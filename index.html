@@ -10,6 +10,17 @@
     
   <body>
   <!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Untitled</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -243,11 +254,11 @@ select option{background:#161b27}
      <div class="hub-side">
        <div class="plabel L"><div class="pdot"></div>Gauche</div>
        <div class="f">
-         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box">Diamètre utile flasque G</span></label>
+         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box">Diamètre utile flasque</span></label>
          <input type="number" id="pcd-left" step="0.1">
        </div>
        <div class="f">
-         <label class="tip-wrap">Déport (mm)<span class="tip-icon">?</span><span class="tip-box">Centre à flasque G</span></label>
+         <label class="tip-wrap">Déport (mm)<span class="tip-icon">?</span><span class="tip-box">Centre vers flasque</span></label>
          <input type="number" id="offset-left" step="0.1" oninput="onTension()">
        </div>
      </div>
@@ -255,11 +266,11 @@ select option{background:#161b27}
      <div class="hub-side">
        <div class="plabel R"><div class="pdot"></div>Droit</div>
        <div class="f">
-         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box">Diamètre utile flasque D</span></label>
+         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box">Diamètre utile flasque</span></label>
          <input type="number" id="pcd-right" step="0.1">
        </div>
        <div class="f">
-         <label class="tip-wrap">Déport (mm)<span class="tip-icon">?</span><span class="tip-box">Centre à flasque D</span></label>
+         <label class="tip-wrap">Déport (mm)<span class="tip-icon">?</span><span class="tip-box">Centre vers flasque</span></label>
          <input type="number" id="offset-right" step="0.1" oninput="onTension()">
        </div>
      </div>
@@ -289,7 +300,7 @@ select option{background:#161b27}
          <input type="number" id="nsd-val" step="0.1" oninput="calcNsd()">
        </div>
        <div class="f">
-         <label class="tip-wrap">ADDON (mm)<span class="tip-icon">?</span><span class="tip-box">L'ADDON dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standards 12 mm.</span></label>
+         <label class="tip-wrap">ADDON (mm)<span class="tip-icon">?</span><span class="tip-box">Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.</span></label>
          <select id="ecrou-type" onchange="calcNsd()">
            <option value="" disabled selected>— mm —</option>
            <option value="1.8">1.8</option>
@@ -717,6 +728,10 @@ function calc(){
 </script>
 
 </body>
+</html>
+    
+  </body>
+  
 </html>
     
   </body>
