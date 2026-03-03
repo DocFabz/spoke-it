@@ -101,7 +101,7 @@ select option{background:#161b27}
 /* Hub top row */
 .hub-top{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem}
 
-/* Hub sides */
+/* Hub sides: two columns always, separated by a thin line */
 .hub-sides{display:grid;grid-template-columns:1fr 1px 1fr;gap:0;background:var(--card-alt);border:1px solid var(--border);border-radius:var(--rs);overflow:hidden}
 .hub-side{padding:1.1rem 1.2rem;display:flex;flex-direction:column;gap:.75rem}
 .hub-divider{background:var(--border);width:1px;margin:0}
@@ -175,391 +175,418 @@ select option{background:#161b27}
 .faible-display.has-val{border-color:rgba(126,200,227,.3)}
 .faible-display .exact{font-size:.75rem;color:var(--text3);margin-left:.4rem}
 
+/* ─ Tooltip ─ */
+.tip-wrap{position:relative;display:inline-flex;align-items:center;gap:.3rem}
+.tip-icon{width:13px;height:13px;border-radius:50%;border:1px solid var(--text3);color:var(--text3);font-size:.6rem;font-family:'DM Mono',monospace;display:inline-flex;align-items:center;justify-content:center;cursor:default;flex-shrink:0;line-height:1;user-select:none}
+.tip-icon:hover{border-color:var(--accent);color:var(--accent)}
+.tip-box{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#0e1420;border:1px solid var(--border-s);border-radius:6px;padding:.45rem .7rem;font-family:'DM Sans',sans-serif;font-size:.68rem;font-weight:400;color:var(--text2);white-space:normal;max-width:220px;text-align:center;pointer-events:none;opacity:0;transition:opacity .18s;z-index:99;letter-spacing:0;text-transform:none}
+.tip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#0e1420}
+.tip-icon:hover + .tip-box,.tip-wrap:hover .tip-box{opacity:1}
+
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:2px}
+
 </style>
 </head>
 <body>
 
 <header>
-  <svg class="logo-ring" viewBox="0 0 50 50" fill="none">
-    <circle cx="25" cy="25" r="22" stroke="rgba(126,200,227,.55)" stroke-width="1.5" stroke-dasharray="3.5 3"/>
-    <circle cx="25" cy="25" r="3" fill="rgba(126,200,227,.75)"/>
-    <line x1="25" y1="3"  x2="25" y2="11" stroke="rgba(126,200,227,.5)" stroke-width="1.2"/>
-    <line x1="25" y1="39" x2="25" y2="47" stroke="rgba(126,200,227,.5)" stroke-width="1.2"/>
-    <line x1="3"  y1="25" x2="11" y2="25" stroke="rgba(232,146,124,.5)" stroke-width="1.2"/>
-    <line x1="39" y1="25" x2="47" y2="25" stroke="rgba(232,146,124,.5)" stroke-width="1.2"/>
-    <line x1="8.5"  y1="8.5"  x2="14.5" y2="14.5" stroke="rgba(126,200,227,.3)" stroke-width="1"/>
-    <line x1="35.5" y1="35.5" x2="41.5" y2="41.5" stroke="rgba(126,200,227,.3)" stroke-width="1"/>
-    <line x1="41.5" y1="8.5"  x2="35.5" y2="14.5" stroke="rgba(232,146,124,.3)" stroke-width="1"/>
-    <line x1="14.5" y1="35.5" x2="8.5"  y2="41.5" stroke="rgba(232,146,124,.3)" stroke-width="1"/>
-  </svg>
-  <div class="brand">Spoke <em>It</em></div>
-  <div class="sub">by @Docfab21</div>
-  <div class="hline"></div>
+ <svg class="logo-ring" viewBox="0 0 50 50" fill="none">
+   <circle cx="25" cy="25" r="22" stroke="rgba(126,200,227,.55)" stroke-width="1.5" stroke-dasharray="3.5 3"/>
+   <circle cx="25" cy="25" r="3" fill="rgba(126,200,227,.75)"/>
+   <line x1="25" y1="3"  x2="25" y2="11" stroke="rgba(126,200,227,.5)" stroke-width="1.2"/>
+   <line x1="25" y1="39" x2="25" y2="47" stroke="rgba(126,200,227,.5)" stroke-width="1.2"/>
+   <line x1="3"  y1="25" x2="11" y2="25" stroke="rgba(232,146,124,.5)" stroke-width="1.2"/>
+   <line x1="39" y1="25" x2="47" y2="25" stroke="rgba(232,146,124,.5)" stroke-width="1.2"/>
+   <line x1="8.5" y1="8.5"  x2="14.5" y2="14.5" stroke="rgba(126,200,227,.3)" stroke-width="1"/>
+   <line x1="35.5" y1="35.5" x2="41.5" y2="41.5" stroke="rgba(126,200,227,.3)" stroke-width="1"/>
+   <line x1="41.5" y1="8.5"  x2="35.5" y2="14.5" stroke="rgba(232,146,124,.3)" stroke-width="1"/>
+   <line x1="14.5" y1="35.5" x2="8.5"  y2="41.5" stroke="rgba(232,146,124,.3)" stroke-width="1"/>
+ </svg>
+ <div class="brand">Spoke <em>It</em></div>
+ <div class="sub">by @Docfab21</div>
+ <div class="hline"></div>
 </header>
 
 <div class="wrap">
 
-  <!-- Wheel type -->
-  <div class="card">
-    <div class="ch"><div class="cdot"></div><div class="clabel">Type de roue</div></div>
-    <div class="seg">
-      <button class="sb active c" id="btn-avant"   onclick="setWheel('avant')">Roue Avant</button>
-      <button class="sb w"        id="btn-arriere" onclick="setWheel('arriere')">Roue Arrière</button>
-    </div>
-  </div>
+ <!-- Wheel type -->
+ <div class="card">
+   <div class="ch"><div class="cdot"></div><div class="clabel">Type de roue</div></div>
+   <div class="seg">
+     <button class="sb active c" id="btn-avant"   onclick="setWheel('avant')">Roue Avant</button>
+     <button class="sb w"        id="btn-arriere" onclick="setWheel('arriere')">Roue Arrière</button>
+   </div>
+ </div>
 
-  <!-- Hub -->
-  <div class="card">
-    <div class="ch"><div class="cdot"></div><div class="clabel">Moyeu</div></div>
+ <!-- Hub -->
+ <div class="card">
+   <div class="ch"><div class="cdot"></div><div class="clabel">Moyeu</div></div>
 
-    <div class="hub-top">
-      <div class="f">
-        <label>Nb total de rayons</label>
-        <select id="nb-rayons">
-          <option value="" disabled selected>— Choisir —</option>
-          <option>16</option><option>20</option><option>24</option>
-          <option>28</option><option>32</option><option>36</option>
-        </select>
-      </div>
-      <div class="f">
-        <label>Ø trous de bride (mm)</label>
-        <input type="number" id="diam-trou" value="2.55" step="0.05" min="1" max="5">
-      </div>
-    </div>
+   <div class="hub-top">
+     <div class="f">
+       <label>Nb total de rayons</label>
+       <select id="nb-rayons">
+         <option value="" disabled selected>— Choisir —</option>
+         <option>16</option><option>20</option><option>24</option>
+         <option>28</option><option>32</option><option>36</option>
+       </select>
+     </div>
+     <div class="f">
+       <label>Ø trous de bride (mm)</label>
+       <input type="number" id="diam-trou" value="2.55" step="0.05" min="1" max="5">
+     </div>
+   </div>
 
-    <div class="hub-sides">
-      <div class="hub-side">
-        <div class="plabel L"><div class="pdot"></div>Gauche</div>
-        <div class="f"><label>PCD (mm)</label><input type="number" id="pcd-left" step="0.1"></div>
-        <div class="f"><label>Déport (mm)</label><input type="number" id="offset-left" step="0.1" oninput="onTension()"></div>
-      </div>
-      <div class="hub-divider"></div>
-      <div class="hub-side">
-        <div class="plabel R"><div class="pdot"></div>Droit</div>
-        <div class="f"><label>PCD (mm)</label><input type="number" id="pcd-right" step="0.1"></div>
-        <div class="f"><label>Déport (mm)</label><input type="number" id="offset-right" step="0.1" oninput="onTension()"></div>
-      </div>
-    </div>
-  </div>
+   <div class="hub-sides">
+     <div class="hub-side">
+       <div class="plabel L"><div class="pdot"></div>Gauche</div>
+       <div class="f">
+         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box">Diamètre utile flasque G</span></label>
+         <input type="number" id="pcd-left" step="0.1">
+       </div>
+       <div class="f">
+         <label class="tip-wrap">Déport (mm)<span class="tip-icon">?</span><span class="tip-box">Centre à flasque G</span></label>
+         <input type="number" id="offset-left" step="0.1" oninput="onTension()">
+       </div>
+     </div>
+     <div class="hub-divider"></div>
+     <div class="hub-side">
+       <div class="plabel R"><div class="pdot"></div>Droit</div>
+       <div class="f">
+         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box">Diamètre utile flasque D</span></label>
+         <input type="number" id="pcd-right" step="0.1">
+       </div>
+       <div class="f">
+         <label class="tip-wrap">Déport (mm)<span class="tip-icon">?</span><span class="tip-box">Centre à flasque D</span></label>
+         <input type="number" id="offset-right" step="0.1" oninput="onTension()">
+       </div>
+     </div>
+   </div>
+ </div>
 
-  <!-- Rim -->
-  <div class="card">
-    <div class="ch"><div class="cdot"></div><div class="clabel">Jante</div></div>
+ <!-- Rim -->
+ <div class="card">
+   <div class="ch"><div class="cdot"></div><div class="clabel">Jante</div></div>
 
-    <div class="prow">
-      <button class="pill active" id="btn-erd-direct" onclick="setErdMode('direct')">ERD direct</button>
-      <button class="pill"        id="btn-erd-nsd"    onclick="setErdMode('nsd')">NSD + type d'écrou</button>
-    </div>
+   <div class="prow">
+     <button class="pill active" id="btn-erd-direct" onclick="setErdMode('direct')">ERD direct</button>
+     <button class="pill"        id="btn-erd-nsd"    onclick="setErdMode('nsd')">NSD + ADDON</button>
+   </div>
 
-    <div id="erd-direct-section">
-      <div class="f" style="max-width:185px">
-        <label>ERD (mm)</label>
-        <input type="number" id="erd-direct" step="0.1">
-      </div>
-    </div>
+   <div id="erd-direct-section">
+     <div class="f" style="max-width:185px">
+       <label>ERD (mm)</label>
+       <input type="number" id="erd-direct" step="0.1">
+     </div>
+   </div>
 
-    <div id="erd-nsd-section" style="display:none">
-      <div class="g2" style="max-width:400px">
-        <div class="f">
-          <label>NSD (mm)</label>
-          <input type="number" id="nsd-val" step="0.1" oninput="calcNsd()">
-        </div>
-        <div class="f">
-          <label>Type d'écrou</label>
-          <select id="ecrou-type" onchange="calcNsd()">
-            <option value="2.0">Classique (+2.0 mm)</option>
-            <option value="2.45">Double Square (+2.45 mm)</option>
-          </select>
-        </div>
-      </div>
-      <div class="f" style="max-width:185px;margin-top:.8rem">
-        <label>ERD calculé (mm)</label>
-        <input type="number" id="erd-nsd-result" readonly style="opacity:.55;cursor:not-allowed">
-      </div>
-    </div>
+   <div id="erd-nsd-section" style="display:none">
+     <div class="g2" style="max-width:400px">
+       <div class="f">
+         <label>NSD (mm)</label>
+         <input type="number" id="nsd-val" step="0.1" oninput="calcNsd()">
+       </div>
+       <div class="f">
+         <label class="tip-wrap">ADDON (mm)<span class="tip-icon">?</span><span class="tip-box">L'ADDON dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standards 12 mm.</span></label>
+         <select id="ecrou-type" onchange="calcNsd()">
+           <option value="" disabled selected>— mm —</option>
+           <option value="1.8">1.8</option>
+           <option value="1.9">1.9</option>
+           <option value="2.0">2.0</option>
+           <option value="2.1">2.1</option>
+           <option value="2.2">2.2</option>
+           <option value="2.3">2.3</option>
+           <option value="2.4">2.4</option>
+           <option value="2.5">2.5</option>
+           <option value="2.6">2.6</option>
+           <option value="2.7">2.7</option>
+           <option value="2.8">2.8</option>
+           <option value="2.9">2.9</option>
+           <option value="3.0">3.0</option>
+           <option value="3.1">3.1</option>
+           <option value="3.2">3.2</option>
+           <option value="3.3">3.3</option>
+           <option value="3.4">3.4</option>
+           <option value="3.5">3.5</option>
+           <option value="3.6">3.6</option>
+         </select>
+       </div>
+     </div>
+     <div class="f" style="max-width:185px;margin-top:.8rem">
+       <label>ERD calculé (mm)</label>
+       <input type="number" id="erd-nsd-result" readonly style="opacity:.55;cursor:not-allowed">
+     </div>
+   </div>
 
-    <div class="div"></div>
+   <div class="div"></div>
 
-    <div class="g2">
-      <div class="f">
-        <label>Asymétrie jante (mm)</label>
-        <input type="number" id="asym" value="0" step="0.5">
-        <p class="help">Positif = décalage vers la droite</p>
-      </div>
-      <div class="f">
-        <label>Section de rayon</label>
-        <div class="sprow">
-          <button class="sp"        data-d="1.6" data-a="" onclick="setSpoke(this)">1.6 mm</button>
-          <button class="sp"        data-d="1.8" data-a="" onclick="setSpoke(this)">1.8 mm</button>
-          <button class="sp active" data-d="2.0" data-a="" onclick="setSpoke(this)">2.0 mm</button>
-          <button class="sp"        data-d="2.3" data-a="" onclick="setSpoke(this)">2.3 mm</button>
-          <button class="sp"        data-d="0.9" data-a="2.2" onclick="setSpoke(this)">CX-Ray 0.9×2.2</button>
-          <button class="sp"        data-d="0.9" data-a="2.3" onclick="setSpoke(this)">Aerolite 0.9×2.3</button>
-        </div>
-      </div>
-    </div>
+   <div class="g2">
+     <div class="f">
+       <label>Asymétrie jante (mm)</label>
+       <input type="number" id="asym" value="0" step="0.5">
+       <p class="help">Positif = décalage vers la droite</p>
+     </div>
+     <div class="f">
+       <label>Section de rayon</label>
+       <select id="spoke-select" onchange="setSpokeFromSelect(this)">
+         <option value="1.6|">1.6 mm</option>
+         <option value="1.7|">1.7 mm</option>
+         <option value="1.8|">1.8 mm</option>
+         <option value="1.9|">1.9 mm</option>
+         <option value="2.0|" selected>2.0 mm</option>
+         <option value="2.1|">2.1 mm</option>
+         <option value="2.2|">2.2 mm</option>
+         <option value="2.3|">2.3 mm</option>
+         <option value="0.9|2.2">CX-Ray 0.9×2.2</option>
+         <option value="0.9|2.3">Aerolite 0.9×2.3</option>
+       </select>
+     </div>
+   </div>
 
-    <div class="div"></div>
+   <div class="div"></div>
 
-    <div class="f">
-      <label>Croisement</label>
-      <div class="crow">
-        <button class="cp active" data-cross="0" onclick="setCross(this)">Radial</button>
-        <button class="cp"        data-cross="1" onclick="setCross(this)">1×</button>
-        <button class="cp"        data-cross="2" onclick="setCross(this)">2×</button>
-        <button class="cp"        data-cross="3" onclick="setCross(this)">3×</button>
-        <button class="cp"        data-cross="4" onclick="setCross(this)">4×</button>
-      </div>
-    </div>
-  </div>
+   <div class="f">
+     <label>Croisement</label>
+     <div class="crow">
+       <button class="cp"        data-cross="0" onclick="setCross(this)">Radial</button>
+       <button class="cp"        data-cross="1" onclick="setCross(this)">1×</button>
+       <button class="cp"        data-cross="2" onclick="setCross(this)">2×</button>
+       <button class="cp active" data-cross="3" onclick="setCross(this)">3×</button>
+       <button class="cp"        data-cross="4" onclick="setCross(this)">4×</button>
+     </div>
+   </div>
+ </div>
 
-  <!-- Tensions -->
-  <div class="card">
-    <div class="ch">
-      <div class="cdot"></div>
-      <div class="clabel">Tensions cibles</div>
-    </div>
-    <div class="g2">
-      <div class="f">
-        <label>
-          <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--warm);margin-right:.3rem;vertical-align:middle"></span>
-          Nappe forte (kgf)
-        </label>
-        <select id="tension-forte" onchange="onTension()">
-          <option value="" disabled selected>— kgf —</option>
-          <option>80</option><option>85</option><option>90</option><option>95</option>
-          <option>100</option><option>105</option><option>110</option><option>115</option>
-          <option>120</option><option>125</option><option>130</option>
-        </select>
-      </div>
-      <div class="f">
-        <label>
-          <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--accent);margin-right:.3rem;vertical-align:middle"></span>
-          Nappe faible (kgf)
-        </label>
-        <div class="faible-display" id="tension-faible-display">—</div>
-      </div>
-    </div>
-    <p class="help" style="margin-top:.6rem">La tension faible est calculée automatiquement selon le ratio des déports.</p>
-  </div>
+ <!-- Tensions -->
+ <div class="card">
+   <div class="ch">
+     <div class="cdot"></div>
+     <div class="clabel">Tensions cibles</div>
+   </div>
+   <div class="g2">
+     <div class="f">
+       <label>
+         <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--warm);margin-right:.3rem;vertical-align:middle"></span>
+         Nappe forte
+       </label>
+       <select id="tension-forte" onchange="onTension()">
+         <option value="" disabled selected>—</option>
+         <option>80</option><option>85</option><option>90</option><option>95</option>
+         <option>100</option><option>105</option><option>110</option><option>115</option>
+         <option>120</option><option>125</option><option>130</option>
+       </select>
+     </div>
+     <div class="f">
+       <label>
+         <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--accent);margin-right:.3rem;vertical-align:middle"></span>
+         Nappe faible
+       </label>
+       <div class="faible-display" id="tension-faible-display">—</div>
+     </div>
+   </div>
+   <p class="help" style="margin-top:.6rem">La tension faible est calculée automatiquement selon le ratio des déports.</p>
+ </div>
 
-  <div class="err" id="err"></div>
-  <button class="btn" onclick="calc()">Calculer les longueurs de rayons</button>
+ <div class="err" id="err"></div>
+ <button class="btn" onclick="calc()">Calculer les longueurs de rayons</button>
 
-  <!-- Results -->
-  <div class="rw" id="results">
-    <div class="card" style="border-color:rgba(126,200,227,.13)">
-      <div class="ch">
-        <div class="cdot" style="background:var(--success);opacity:.7"></div>
-        <div class="clabel" style="color:var(--success)">Résultats</div>
-      </div>
+ <!-- Results -->
+ <div class="rw" id="results">
+   <div class="card" style="border-color:rgba(126,200,227,.13)">
+     <div class="ch">
+       <div class="cdot" style="background:var(--success);opacity:.7"></div>
+       <div class="clabel" style="color:var(--success)">Résultats</div>
+     </div>
 
-      <div class="rg">
-        <div class="rc fo">
-          <div class="rtag">Nappe forte</div>
-          <div class="rnum" id="r-fo">—</div>
-          <div class="runit">mm</div>
-          <div class="rrows" id="m-fo"></div>
-        </div>
-        <div class="rc fa">
-          <div class="rtag">Nappe faible</div>
-          <div class="rnum" id="r-fa">—</div>
-          <div class="runit">mm</div>
-          <div class="rrows" id="m-fa"></div>
-        </div>
-      </div>
+     <div class="rg">
+       <div class="rc fo">
+         <div class="rtag">Nappe forte</div>
+         <div class="rnum" id="r-fo">—</div>
+         <div class="runit">mm</div>
+         <div class="rrows" id="m-fo"></div>
+       </div>
+       <div class="rc fa">
+         <div class="rtag">Nappe faible</div>
+         <div class="rnum" id="r-fa">—</div>
+         <div class="runit">mm</div>
+         <div class="rrows" id="m-fa"></div>
+       </div>
+     </div>
 
-      <div class="sum" id="summary"></div>
-    </div>
-  </div>
+     <div class="sum" id="summary"></div>
+   </div>
+ </div>
 
 </div>
 
 <script>
-let wtype = 'avant', erdMode = 'direct', sd = 2.0, sa = null, cross = 0;
+let wtype='avant', erdMode='direct', sd=2.0, sa=null, cross=3;
 
-function setWheel(t) {
-  wtype = t;
-  document.getElementById('btn-avant').classList.toggle('active', t === 'avant');
-  document.getElementById('btn-arriere').classList.toggle('active', t === 'arriere');
+function setWheel(t){
+ wtype=t;
+ document.getElementById('btn-avant').classList.toggle('active',t==='avant');
+ document.getElementById('btn-arriere').classList.toggle('active',t==='arriere');
 }
 
-function setErdMode(m) {
-  erdMode = m;
-  document.getElementById('btn-erd-direct').classList.toggle('active', m === 'direct');
-  document.getElementById('btn-erd-nsd').classList.toggle('active', m === 'nsd');
-  document.getElementById('erd-direct-section').style.display = m === 'direct' ? '' : 'none';
-  document.getElementById('erd-nsd-section').style.display = m === 'nsd' ? '' : 'none';
+function setErdMode(m){
+ erdMode=m;
+ document.getElementById('btn-erd-direct').classList.toggle('active',m==='direct');
+ document.getElementById('btn-erd-nsd').classList.toggle('active',m==='nsd');
+ document.getElementById('erd-direct-section').style.display=m==='direct'?'':'none';
+ document.getElementById('erd-nsd-section').style.display=m==='nsd'?'':'none';
 }
 
-function calcNsd() {
-  const n = parseFloat(document.getElementById('nsd-val').value);
-  const o = parseFloat(document.getElementById('ecrou-type').value) || 2;
-  if (!isNaN(n)) document.getElementById('erd-nsd-result').value = (n + 2 * o).toFixed(2);
+function calcNsd(){
+ const n=parseFloat(document.getElementById('nsd-val').value);
+ const addon=parseFloat(document.getElementById('ecrou-type').value);
+ if(!isNaN(n) && !isNaN(addon)) document.getElementById('erd-nsd-result').value=(n+addon).toFixed(2);
 }
 
-function setSpoke(b) {
-  document.querySelectorAll('.sp').forEach(x => x.classList.remove('active'));
-  b.classList.add('active');
-  sd = parseFloat(b.dataset.d);
-  sa = b.dataset.a ? parseFloat(b.dataset.a) : null;
+function setSpokeFromSelect(sel){
+ const parts = sel.value.split('|');
+ sd = parseFloat(parts[0]);
+ sa = parts[1] ? parseFloat(parts[1]) : null;
 }
 
-function setCross(b) {
-  document.querySelectorAll('.cp').forEach(x => x.classList.remove('active'));
-  b.classList.add('active');
-  cross = parseInt(b.dataset.cross);
+function setCross(b){
+ document.querySelectorAll('.cp').forEach(x=>x.classList.remove('active'));
+ b.classList.add('active');
+ cross=parseInt(b.dataset.cross);
 }
 
-function onTension() {
-  const ol  = parseFloat(document.getElementById('offset-left').value);
-  const or_ = parseFloat(document.getElementById('offset-right').value);
-  const tF  = parseFloat(document.getElementById('tension-forte').value);
-  const disp = document.getElementById('tension-faible-display');
+function onTension(){
+ const oL=parseFloat(document.getElementById('offset-left').value);
+ const oR=parseFloat(document.getElementById('offset-right').value);
+ const tF=parseFloat(document.getElementById('tension-forte').value);
+ const disp=document.getElementById('tension-faible-display');
 
-  if (isNaN(tF)) { disp.textContent = '—'; disp.classList.remove('has-val'); return; }
+ if(isNaN(tF)){disp.textContent='—';disp.classList.remove('has-val');return}
 
-  if (isNaN(ol) || isNaN(or_) || ol === 0 || or_ === 0) {
-    disp.innerHTML = `<span style="color:var(--text3);font-size:.78rem">Entrez les déports</span>`;
-    disp.classList.remove('has-val');
-    return;
-  }
+ if(isNaN(oL)||isNaN(oR)||oL===0||oR===0){
+   disp.innerHTML=`<span style="color:var(--text3);font-size:.78rem">Entrez les déports</span>`;
+   disp.classList.remove('has-val');
+   return;
+ }
 
-  const ratio = wtype === 'arriere' ? or_ / ol : Math.min(ol, or_) / Math.max(ol, or_);
-  const exact = tF * ratio;
-  disp.textContent = exact.toFixed(1);
-  disp.classList.add('has-val');
+ const foOff = wtype==='arriere' ? oR : Math.min(oL, oR);
+ const faOff = wtype==='arriere' ? oL  : Math.max(oL, oR);
+ const ratio = (faOff>0 && foOff>0) ? foOff/faOff : 1;
+ const exact = tF * ratio;
+ disp.textContent=exact.toFixed(1);
+ disp.classList.add('has-val');
 }
 
-function getERD() {
-  return erdMode === 'direct'
-    ? parseFloat(document.getElementById('erd-direct').value)
-    : parseFloat(document.getElementById('erd-nsd-result').value);
+function getERD(){
+ return erdMode==='direct'
+   ?parseFloat(document.getElementById('erd-direct').value)
+   :parseFloat(document.getElementById('erd-nsd-result').value);
 }
 
-function slen(pcd, off, cr, n, erd, trou) {
-  const R = pcd / 2, Rj = erd / 2, a = cr * (2 * Math.PI) / (n / 2);
-  return Math.sqrt(R * R + Rj * Rj - 2 * R * Rj * Math.cos(a) + off * off) - trou / 2;
+function slen(pcd,off,cr,n,erd,trou){
+ const R=pcd/2, Rj=erd/2, a=cr*(2*Math.PI)/(n/2);
+ return Math.sqrt(R*R+Rj*Rj-2*R*Rj*Math.cos(a)+off*off)-trou/2;
 }
 
-function area() {
-  return sa !== null ? Math.PI / 4 * sd * sa : Math.PI / 4 * sd * sd;
+function area(){return sa!==null?Math.PI/4*sd*sa:Math.PI/4*sd*sd}
+
+function el(F,L){return(F*9.81*L)/(area()*210000)}
+
+function showErr(m){const e=document.getElementById('err');e.textContent=m;e.classList.add('show')}
+
+function row(label,val){return`<div class="rrow"><span>${label}</span><strong>${val}</strong></div>`}
+
+function playValidation(){
+ try {
+   const ctx = new (window.AudioContext || window.webkitAudioContext)();
+   const t = ctx.currentTime;
+   [0, 0.12].forEach((delay, i) => {
+     const osc = ctx.createOscillator();
+     const gain = ctx.createGain();
+     osc.connect(gain); gain.connect(ctx.destination);
+     osc.type = 'sine';
+     osc.frequency.setValueAtTime(i === 0 ? 660 : 880, t + delay);
+     gain.gain.setValueAtTime(0, t + delay);
+     gain.gain.linearRampToValueAtTime(0.18, t + delay + 0.02);
+     gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.35);
+     osc.start(t + delay);
+     osc.stop(t + delay + 0.4);
+   });
+ } catch(e) {}
 }
 
-function el(F, L) {
-  return (F * 9.81 * L) / (area() * 210000);
-}
+function calc(){
+ const e=document.getElementById('err');e.classList.remove('show');
 
-function showErr(m) {
-  const e = document.getElementById('err');
-  e.textContent = m;
-  e.classList.add('show');
-}
+ const n=parseInt(document.getElementById('nb-rayons').value);
+ if(!n) return showErr('Veuillez choisir le nombre de rayons.');
 
-function row(label, val) {
-  return `<div class="rrow"><span>${label}</span><strong>${val}</strong></div>`;
-}
+ const pL=parseFloat(document.getElementById('pcd-left').value);
+ const pR=parseFloat(document.getElementById('pcd-right').value);
+ const oL=parseFloat(document.getElementById('offset-left').value);
+ const oR=parseFloat(document.getElementById('offset-right').value);
+ if([pL,pR,oL,oR].some(isNaN)) return showErr('Veuillez renseigner PCD et déport pour les deux côtés.');
 
-function playValidation() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const t = ctx.currentTime;
-    [0, 0.12].forEach((delay, i) => {
-      const osc  = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(i === 0 ? 660 : 880, t + delay);
-      gain.gain.setValueAtTime(0, t + delay);
-      gain.gain.linearRampToValueAtTime(0.18, t + delay + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.35);
-      osc.start(t + delay);
-      osc.stop(t + delay + 0.4);
-    });
-  } catch(e) {}
-}
+ const erd=getERD();
+ if(isNaN(erd)||erd<=0) return showErr('ERD invalide ou non renseigné.');
 
-function calc() {
-  const e = document.getElementById('err');
-  e.classList.remove('show');
+ const asym=parseFloat(document.getElementById('asym').value)||0;
+ const trou=parseFloat(document.getElementById('diam-trou').value)||2.55;
+ const tF=parseFloat(document.getElementById('tension-forte').value);
+ if(isNaN(tF)) return showErr('Veuillez choisir la tension cible nappe forte.');
 
-  const n = parseInt(document.getElementById('nb-rayons').value);
-  if (!n) return showErr('Veuillez choisir le nombre de rayons.');
+ const effL=oL+asym, effR=oR-asym;
+ let foOff,faOff,foPCD,faPCD;
+ if(wtype==='arriere'){foOff=effR;faOff=effL;foPCD=pR;faPCD=pL}
+ else if(effL<=effR){foOff=effL;faOff=effR;foPCD=pL;faPCD=pR}
+ else{foOff=effR;faOff=effL;foPCD=pR;faPCD=pL}
 
-  const pL = parseFloat(document.getElementById('pcd-left').value);
-  const pR = parseFloat(document.getElementById('pcd-right').value);
-  const oL = parseFloat(document.getElementById('offset-left').value);
-  const oR = parseFloat(document.getElementById('offset-right').value);
-  if ([pL, pR, oL, oR].some(isNaN)) return showErr('Veuillez renseigner PCD et déport pour les deux côtés.');
+ const ratio=(faOff>0&&foOff>0)?foOff/faOff:1;
+ const tf=tF*ratio;
 
-  const erd = getERD();
-  if (isNaN(erd) || erd <= 0) return showErr('ERD invalide ou non renseigné.');
+ const Lfo=slen(foPCD,foOff,cross,n,erd,trou);
+ const Lfa=slen(faPCD,faOff,cross,n,erd,trou);
+ const eFo=el(tF,Lfo), eFa=el(tf,Lfa);
+ const h=n/2;
+ const ratioDisp=(faOff>0&&foOff>0)?(faOff/foOff).toFixed(3):'—';
 
-  const asym = parseFloat(document.getElementById('asym').value) || 0;
-  const trou = parseFloat(document.getElementById('diam-trou').value) || 2.55;
-  const tF   = parseFloat(document.getElementById('tension-forte').value);
-  if (isNaN(tF)) return showErr('Veuillez choisir la tension cible nappe forte.');
+ document.getElementById('r-fo').textContent=Lfo.toFixed(1);
+ document.getElementById('r-fa').textContent=Lfa.toFixed(1);
 
-  const effL = oL + asym, effR = oR - asym;
-  let foOff, faOff, foPCD, faPCD;
+ document.getElementById('m-fo').innerHTML=
+   `<div class="rrow"><span>Élongation à ${tF} kgf</span><span class="ev">+${eFo.toFixed(3)} mm</span></div>`+
+   row('Rayons par côté',h)+
+   row('Déport effectif',foOff.toFixed(2)+' mm')+
+   row('Tension cible',tF+' kgf');
 
-  if (wtype === 'arriere') {
-    foOff = effR; faOff = effL; foPCD = pR; faPCD = pL;
-  } else if (effL <= effR) {
-    foOff = effL; faOff = effR; foPCD = pL; faPCD = pR;
-  } else {
-    foOff = effR; faOff = effL; foPCD = pR; faPCD = pL;
-  }
+ document.getElementById('m-fa').innerHTML=
+   `<div class="rrow"><span>Élongation à ${tf.toFixed(1)} kgf</span><span class="ev">+${eFa.toFixed(3)} mm</span></div>`+
+   row('Rayons par côté',h)+
+   row('Déport effectif',faOff.toFixed(2)+' mm')+
+   row('Tension cible',tf.toFixed(1)+' kgf');
 
-  const ratio = (faOff > 0 && foOff > 0) ? faOff / foOff : 1;
-  const tf = tF * ratio;
+ const sl=sa?`${sd}×${sa} mm`:`${sd} mm`;
+ const cl=cross===0?'Radial':`${cross}×`;
 
-  const Lfo = slen(foPCD, foOff, cross, n, erd, trou);
-  const Lfa = slen(faPCD, faOff, cross, n, erd, trou);
-  const eFo = el(tF, Lfo), eFa = el(tf, Lfa);
-  const h = n / 2;
-  const ratioDisp = (faOff > 0 && foOff > 0) ? (faOff / foOff).toFixed(3) : '—';
+ document.getElementById('summary').innerHTML=`
+   <div class="sumh">Résumé de configuration</div>
+   <div class="sumg">
+     <div class="si">ERD<strong>${erd.toFixed(1)} mm</strong></div>
+     <div class="si">Roue<strong>${wtype==='avant'?'Avant':'Arrière'}</strong></div>
+     <div class="si">Nb rayons<strong>${n} (${h}/côté)</strong></div>
+     <div class="si">Croisement<strong>${cl}</strong></div>
+     <div class="si">Section rayon<strong>${sl}</strong></div>
+     <div class="si">Ratio faible/forte<strong>${ratioDisp}</strong></div>
+     <div class="si">Asymétrie jante<strong>${asym>0?'+':''}${asym} mm</strong></div>
+     <div class="si">Corr. trou bride<strong>−${(trou/2).toFixed(3)} mm</strong></div>
+     <div class="si">Aire section<strong>${area().toFixed(3)} mm²</strong></div>
+     <div class="si">Différence L<strong>${Math.abs(Lfo-Lfa).toFixed(1)} mm</strong></div>
+   </div>`;
 
-  document.getElementById('r-fo').textContent = Lfo.toFixed(1);
-  document.getElementById('r-fa').textContent = Lfa.toFixed(1);
-
-  document.getElementById('m-fo').innerHTML =
-    `<div class="rrow"><span>Élongation à ${tF} kgf</span><span class="ev">+${eFo.toFixed(3)} mm</span></div>` +
-    row('Rayons par côté', h) +
-    row('Déport effectif', foOff.toFixed(2) + ' mm') +
-    row('Tension cible', tF + ' kgf');
-
-  document.getElementById('m-fa').innerHTML =
-    `<div class="rrow"><span>Élongation à ${tf.toFixed(1)} kgf</span><span class="ev">+${eFa.toFixed(3)} mm</span></div>` +
-    row('Rayons par côté', h) +
-    row('Déport effectif', faOff.toFixed(2) + ' mm') +
-    row('Tension cible', tf.toFixed(1) + ' kgf');
-
-  const sl = sa ? `${sd}×${sa} mm` : `${sd} mm`;
-  const cl = cross === 0 ? 'Radial' : `${cross}×`;
-
-  document.getElementById('summary').innerHTML = `
-    <div class="sumh">Résumé de configuration</div>
-    <div class="sumg">
-      <div class="si">ERD<strong>${erd.toFixed(1)} mm</strong></div>
-      <div class="si">Roue<strong>${wtype === 'avant' ? 'Avant' : 'Arrière'}</strong></div>
-      <div class="si">Nb rayons<strong>${n} (${h}/côté)</strong></div>
-      <div class="si">Croisement<strong>${cl}</strong></div>
-      <div class="si">Section rayon<strong>${sl}</strong></div>
-      <div class="si">Ratio faible/forte<strong>${ratioDisp}</strong></div>
-      <div class="si">Asymétrie jante<strong>${asym > 0 ? '+' : ''}${asym} mm</strong></div>
-      <div class="si">Corr. trou bride<strong>−${(trou / 2).toFixed(3)} mm</strong></div>
-      <div class="si">Aire section<strong>${area().toFixed(3)} mm²</strong></div>
-      <div class="si">Différence L<strong>${Math.abs(Lfo - Lfa).toFixed(1)} mm</strong></div>
-    </div>`;
-
-  playValidation();
-  document.getElementById('results').classList.add('show');
-  setTimeout(() => document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+ playValidation();
+ document.getElementById('results').classList.add('show');
+ setTimeout(()=>document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'}),80);
 }
 </script>
 
