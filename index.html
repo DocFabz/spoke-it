@@ -60,11 +60,11 @@ header{text-align:center;padding:3.5rem 1rem 2rem}
 .clabel{font-size:.63rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--accent)}
 
 /* ─ Seg ─ */
-.seg{display:flex;background:var(--inp);border:1px solid var(--border);border-radius:var(--rs);padding:3px;gap:3px}
-.sb{flex:1;padding:.6rem 1rem;border:none;border-radius:calc(var(--rs) - 2px);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;cursor:pointer;transition:all .22s}
-.sb.active{background:var(--card-alt);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.28)}
-.sb.active.w{color:var(--warm2)}
-.sb.active.c{color:var(--accent2)}
+.seg{display:flex;background:var(--inp);border:1px solid var(--border-s);border-radius:var(--rs);padding:3px;gap:3px}
+.sb{flex:1;padding:.6rem 1rem;border:none;border-radius:calc(var(--rs) - 2px);background:transparent;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;cursor:pointer;transition:all .22s}
+.sb.active{background:var(--bg2);color:var(--text);box-shadow:0 2px 12px rgba(0,0,0,.4)}
+.sb.active.w{color:var(--warm);text-shadow:0 0 12px rgba(232,146,124,.5)}
+.sb.active.c{color:var(--accent);text-shadow:0 0 12px rgba(126,200,227,.5)}
 
 /* ─ Grid ─ */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
@@ -233,7 +233,7 @@ select option{background:#161b27}
      <div class="hub-side">
        <div class="plabel L"><div class="pdot"></div>Gauche</div>
        <div class="f">
-         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box">Diamètre utile flasque</span></label>
+         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box">Diam utile flasque</span></label>
          <input type="number" id="pcd-left" step="0.1">
        </div>
        <div class="f">
@@ -241,7 +241,7 @@ select option{background:#161b27}
          <input type="number" id="offset-left" step="0.1" oninput="onTension()">
        </div>
        <div class="f" id="field-sp-so-left" style="display:none">
-         <label class="tip-wrap">SO gauche (mm)<span class="tip-icon">?</span><span class="tip-box">Offset latéral du rayon dans le trou bride. 0 si inconnu.</span></label>
+         <label class="tip-wrap">SO gauche (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
          <input type="number" id="sp-so-left" value="0" step="0.1" min="0" max="5">
        </div>
      </div>
@@ -249,7 +249,7 @@ select option{background:#161b27}
      <div class="hub-side">
        <div class="plabel R"><div class="pdot"></div>Droit</div>
        <div class="f">
-         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box">Diamètre utile flasque</span></label>
+         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box">Diam utile flasque</span></label>
          <input type="number" id="pcd-right" step="0.1">
        </div>
        <div class="f">
@@ -257,7 +257,7 @@ select option{background:#161b27}
          <input type="number" id="offset-right" step="0.1" oninput="onTension()">
        </div>
        <div class="f" id="field-sp-so-right" style="display:none">
-         <label class="tip-wrap">SO droit (mm)<span class="tip-icon">?</span><span class="tip-box">Offset latéral du rayon dans le trou bride. 0 si inconnu.</span></label>
+         <label class="tip-wrap">SO droit (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
          <input type="number" id="sp-so-right" value="0" step="0.1" min="0" max="5">
        </div>
      </div>
@@ -323,8 +323,7 @@ select option{background:#161b27}
    <div class="g2">
      <div class="f">
        <label>Asymétrie jante (mm)</label>
-       <input type="number" id="asym" value="0" step="0.5">
-       <p class="help">Positif = décalage vers la droite</p>
+       <input type="number" id="asym" value="0" step="0.5" min="0">
      </div>
      <div class="f">
        <label>Section de rayon</label>
@@ -363,8 +362,8 @@ select option{background:#161b27}
      <div class="cdot"></div>
      <div class="clabel">Tensions cibles</div>
    </div>
-   <div class="g2">
-     <div class="f">
+   <div class="g2" id="tension-g2">
+     <div class="f" id="tension-forte-field">
        <label>
          <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--warm);margin-right:.3rem;vertical-align:middle"></span>
          Nappe forte
@@ -376,7 +375,7 @@ select option{background:#161b27}
          <option>120</option><option>125</option><option>130</option>
        </select>
      </div>
-     <div class="f">
+     <div class="f" id="tension-faible-field">
        <label>
          <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--accent);margin-right:.3rem;vertical-align:middle"></span>
          Nappe faible
@@ -552,8 +551,20 @@ function switchTo(t){
  }
 }
 
+function reorderTensionFields(t){
+ const g2 = document.getElementById('tension-g2');
+ const fo = document.getElementById('tension-forte-field');
+ const fa = document.getElementById('tension-faible-field');
+ if(t === 'arriere'){
+   g2.appendChild(fo);
+ } else {
+   g2.insertBefore(fo, fa);
+ }
+}
+
 function setWheel(t){
  switchTo(t);
+ reorderTensionFields(t);
 }
 
 // ── Tooltip touch support (iOS) ────────────────────────────────────────────
@@ -709,7 +720,9 @@ function calc(){
  const tF=parseFloat(document.getElementById('tension-forte').value);
  if(isNaN(tF)) return showErr('Veuillez choisir la tension cible nappe forte.');
 
- const effL=oL+asym, effR=oR-asym;
+ // Roue arrière : asym vers droite (nappe forte), roue avant : vers gauche
+ const asymSign = wtype === 'arriere' ? -1 : 1;
+ const effL=oL + asymSign*asym, effR=oR - asymSign*asym;
  let foOff,faOff,foPCD,faPCD;
  // Forte = cote avec le plus petit deport (plus tendu)
  if(effL<=effR){foOff=effL;faOff=effR;foPCD=pL;faPCD=pR}
@@ -730,15 +743,13 @@ function calc(){
  document.getElementById('r-fa').textContent=Lfa.toFixed(1);
 
  document.getElementById('m-fo').innerHTML=
-   `<div class="rrow"><span>Élongation à ${tF} kgf</span><span class="ev">+${eFo.toFixed(3)} mm</span></div>`+
+   `<div class="rrow"><span>Est.Stretch ${tF} kgf</span><span class="ev">+${eFo.toFixed(3)} mm</span></div>`+
    row('Rayons par côté',h)+
-   row('Déport effectif',foOff.toFixed(2)+' mm')+
    row('Tension cible',tF+' kgf');
 
  document.getElementById('m-fa').innerHTML=
-   `<div class="rrow"><span>Élongation à ${tf.toFixed(1)} kgf</span><span class="ev">+${eFa.toFixed(3)} mm</span></div>`+
+   `<div class="rrow"><span>Est.Stretch ${tf.toFixed(1)} kgf</span><span class="ev">+${eFa.toFixed(3)} mm</span></div>`+
    row('Rayons par côté',h)+
-   row('Déport effectif',faOff.toFixed(2)+' mm')+
    row('Tension cible',tf.toFixed(1)+' kgf');
 
  const sl=sa?`${sd}×${sa} mm`:`${sd} mm`;
@@ -751,18 +762,28 @@ function calc(){
      <div class="si">Roue<strong>${wtype==='avant'?'Avant':'Arrière'}</strong></div>
      <div class="si">Nb rayons<strong>${n} (${h}/côté)</strong></div>
      <div class="si">Croisement<strong>${cl}</strong></div>
-     <div class="si">Type moyeu<strong>${isSP?'Straightpull':'Crochet J'}</strong></div>
+     <div class="si">Type moyeu<strong>${isSP?'Straightpull':'J-Bend'}</strong></div>
      <div class="si">Section rayon<strong>${sl}</strong></div>
-     <div class="si">Ratio faible/forte<strong>${ratioDisp}</strong></div>
      <div class="si">Asymétrie jante<strong>${asym>0?'+':''}${asym} mm</strong></div>
-     <div class="si">Corr. trou bride<strong>−${(trou/2).toFixed(3)} mm</strong></div>
-     <div class="si">Aire section<strong>${area().toFixed(3)} mm²</strong></div>
-     <div class="si">Différence L<strong>${Math.abs(Lfo-Lfa).toFixed(1)} mm</strong></div>
+     <div class="si">Tension ratio<strong style="color:${ratio>=0.7?'var(--success)':ratio>=0.6?'#e8a040':'#e06060'}">${(ratio*100).toFixed(1)}%</strong></div>
    </div>`;
 
  // Auto-save current wheel state after calc
  saved[wtype] = readState();
  saved[wtype].wtype = wtype;
+
+ playValidation();
+ // Reorder result cards: nappe forte à droite pour roue arrière, à gauche pour avant
+ const rg = document.querySelector('.rg');
+ const rcFo = document.querySelector('.rc.fo');
+ const rcFa = document.querySelector('.rc.fa');
+ if(wtype === 'arriere'){
+   // forte à droite : fa | fo
+   rg.appendChild(rcFo); // déplace fo après fa
+ } else {
+   // forte à gauche : fo | fa
+   rg.insertBefore(rcFo, rcFa);
+ }
 
  playValidation();
  document.getElementById('results').classList.add('show');
