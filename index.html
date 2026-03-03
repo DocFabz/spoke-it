@@ -193,6 +193,7 @@ select option{background:#161b27}
 .tip-box{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#0e1420;border:1px solid var(--border-s);border-radius:6px;padding:.45rem .7rem;font-family:'DM Sans',sans-serif;font-size:.68rem;font-weight:400;color:var(--text2);white-space:normal;max-width:220px;text-align:center;pointer-events:none;opacity:0;transition:opacity .18s;z-index:99;letter-spacing:0;text-transform:none}
 .tip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#0e1420}
 .tip-icon:hover + .tip-box,.tip-wrap:hover .tip-box{opacity:1}
+.tip-box.visible{opacity:1}
 
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -562,6 +563,30 @@ function setWheel(t){
  switchTo(t);
 }
 
+// ── Tooltip touch support (iOS) ────────────────────────────────────────────
+(function(){
+ let current = null;
+ function closeAll(){
+   document.querySelectorAll('.tip-box.visible').forEach(b=>b.classList.remove('visible'));
+   current = null;
+ }
+ document.addEventListener('touchstart', function(e){
+   const icon = e.target.closest('.tip-icon');
+   if(icon){
+     e.preventDefault();
+     const box = icon.nextElementSibling;
+     if(box && box.classList.contains('tip-box')){
+       if(current === box){ closeAll(); return; }
+       closeAll();
+       box.classList.add('visible');
+       current = box;
+     }
+   } else if(!e.target.closest('.tip-box')){
+     closeAll();
+   }
+ }, {passive:false});
+})();
+
 // ── ERD mode ───────────────────────────────────────────────────────────────
 function setErdMode(m){
  erdMode=m;
@@ -574,7 +599,7 @@ function setErdMode(m){
 function calcNsd(){
  const n=parseFloat(document.getElementById('nsd-val').value);
  const addon=parseFloat(document.getElementById('ecrou-type').value);
- if(!isNaN(n) && !isNaN(addon)) document.getElementById('erd-nsd-result').value=(n+addon).toFixed(2);
+ if(!isNaN(n) && !isNaN(addon)) document.getElementById('erd-nsd-result').value=(n+2*addon).toFixed(2);
 }
 
 function setSpokeFromSelect(sel){
