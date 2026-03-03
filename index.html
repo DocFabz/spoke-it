@@ -422,14 +422,136 @@ select option{background:#161b27}
 </div>
 
 <script>
+// ── State ──────────────────────────────────────────────────────────────────
 let wtype='avant', erdMode='direct', sd=2.0, sa=null, cross=3;
 
-function setWheel(t){
- wtype=t;
- document.getElementById('btn-avant').classList.toggle('active',t==='avant');
- document.getElementById('btn-arriere').classList.toggle('active',t==='arriere');
+// Per-wheel saved state (null = never saved)
+const saved = { avant: null, arriere: null };
+
+// ── Helpers: read/write all form fields ───────────────────────────────────
+function readState(){
+ return {
+   nbRayons:    document.getElementById('nb-rayons').value,
+   diamTrou:    document.getElementById('diam-trou').value,
+   pcdLeft:     document.getElementById('pcd-left').value,
+   offsetLeft:  document.getElementById('offset-left').value,
+   pcdRight:    document.getElementById('pcd-right').value,
+   offsetRight: document.getElementById('offset-right').value,
+   erdMode:     erdMode,
+   erdDirect:   document.getElementById('erd-direct').value,
+   nsdVal:      document.getElementById('nsd-val').value,
+   ecrouType:   document.getElementById('ecrou-type').value,
+   erdNsdResult:document.getElementById('erd-nsd-result').value,
+   asym:        document.getElementById('asym').value,
+   spokeSelect: document.getElementById('spoke-select').value,
+   cross:       cross,
+   tensionForte:document.getElementById('tension-forte').value,
+   sd: sd, sa: sa,
+   hasResult:   document.getElementById('results').classList.contains('show'),
+   rFo:         document.getElementById('r-fo').textContent,
+   rFa:         document.getElementById('r-fa').textContent,
+   mFo:         document.getElementById('m-fo').innerHTML,
+   mFa:         document.getElementById('m-fa').innerHTML,
+   summary:     document.getElementById('summary').innerHTML,
+ };
 }
 
+function applyState(s){
+ if(!s) return;
+ document.getElementById('nb-rayons').value    = s.nbRayons;
+ document.getElementById('diam-trou').value    = s.diamTrou;
+ document.getElementById('pcd-left').value     = s.pcdLeft;
+ document.getElementById('offset-left').value  = s.offsetLeft;
+ document.getElementById('pcd-right').value    = s.pcdRight;
+ document.getElementById('offset-right').value = s.offsetRight;
+ document.getElementById('erd-direct').value   = s.erdDirect;
+ document.getElementById('nsd-val').value      = s.nsdVal;
+ document.getElementById('ecrou-type').value   = s.ecrouType;
+ document.getElementById('erd-nsd-result').value = s.erdNsdResult;
+ document.getElementById('asym').value         = s.asym;
+ document.getElementById('spoke-select').value = s.spokeSelect;
+ document.getElementById('tension-forte').value= s.tensionForte;
+ sd = s.sd; sa = s.sa; cross = s.cross;
+
+ // ERD mode
+ erdMode = s.erdMode;
+ document.getElementById('btn-erd-direct').classList.toggle('active', erdMode==='direct');
+ document.getElementById('btn-erd-nsd').classList.toggle('active', erdMode==='nsd');
+ document.getElementById('erd-direct-section').style.display = erdMode==='direct' ? '' : 'none';
+ document.getElementById('erd-nsd-section').style.display    = erdMode==='nsd'    ? '' : 'none';
+
+ // Cross buttons
+ document.querySelectorAll('.cp').forEach(b=>{
+   b.classList.toggle('active', parseInt(b.dataset.cross)===cross);
+ });
+
+ // Results
+ if(s.hasResult){
+   document.getElementById('r-fo').textContent = s.rFo;
+   document.getElementById('r-fa').textContent = s.rFa;
+   document.getElementById('m-fo').innerHTML   = s.mFo;
+   document.getElementById('m-fa').innerHTML   = s.mFa;
+   document.getElementById('summary').innerHTML= s.summary;
+   document.getElementById('results').classList.add('show');
+ } else {
+   document.getElementById('results').classList.remove('show');
+ }
+
+ onTension();
+}
+
+function clearForm(){
+ ['nb-rayons','pcd-left','offset-left','pcd-right','offset-right',
+  'erd-direct','nsd-val','erd-nsd-result','tension-forte'].forEach(id=>{
+   document.getElementById(id).value='';
+ });
+ document.getElementById('diam-trou').value = '2.55';
+ document.getElementById('asym').value = '0';
+ document.getElementById('ecrou-type').value = '';
+ document.getElementById('spoke-select').value = '2.0|';
+ sd=2.0; sa=null; cross=3;
+
+ erdMode='direct';
+ document.getElementById('btn-erd-direct').classList.add('active');
+ document.getElementById('btn-erd-nsd').classList.remove('active');
+ document.getElementById('erd-direct-section').style.display='';
+ document.getElementById('erd-nsd-section').style.display='none';
+
+ document.querySelectorAll('.cp').forEach(b=>{
+   b.classList.toggle('active', parseInt(b.dataset.cross)===3);
+ });
+
+ document.getElementById('results').classList.remove('show');
+ document.getElementById('err').classList.remove('show');
+ const disp=document.getElementById('tension-faible-display');
+ disp.textContent='—'; disp.classList.remove('has-val');
+}
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTo(t){
+ if(t === wtype) return;
+
+ // Save current tab
+ saved[wtype] = readState();
+ saved[wtype].wtype = wtype;
+
+ // Switch
+ wtype = t;
+ document.getElementById('btn-avant').classList.toggle('active', t==='avant');
+ document.getElementById('btn-arriere').classList.toggle('active', t==='arriere');
+
+ if(saved[t]){
+   applyState(saved[t]);
+ } else {
+   clearForm();
+ }
+}
+
+function setWheel(t){
+ switchTo(t);
+}
+
+// ── ERD mode ───────────────────────────────────────────────────────────────
 function setErdMode(m){
  erdMode=m;
  document.getElementById('btn-erd-direct').classList.toggle('active',m==='direct');
@@ -583,6 +705,10 @@ function calc(){
      <div class="si">Aire section<strong>${area().toFixed(3)} mm²</strong></div>
      <div class="si">Différence L<strong>${Math.abs(Lfo-Lfa).toFixed(1)} mm</strong></div>
    </div>`;
+
+ // Auto-save current wheel state after calc
+ saved[wtype] = readState();
+ saved[wtype].wtype = wtype;
 
  playValidation();
  document.getElementById('results').classList.add('show');
