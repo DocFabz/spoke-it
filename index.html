@@ -21,6 +21,17 @@
     
   <body>
   <!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Untitled</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -199,6 +210,26 @@ select option{background:#161b27}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:2px}
 
+/* ─ Hub type toggle ─ */
+.hub-type-seg{display:flex;background:var(--inp);border:1px solid var(--border);border-radius:var(--rs);padding:3px;gap:3px;margin-bottom:1.2rem}
+.htb{flex:1;padding:.55rem 1rem;border:none;border-radius:calc(var(--rs) - 2px);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .22s;display:flex;align-items:center;justify-content:center;gap:.45rem}
+.htb.active{background:var(--card-alt);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.28)}
+.htb.active.jbend{color:var(--accent2)}
+.htb.active.sp{color:var(--warm2)}
+.htb svg{flex-shrink:0;opacity:.65;transition:opacity .2s}
+.htb.active svg{opacity:1}
+
+/* ─ SP offset section ─ */
+.sp-section{display:none;margin-top:1rem;padding:1rem 1.2rem;background:rgba(232,146,124,.04);border:1px solid rgba(232,146,124,.13);border-radius:var(--rs);animation:fu .3s cubic-bezier(.22,1,.36,1)}
+.sp-section.show{display:block}
+.sp-banner{font-size:.61rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--warm);margin-bottom:.8rem;display:flex;align-items:center;gap:.38rem}
+.sp-dot{width:5px;height:5px;border-radius:50%;background:var(--warm);flex-shrink:0}
+
+/* ─ Hub type badge in results ─ */
+.hub-badge{display:inline-block;padding:.15rem .55rem;border-radius:20px;font-family:'DM Mono',monospace;font-size:.62rem;font-weight:400;letter-spacing:.05em;vertical-align:middle;margin-left:.35rem}
+.hub-badge.jb{background:rgba(126,200,227,.1);border:1px solid rgba(126,200,227,.25);color:var(--accent2)}
+.hub-badge.sp{background:rgba(232,146,124,.1);border:1px solid rgba(232,146,124,.25);color:var(--warm2)}
+
 </style>
 </head>
 <body>
@@ -236,6 +267,24 @@ select option{background:#161b27}
  <div class="card">
    <div class="ch"><div class="cdot"></div><div class="clabel">Moyeu</div></div>
 
+   <!-- Hub type selector -->
+   <div class="hub-type-seg">
+     <button class="htb active jbend" id="btn-jbend" onclick="setHubType('jbend')">
+       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+         <path d="M3 13 C3 13 3 9 7 7 C11 5 13 3 13 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+         <circle cx="13" cy="3" r="1.8" fill="currentColor"/>
+       </svg>
+       J-Bend
+     </button>
+     <button class="htb sp" id="btn-sp" onclick="setHubType('straightpull')">
+       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+         <line x1="3" y1="8" x2="13" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+         <rect x="11.5" y="5.5" width="3" height="5" rx="1" fill="currentColor" opacity=".8"/>
+       </svg>
+       Straight Pull
+     </button>
+   </div>
+
    <div class="hub-top">
      <div class="f">
        <label>Nb total de rayons</label>
@@ -245,7 +294,7 @@ select option{background:#161b27}
          <option>28</option><option>32</option><option>36</option>
        </select>
      </div>
-     <div class="f">
+     <div class="f" id="diam-trou-wrap">
        <label>Ø trous de bride (mm)</label>
        <input type="number" id="diam-trou" value="2.55" step="0.05" min="1" max="5">
      </div>
@@ -276,6 +325,29 @@ select option{background:#161b27}
        </div>
      </div>
    </div>
+
+   <!-- Straight Pull offset section (hidden by default) -->
+   <div class="sp-section" id="sp-section">
+     <div class="sp-banner"><div class="sp-dot"></div>Décalage rayon — Spoke Offset</div>
+     <div class="hub-sides">
+       <div class="hub-side">
+         <div class="plabel L"><div class="pdot"></div>Gauche</div>
+         <div class="f">
+           <label>Spoke Offset G (mm)</label>
+           <input type="number" id="sp-offset-left" value="0" step="0.1">
+         </div>
+       </div>
+       <div class="hub-divider"></div>
+       <div class="hub-side">
+         <div class="plabel R"><div class="pdot"></div>Droit</div>
+         <div class="f">
+           <label>Spoke Offset D (mm)</label>
+           <input type="number" id="sp-offset-right" value="0" step="0.1">
+         </div>
+       </div>
+     </div>
+   </div>
+
  </div>
 
  <!-- Rim -->
@@ -435,7 +507,7 @@ select option{background:#161b27}
 
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
-let wtype='avant', erdMode='direct', sd=2.0, sa=null, cross=3;
+let wtype='avant', erdMode='direct', sd=2.0, sa=null, cross=3, hubType='jbend';
 
 // Per-wheel saved state (null = never saved)
 const saved = { avant: null, arriere: null };
@@ -459,6 +531,9 @@ function readState(){
    cross:       cross,
    tensionForte:document.getElementById('tension-forte').value,
    sd: sd, sa: sa,
+   hubType:     hubType,
+   spOffsetLeft:  document.getElementById('sp-offset-left').value,
+   spOffsetRight: document.getElementById('sp-offset-right').value,
    hasResult:   document.getElementById('results').classList.contains('show'),
    rFo:         document.getElementById('r-fo').textContent,
    rFa:         document.getElementById('r-fa').textContent,
@@ -484,6 +559,11 @@ function applyState(s){
  document.getElementById('spoke-select').value = s.spokeSelect;
  document.getElementById('tension-forte').value= s.tensionForte;
  sd = s.sd; sa = s.sa; cross = s.cross;
+
+ // Hub type
+ if(s.hubType) setHubType(s.hubType);
+ if(s.spOffsetLeft  !== undefined) document.getElementById('sp-offset-left').value  = s.spOffsetLeft;
+ if(s.spOffsetRight !== undefined) document.getElementById('sp-offset-right').value = s.spOffsetRight;
 
  // ERD mode
  erdMode = s.erdMode;
@@ -521,7 +601,10 @@ function clearForm(){
  document.getElementById('asym').value = '0';
  document.getElementById('ecrou-type').value = '';
  document.getElementById('spoke-select').value = '2.0|';
+ document.getElementById('sp-offset-left').value = '0';
+ document.getElementById('sp-offset-right').value = '0';
  sd=2.0; sa=null; cross=3;
+ setHubType('jbend');
 
  erdMode='direct';
  document.getElementById('btn-erd-direct').classList.add('active');
@@ -587,6 +670,18 @@ function setWheel(t){
  }, {passive:false});
 })();
 
+// ── Hub type ───────────────────────────────────────────────────────────────
+function setHubType(t){
+ hubType = t;
+ const isSP = t === 'straightpull';
+ document.getElementById('btn-jbend').classList.toggle('active', !isSP);
+ document.getElementById('btn-sp').classList.toggle('active', isSP);
+ document.getElementById('sp-section').classList.toggle('show', isSP);
+ // Show/hide hole diameter field (not needed for straightpull)
+ document.getElementById('diam-trou-wrap').style.opacity = isSP ? '0.35' : '1';
+ document.getElementById('diam-trou-wrap').style.pointerEvents = isSP ? 'none' : '';
+}
+
 // ── ERD mode ───────────────────────────────────────────────────────────────
 function setErdMode(m){
  erdMode=m;
@@ -647,6 +742,12 @@ function slen(pcd,off,cr,n,erd,trou){
  return Math.sqrt(R*R+Rj*Rj-2*R*Rj*Math.cos(a)+off*off)-trou/2;
 }
 
+// Straightpull: lengthAdjust = spOffset (additive, no holeDia correction)
+function slenSP(pcd,off,cr,n,erd,spOffset){
+ const R=pcd/2, Rj=erd/2, a=cr*(2*Math.PI)/(n/2);
+ return Math.sqrt(R*R+Rj*Rj-2*R*Rj*Math.cos(a)+off*off)+spOffset;
+}
+
 function area(){return sa!==null?Math.PI/4*sd*sa:Math.PI/4*sd*sd}
 
 function el(F,L){return(F*9.81*L)/(area()*210000)}
@@ -694,20 +795,44 @@ function calc(){
  const tF=parseFloat(document.getElementById('tension-forte').value);
  if(isNaN(tF)) return showErr('Veuillez choisir la tension cible nappe forte.');
 
+ // Hub type specific params
+ const isSP = hubType === 'straightpull';
+ let spOffL=0, spOffR=0;
+ if(isSP){
+   spOffL = parseFloat(document.getElementById('sp-offset-left').value)||0;
+   spOffR = parseFloat(document.getElementById('sp-offset-right').value)||0;
+ }
+
  const effL=oL+asym, effR=oR-asym;
- let foOff,faOff,foPCD,faPCD;
- if(wtype==='arriere'){foOff=effR;faOff=effL;foPCD=pR;faPCD=pL}
- else if(effL<=effR){foOff=effL;faOff=effR;foPCD=pL;faPCD=pR}
- else{foOff=effR;faOff=effL;foPCD=pR;faPCD=pL}
+ let foOff,faOff,foPCD,faPCD,foSpOff,faSpOff;
+ if(wtype==='arriere'){
+   foOff=effR;faOff=effL;foPCD=pR;faPCD=pL;
+   foSpOff=spOffR;faSpOff=spOffL;
+ } else if(effL<=effR){
+   foOff=effL;faOff=effR;foPCD=pL;faPCD=pR;
+   foSpOff=spOffL;faSpOff=spOffR;
+ } else {
+   foOff=effR;faOff=effL;foPCD=pR;faPCD=pL;
+   foSpOff=spOffR;faSpOff=spOffL;
+ }
 
  const ratio=(faOff>0&&foOff>0)?foOff/faOff:1;
  const tf=tF*ratio;
 
- const Lfo=slen(foPCD,foOff,cross,n,erd,trou);
- const Lfa=slen(faPCD,faOff,cross,n,erd,trou);
+ const Lfo = isSP
+   ? slenSP(foPCD, foOff, cross, n, erd, foSpOff)
+   : slen(foPCD, foOff, cross, n, erd, trou);
+ const Lfa = isSP
+   ? slenSP(faPCD, faOff, cross, n, erd, faSpOff)
+   : slen(faPCD, faOff, cross, n, erd, trou);
+
  const eFo=el(tF,Lfo), eFa=el(tf,Lfa);
  const h=n/2;
  const ratioDisp=(faOff>0&&foOff>0)?(faOff/foOff).toFixed(3):'—';
+
+ const hubBadge = isSP
+   ? '<span class="hub-badge sp">Straight Pull</span>'
+   : '<span class="hub-badge jb">J-Bend</span>';
 
  document.getElementById('r-fo').textContent=Lfo.toFixed(1);
  document.getElementById('r-fa').textContent=Lfa.toFixed(1);
@@ -732,13 +857,17 @@ function calc(){
    <div class="sumg">
      <div class="si">ERD<strong>${erd.toFixed(1)} mm</strong></div>
      <div class="si">Roue<strong>${wtype==='avant'?'Avant':'Arrière'}</strong></div>
+     <div class="si">Type moyeu<strong>${hubBadge}</strong></div>
      <div class="si">Nb rayons<strong>${n} (${h}/côté)</strong></div>
      <div class="si">Croisement<strong>${cl}</strong></div>
      <div class="si">Section rayon<strong>${sl}</strong></div>
      <div class="si">Ratio faible/forte<strong>${ratioDisp}</strong></div>
      <div class="si">Asymétrie jante<strong>${asym>0?'+':''}${asym} mm</strong></div>
-     <div class="si">Corr. trou bride<strong>−${(trou/2).toFixed(3)} mm</strong></div>
-     <div class="si">Aire section<strong>${area().toFixed(3)} mm²</strong></div>
+     ${isSP
+       ? `<div class="si">Spoke Offset G<strong>${spOffL} mm</strong></div><div class="si">Spoke Offset D<strong>${spOffR} mm</strong></div>`
+       : `<div class="si">Corr. trou bride<strong>&minus;${(trou/2).toFixed(3)} mm</strong></div>`
+     }
+     <div class="si">Aire section<strong>${area().toFixed(3)} mm&sup2;</strong></div>
      <div class="si">Différence L<strong>${Math.abs(Lfo-Lfa).toFixed(1)} mm</strong></div>
    </div>`;
 
@@ -753,6 +882,10 @@ function calc(){
 </script>
 
 </body>
+</html>
+    
+  </body>
+  
 </html>
     
   </body>
