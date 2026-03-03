@@ -197,67 +197,68 @@ select option{background:#161b27}
  <div class="brand">Spoke <em>It</em></div>
  <div class="sub">by @Docfab21</div>
  <div class="hline"></div>
+ <button id="lang-btn" onclick="toggleLang()" style="margin-top:1.1rem;background:transparent;border:1px solid var(--border-s);border-radius:20px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.65rem;font-weight:400;letter-spacing:.15em;padding:.28rem .9rem;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border-s)';this.style.color='var(--text3)'">EN</button>
 </header>
 
 <div class="wrap">
 
  <!-- Wheel type -->
  <div class="card">
-   <div class="ch"><div class="cdot"></div><div class="clabel">Type de roue</div></div>
+   <div class="ch"><div class="cdot"></div><div class="clabel" data-i18n="wheelType">Type de roue</div></div>
    <div class="seg">
-     <button class="sb active c" id="btn-avant"   onclick="setWheel('avant')">Roue Avant</button>
-     <button class="sb w"        id="btn-arriere" onclick="setWheel('arriere')">Roue Arrière</button>
+     <button class="sb active c" id="btn-avant"   onclick="setWheel('avant')" data-i18n="frontWheel">Roue Avant</button>
+     <button class="sb w"        id="btn-arriere" onclick="setWheel('arriere')" data-i18n="rearWheel">Roue Arrière</button>
    </div>
  </div>
 
  <!-- Hub -->
  <div class="card">
-   <div class="ch"><div class="cdot"></div><div class="clabel">Moyeu</div><div style="margin-left:auto;display:flex;gap:.3rem"><button class="pill active" id="btn-hub-jbend" onclick="setHubType('jbend')" style="padding:.18rem .65rem;font-size:.65rem">J-bend</button><button class="pill" id="btn-hub-sp" onclick="setHubType('straightpull')" style="padding:.18rem .65rem;font-size:.65rem">Straightpull</button></div></div>
+   <div class="ch"><div class="cdot"></div><div class="clabel" data-i18n="hub">Moyeu</div><div style="margin-left:auto;display:flex;gap:.3rem"><button class="pill active" id="btn-hub-jbend" onclick="setHubType('jbend')" style="padding:.18rem .65rem;font-size:.65rem">J-bend</button><button class="pill" id="btn-hub-sp" onclick="setHubType('straightpull')" style="padding:.18rem .65rem;font-size:.65rem">Straightpull</button></div></div>
 
    <div class="hub-top">
      <div class="f">
-       <label>Nb total de rayons</label>
+       <label data-i18n="totalSpokes">Nb total de rayons</label>
        <select id="nb-rayons">
-         <option value="" disabled selected>— Choisir —</option>
+         <option value="" disabled selected data-i18n-opt="choose">— Choisir —</option>
          <option>16</option><option>20</option><option>24</option>
          <option>28</option><option>32</option><option>36</option>
        </select>
      </div>
      <div class="f" id="field-diam-trou">
-       <label>Ø trous de bride (mm)</label>
+       <label data-i18n="holeDiam">Ø trous de bride (mm)</label>
        <input type="number" id="diam-trou" value="2.55" step="0.05" min="1" max="5">
      </div>
 </div>
 
    <div class="hub-sides">
      <div class="hub-side">
-       <div class="plabel L"><div class="pdot"></div>Gauche</div>
+       <div class="plabel L"><div class="pdot"></div><span data-i18n="left">Gauche</span></div>
        <div class="f">
-         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box">Diam utile flasque</span></label>
+         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTip">Diam utile flasque</span></label>
          <input type="number" id="pcd-left" step="0.1">
        </div>
        <div class="f">
-         <label class="tip-wrap">Déport (mm)<span class="tip-icon">?</span><span class="tip-box">Centre vers flasque</span></label>
+         <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTip">Centre vers flasque</span></label>
          <input type="number" id="offset-left" step="0.1" oninput="onTension()">
        </div>
        <div class="f" id="field-sp-so-left" style="display:none">
-         <label class="tip-wrap">SO gauche (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
+         <label class="tip-wrap"><span data-i18n="soLeft">SO gauche</span> (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
          <input type="number" id="sp-so-left" value="0" step="0.1" min="0" max="5">
        </div>
      </div>
      <div class="hub-divider"></div>
      <div class="hub-side">
-       <div class="plabel R"><div class="pdot"></div>Droit</div>
+       <div class="plabel R"><div class="pdot"></div><span data-i18n="right">Droit</span></div>
        <div class="f">
-         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box">Diam utile flasque</span></label>
+         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTip">Diam utile flasque</span></label>
          <input type="number" id="pcd-right" step="0.1">
        </div>
        <div class="f">
-         <label class="tip-wrap">Déport (mm)<span class="tip-icon">?</span><span class="tip-box">Centre vers flasque</span></label>
+         <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTip">Centre vers flasque</span></label>
          <input type="number" id="offset-right" step="0.1" oninput="onTension()">
        </div>
        <div class="f" id="field-sp-so-right" style="display:none">
-         <label class="tip-wrap">SO droit (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
+         <label class="tip-wrap"><span data-i18n="soRight">SO droit</span> (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
          <input type="number" id="sp-so-right" value="0" step="0.1" min="0" max="5">
        </div>
      </div>
@@ -266,10 +267,10 @@ select option{background:#161b27}
 
  <!-- Rim -->
  <div class="card">
-   <div class="ch"><div class="cdot"></div><div class="clabel">Jante</div></div>
+   <div class="ch"><div class="cdot"></div><div class="clabel" data-i18n="rim">Jante</div></div>
 
    <div class="prow">
-     <button class="pill active" id="btn-erd-direct" onclick="setErdMode('direct')">ERD direct</button>
+     <button class="pill active" id="btn-erd-direct" onclick="setErdMode('direct')" data-i18n="erdDirect">ERD DIRECT</button>
      <button class="pill"        id="btn-erd-nsd"    onclick="setErdMode('nsd')">NSD + ADDON</button>
    </div>
 
@@ -287,7 +288,7 @@ select option{background:#161b27}
          <input type="number" id="nsd-val" step="0.1" oninput="calcNsd()">
        </div>
        <div class="f">
-         <label class="tip-wrap">ADDON (mm)<span class="tip-icon">?</span><span class="tip-box">Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.</span></label>
+         <label class="tip-wrap">ADDON (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="addonTip">Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.</span></label>
          <select id="ecrou-type" onchange="calcNsd()">
            <option value="" disabled selected>— mm —</option>
            <option value="1.8">1.8</option>
@@ -313,7 +314,7 @@ select option{background:#161b27}
        </div>
      </div>
      <div class="f" style="max-width:185px;margin-top:.8rem">
-       <label>ERD calculé (mm)</label>
+       <label data-i18n="erdCalc">ERD calculé (mm)</label>
        <input type="number" id="erd-nsd-result" readonly style="opacity:.55;cursor:not-allowed">
      </div>
    </div>
@@ -322,11 +323,11 @@ select option{background:#161b27}
 
    <div class="g2">
      <div class="f">
-       <label>Asymétrie jante (mm)</label>
+       <label data-i18n="rimAsym">Asymétrie jante (mm)</label>
        <input type="number" id="asym" value="0" step="0.5" min="0">
      </div>
      <div class="f">
-       <label>Section de rayon</label>
+       <label data-i18n="spokeSection">Section de rayon</label>
        <select id="spoke-select" onchange="setSpokeFromSelect(this)">
          <option value="1.6|">1.6 mm</option>
          <option value="1.7|">1.7 mm</option>
@@ -345,7 +346,7 @@ select option{background:#161b27}
    <div class="div"></div>
 
    <div class="f">
-     <label>Croisement</label>
+     <label data-i18n="cross">Croisement</label>
      <div class="crow">
        <button class="cp"        data-cross="0" onclick="setCross(this)">Radial</button>
        <button class="cp"        data-cross="1" onclick="setCross(this)">1×</button>
@@ -360,13 +361,13 @@ select option{background:#161b27}
  <div class="card">
    <div class="ch">
      <div class="cdot"></div>
-     <div class="clabel">Tensions cibles</div>
+     <div class="clabel" data-i18n="targetTensions">Tensions cibles</div>
    </div>
    <div class="g2" id="tension-g2">
      <div class="f" id="tension-forte-field">
        <label>
          <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--warm);margin-right:.3rem;vertical-align:middle"></span>
-         Nappe forte
+         <span data-i18n="driveSide">Nappe forte</span>
        </label>
        <select id="tension-forte" onchange="onTension()">
          <option value="" disabled selected>—</option>
@@ -378,35 +379,35 @@ select option{background:#161b27}
      <div class="f" id="tension-faible-field">
        <label>
          <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--accent);margin-right:.3rem;vertical-align:middle"></span>
-         Nappe faible
+         <span data-i18n="nonDriveSide">Nappe faible</span>
        </label>
        <div class="faible-display" id="tension-faible-display">—</div>
      </div>
    </div>
-   <p class="help" style="margin-top:.6rem">La tension faible est calculée automatiquement selon le ratio des déports.</p>
+   <p class="help" style="margin-top:.6rem" data-i18n="tensionHelp">La tension faible est calculée automatiquement selon le ratio des déports.</p>
  </div>
 
  <div class="err" id="err"></div>
- <button class="btn" onclick="calc()">Calculer les longueurs de rayons</button>
+ <button class="btn" onclick="calc()" data-i18n="calcBtn">Calculer les longueurs de rayons</button>
 
  <!-- Results -->
  <div class="rw" id="results">
    <div class="card" style="border-color:rgba(126,200,227,.13)">
      <div class="ch">
        <div class="cdot" style="background:var(--success);opacity:.7"></div>
-       <div class="clabel" style="color:var(--success)">Résultats</div>
+       <div class="clabel" style="color:var(--success)" data-i18n="results">Résultats</div>
      </div>
 </div>
 
      <div class="rg">
        <div class="rc fo">
-         <div class="rtag">Nappe forte</div>
+         <div class="rtag" data-i18n="driveSide">Nappe forte</div>
          <div class="rnum" id="r-fo">—</div>
          <div class="runit">mm</div>
          <div class="rrows" id="m-fo"></div>
        </div>
        <div class="rc fa">
-         <div class="rtag">Nappe faible</div>
+         <div class="rtag" data-i18n="nonDriveSide">Nappe faible</div>
          <div class="rnum" id="r-fa">—</div>
          <div class="runit">mm</div>
          <div class="rrows" id="m-fa"></div>
@@ -420,6 +421,144 @@ select option{background:#161b27}
 </div>
 
 <script>
+
+// ── i18n ──────────────────────────────────────────────────────────────────
+let lang = 'fr';
+
+const i18n = {
+  fr: {
+    wheelType:      'Type de roue',
+    hub:            'Moyeu',
+    rim:            'Jante',
+    targetTensions: 'Tensions cibles',
+    results:        'Résultats',
+    frontWheel:     'Roue Avant',
+    rearWheel:      'Roue Arrière',
+    totalSpokes:    'Nb total de rayons',
+    choose:         '— Choisir —',
+    holeDiam:       'Ø trous de bride (mm)',
+    left:           'Gauche',
+    right:          'Droit',
+    pcdTip:         'Diam utile flasque',
+    offset:         'Déport',
+    offsetTip:      'Centre vers flasque',
+    soLeft:         'SO gauche',
+    soRight:        'SO droit',
+    erdDirect:      'ERD DIRECT',
+    addonTip:       "Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.",
+    erdCalc:        'ERD calculé (mm)',
+    rimAsym:        'Asymétrie jante (mm)',
+    spokeSection:   'Section de rayon',
+    cross:          'Croisement',
+    driveSide:      'Nappe forte',
+    nonDriveSide:   'Nappe faible',
+    tensionHelp:    'La tension faible est calculée automatiquement selon le ratio des déports.',
+    calcBtn:        'Calculer les longueurs de rayons',
+    // dynamic
+    spokesBySize:   'Rayons par côté',
+    perSide:        '/côté',
+    targetTension:  'Tension cible',
+    configSummary:  'Résumé de configuration',
+    wheelLabel:     'Roue',
+    spokeCount:     'Nb rayons',
+    crossLabel:     'Croisement',
+    hubType:        'Type moyeu',
+    spokeSection2:  'Section rayon',
+    rimAsym2:       'Asymétrie jante',
+    tensionRatio:   'Tension ratio',
+    frontLabel:     'Avant',
+    rearLabel:      'Arrière',
+    radial:         'Radial',
+    // errors
+    errSpokes:      'Veuillez choisir le nombre de rayons.',
+    errPcd:         'Veuillez renseigner PCD et déport pour les deux côtés.',
+    errErd:         'ERD invalide ou non renseigné.',
+    errTension:     'Veuillez choisir la tension cible nappe forte.',
+    // tension field help
+    tensionFaibleHint: 'Entrez les déports',
+  },
+  en: {
+    wheelType:      'Wheel Type',
+    hub:            'Hub',
+    rim:            'Rim',
+    targetTensions: 'Target Tensions',
+    results:        'Results',
+    frontWheel:     'Front Wheel',
+    rearWheel:      'Rear Wheel',
+    totalSpokes:    'Total spoke count',
+    choose:         '— Choose —',
+    holeDiam:       'Flange hole Ø (mm)',
+    left:           'Left',
+    right:          'Right',
+    pcdTip:         'Flange pitch circle',
+    offset:         'Offset',
+    offsetTip:      'Center to flange',
+    soLeft:         'SO left',
+    soRight:        'SO right',
+    erdDirect:      'ERD DIRECT',
+    addonTip:       'Depends on nipple used. Select 2 mm for standard 12 mm nipples.',
+    erdCalc:        'Calculated ERD (mm)',
+    rimAsym:        'Rim asymmetry (mm)',
+    spokeSection:   'Spoke section',
+    cross:          'Lacing',
+    driveSide:      'Drive side',
+    nonDriveSide:   'Non-drive side',
+    tensionHelp:    'Non-drive tension is calculated automatically from the offset ratio.',
+    calcBtn:        'Calculate spoke lengths',
+    // dynamic
+    spokesBySize:   'Spokes per side',
+    perSide:        '/side',
+    targetTension:  'Target tension',
+    configSummary:  'Configuration summary',
+    wheelLabel:     'Wheel',
+    spokeCount:     'Spoke count',
+    crossLabel:     'Lacing',
+    hubType:        'Hub type',
+    spokeSection2:  'Spoke section',
+    rimAsym2:       'Rim asymmetry',
+    tensionRatio:   'Tension ratio',
+    frontLabel:     'Front',
+    rearLabel:      'Rear',
+    radial:         'Radial',
+    // errors
+    errSpokes:      'Please select the number of spokes.',
+    errPcd:         'Please enter PCD and offset for both sides.',
+    errErd:         'ERD is invalid or missing.',
+    errTension:     'Please select the drive side target tension.',
+    // tension field help
+    tensionFaibleHint: 'Enter offsets first',
+  }
+};
+
+function t(key){ return (i18n[lang] && i18n[lang][key]) || key; }
+
+function applyLang(){
+  // Static elements via data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  // Choose option
+  document.querySelectorAll('[data-i18n-opt="choose"]').forEach(el => {
+    el.textContent = t('choose');
+  });
+  // Lang button label: show the OTHER language
+  document.getElementById('lang-btn').textContent = lang === 'fr' ? 'EN' : 'FR';
+  // Refresh tension faible hint if needed
+  const disp = document.getElementById('tension-faible-display');
+  if(disp && !disp.classList.contains('has-val')){
+    const oL = parseFloat(document.getElementById('offset-left').value);
+    const oR = parseFloat(document.getElementById('offset-right').value);
+    if(isNaN(oL)||isNaN(oR)||oL===0||oR===0){
+      disp.innerHTML = `<span style="color:var(--text3);font-size:.78rem">${t('tensionFaibleHint')}</span>`;
+    }
+  }
+}
+
+function toggleLang(){
+  lang = lang === 'fr' ? 'en' : 'fr';
+  applyLang();
+}
+
 // ── State ──────────────────────────────────────────────────────────────────
 let wtype='avant', erdMode='direct', sd=2.0, sa=null, cross=3, hubType='jbend';
 
@@ -637,7 +776,7 @@ function onTension(){
  if(isNaN(tF)){disp.textContent='—';disp.classList.remove('has-val');return}
 
  if(isNaN(oL)||isNaN(oR)||oL===0||oR===0){
-   disp.innerHTML=`<span style="color:var(--text3);font-size:.78rem">Entrez les déports</span>`;
+   disp.innerHTML=`<span style="color:var(--text3);font-size:.78rem">${t('tensionFaibleHint')}</span>`;
    disp.classList.remove('has-val');
    return;
  }
@@ -701,16 +840,16 @@ function calc(){
  const e=document.getElementById('err');e.classList.remove('show');
 
  const n=parseInt(document.getElementById('nb-rayons').value);
- if(!n) return showErr('Veuillez choisir le nombre de rayons.');
+ if(!n) return showErr(t('errSpokes'));
 
  const pL=parseFloat(document.getElementById('pcd-left').value);
  const pR=parseFloat(document.getElementById('pcd-right').value);
  const oL=parseFloat(document.getElementById('offset-left').value);
  const oR=parseFloat(document.getElementById('offset-right').value);
- if([pL,pR,oL,oR].some(isNaN)) return showErr('Veuillez renseigner PCD et déport pour les deux côtés.');
+ if([pL,pR,oL,oR].some(isNaN)) return showErr(t('errPcd'));
 
  const erd=getERD();
- if(isNaN(erd)||erd<=0) return showErr('ERD invalide ou non renseigné.');
+ if(isNaN(erd)||erd<=0) return showErr(t('errErd'));
 
  const asym=parseFloat(document.getElementById('asym').value)||0;
  const isSP=hubType==='straightpull';
@@ -718,7 +857,7 @@ function calc(){
  const soL=parseFloat(document.getElementById('sp-so-left').value)||0;
  const soR=parseFloat(document.getElementById('sp-so-right').value)||0;
  const tF=parseFloat(document.getElementById('tension-forte').value);
- if(isNaN(tF)) return showErr('Veuillez choisir la tension cible nappe forte.');
+ if(isNaN(tF)) return showErr(t('errTension'));
 
  // Roue arrière : asym vers droite (nappe forte), roue avant : vers gauche
  const asymSign = wtype === 'arriere' ? -1 : 1;
@@ -744,28 +883,28 @@ function calc(){
 
  document.getElementById('m-fo').innerHTML=
    `<div class="rrow"><span>Est.Stretch ${tF} kgf</span><span class="ev">+${eFo.toFixed(3)} mm</span></div>`+
-   row('Rayons par côté',h)+
-   row('Tension cible',tF+' kgf');
+   row(t('spokesBySize'),h)+
+   row(t('targetTension'),tF+' kgf');
 
  document.getElementById('m-fa').innerHTML=
    `<div class="rrow"><span>Est.Stretch ${tf.toFixed(1)} kgf</span><span class="ev">+${eFa.toFixed(3)} mm</span></div>`+
-   row('Rayons par côté',h)+
-   row('Tension cible',tf.toFixed(1)+' kgf');
+   row(t('spokesBySize'),h)+
+   row(t('targetTension'),tf.toFixed(1)+' kgf');
 
  const sl=sa?`${sd}×${sa} mm`:`${sd} mm`;
- const cl=cross===0?'Radial':`${cross}×`;
+ const cl=cross===0?t('radial'):`${cross}×`;
 
  document.getElementById('summary').innerHTML=`
-   <div class="sumh">Résumé de configuration</div>
+   <div class="sumh">${t('configSummary')}</div>
    <div class="sumg">
      <div class="si">ERD<strong>${erd.toFixed(1)} mm</strong></div>
-     <div class="si">Roue<strong>${wtype==='avant'?'Avant':'Arrière'}</strong></div>
-     <div class="si">Nb rayons<strong>${n} (${h}/côté)</strong></div>
-     <div class="si">Croisement<strong>${cl}</strong></div>
-     <div class="si">Type moyeu<strong>${isSP?'Straightpull':'J-Bend'}</strong></div>
-     <div class="si">Section rayon<strong>${sl}</strong></div>
-     <div class="si">Asymétrie jante<strong>${asym>0?'+':''}${asym} mm</strong></div>
-     <div class="si">Tension ratio<strong style="color:${ratio>=0.7?'var(--success)':ratio>=0.6?'#e8a040':'#e06060'}">${(ratio*100).toFixed(1)}%</strong></div>
+     <div class="si">${t('wheelLabel')}<strong>${wtype==='avant'?t('frontLabel'):t('rearLabel')}</strong></div>
+     <div class="si">${t('spokeCount')}<strong>${n} (${h}${t('perSide')})</strong></div>
+     <div class="si">${t('crossLabel')}<strong>${cl}</strong></div>
+     <div class="si">${t('hubType')}<strong>${isSP?'Straightpull':'J-Bend'}</strong></div>
+     <div class="si">${t('spokeSection2')}<strong>${sl}</strong></div>
+     <div class="si">${t('rimAsym2')}<strong>${asym>0?'+':''}${asym} mm</strong></div>
+     <div class="si">${t('tensionRatio')}<strong style="color:${ratio>=0.7?'var(--success)':ratio>=0.6?'#e8a040':'#e06060'}">${(ratio*100).toFixed(1)}%</strong></div>
    </div>`;
 
  // Auto-save current wheel state after calc
