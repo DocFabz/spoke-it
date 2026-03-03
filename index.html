@@ -401,13 +401,13 @@ select option{background:#161b27}
 
      <div class="rg">
        <div class="rc fo">
-         <div class="rtag" data-i18n="driveSide">Nappe forte</div>
+         <div class="rtag" id="rtag-fo">Nappe forte</div>
          <div class="rnum" id="r-fo">—</div>
          <div class="runit">mm</div>
          <div class="rrows" id="m-fo"></div>
        </div>
        <div class="rc fa">
-         <div class="rtag" data-i18n="nonDriveSide">Nappe faible</div>
+         <div class="rtag" id="rtag-fa">Nappe faible</div>
          <div class="rnum" id="r-fa">—</div>
          <div class="runit">mm</div>
          <div class="rrows" id="m-fa"></div>
@@ -452,6 +452,8 @@ const i18n = {
     cross:          'Croisement',
     driveSide:      'Nappe forte',
     nonDriveSide:   'Nappe faible',
+    leftSide:       'Côté gauche',
+    rightSide:      'Côté droit',
     tensionHelp:    'La tension faible est calculée automatiquement selon le ratio des déports.',
     calcBtn:        'Calculer les longueurs de rayons',
     // dynamic
@@ -501,9 +503,11 @@ const i18n = {
     rimAsym:        'Rim asymmetry (mm)',
     spokeSection:   'Spoke section',
     cross:          'Lacing',
-    driveSide:      'Drive side',
-    nonDriveSide:   'Non-drive side',
-    tensionHelp:    'Non-drive tension is calculated automatically from the offset ratio.',
+    driveSide:      'High tension side',
+    nonDriveSide:   'Low tension side',
+    leftSide:       'Left side',
+    rightSide:      'Right side',
+    tensionHelp:    'Low tension is calculated automatically from the offset ratio.',
     calcBtn:        'Calculate spoke lengths',
     // dynamic
     spokesBySize:   'Spokes per side',
@@ -524,7 +528,7 @@ const i18n = {
     errSpokes:      'Please select the number of spokes.',
     errPcd:         'Please enter PCD and offset for both sides.',
     errErd:         'ERD is invalid or missing.',
-    errTension:     'Please select the drive side target tension.',
+    errTension:     'Please select the high tension target.',
     // tension field help
     tensionFaibleHint: 'Enter offsets first',
   }
@@ -551,6 +555,17 @@ function applyLang(){
     if(isNaN(oL)||isNaN(oR)||oL===0||oR===0){
       disp.innerHTML = `<span style="color:var(--text3);font-size:.78rem">${t('tensionFaibleHint')}</span>`;
     }
+  }
+  // Refresh result card labels if results are visible
+  if(document.getElementById('results').classList.contains('show')){
+    const oL = parseFloat(document.getElementById('offset-left').value);
+    const oR = parseFloat(document.getElementById('offset-right').value);
+    const asym = parseFloat(document.getElementById('asym').value)||0;
+    const asymSign = wtype === 'arriere' ? -1 : 1;
+    const effL = oL + asymSign*asym, effR = oR - asymSign*asym;
+    const isSymmetric = Math.abs(effL - effR) < 0.01;
+    document.getElementById('rtag-fo').textContent = isSymmetric ? t('leftSide')  : t('driveSide');
+    document.getElementById('rtag-fa').textContent = isSymmetric ? t('rightSide') : t('nonDriveSide');
   }
 }
 
@@ -593,6 +608,8 @@ function readState(){
    mFo:         document.getElementById('m-fo').innerHTML,
    mFa:         document.getElementById('m-fa').innerHTML,
    summary:     document.getElementById('summary').innerHTML,
+   rtagFo:      document.getElementById('rtag-fo').textContent,
+   rtagFa:      document.getElementById('rtag-fa').textContent,
  };
 }
 
@@ -635,12 +652,15 @@ function applyState(s){
    document.getElementById('m-fo').innerHTML   = s.mFo;
    document.getElementById('m-fa').innerHTML   = s.mFa;
    document.getElementById('summary').innerHTML= s.summary;
+   if(s.rtagFo) document.getElementById('rtag-fo').textContent = s.rtagFo;
+   if(s.rtagFa) document.getElementById('rtag-fa').textContent = s.rtagFa;
    document.getElementById('results').classList.add('show');
  } else {
    document.getElementById('results').classList.remove('show');
  }
 
  onTension();
+ reorderTensionFields(wtype);
 }
 
 function clearForm(){
@@ -671,39 +691,39 @@ function clearForm(){
 }
 
 // ── Tab switching ──────────────────────────────────────────────────────────
-function switchTo(t){
- if(t === wtype) return;
+function switchTo(wh){
+ if(wh === wtype) return;
 
  // Save current tab
  saved[wtype] = readState();
  saved[wtype].wtype = wtype;
 
  // Switch
- wtype = t;
- document.getElementById('btn-avant').classList.toggle('active', t==='avant');
- document.getElementById('btn-arriere').classList.toggle('active', t==='arriere');
+ wtype = wh;
+ document.getElementById('btn-avant').classList.toggle('active', wh==='avant');
+ document.getElementById('btn-arriere').classList.toggle('active', wh==='arriere');
 
- if(saved[t]){
-   applyState(saved[t]);
+ if(saved[wh]){
+   applyState(saved[wh]);
  } else {
    clearForm();
  }
 }
 
-function reorderTensionFields(t){
+function reorderTensionFields(wh){
  const g2 = document.getElementById('tension-g2');
  const fo = document.getElementById('tension-forte-field');
  const fa = document.getElementById('tension-faible-field');
- if(t === 'arriere'){
+ if(wh === 'arriere'){
    g2.appendChild(fo);
  } else {
    g2.insertBefore(fo, fa);
  }
 }
 
-function setWheel(t){
- switchTo(t);
- reorderTensionFields(t);
+function setWheel(wh){
+ switchTo(wh);
+ reorderTensionFields(wh);
 }
 
 // ── Tooltip touch support (iOS) ────────────────────────────────────────────
@@ -781,8 +801,11 @@ function onTension(){
    return;
  }
 
- const foOff = Math.min(oL, oR);
- const faOff = Math.max(oL, oR);
+ const asym=parseFloat(document.getElementById('asym').value)||0;
+ const asymSign = wtype === 'arriere' ? -1 : 1;
+ const effL = oL + asymSign*asym, effR = oR - asymSign*asym;
+ const foOff = Math.min(effL, effR);
+ const faOff = Math.max(effL, effR);
  const ratio = (faOff>0 && foOff>0) ? foOff/faOff : 1;
  const exact = tF * ratio;
  disp.textContent=exact.toFixed(1);
@@ -924,7 +947,16 @@ function calc(){
    rg.insertBefore(rcFo, rcFa);
  }
 
- playValidation();
+ // Labels: si moyeu symétrique, afficher Gauche/Droite plutôt que Forte/Faible
+ const isSymmetric = Math.abs(effL - effR) < 0.01;
+ if(isSymmetric){
+   document.getElementById('rtag-fo').textContent = t('leftSide');
+   document.getElementById('rtag-fa').textContent = t('rightSide');
+ } else {
+   document.getElementById('rtag-fo').textContent = t('driveSide');
+   document.getElementById('rtag-fa').textContent = t('nonDriveSide');
+ }
+
  document.getElementById('results').classList.add('show');
  setTimeout(()=>document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'}),80);
 }
