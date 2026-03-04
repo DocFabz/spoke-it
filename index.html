@@ -397,7 +397,6 @@ select option{background:#161b27}
        <div class="cdot" style="background:var(--success);opacity:.7"></div>
        <div class="clabel" style="color:var(--success)" data-i18n="results">Résultats</div>
      </div>
-</div>
 
      <div class="rg">
        <div class="rc fo">
@@ -759,14 +758,13 @@ function setErdMode(m){
  document.getElementById('erd-nsd-section').style.display=m==='nsd'?'':'none';
 }
 
-function setHubType(t){
- hubType=t;
- document.getElementById('btn-hub-jbend').classList.toggle('active',t==='jbend');
- document.getElementById('btn-hub-sp').classList.toggle('active',t==='straightpull');
- document.getElementById('field-diam-trou').style.display=t==='jbend'?'':'none';
- document.getElementById('field-sp-so-left').style.display=t==='straightpull'?'':'none';
- document.getElementById('field-sp-so-right').style.display=t==='straightpull'?'':'none';
-
+function setHubType(htype){
+ hubType=htype;
+ document.getElementById('btn-hub-jbend').classList.toggle('active',htype==='jbend');
+ document.getElementById('btn-hub-sp').classList.toggle('active',htype==='straightpull');
+ document.getElementById('field-diam-trou').style.display=htype==='jbend'?'':'none';
+ document.getElementById('field-sp-so-left').style.display=htype==='straightpull'?'':'none';
+ document.getElementById('field-sp-so-right').style.display=htype==='straightpull'?'':'none';
 }
 
 function calcNsd(){
