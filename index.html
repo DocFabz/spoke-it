@@ -153,7 +153,7 @@ select option{background:#161b27}
 
 .rg{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
 
-.rc{border-radius:var(--rs);padding:1.4rem 1.5rem;position:relative;overflow:hidden}
+.rc{border-radius:var(--rs);padding:1.4rem 1.5rem;position:relative;overflow:visible}
 .rc.fo{background:linear-gradient(145deg,rgba(232,146,124,.07),rgba(232,146,124,.025));border:1px solid rgba(232,146,124,.18)}
 .rc.fa{background:linear-gradient(145deg,rgba(126,200,227,.07),rgba(126,200,227,.025));border:1px solid rgba(126,200,227,.18)}
 
@@ -196,6 +196,24 @@ select option{background:#161b27}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:2px}
 
+
+/* ─ Arbitrage ─ */
+.arb-btn{margin-top:1rem;width:100%;padding:.6rem 1rem;background:transparent;border:1px solid var(--border-s);border-radius:var(--rs);color:var(--text3);font-family:'DM Mono',monospace;font-size:.68rem;font-weight:400;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;transition:all .22s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.arb-btn:hover{border-color:var(--accent);color:var(--accent)}
+.arb-btn .arb-chevron{transition:transform .22s;font-style:normal}
+.arb-btn.open .arb-chevron{transform:rotate(180deg)}
+.arb-panel{display:none;margin-top:.75rem;animation:fu .3s cubic-bezier(.22,1,.36,1)}
+.arb-panel.show{display:block}
+.arb-grid{display:flex;flex-direction:column;gap:.35rem}
+.arb-row{display:flex;align-items:center;justify-content:space-between;padding:.55rem .85rem;border:1px solid var(--border);border-radius:var(--rs);background:var(--card-alt)}
+.arb-row.best{border-color:var(--success)}
+.arb-row.arb-muted{opacity:.28;border-color:transparent}
+.arb-sz{font-family:'DM Mono',monospace;font-size:.88rem;font-weight:500;color:var(--text);min-width:3.5rem}
+.arb-lbl{font-size:.62rem;color:var(--text3);letter-spacing:.08em;flex:1;padding:0 .6rem}
+.arb-delta{font-family:'DM Mono',monospace;font-size:.8rem;font-weight:500;color:var(--text2)}
+.arb-even-btn{margin-top:.45rem;margin-bottom:.6rem;width:100%;padding:.4rem .8rem;background:transparent;border:1px solid var(--border);border-radius:var(--rs);color:var(--text3);font-family:'DM Mono',monospace;font-size:.62rem;font-weight:400;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;transition:all .22s}
+.arb-even-btn:hover{border-color:var(--border-s);color:var(--text2)}
+.arb-even-btn.active{border-color:rgba(126,200,227,.4);color:var(--accent2);background:rgba(126,200,227,.06)}
 </style>
 </head>
 <body>
@@ -433,12 +451,26 @@ select option{background:#161b27}
          <div class="rnum" id="r-fo">—</div>
          <div class="runit">mm</div>
          <div class="rrows" id="m-fo"></div>
+         <button class="arb-btn" id="arb-btn-fo" onclick="toggleArb('fo')" style="display:none">
+           <span data-i18n="arbitrage">Arbitrage</span><em class="arb-chevron">&#8964;</em>
+         </button>
+         <div class="arb-panel" id="arb-panel-fo">
+           <button class="arb-even-btn" id="arb-even-fo" onclick="toggleEven('fo')" data-i18n="evenSizes">Tailles paires</button>
+           <div class="arb-grid" id="arb-grid-fo"></div>
+         </div>
        </div>
        <div class="rc fa">
          <div class="rtag" id="rtag-fa">Nappe faible</div>
          <div class="rnum" id="r-fa">—</div>
          <div class="runit">mm</div>
          <div class="rrows" id="m-fa"></div>
+         <button class="arb-btn" id="arb-btn-fa" onclick="toggleArb('fa')" style="display:none">
+           <span data-i18n="arbitrage">Arbitrage</span><em class="arb-chevron">&#8964;</em>
+         </button>
+         <div class="arb-panel" id="arb-panel-fa">
+           <button class="arb-even-btn" id="arb-even-fa" onclick="toggleEven('fa')" data-i18n="evenSizes">Tailles paires</button>
+           <div class="arb-grid" id="arb-grid-fa"></div>
+         </div>
        </div>
      </div>
 
@@ -507,6 +539,10 @@ const i18n = {
     errOffset:      'Les déports doivent être positifs.',
     // tension field help
     tensionFaibleHint: 'Entrez les déports',
+    estStretch: 'Allongement estimé',
+    arbitrage: 'Arbitrage',
+    evenSizes: 'Tailles paires',
+    gapTarget: 'écart cible',
   },
   en: {
     wheelType:      'Wheel Type',
@@ -561,6 +597,11 @@ const i18n = {
     errOffset:      'Offsets must be positive values.',
     // tension field help
     tensionFaibleHint: 'Enter offsets first',
+    estStretch: 'Allongement estimé',
+    estStretch: 'Est. Stretch',
+    arbitrage: 'Arbitrage',
+    evenSizes: 'Even sizes',
+    gapTarget: 'gap to target',
   }
 };
 
@@ -596,6 +637,9 @@ function applyLang(){
     const isSymmetric = Math.abs(effL - effR) < 0.01;
     document.getElementById('rtag-fo').textContent = isSymmetric ? t('leftSide')  : t('driveSide');
     document.getElementById('rtag-fa').textContent = isSymmetric ? t('rightSide') : t('nonDriveSide');
+    renderResults();
+    if (arbData.fo) renderArb('fo');
+    if (arbData.fa) renderArb('fa');
   }
 }
 
@@ -868,6 +912,92 @@ function area(){
 
 function el(F,L){return(F*9.81*L)/(area()*210000)}
 
+
+var arbData  = { fo: null, fa: null };
+var lastCalc = null;
+var evenMode = { fo: false, fa: false };
+
+function buildArb(side, exactLen, elongation) {
+  arbData[side] = { exactLen: exactLen, elongation: elongation };
+  renderArb(side);
+}
+
+function renderArb(side) {
+  var exactLen   = arbData[side].exactLen;
+  var elongation = arbData[side].elongation;
+  var onlyEven   = evenMode[side];
+  var base       = Math.floor(exactLen);
+  var sizes      = [base - 1, base, base + 1];
+  var grid       = document.getElementById('arb-grid-' + side);
+  var deltas     = [];
+  for (var i = 0; i < sizes.length; i++) {
+    deltas.push((sizes[i] + elongation) - exactLen);
+  }
+  var minAbs = Infinity;
+  for (var i = 0; i < sizes.length; i++) {
+    if (onlyEven && sizes[i] % 2 !== 0) continue;
+    if (Math.abs(deltas[i]) < minAbs) minAbs = Math.abs(deltas[i]);
+  }
+  var html = '';
+  for (var i = 0; i < sizes.length; i++) {
+    var sz    = sizes[i];
+    var delta = deltas[i];
+    var sign  = delta >= 0 ? '+' : '';
+    var isOdd = sz % 2 !== 0;
+    var rowCls = 'arb-row';
+    if (onlyEven && isOdd) {
+      rowCls += ' arb-muted';
+    } else if (Math.abs(delta) <= minAbs + 0.0001) {
+      rowCls += ' best';
+    }
+    html += '<div class="' + rowCls + '">'
+          + '<span class="arb-sz">' + sz + ' mm</span>'
+          + '<span class="arb-lbl">' + t('gapTarget') + '</span>'
+          + '<span class="arb-delta">' + sign + delta.toFixed(2) + ' mm</span>'
+          + '</div>';
+  }
+  grid.innerHTML = html;
+}
+
+function toggleEven(side) {
+  evenMode[side] = !evenMode[side];
+  document.getElementById('arb-even-' + side).classList.toggle('active', evenMode[side]);
+  renderArb(side);
+}
+
+function toggleArb(side) {
+  var btn   = document.getElementById('arb-btn-' + side);
+  var panel = document.getElementById('arb-panel-' + side);
+  var open  = panel.classList.contains('show');
+  panel.classList.toggle('show', !open);
+  btn.classList.toggle('open', !open);
+}
+function renderResults() {
+  if (!lastCalc) return;
+  var c = lastCalc;
+  document.getElementById('m-fo').innerHTML =
+    '<div class="rrow"><span>' + t('estStretch') + ' ' + c.tF + ' kgf</span><span class="ev">+' + c.eFo.toFixed(2) + ' mm</span></div>' +
+    row(t('spokesBySize'), c.h) +
+    row(t('targetTension'), c.tF + ' kgf');
+  document.getElementById('m-fa').innerHTML =
+    '<div class="rrow"><span>' + t('estStretch') + ' ' + c.tf.toFixed(1) + ' kgf</span><span class="ev">+' + c.eFa.toFixed(2) + ' mm</span></div>' +
+    row(t('spokesBySize'), c.h) +
+    row(t('targetTension'), c.tf.toFixed(1) + ' kgf');
+  var cl = c.crossVal === 0 ? t('radial') : (c.crossVal + '×');
+  document.getElementById('summary').innerHTML =
+    '<div class="sumh">' + t('configSummary') + '</div>' +
+    '<div class="sumg">' +
+    '<div class="si">ERD<strong>' + c.erd.toFixed(1) + ' mm</strong></div>' +
+    '<div class="si">' + t('wheelLabel') + '<strong>' + (c.wtype === 'avant' ? t('frontLabel') : t('rearLabel')) + '</strong></div>' +
+    '<div class="si">' + t('spokeCount') + '<strong>' + c.n + ' (' + c.h + t('perSide') + ')</strong></div>' +
+    '<div class="si">' + t('crossLabel') + '<strong>' + cl + '</strong></div>' +
+    '<div class="si">' + t('hubType') + '<strong>' + (c.isSP ? 'Straightpull' : 'J-Bend') + '</strong></div>' +
+    '<div class="si">' + t('spokeSection2') + '<strong>' + c.sl + '</strong></div>' +
+    '<div class="si">' + t('rimAsym2') + '<strong>' + (c.asym > 0 ? '+' : '') + c.asym + ' mm</strong></div>' +
+    '<div class="si">' + t('tensionRatio') + '<strong style="color:' + (c.ratio >= 0.7 ? 'var(--success)' : c.ratio >= 0.6 ? '#e8a040' : '#e06060') + '">' + (c.ratio * 100).toFixed(1) + '%</strong></div>' +
+    '</div>';
+}
+
 function showErr(m){const e=document.getElementById('err');e.textContent=m;e.classList.add('show')}
 
 function row(label,val){return`<div class="rrow"><span>${label}</span><strong>${val}</strong></div>`}
@@ -935,36 +1065,13 @@ function calc(){
  const Lfa=isSP?slenSP(faPCD,faOff,cross,n,erd,soFa):slen(faPCD,faOff,cross,n,erd,trou);
  const eFo=el(tF,Lfo), eFa=el(tf,Lfa);
  const h=n/2;
+ lastCalc={tF,tf,Lfo,Lfa,eFo,eFa,h,erd,n,isSP,sl:sa?`${sd}×${sa} mm`:`${sd} mm`,crossVal:cross,asym,ratio,wtype};
  const ratioDisp=(faOff>0&&foOff>0)?(faOff/foOff).toFixed(3):'—';
 
- document.getElementById('r-fo').textContent=Lfo.toFixed(1);
- document.getElementById('r-fa').textContent=Lfa.toFixed(1);
+ document.getElementById('r-fo').textContent=Lfo.toFixed(2);
+ document.getElementById('r-fa').textContent=Lfa.toFixed(2);
 
- document.getElementById('m-fo').innerHTML=
-   `<div class="rrow"><span>Est.Stretch ${tF} kgf</span><span class="ev">+${eFo.toFixed(3)} mm</span></div>`+
-   row(t('spokesBySize'),h)+
-   row(t('targetTension'),tF+' kgf');
-
- document.getElementById('m-fa').innerHTML=
-   `<div class="rrow"><span>Est.Stretch ${tf.toFixed(1)} kgf</span><span class="ev">+${eFa.toFixed(3)} mm</span></div>`+
-   row(t('spokesBySize'),h)+
-   row(t('targetTension'),tf.toFixed(1)+' kgf');
-
- const sl=sa?`${sd}×${sa} mm`:`${sd} mm`;
- const cl=cross===0?t('radial'):`${cross}×`;
-
- document.getElementById('summary').innerHTML=`
-   <div class="sumh">${t('configSummary')}</div>
-   <div class="sumg">
-     <div class="si">ERD<strong>${erd.toFixed(1)} mm</strong></div>
-     <div class="si">${t('wheelLabel')}<strong>${wtype==='avant'?t('frontLabel'):t('rearLabel')}</strong></div>
-     <div class="si">${t('spokeCount')}<strong>${n} (${h}${t('perSide')})</strong></div>
-     <div class="si">${t('crossLabel')}<strong>${cl}</strong></div>
-     <div class="si">${t('hubType')}<strong>${isSP?'Straightpull':'J-Bend'}</strong></div>
-     <div class="si">${t('spokeSection2')}<strong>${sl}</strong></div>
-     <div class="si">${t('rimAsym2')}<strong>${asym>0?'+':''}${asym} mm</strong></div>
-     <div class="si">${t('tensionRatio')}<strong style="color:${ratio>=0.7?'var(--success)':ratio>=0.6?'#e8a040':'#e06060'}">${(ratio*100).toFixed(1)}%</strong></div>
-   </div>`;
+ renderResults();
 
  // Auto-save current wheel state after calc
  saved[wtype] = readState();
@@ -993,6 +1100,17 @@ function calc(){
    document.getElementById('rtag-fa').textContent = t('nonDriveSide');
  }
 
+ evenMode.fo = false; evenMode.fa = false;
+ document.getElementById('arb-even-fo').classList.remove('active');
+ document.getElementById('arb-even-fa').classList.remove('active');
+ document.getElementById('arb-btn-fo').style.display = '';
+ document.getElementById('arb-btn-fa').style.display = '';
+ document.getElementById('arb-panel-fo').classList.remove('show');
+ document.getElementById('arb-btn-fo').classList.remove('open');
+ document.getElementById('arb-panel-fa').classList.remove('show');
+ document.getElementById('arb-btn-fa').classList.remove('open');
+ buildArb('fo', Lfo, eFo);
+ buildArb('fa', Lfa, eFa);
  document.getElementById('results').classList.add('show');
  setTimeout(()=>document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'}),80);
 }
