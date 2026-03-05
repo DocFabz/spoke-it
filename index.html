@@ -177,14 +177,12 @@ select option{background:#161b27}
 .ev{font-family:'DM Mono',monospace;font-weight:500;color:var(--success);font-size:.8rem}
 
 /* ─ Summary ─ */
-.sum{background:var(--card-alt);border:1px solid var(--border);border-radius:var(--rs);padding:1.2rem 1.5rem}
-.sumh{font-size:.59rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--text3);margin-bottom:.95rem}
 .sumg{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:.75rem}
 .si{font-size:.68rem;color:var(--text3);line-height:1.7}
 .si strong{display:block;font-family:'DM Mono',monospace;font-size:.77rem;font-weight:400;color:var(--text)}
 
 /* ─ Faible display ─ */
-.faible-display{background:var(--inp);border:1px solid var(--border);border-radius:var(--rs);color:var(--accent2);font-family:'DM Mono',monospace;font-size:.85rem;font-weight:400;padding:.55rem .9rem;width:100%;min-height:2.35rem;display:flex;align-items:center}
+.faible-display{background:var(--inp);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:'DM Mono',monospace;font-size:.85rem;font-weight:300;padding:.55rem .9rem;width:100%;min-height:2.35rem;display:flex;align-items:center}
 .faible-display.has-val{border-color:rgba(126,200,227,.3)}
 
 /* ─ Tooltip ─ */
@@ -428,19 +426,19 @@ select option{background:#161b27}
          <option>120</option><option>125</option><option>130</option>
        </select>
      </div>
-     <div class="f" id="tension-faible-field">
+     <div class="f" id="tension-faible-field" style="opacity:.35">
        <label>
          <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--accent);margin-right:.3rem;vertical-align:middle"></span>
          <span data-i18n="nonDriveSide">Nappe faible</span>
        </label>
-       <div class="faible-display" id="tension-faible-display">—</div>
+       <div class="faible-display" id="tension-faible-display"></div>
      </div>
    </div>
    <p class="help" style="margin-top:.6rem" data-i18n="tensionHelp">La tension faible est calculée automatiquement selon le ratio des déports.</p>
  </div>
 
  <div class="err" id="err"></div>
- <button class="btn" onclick="calc()" data-i18n="calcBtn">Calculer les longueurs de rayons</button>
+ <button class="btn" onclick="calc()" data-i18n="calcBtn">Calculer</button>
 
  <!-- Results -->
  <div class="rw" id="results">
@@ -470,21 +468,25 @@ select option{background:#161b27}
  <!-- Arbitrage -->
  <div class="arb-wrap" id="arb-wrap">
    <div class="card" style="border-color:rgba(255,255,255,.06)">
-     <div class="ch">
-       <div class="cdot" style="opacity:.35"></div>
-       <div class="clabel" style="color:var(--text3)" data-i18n="arbitrage">Arbitrage</div>
+     <div class="ch" onclick="toggleArbCard()" style="cursor:pointer;user-select:none;margin-bottom:0">
+       <div class="cdot" style="background:var(--success);opacity:.7"></div>
+       <div class="clabel" style="color:var(--success)" data-i18n="arbitrage">Arrondi suggéré</div>
+       <em id="arb-card-chevron" style="margin-left:auto;color:var(--success);font-style:normal;font-size:.75rem;transition:transform .22s;display:inline-block">&#8964;</em>
      </div>
-     <div class="arb-cols">
-       <div>
-         <div class="arb-col-head fo" id="arb-head-fo">Nappe forte</div>
-         <button class="arb-even-btn" id="arb-even-fo" onclick="toggleEven('fo')" data-i18n="evenSizes">Tailles paires</button>
-         <div class="arb-grid" id="arb-grid-fo"></div>
+     <div id="arb-card-body" style="display:none;margin-top:1.35rem">
+       <div class="arb-cols" id="arb-cols">
+         <div id="arb-col-fo">
+           <div class="arb-col-head fo" id="arb-head-fo">Nappe forte</div>
+           <button class="arb-even-btn" id="arb-even-fo" onclick="toggleEven('fo')" data-i18n="evenSizes">Tailles paires</button>
+           <div class="arb-grid" id="arb-grid-fo"></div>
+         </div>
+         <div id="arb-col-fa">
+           <div class="arb-col-head fa" id="arb-head-fa">Nappe faible</div>
+           <button class="arb-even-btn" id="arb-even-fa" onclick="toggleEven('fa')" data-i18n="evenSizes">Tailles paires</button>
+           <div class="arb-grid" id="arb-grid-fa"></div>
+         </div>
        </div>
-       <div>
-         <div class="arb-col-head fa" id="arb-head-fa">Nappe faible</div>
-         <button class="arb-even-btn" id="arb-even-fa" onclick="toggleEven('fa')" data-i18n="evenSizes">Tailles paires</button>
-         <div class="arb-grid" id="arb-grid-fa"></div>
-       </div>
+       <p class="help" style="margin-top:1rem" data-i18n="spokeThread">Note : un filet = 0.45 mm</p>
      </div>
    </div>
  </div>
@@ -537,11 +539,9 @@ const i18n = {
     leftSide:       'Côté gauche',
     rightSide:      'Côté droit',
     tensionHelp:    'La tension faible est calculée automatiquement selon le ratio des déports.',
-    calcBtn:        'Calculer les longueurs de rayons',
+    calcBtn:        'Calculer',
     // dynamic
-    spokesBySize:   'Rayons par côté',
     perSide:        '/côté',
-    targetTension:  'Tension cible',
     configSummary:  'Résumé de configuration',
     wheelLabel:     'Roue',
     spokeCount:     'Nb rayons',
@@ -561,9 +561,10 @@ const i18n = {
     errOffset:      'Les déports doivent être positifs.',
     // tension field help
     tensionFaibleHint: 'Entrez les déports',
-    arbitrage:  'Arbitrage',
+    arbitrage:  'Arrondi suggéré',
     evenSizes:  'Tailles paires',
     gapTarget:  'écart cible',
+    spokeThread: 'Note : un filet = 0.45 mm',
   },
   en: {
     wheelType:      'Wheel Type',
@@ -594,11 +595,9 @@ const i18n = {
     leftSide:       'Left side',
     rightSide:      'Right side',
     tensionHelp:    'Low tension is calculated automatically from the offset ratio.',
-    calcBtn:        'Calculate spoke lengths',
+    calcBtn:        'Calculate',
     // dynamic
-    spokesBySize:   'Spokes per side',
     perSide:        '/side',
-    targetTension:  'Target tension',
     configSummary:  'Configuration summary',
     wheelLabel:     'Wheel',
     spokeCount:     'Spoke count',
@@ -617,10 +616,11 @@ const i18n = {
     errTension:     'Please select the high tension target.',
     errOffset:      'Offsets must be positive values.',
     // tension field help
-    tensionFaibleHint: 'Enter offsets first',
-    arbitrage:  'Rounding',
+    tensionFaibleHint: '',
+    arbitrage:  'Suggested rounding',
     evenSizes:  'Even sizes',
     gapTarget:  'gap to target',
+    spokeThread: 'Note : one spoke thread is 0.45 mm',
   }
 };
 
@@ -661,11 +661,25 @@ function applyLang(){
   if(document.getElementById('arb-wrap').classList.contains('show')){
     if(arbData.fo) renderArb('fo');
     if(arbData.fa) renderArb('fa');
+    // Refresh column heads
+    if(summaryData){
+      const oL = parseFloat(document.getElementById('offset-left').value);
+      const oR = parseFloat(document.getElementById('offset-right').value);
+      const asym = parseFloat(document.getElementById('asym').value)||0;
+      const asymSign = wtype === 'arriere' ? -1 : 1;
+      const effL = oL + asymSign*asym, effR = oR - asymSign*asym;
+      const isSym = Math.abs(effL - effR) < 0.01;
+      document.getElementById('arb-head-fo').textContent = isSym ? t('leftSide')  : t('driveSide');
+      document.getElementById('arb-head-fa').textContent = isSym ? t('rightSide') : t('nonDriveSide');
+    }
   }
   // Refresh summary if visible
   if(document.getElementById('summary-wrap').classList.contains('show')){
     renderSummary();
   }
+  // Note arbitrage (dans panneau masqué, data-i18n ne suffit pas)
+  const noteEl = document.querySelector('[data-i18n="spokeThread"]');
+  if(noteEl) noteEl.textContent = t('spokeThread');
 }
 
 function toggleLang(){
@@ -709,6 +723,8 @@ function readState(){
    summary:     document.getElementById('summary').innerHTML,
    rtagFo:      document.getElementById('rtag-fo').textContent,
    rtagFa:      document.getElementById('rtag-fa').textContent,
+   summaryData: summaryData,
+   arbData:     (arbData.fo && arbData.fa) ? JSON.parse(JSON.stringify(arbData)) : null,
  };
 }
 
@@ -750,12 +766,15 @@ function applyState(s){
    document.getElementById('r-fa').textContent = s.rFa;
    document.getElementById('m-fo').innerHTML   = s.mFo;
    document.getElementById('m-fa').innerHTML   = s.mFa;
-   document.getElementById('summary').innerHTML= s.summary;
    if(s.rtagFo) document.getElementById('rtag-fo').textContent = s.rtagFo;
    if(s.rtagFa) document.getElementById('rtag-fa').textContent = s.rtagFa;
    document.getElementById('results').classList.add('show');
+   if(s.summaryData){ summaryData = s.summaryData; renderSummary(); document.getElementById('summary-wrap').classList.add('show'); }
+   if(s.arbData){ arbData = s.arbData; buildArb('fo', arbData.fo.exactLen, arbData.fo.elongation); buildArb('fa', arbData.fa.exactLen, arbData.fa.elongation); document.getElementById('arb-wrap').classList.add('show'); }
  } else {
    document.getElementById('results').classList.remove('show');
+   document.getElementById('arb-wrap').classList.remove('show');
+   document.getElementById('summary-wrap').classList.remove('show');
  }
 
  onTension();
@@ -784,9 +803,17 @@ function clearForm(){
  });
 
  document.getElementById('results').classList.remove('show');
+ document.getElementById('arb-wrap').classList.remove('show');
+ document.getElementById('summary-wrap').classList.remove('show');
+ document.getElementById('arb-card-body').style.display = 'none';
+ document.getElementById('arb-card-chevron').style.transform = '';
+ summaryData = null;
+ arbData.fo = null; arbData.fa = null;
+ evenMode.fo = false; evenMode.fa = false;
  document.getElementById('err').classList.remove('show');
  const disp=document.getElementById('tension-faible-display');
- disp.textContent='—'; disp.classList.remove('has-val');
+ disp.textContent=''; disp.classList.remove('has-val');
+ document.getElementById('tension-faible-field').style.opacity='.35';
 }
 
 // ── Tab switching ──────────────────────────────────────────────────────────
@@ -890,8 +917,16 @@ function onTension(){
  const oR=parseFloat(document.getElementById('offset-right').value);
  const tF=parseFloat(document.getElementById('tension-forte').value);
  const disp=document.getElementById('tension-faible-display');
+ const field=document.getElementById('tension-faible-field');
 
- if(isNaN(tF)){disp.textContent='—';disp.classList.remove('has-val');return}
+ if(isNaN(tF)){
+   disp.textContent='';
+   disp.classList.remove('has-val');
+   field.style.opacity='.35';
+   return;
+ }
+
+ field.style.opacity='1';
 
  if(isNaN(oL)||isNaN(oR)||oL===0||oR===0){
    disp.innerHTML=`<span style="color:var(--text3);font-size:.78rem">${t('tensionFaibleHint')}</span>`;
@@ -999,6 +1034,14 @@ function toggleEven(side) {
   renderArb(side);
 }
 
+function toggleArbCard() {
+  var body    = document.getElementById('arb-card-body');
+  var chevron = document.getElementById('arb-card-chevron');
+  var open    = body.style.display !== 'none';
+  body.style.display    = open ? 'none' : 'block';
+  chevron.style.transform = open ? '' : 'rotate(180deg)';
+}
+
 function playValidation(){
  try {
    const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1062,7 +1105,6 @@ function calc(){
  const Lfa=isSP?slenSP(faPCD,faOff,cross,n,erd,soFa):slen(faPCD,faOff,cross,n,erd,trou);
  const eFo=el(tF,Lfo), eFa=el(tf,Lfa);
  const h=n/2;
- const ratioDisp=(faOff>0&&foOff>0)?(faOff/foOff).toFixed(3):'—';
 
  document.getElementById('r-fo').textContent=Lfo.toFixed(1);
  document.getElementById('r-fa').textContent=Lfa.toFixed(1);
@@ -1091,11 +1133,19 @@ function calc(){
  const rcFo = document.querySelector('.rc.fo');
  const rcFa = document.querySelector('.rc.fa');
  if(wtype === 'arriere'){
-   // forte à droite : fa | fo
-   rg.appendChild(rcFo); // déplace fo après fa
+   rg.appendChild(rcFo);
  } else {
-   // forte à gauche : fo | fa
    rg.insertBefore(rcFo, rcFa);
+ }
+
+ // Même logique pour les colonnes arbitrage
+ const arbCols = document.getElementById('arb-cols');
+ const arbColFo = document.getElementById('arb-col-fo');
+ const arbColFa = document.getElementById('arb-col-fa');
+ if(wtype === 'arriere'){
+   arbCols.appendChild(arbColFo); // fa | fo
+ } else {
+   arbCols.insertBefore(arbColFo, arbColFa); // fo | fa
  }
 
  // Labels résultats + têtes arbitrage
