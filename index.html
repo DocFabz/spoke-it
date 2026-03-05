@@ -225,11 +225,11 @@ select option{background:#161b27}
 .arb-panel{display:none;margin-top:.75rem;animation:fu .3s cubic-bezier(.22,1,.36,1)}
 .arb-panel.show{display:block}
 .arb-grid{display:flex;flex-direction:column;gap:.35rem}
-.arb-row{display:flex;align-items:center;justify-content:space-between;padding:.55rem .85rem;border:1px solid var(--border);border-radius:var(--rs);background:var(--card-alt)}
+.arb-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem .85rem;border:1px solid var(--border);border-radius:var(--rs);background:var(--card-alt)}
 .arb-row.best{border-color:var(--success)}
 .arb-row.arb-muted{opacity:.28;border-color:transparent}
-.arb-sz{font-family:'DM Mono',monospace;font-size:.88rem;font-weight:500;color:var(--text);min-width:3.5rem}
-.arb-lbl{font-size:.62rem;color:var(--text3);letter-spacing:.08em;flex:1;padding:0 .6rem}
+.arb-sz{font-family:'DM Mono',monospace;font-size:.88rem;font-weight:500;color:var(--text)}
+.arb-lbl{font-size:.55rem;color:var(--text3);letter-spacing:.07em}
 .arb-delta{font-family:'DM Mono',monospace;font-size:.8rem;font-weight:500;color:var(--text2)}
 .arb-even-btn{margin-top:.45rem;margin-bottom:.6rem;width:100%;padding:.4rem .8rem;background:transparent;border:1px solid var(--border);border-radius:var(--rs);color:var(--text3);font-family:'DM Mono',monospace;font-size:.62rem;font-weight:400;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;transition:all .22s}
 .arb-even-btn:hover{border-color:var(--border-s);color:var(--text2)}
@@ -452,7 +452,7 @@ select option{background:#161b27}
          <option>120</option><option>125</option><option>130</option>
        </select>
      </div>
-     <div class="f" id="tension-faible-field">
+     <div class="f" id="tension-faible-field" style="opacity:.38;transition:opacity .3s">
        <label>
          <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--accent);margin-right:.3rem;vertical-align:middle"></span>
          <span data-i18n="nonDriveSide">Nappe faible</span>
@@ -464,7 +464,7 @@ select option{background:#161b27}
  </div>
 
  <div class="err" id="err"></div>
- <button class="btn" onclick="calc()" data-i18n="calcBtn">Calculer les longueurs de rayons</button>
+ <button class="btn" onclick="calc()" data-i18n="calcBtn">Calcul</button>
 
  <!-- Results -->
  <div class="rw" id="results">
@@ -556,11 +556,9 @@ const i18n = {
     leftSide:       'Côté gauche',
     rightSide:      'Côté droit',
     tensionHelp:    'La tension faible est calculée automatiquement selon le ratio des déports.',
-    calcBtn:        'Calculer les longueurs de rayons',
+    calcBtn:        'Calcul',
     // dynamic
-    spokesBySize:   'Rayons par côté',
     perSide:        '/côté',
-    targetTension:  'Tension cible',
     configSummary:  'Résumé de configuration',
     wheelLabel:     'Roue',
     spokeCount:     'Nb rayons',
@@ -578,13 +576,12 @@ const i18n = {
     errErd:         'ERD invalide ou non renseigné.',
     errTension:     'Veuillez choisir la tension cible nappe forte.',
     errOffset:      'Les déports doivent être positifs.',
-    // tension field help
+    // tension field
     tensionFaibleHint: 'Entrez les déports',
-    estStretch: 'Allongement estimé',
-    arbitrage: 'Arbitrage',
-    evenSizes: 'Tailles paires',
-    gapTarget: 'écart cible',
-    allongement: 'Allongement',
+    arbitrage:      'Arbitrage',
+    evenSizes:      'Tailles paires',
+    gapTarget:      'écart cible',
+    allongement:    'Allongement',
   },
   en: {
     wheelType:      'Wheel Type',
@@ -615,11 +612,9 @@ const i18n = {
     leftSide:       'Left side',
     rightSide:      'Right side',
     tensionHelp:    'Low tension is calculated automatically from the offset ratio.',
-    calcBtn:        'Calculate spoke lengths',
+    calcBtn:        'Calculate',
     // dynamic
-    spokesBySize:   'Spokes per side',
     perSide:        '/side',
-    targetTension:  'Target tension',
     configSummary:  'Configuration summary',
     wheelLabel:     'Wheel',
     spokeCount:     'Spoke count',
@@ -637,14 +632,12 @@ const i18n = {
     errErd:         'ERD is invalid or missing.',
     errTension:     'Please select the high tension target.',
     errOffset:      'Offsets must be positive values.',
-    // tension field help
-    tensionFaibleHint: 'Enter offsets first',
-    estStretch: 'Allongement estimé',
-    estStretch: 'Est. Stretch',
-    arbitrage: 'Arbitrage',
-    evenSizes: 'Even sizes',
-    gapTarget: 'gap to target',
-    allongement: 'Stretch',
+    // tension field
+    tensionFaibleHint: '',
+    arbitrage:      'Rounding',
+    evenSizes:      'Even sizes',
+    gapTarget:      'gap to target',
+    allongement:    'Stretch',
   }
 };
 
@@ -667,7 +660,7 @@ function applyLang(){
     const oL = parseFloat(document.getElementById('offset-left').value);
     const oR = parseFloat(document.getElementById('offset-right').value);
     if(isNaN(oL)||isNaN(oR)||oL===0||oR===0){
-      disp.innerHTML = `<span style="color:var(--text3);font-size:.78rem">${t('tensionFaibleHint')}</span>`;
+      disp.innerHTML = t('tensionFaibleHint') ? `<span style="color:var(--text3);font-size:.78rem">${t('tensionFaibleHint')}</span>` : '';
     }
   }
   // Refresh result card labels if results are visible
@@ -908,11 +901,14 @@ function onTension(){
  const oR=parseFloat(document.getElementById('offset-right').value);
  const tF=parseFloat(document.getElementById('tension-forte').value);
  const disp=document.getElementById('tension-faible-display');
+ const field=document.getElementById('tension-faible-field');
 
- if(isNaN(tF)){disp.textContent='—';disp.classList.remove('has-val');return}
+ if(isNaN(tF)){disp.textContent='—';disp.classList.remove('has-val');field.style.opacity='.38';return}
+
+ field.style.opacity='1';
 
  if(isNaN(oL)||isNaN(oR)||oL===0||oR===0){
-   disp.innerHTML=`<span style="color:var(--text3);font-size:.78rem">${t('tensionFaibleHint')}</span>`;
+   disp.innerHTML=t('tensionFaibleHint') ? `<span style="color:var(--text3);font-size:.78rem">${t('tensionFaibleHint')}</span>` : '';
    disp.classList.remove('has-val');
    return;
  }
@@ -995,8 +991,10 @@ function renderArb(side) {
     }
     html += '<div class="' + rowCls + '">'
           + '<span class="arb-sz">' + sz + ' mm</span>'
-          + '<span class="arb-lbl">' + t('gapTarget') + '</span>'
+          + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:.1rem">'
           + '<span class="arb-delta">' + sign + delta.toFixed(2) + ' mm</span>'
+          + '<span class="arb-lbl">' + t('gapTarget') + '</span>'
+          + '</div>'
           + '</div>';
   }
   grid.innerHTML = html;
@@ -1040,8 +1038,6 @@ function renderResults() {
 }
 
 function showErr(m){const e=document.getElementById('err');e.textContent=m;e.classList.add('show')}
-
-function row(label,val){return`<div class="rrow"><span>${label}</span><strong>${val}</strong></div>`}
 
 function playValidation(){
  try {
@@ -1107,7 +1103,6 @@ function calc(){
  const eFo=el(tF,Lfo), eFa=el(tf,Lfa);
  const h=n/2;
  lastCalc={tF,tf,Lfo,Lfa,eFo,eFa,h,erd,n,isSP,sl:sa?`${sd}×${sa} mm`:`${sd} mm`,crossVal:cross,asym,ratio,wtype};
- const ratioDisp=(faOff>0&&foOff>0)?(faOff/foOff).toFixed(3):'—';
 
  document.getElementById('r-fo').textContent=Lfo.toFixed(2);
  document.getElementById('r-fa').textContent=Lfa.toFixed(2);
