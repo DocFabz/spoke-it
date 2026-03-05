@@ -151,27 +151,46 @@ select option{background:#161b27}
 .rw.show{display:block}
 @keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 
-.rg{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-bottom:1rem;min-width:0}
+/* Mobile-first: une colonne, passe à deux colonnes sur écrans larges */
+.rg{display:flex;flex-direction:column;gap:.75rem;margin-bottom:1rem}
+@media(min-width:540px){
+  .rg{display:grid;grid-template-columns:1fr 1fr;gap:.85rem}
+}
 
-.rc{border-radius:var(--rs);padding:1rem 1rem;position:relative;overflow:hidden;min-width:0;box-sizing:border-box}
+.rc{border-radius:var(--rs);padding:1.1rem 1.2rem;overflow:hidden;min-width:0;box-sizing:border-box}
 .rc.fo{background:linear-gradient(145deg,rgba(232,146,124,.07),rgba(232,146,124,.025));border:1px solid rgba(232,146,124,.18)}
 .rc.fa{background:linear-gradient(145deg,rgba(126,200,227,.07),rgba(126,200,227,.025));border:1px solid rgba(126,200,227,.18)}
 
-.rtag{font-size:.55rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;margin-bottom:.5rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Sur mobile, chaque carte est horizontale : chiffre à gauche, détails à droite */
+.rc-inner{display:flex;gap:1rem;align-items:flex-start}
+.rc-left{flex-shrink:0}
+.rc-right{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+@media(min-width:540px){
+  .rc-inner{flex-direction:column;gap:0}
+  .rc-right{margin-top:0}
+}
+
+.rtag{font-size:.55rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.4rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fo .rtag{color:var(--warm)}
 .fa .rtag{color:var(--accent)}
 
-.rnum{font-family:'Cormorant Garamond',serif;font-size:clamp(1.6rem,5vw,2.8rem);font-weight:300;line-height:1;white-space:nowrap}
+.rnum{font-family:'Cormorant Garamond',serif;font-size:2.6rem;font-weight:300;line-height:1;white-space:nowrap}
 .fo .rnum{color:var(--warm2)}
 .fa .rnum{color:var(--accent2)}
+@media(min-width:540px){
+  .rnum{font-size:clamp(2rem,4vw,3rem)}
+}
 
-.runit{font-family:'DM Mono',monospace;font-size:.68rem;font-weight:300;color:var(--text3);margin:.08rem 0 .9rem}
+.runit{font-family:'DM Mono',monospace;font-size:.62rem;font-weight:300;color:var(--text3);margin:.05rem 0 0}
 
-.rrows{border-top:1px solid var(--border);padding-top:.65rem;display:flex;flex-direction:column;gap:.28rem}
-.rrow{display:flex;justify-content:space-between;align-items:baseline;font-size:.65rem;color:var(--text2);gap:.3rem}
+.rrows{border-top:1px solid var(--border);padding-top:.6rem;display:flex;flex-direction:column;gap:.26rem;margin-top:.6rem}
+@media(max-width:539px){
+  .rrows{border-top:none;padding-top:0;margin-top:.2rem}
+}
+.rrow{display:flex;justify-content:space-between;align-items:baseline;font-size:.68rem;color:var(--text2);gap:.4rem}
 .rrow span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1}
-.rrow strong{font-family:'DM Mono',monospace;font-weight:400;font-size:.68rem;color:var(--text);flex-shrink:0;white-space:nowrap}
-.ev{font-family:'DM Mono',monospace;font-weight:500;color:var(--success);font-size:.68rem;flex-shrink:0;white-space:nowrap}
+.rrow strong{font-family:'DM Mono',monospace;font-weight:400;font-size:.72rem;color:var(--text);flex-shrink:0;white-space:nowrap}
+.ev{font-family:'DM Mono',monospace;font-weight:500;color:var(--success);font-size:.72rem;flex-shrink:0;white-space:nowrap}
 
 /* ─ Summary ─ */
 .sum{background:var(--card-alt);border:1px solid var(--border);border-radius:var(--rs);padding:1.2rem 1.5rem}
@@ -216,20 +235,12 @@ select option{background:#161b27}
 .arb-even-btn:hover{border-color:var(--border-s);color:var(--text2)}
 .arb-even-btn.active{border-color:rgba(126,200,227,.4);color:var(--accent2);background:rgba(126,200,227,.06)}
 
-/* ─ Mobile fixes ─ */
+/* ─ Mobile layout ─ */
 @media(max-width:480px){
-  .wrap{padding:0 .75rem 4rem}
-  .card{padding:1.2rem 1rem}
-  .hub-sides{grid-template-columns:1fr 1px 1fr}
-  .hub-side{padding:.85rem .75rem}
-  .rg{gap:.5rem}
-  .rc{padding:.85rem .75rem}
-  .rnum{font-size:clamp(1.4rem,7vw,2.2rem)}
-  .runit{font-size:.58rem}
-  .rrow{font-size:.6rem}
-  .rrow strong,.ev{font-size:.62rem}
-  .arb-btn{font-size:.6rem;padding:.5rem .7rem}
-  .arb-sz{font-size:.78rem}
+  .wrap{padding:0 .9rem 4rem}
+  .card{padding:1.2rem 1.1rem}
+  .hub-side{padding:.85rem .8rem}
+  .sum{padding:1rem 1.1rem}
   .sumg{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
 }
 </style>
@@ -465,10 +476,16 @@ select option{background:#161b27}
 
      <div class="rg">
        <div class="rc fo">
-         <div class="rtag" id="rtag-fo">Nappe forte</div>
-         <div class="rnum" id="r-fo">—</div>
-         <div class="runit">mm</div>
-         <div class="rrows" id="m-fo"></div>
+         <div class="rc-inner">
+           <div class="rc-left">
+             <div class="rtag" id="rtag-fo">Nappe forte</div>
+             <div class="rnum" id="r-fo">—</div>
+             <div class="runit">mm</div>
+           </div>
+           <div class="rc-right">
+             <div class="rrows" id="m-fo"></div>
+           </div>
+         </div>
          <button class="arb-btn" id="arb-btn-fo" onclick="toggleArb('fo')" style="display:none">
            <span data-i18n="arbitrage">Arbitrage</span><em class="arb-chevron">&#8964;</em>
          </button>
@@ -478,10 +495,16 @@ select option{background:#161b27}
          </div>
        </div>
        <div class="rc fa">
-         <div class="rtag" id="rtag-fa">Nappe faible</div>
-         <div class="rnum" id="r-fa">—</div>
-         <div class="runit">mm</div>
-         <div class="rrows" id="m-fa"></div>
+         <div class="rc-inner">
+           <div class="rc-left">
+             <div class="rtag" id="rtag-fa">Nappe faible</div>
+             <div class="rnum" id="r-fa">—</div>
+             <div class="runit">mm</div>
+           </div>
+           <div class="rc-right">
+             <div class="rrows" id="m-fa"></div>
+           </div>
+         </div>
          <button class="arb-btn" id="arb-btn-fa" onclick="toggleArb('fa')" style="display:none">
            <span data-i18n="arbitrage">Arbitrage</span><em class="arb-chevron">&#8964;</em>
          </button>
@@ -561,6 +584,7 @@ const i18n = {
     arbitrage: 'Arbitrage',
     evenSizes: 'Tailles paires',
     gapTarget: 'écart cible',
+    allongement: 'Allongement',
   },
   en: {
     wheelType:      'Wheel Type',
@@ -620,6 +644,7 @@ const i18n = {
     arbitrage: 'Arbitrage',
     evenSizes: 'Even sizes',
     gapTarget: 'gap to target',
+    allongement: 'Stretch',
   }
 };
 
@@ -994,13 +1019,11 @@ function renderResults() {
   if (!lastCalc) return;
   var c = lastCalc;
   document.getElementById('m-fo').innerHTML =
-    '<div class="rrow"><span>' + t('estStretch') + ' ' + c.tF + ' kgf</span><span class="ev">+' + c.eFo.toFixed(2) + ' mm</span></div>' +
-    row(t('spokesBySize'), c.h) +
-    row(t('targetTension'), c.tF + ' kgf');
+    '<div class="rrow"><span>' + t('allongement') + '</span><span class="ev">+' + c.eFo.toFixed(2) + ' mm</span></div>' +
+    '<div class="rrow"><strong>' + c.tF + ' kgf</strong></div>';
   document.getElementById('m-fa').innerHTML =
-    '<div class="rrow"><span>' + t('estStretch') + ' ' + c.tf.toFixed(1) + ' kgf</span><span class="ev">+' + c.eFa.toFixed(2) + ' mm</span></div>' +
-    row(t('spokesBySize'), c.h) +
-    row(t('targetTension'), c.tf.toFixed(1) + ' kgf');
+    '<div class="rrow"><span>' + t('allongement') + '</span><span class="ev">+' + c.eFa.toFixed(2) + ' mm</span></div>' +
+    '<div class="rrow"><strong>' + c.tf.toFixed(1) + ' kgf</strong></div>';
   var cl = c.crossVal === 0 ? t('radial') : (c.crossVal + '×');
   document.getElementById('summary').innerHTML =
     '<div class="sumh">' + t('configSummary') + '</div>' +
