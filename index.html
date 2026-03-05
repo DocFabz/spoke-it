@@ -196,6 +196,26 @@ select option{background:#161b27}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:2px}
 
+/* ─ Arbitrage ─ */
+.arb-wrap{display:none;animation:fu .5s cubic-bezier(.22,1,.36,1)}
+.arb-wrap.show{display:block}
+.arb-cols{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:540px){.arb-cols{grid-template-columns:1fr}}
+.arb-col-head{font-size:.56rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.7rem}
+.arb-col-head.fo{color:var(--warm)}
+.arb-col-head.fa{color:var(--accent)}
+.arb-even-btn{margin-bottom:.6rem;padding:.28rem .8rem;background:transparent;border:1px solid var(--border);border-radius:20px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.61rem;font-weight:400;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:all .22s}
+.arb-even-btn:hover{border-color:var(--border-s);color:var(--text2)}
+.arb-even-btn.active{border-color:rgba(126,200,227,.4);color:var(--accent2);background:rgba(126,200,227,.06)}
+.arb-grid{display:flex;flex-direction:column;gap:.3rem}
+.arb-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem .85rem;border:1px solid var(--border);border-radius:var(--rs);background:var(--card-alt)}
+.arb-row.best{border-color:var(--success)}
+.arb-row.arb-muted{opacity:.25;border-color:transparent}
+.arb-sz{font-family:'DM Mono',monospace;font-size:.88rem;font-weight:500;color:var(--text)}
+.arb-right{display:flex;flex-direction:column;align-items:flex-end;gap:.07rem}
+.arb-delta{font-family:'DM Mono',monospace;font-size:.8rem;font-weight:500;color:var(--text2)}
+.arb-lbl{font-size:.53rem;color:var(--text3);letter-spacing:.06em}
+
 </style>
 </head>
 <body>
@@ -441,8 +461,39 @@ select option{background:#161b27}
          <div class="rrows" id="m-fa"></div>
        </div>
      </div>
+   </div>
+ </div>
 
-     <div class="sum" id="summary"></div>
+ <!-- Arbitrage -->
+ <div class="arb-wrap" id="arb-wrap">
+   <div class="card" style="border-color:rgba(255,255,255,.06)">
+     <div class="ch">
+       <div class="cdot" style="opacity:.35"></div>
+       <div class="clabel" style="color:var(--text3)" data-i18n="arbitrage">Arbitrage</div>
+     </div>
+     <div class="arb-cols">
+       <div>
+         <div class="arb-col-head fo" id="arb-head-fo">Nappe forte</div>
+         <button class="arb-even-btn" id="arb-even-fo" onclick="toggleEven('fo')" data-i18n="evenSizes">Tailles paires</button>
+         <div class="arb-grid" id="arb-grid-fo"></div>
+       </div>
+       <div>
+         <div class="arb-col-head fa" id="arb-head-fa">Nappe faible</div>
+         <button class="arb-even-btn" id="arb-even-fa" onclick="toggleEven('fa')" data-i18n="evenSizes">Tailles paires</button>
+         <div class="arb-grid" id="arb-grid-fa"></div>
+       </div>
+     </div>
+   </div>
+ </div>
+
+ <!-- Résumé de configuration -->
+ <div class="rw" id="summary-wrap">
+   <div class="card" style="border-color:rgba(255,255,255,.06)">
+     <div class="ch">
+       <div class="cdot" style="opacity:.35"></div>
+       <div class="clabel" style="color:var(--text3)" data-i18n="configSummary">Résumé de configuration</div>
+     </div>
+     <div class="sumg" id="summary"></div>
    </div>
  </div>
 
@@ -507,6 +558,9 @@ const i18n = {
     errOffset:      'Les déports doivent être positifs.',
     // tension field help
     tensionFaibleHint: 'Entrez les déports',
+    arbitrage:  'Arbitrage',
+    evenSizes:  'Tailles paires',
+    gapTarget:  'écart cible',
   },
   en: {
     wheelType:      'Wheel Type',
@@ -561,6 +615,9 @@ const i18n = {
     errOffset:      'Offsets must be positive values.',
     // tension field help
     tensionFaibleHint: 'Enter offsets first',
+    arbitrage:  'Rounding',
+    evenSizes:  'Even sizes',
+    gapTarget:  'gap to target',
   }
 };
 
@@ -596,6 +653,15 @@ function applyLang(){
     const isSymmetric = Math.abs(effL - effR) < 0.01;
     document.getElementById('rtag-fo').textContent = isSymmetric ? t('leftSide')  : t('driveSide');
     document.getElementById('rtag-fa').textContent = isSymmetric ? t('rightSide') : t('nonDriveSide');
+  }
+  // Refresh arbitrage grids if visible
+  if(document.getElementById('arb-wrap').classList.contains('show')){
+    if(arbData.fo) renderArb('fo');
+    if(arbData.fa) renderArb('fa');
+  }
+  // Refresh summary if visible
+  if(document.getElementById('summary-wrap').classList.contains('show')){
+    renderSummary();
   }
 }
 
@@ -872,6 +938,64 @@ function showErr(m){const e=document.getElementById('err');e.textContent=m;e.cla
 
 function row(label,val){return`<div class="rrow"><span>${label}</span><strong>${val}</strong></div>`}
 
+// ── Arbitrage ──────────────────────────────────────────────────────────────
+var arbData  = { fo: null, fa: null };
+var evenMode = { fo: false, fa: false };
+var summaryData = null;
+
+function renderSummary() {
+  if (!summaryData) return;
+  var d = summaryData;
+  var cl = d.cross === 0 ? t('radial') : d.cross + '×';
+  document.getElementById('summary').innerHTML =
+    '<div class="si">ERD<strong>' + d.erd + ' mm</strong></div>' +
+    '<div class="si">' + t('wheelLabel') + '<strong>' + (d.wtype==='avant' ? t('frontLabel') : t('rearLabel')) + '</strong></div>' +
+    '<div class="si">' + t('spokeCount') + '<strong>' + d.n + ' (' + d.h + t('perSide') + ')</strong></div>' +
+    '<div class="si">' + t('crossLabel') + '<strong>' + cl + '</strong></div>' +
+    '<div class="si">' + t('hubType') + '<strong>' + (d.isSP ? 'Straightpull' : 'J-Bend') + '</strong></div>' +
+    '<div class="si">' + t('spokeSection2') + '<strong>' + d.sl + '</strong></div>' +
+    '<div class="si">' + t('rimAsym2') + '<strong>' + (d.asym > 0 ? '+' : '') + d.asym + ' mm</strong></div>' +
+    '<div class="si">' + t('tensionRatio') + '<strong style="color:' + (d.ratio>=0.7?'var(--success)':d.ratio>=0.6?'#e8a040':'#e06060') + '">' + (d.ratio*100).toFixed(1) + '%</strong></div>';
+}
+
+function buildArb(side, exactLen, elongation) {
+  arbData[side] = { exactLen, elongation };
+  renderArb(side);
+}
+
+function renderArb(side) {
+  var d        = arbData[side];
+  var onlyEven = evenMode[side];
+  var base     = Math.floor(d.exactLen);
+  var sizes    = [base - 1, base, base + 1];
+  var deltas   = sizes.map(function(s){ return (s + d.elongation) - d.exactLen; });
+  var minAbs   = Infinity;
+  sizes.forEach(function(s, i){
+    if (onlyEven && s % 2 !== 0) return;
+    if (Math.abs(deltas[i]) < minAbs) minAbs = Math.abs(deltas[i]);
+  });
+  var html = '';
+  sizes.forEach(function(sz, i){
+    var delta  = deltas[i];
+    var cls    = 'arb-row';
+    if (onlyEven && sz % 2 !== 0) cls += ' arb-muted';
+    else if (Math.abs(delta) <= minAbs + 0.0001) cls += ' best';
+    html += '<div class="' + cls + '">'
+          + '<span class="arb-sz">' + sz + ' mm</span>'
+          + '<div class="arb-right">'
+          + '<span class="arb-delta">' + (delta >= 0 ? '+' : '') + delta.toFixed(2) + ' mm</span>'
+          + '<span class="arb-lbl">' + t('gapTarget') + '</span>'
+          + '</div></div>';
+  });
+  document.getElementById('arb-grid-' + side).innerHTML = html;
+}
+
+function toggleEven(side) {
+  evenMode[side] = !evenMode[side];
+  document.getElementById('arb-even-' + side).classList.toggle('active', evenMode[side]);
+  renderArb(side);
+}
+
 function playValidation(){
  try {
    const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -941,30 +1065,18 @@ function calc(){
  document.getElementById('r-fa').textContent=Lfa.toFixed(1);
 
  document.getElementById('m-fo').innerHTML=
-   `<div class="rrow"><span>Est.Stretch ${tF} kgf</span><span class="ev">+${eFo.toFixed(3)} mm</span></div>`+
-   row(t('spokesBySize'),h)+
-   row(t('targetTension'),tF+' kgf');
+   `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFo.toFixed(3)} mm</span></div>`+
+   `<div class="rrow"><strong>${tF} kgf</strong></div>`;
 
  document.getElementById('m-fa').innerHTML=
-   `<div class="rrow"><span>Est.Stretch ${tf.toFixed(1)} kgf</span><span class="ev">+${eFa.toFixed(3)} mm</span></div>`+
-   row(t('spokesBySize'),h)+
-   row(t('targetTension'),tf.toFixed(1)+' kgf');
+   `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFa.toFixed(3)} mm</span></div>`+
+   `<div class="rrow"><strong>${tf.toFixed(1)} kgf</strong></div>`;
 
  const sl=sa?`${sd}×${sa} mm`:`${sd} mm`;
- const cl=cross===0?t('radial'):`${cross}×`;
 
- document.getElementById('summary').innerHTML=`
-   <div class="sumh">${t('configSummary')}</div>
-   <div class="sumg">
-     <div class="si">ERD<strong>${erd.toFixed(1)} mm</strong></div>
-     <div class="si">${t('wheelLabel')}<strong>${wtype==='avant'?t('frontLabel'):t('rearLabel')}</strong></div>
-     <div class="si">${t('spokeCount')}<strong>${n} (${h}${t('perSide')})</strong></div>
-     <div class="si">${t('crossLabel')}<strong>${cl}</strong></div>
-     <div class="si">${t('hubType')}<strong>${isSP?'Straightpull':'J-Bend'}</strong></div>
-     <div class="si">${t('spokeSection2')}<strong>${sl}</strong></div>
-     <div class="si">${t('rimAsym2')}<strong>${asym>0?'+':''}${asym} mm</strong></div>
-     <div class="si">${t('tensionRatio')}<strong style="color:${ratio>=0.7?'var(--success)':ratio>=0.6?'#e8a040':'#e06060'}">${(ratio*100).toFixed(1)}%</strong></div>
-   </div>`;
+ summaryData = { erd: erd.toFixed(1), wtype, n, h, cross, isSP, sl, asym, ratio };
+ renderSummary();
+ document.getElementById('summary-wrap').classList.add('show');
 
  // Auto-save current wheel state after calc
  saved[wtype] = readState();
@@ -983,7 +1095,7 @@ function calc(){
    rg.insertBefore(rcFo, rcFa);
  }
 
- // Labels: si moyeu symétrique, afficher Gauche/Droite plutôt que Forte/Faible
+ // Labels résultats + têtes arbitrage
  const isSymmetric = Math.abs(effL - effR) < 0.01;
  if(isSymmetric){
    document.getElementById('rtag-fo').textContent = t('leftSide');
@@ -994,6 +1106,17 @@ function calc(){
  }
 
  document.getElementById('results').classList.add('show');
+
+ // Arbitrage
+ document.getElementById('arb-head-fo').textContent = isSymmetric ? t('leftSide')  : t('driveSide');
+ document.getElementById('arb-head-fa').textContent = isSymmetric ? t('rightSide') : t('nonDriveSide');
+ evenMode.fo = false; evenMode.fa = false;
+ document.getElementById('arb-even-fo').classList.remove('active');
+ document.getElementById('arb-even-fa').classList.remove('active');
+ buildArb('fo', Lfo, eFo);
+ buildArb('fa', Lfa, eFa);
+ document.getElementById('arb-wrap').classList.add('show');
+
  setTimeout(()=>document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'}),80);
 }
 </script>
