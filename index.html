@@ -720,7 +720,6 @@ function readState(){
    rFa:         document.getElementById('r-fa').textContent,
    mFo:         document.getElementById('m-fo').innerHTML,
    mFa:         document.getElementById('m-fa').innerHTML,
-   summary:     document.getElementById('summary').innerHTML,
    rtagFo:      document.getElementById('rtag-fo').textContent,
    rtagFa:      document.getElementById('rtag-fa').textContent,
    summaryData: summaryData,
@@ -1035,31 +1034,27 @@ var summaryData = null;
 
 function renderSummary() {
   if (!summaryData) return;
-  var d = summaryData;
-  var cl = d.cross === 0 ? t('radial') : d.cross + '×';
-  var ratioColor = d.ratio>=0.7?'var(--success)':d.ratio>=0.6?'#e8a040':'#e06060';
+  const d = summaryData;
+  const cl = d.cross === 0 ? t('radial') : d.cross + '×';
+  const ratioColor = d.ratio>=0.7?'var(--success)':d.ratio>=0.6?'#e8a040':'#e06060';
   function item(lbl, val, color) {
     return '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:.38rem 0;border-bottom:1px solid var(--border)">'
       + '<span style="font-size:.6rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">' + lbl + '</span>'
       + '<span style="font-family:DM Mono,monospace;font-size:.8rem;color:' + (color||'var(--text)') + '">' + val + '</span>'
       + '</div>';
   }
-  var col1 =
+  const rows =
     item(t('wheelLabel'),    d.wtype==='avant' ? t('frontLabel') : t('rearLabel')) +
     item('ERD',              d.erd + ' mm') +
     item(t('spokeCount'),    d.n + ' (' + d.h + t('perSide') + ')') +
-    item(t('crossLabel'),    cl);
-  var col2 =
+    item(t('crossLabel'),    cl) +
     item(t('hubType'),       d.isSP ? 'Straightpull' : 'J-Bend') +
     item(t('spokeSection2'), d.sl) +
     item(t('rimAsym2'),      (d.asym > 0 ? '+' : '') + d.asym + ' mm') +
     item(t('tensionRatio'),  (d.ratio*100).toFixed(1) + '%', ratioColor);
-  var capsule = 'flex:1;background:var(--card-alt);border:1px solid var(--border);border-radius:var(--rs);padding:.6rem .9rem';
-  var el = document.getElementById('summary');
-  el.style.cssText = 'display:flex;gap:.5rem';
-  el.innerHTML =
-    '<div style="' + capsule + '">' + col1 + '</div>' +
-    '<div style="' + capsule + '">' + col2 + '</div>';
+  const summaryEl = document.getElementById('summary');
+  summaryEl.style.cssText = '';
+  summaryEl.innerHTML = rows;
 }
 
 function buildArb(side, exactLen, elongation) {
@@ -1068,20 +1063,20 @@ function buildArb(side, exactLen, elongation) {
 }
 
 function renderArb(side) {
-  var d        = arbData[side];
-  var onlyEven = evenMode[side];
-  var base     = Math.floor(d.exactLen);
-  var sizes    = [base - 1, base, base + 1];
-  var deltas   = sizes.map(function(s){ return (s + d.elongation) - d.exactLen; });
-  var minAbs   = Infinity;
+  const d        = arbData[side];
+  const onlyEven = evenMode[side];
+  const base     = Math.floor(d.exactLen);
+  const sizes    = [base - 1, base, base + 1];
+  const deltas   = sizes.map(function(s){ return (s + d.elongation) - d.exactLen; });
+  let minAbs     = Infinity;
   sizes.forEach(function(s, i){
     if (onlyEven && s % 2 !== 0) return;
     if (Math.abs(deltas[i]) < minAbs) minAbs = Math.abs(deltas[i]);
   });
-  var html = '';
+  let html = '';
   sizes.forEach(function(sz, i){
-    var delta  = deltas[i];
-    var cls    = 'arb-row';
+    const delta  = deltas[i];
+    let cls      = 'arb-row';
     if (onlyEven && sz % 2 !== 0) cls += ' arb-muted';
     else if (Math.abs(delta) <= minAbs + 0.0001) cls += ' best';
     html += '<div class="' + cls + '">'
@@ -1101,17 +1096,17 @@ function toggleEven(side) {
 }
 
 function toggleSummaryCard() {
-  var body    = document.getElementById('sum-card-body');
-  var chevron = document.getElementById('sum-card-chevron');
-  var open    = body.style.display !== 'none';
+  const body    = document.getElementById('sum-card-body');
+  const chevron = document.getElementById('sum-card-chevron');
+  const open    = body.style.display !== 'none';
   body.style.display      = open ? 'none' : 'block';
   chevron.style.transform = open ? '' : 'rotate(180deg)';
 }
 
 function toggleArbCard() {
-  var body    = document.getElementById('arb-card-body');
-  var chevron = document.getElementById('arb-card-chevron');
-  var open    = body.style.display !== 'none';
+  const body    = document.getElementById('arb-card-body');
+  const chevron = document.getElementById('arb-card-chevron');
+  const open    = body.style.display !== 'none';
   body.style.display    = open ? 'none' : 'block';
   chevron.style.transform = open ? '' : 'rotate(180deg)';
 }
