@@ -1042,6 +1042,21 @@ function toggleArbCard() {
   chevron.style.transform = open ? '' : 'rotate(180deg)';
 }
 
+// Efface le champ au focus pour faciliter la correction
+document.querySelectorAll('input[type=number]').forEach(function(inp) {
+  if (inp.readOnly) return; // ne pas effacer les champs en lecture seule
+  inp.addEventListener('focus', function() {
+    this.select();
+    this._prevVal = this.value;
+    this.value = '';
+  });
+  inp.addEventListener('blur', function() {
+    if (this.value === '' && this._prevVal !== undefined) {
+      this.value = this._prevVal;
+    }
+  });
+});
+
 function playValidation(){
  try {
    const ctx = new (window.AudioContext || window.webkitAudioContext)();
