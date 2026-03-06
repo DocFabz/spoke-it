@@ -132,8 +132,6 @@ select option{background:#161b27}
 .div{height:1px;background:var(--border);margin:1.15rem 0}
 .help{font-size:.66rem;color:var(--text3);margin-top:.22rem;font-style:italic;line-height:1.4}
 
-.sync{display:inline-flex;align-items:center;gap:.25rem;font-family:'DM Mono',monospace;font-size:.61rem;color:var(--success);opacity:0;transition:opacity .4s;margin-left:auto}
-.sync.show{opacity:1}
 
 /* ─ Lang button ─ */
 .lang-btn{margin-top:1.1rem;background:transparent;border:1px solid var(--border-s);border-radius:20px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.65rem;font-weight:400;letter-spacing:.15em;padding:.28rem .9rem;cursor:pointer;transition:all .2s}
@@ -142,9 +140,11 @@ select option{background:#161b27}
 /* ─ Button ─ */
 .btn{width:100%;padding:1rem 1.5rem;background:var(--card);border:1px solid rgba(126,200,227,.22);border-radius:var(--r);color:var(--accent2);font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
 .btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(126,200,227,.055),rgba(232,146,124,.035));opacity:0;transition:opacity .25s}
-.btn:hover{border-color:rgba(126,200,227,.48);box-shadow:0 0 28px rgba(126,200,227,.09);transform:translateY(-1px)}
+.btn:hover{border-color:rgba(126,200,227,.48);transform:translateY(-1px)}
 .btn:hover::before{opacity:1}
 .btn:active{transform:translateY(0)}
+.btn.ready{border-color:rgba(126,207,168,.6);transition:border-color .3s,transform .25s}
+.btn.ready:hover{border-color:rgba(126,207,168,.9);transform:translateY(-1px)}
 
 /* ─ Error ─ */
 .err{background:rgba(240,100,100,.08);border:1px solid rgba(240,100,100,.2);border-radius:var(--rs);padding:.7rem 1rem;color:#f08080;font-family:'DM Mono',monospace;font-size:.77rem;display:none}
@@ -176,10 +176,6 @@ select option{background:#161b27}
 .rrow strong{font-family:'DM Mono',monospace;font-weight:400;font-size:.77rem;color:var(--text)}
 .ev{font-family:'DM Mono',monospace;font-weight:500;color:var(--success);font-size:.8rem}
 
-/* ─ Summary ─ */
-.sumg{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:.75rem}
-.si{font-size:.68rem;color:var(--text3);line-height:1.7}
-.si strong{display:block;font-family:'DM Mono',monospace;font-size:.77rem;font-weight:400;color:var(--text)}
 
 /* ─ Faible display ─ */
 .faible-display{background:var(--inp);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:'DM Mono',monospace;font-size:.85rem;font-weight:300;padding:.55rem .9rem;width:100%;min-height:2.35rem;display:flex;align-items:center}
@@ -199,6 +195,10 @@ input.invalid, select.invalid{border-color:rgba(240,100,100,.6)!important;backgr
 
 /* ─ Button Reset ─ */
 .btn-reset{width:auto;padding:1rem 1.6rem}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
 
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -275,7 +275,7 @@ input.invalid, select.invalid{border-color:rgba(240,100,100,.6)!important;backgr
      <div class="f">
        <label data-i18n="totalSpokes">Nb total de rayons</label>
        <select id="nb-rayons">
-         <option value="" disabled selected data-i18n-opt="choose">— Choisir —</option>
+         <option value="" disabled selected hidden></option>
          <option>16</option><option>20</option><option>24</option>
          <option>28</option><option>32</option><option>36</option>
        </select>
@@ -299,7 +299,7 @@ input.invalid, select.invalid{border-color:rgba(240,100,100,.6)!important;backgr
        </div>
        <div class="f" id="field-sp-so-left" style="display:none">
          <label class="tip-wrap"><span data-i18n="soLeft">SO gauche</span> (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
-         <input type="number" id="sp-so-left" value="0" step="0.1" min="0" max="5">
+         <input type="number" id="sp-so-left" step="0.1" min="0" max="5">
        </div>
      </div>
      <div class="hub-divider"></div>
@@ -315,7 +315,7 @@ input.invalid, select.invalid{border-color:rgba(240,100,100,.6)!important;backgr
        </div>
        <div class="f" id="field-sp-so-right" style="display:none">
          <label class="tip-wrap"><span data-i18n="soRight">SO droit</span> (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
-         <input type="number" id="sp-so-right" value="0" step="0.1" min="0" max="5">
+         <input type="number" id="sp-so-right" step="0.1" min="0" max="5">
        </div>
      </div>
    </div>
@@ -476,7 +476,7 @@ input.invalid, select.invalid{border-color:rgba(240,100,100,.6)!important;backgr
 
  <!-- Arbitrage -->
  <div class="arb-wrap" id="arb-wrap">
-   <div class="card" style="border-color:rgba(255,255,255,.06)">
+   <div class="card" style="border-color:rgba(126,207,168,.35);box-shadow:0 0 0 1px rgba(126,207,168,.1)">
      <div class="ch" onclick="toggleArbCard()" style="cursor:pointer;user-select:none;margin-bottom:0">
        <div class="cdot" style="background:var(--success);opacity:.7"></div>
        <div class="clabel" style="color:var(--success)" data-i18n="arbitrage">Arrondi suggéré</div>
@@ -503,11 +503,14 @@ input.invalid, select.invalid{border-color:rgba(240,100,100,.6)!important;backgr
  <!-- Résumé de configuration -->
  <div class="rw" id="summary-wrap">
    <div class="card" style="border-color:rgba(255,255,255,.06)">
-     <div class="ch">
+     <div class="ch" onclick="toggleSummaryCard()" style="cursor:pointer;user-select:none;margin-bottom:0">
        <div class="cdot" style="opacity:.35"></div>
-       <div class="clabel" style="color:var(--text3)" data-i18n="configSummary">Résumé de configuration</div>
+       <div class="clabel" style="color:var(--text2)" data-i18n="configSummary">Résumé de configuration</div>
+       <em id="sum-card-chevron" style="margin-left:auto;color:var(--text2);font-style:normal;font-size:.75rem;transition:transform .22s;display:inline-block">&#8964;</em>
      </div>
-     <div class="sumg" id="summary"></div>
+     <div id="sum-card-body" style="display:none;margin-top:1.35rem">
+       <div id="summary"></div>
+     </div>
    </div>
  </div>
 
@@ -528,7 +531,6 @@ const i18n = {
     frontWheel:     'Roue Avant',
     rearWheel:      'Roue Arrière',
     totalSpokes:    'Nb total de rayons',
-    choose:         '— Choisir —',
     holeDiam:       'Ø trous de bride (mm)',
     left:           'Gauche',
     right:          'Droit',
@@ -568,6 +570,7 @@ const i18n = {
     errErd:         'ERD invalide ou non renseigné.',
     errTension:     'Veuillez choisir la tension cible nappe forte.',
     errOffset:      'Les déports doivent être positifs.',
+    errSO:          'Veuillez renseigner le Spoke Offset (SO) pour les deux côtés.',
     arbitrage:  'Arrondi suggéré',
     evenSizes:  'Tailles paires',
     gapTarget:  'écart cible',
@@ -582,7 +585,6 @@ const i18n = {
     frontWheel:     'Front Wheel',
     rearWheel:      'Rear Wheel',
     totalSpokes:    'Total spoke count',
-    choose:         '— Choose —',
     holeDiam:       'Flange hole Ø (mm)',
     left:           'Left',
     right:          'Right',
@@ -622,6 +624,7 @@ const i18n = {
     errErd:         'ERD is invalid or missing.',
     errTension:     'Please select the high tension target.',
     errOffset:      'Offsets must be positive values.',
+    errSO:          'Please enter Spoke Offset (SO) for both sides.',
     arbitrage:  'Suggested rounding',
     evenSizes:  'Even sizes',
     gapTarget:  'gap to target',
@@ -648,10 +651,6 @@ function applyLang(){
   // Static elements via data-i18n
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.dataset.i18n);
-  });
-  // Choose option
-  document.querySelectorAll('[data-i18n-opt="choose"]').forEach(el => {
-    el.textContent = t('choose');
   });
   // Lang button label: show the OTHER language
   document.getElementById('lang-btn').textContent = lang === 'fr' ? 'EN' : 'FR';
@@ -714,8 +713,6 @@ function readState(){
    spokeSelect: document.getElementById('spoke-select').value,
    cross:       cross,
    hubType:     hubType,
-   spSoLeft:    document.getElementById('sp-so-left').value,
-   spSoRight:   document.getElementById('sp-so-right').value,
    tensionForte:document.getElementById('tension-forte').value,
    sd: sd, sa: sa,
    hasResult:   document.getElementById('results').classList.contains('show'),
@@ -748,8 +745,8 @@ function applyState(s){
  document.getElementById('tension-forte').value= s.tensionForte;
  sd = s.sd; sa = s.sa; cross = s.cross;
  if(s.hubType){hubType=s.hubType;setHubType(hubType);}
- if(s.spSoLeft!==undefined) document.getElementById('sp-so-left').value=s.spSoLeft;
- if(s.spSoRight!==undefined) document.getElementById('sp-so-right').value=s.spSoRight;
+ document.getElementById('sp-so-left').value='';
+ document.getElementById('sp-so-right').value='';
 
  // ERD mode
  erdMode = s.erdMode;
@@ -782,6 +779,9 @@ function applyState(s){
 
  onTension();
  reorderTensionFields(wtype);
+ // update btn readiness without clearing results (state already applied)
+ const btn=document.querySelector('.btn[onclick="calc()"]');
+ if(btn) btn.classList.toggle('ready', checkReady());
 }
 
 function clearForm(){
@@ -792,6 +792,8 @@ function clearForm(){
  document.getElementById('diam-trou').value = '2.55';
  document.getElementById('asym').value = '0';
  document.getElementById('ecrou-type').value = '';
+ document.getElementById('sp-so-left').value = '';
+ document.getElementById('sp-so-right').value = '';
  document.getElementById('spoke-select').value = '2.0|';
  sd=2.0; sa=null; cross=3; hubType='jbend'; setHubType('jbend');
 
@@ -810,6 +812,8 @@ function clearForm(){
  document.getElementById('summary-wrap').classList.remove('show');
  document.getElementById('arb-card-body').style.display = 'none';
  document.getElementById('arb-card-chevron').style.transform = '';
+ document.getElementById('sum-card-body').style.display = 'none';
+ document.getElementById('sum-card-chevron').style.transform = '';
  summaryData = null;
  arbData.fo = null; arbData.fa = null;
  evenMode.fo = false; evenMode.fa = false;
@@ -819,6 +823,8 @@ function clearForm(){
  const disp=document.getElementById('tension-faible-display');
  disp.textContent=''; disp.classList.remove('has-val');
  document.getElementById('tension-faible-field').style.opacity='.35';
+ window.scrollTo({top:0,behavior:'smooth'});
+ updateCalcBtn();
 }
 
 // ── Tab switching ──────────────────────────────────────────────────────────
@@ -888,6 +894,7 @@ function setErdMode(m){
  document.getElementById('btn-erd-nsd').classList.toggle('active',m==='nsd');
  document.getElementById('erd-direct-section').style.display=m==='direct'?'':'none';
  document.getElementById('erd-nsd-section').style.display=m==='nsd'?'':'none';
+ clearResults(); updateCalcBtn();
 }
 
 function setHubType(htype){
@@ -897,6 +904,13 @@ function setHubType(htype){
  document.getElementById('field-diam-trou').style.display=htype==='jbend'?'':'none';
  document.getElementById('field-sp-so-left').style.display=htype==='straightpull'?'':'none';
  document.getElementById('field-sp-so-right').style.display=htype==='straightpull'?'':'none';
+ if(htype==='straightpull'){
+   var soL=document.getElementById('sp-so-left');
+   var soR=document.getElementById('sp-so-right');
+   soL.value=''; soL._prevVal=undefined;
+   soR.value=''; soR._prevVal=undefined;
+ }
+ clearResults(); updateCalcBtn();
 }
 
 function calcNsd(){
@@ -909,12 +923,14 @@ function setSpokeFromSelect(sel){
  const parts = sel.value.split('|');
  sd = parseFloat(parts[0]);
  sa = parts[1] ? parseFloat(parts[1]) : null;
+ clearResults(); updateCalcBtn();
 }
 
 function setCross(b){
  document.querySelectorAll('.cp').forEach(x=>x.classList.remove('active'));
  b.classList.add('active');
  cross=parseInt(b.dataset.cross);
+ clearResults(); updateCalcBtn();
 }
 
 function onTension(){
@@ -924,7 +940,7 @@ function onTension(){
  const disp  = document.getElementById('tension-faible-display');
  const field = document.getElementById('tension-faible-field');
 
- if(isNaN(tF) || isNaN(oL) || isNaN(oR) || oL === 0 || oR === 0){
+ if(isNaN(tF) || isNaN(oL) || isNaN(oR)){
    disp.textContent = '';
    disp.classList.remove('has-val');
    field.style.opacity = '.35';
@@ -947,6 +963,42 @@ function getERD(){
  return erdMode==='direct'
    ?parseFloat(document.getElementById('erd-direct').value)
    :parseFloat(document.getElementById('erd-nsd-result').value);
+}
+
+function checkReady(){
+ const n=parseInt(document.getElementById('nb-rayons').value);
+ if(!n) return false;
+ const pL=parseFloat(document.getElementById('pcd-left').value);
+ const pR=parseFloat(document.getElementById('pcd-right').value);
+ const oL=parseFloat(document.getElementById('offset-left').value);
+ const oR=parseFloat(document.getElementById('offset-right').value);
+ if([pL,pR,oL,oR].some(isNaN)||pL<=0||pR<=0) return false;
+ const erd=getERD();
+ if(isNaN(erd)||erd<=0) return false;
+ const tF=parseFloat(document.getElementById('tension-forte').value);
+ if(isNaN(tF)) return false;
+ if(hubType==='straightpull'){
+   const soL=document.getElementById('sp-so-left').value;
+   const soR=document.getElementById('sp-so-right').value;
+   if(soL===''||soR==='') return false;
+ }
+ const asymSign = wtype === 'arriere' ? -1 : 1;
+ const asym=parseFloat(document.getElementById('asym').value)||0;
+ const effL=oL+asymSign*asym, effR=oR-asymSign*asym;
+ if(effL<=0||effR<=0) return false;
+ return true;
+}
+
+function clearResults(){
+ document.getElementById('results').classList.remove('show');
+ document.getElementById('arb-wrap').classList.remove('show');
+ document.getElementById('summary-wrap').classList.remove('show');
+}
+
+function updateCalcBtn(){
+ const btn=document.querySelector('.btn[onclick="calc()"]');
+ if(btn) btn.classList.toggle('ready', checkReady());
+ clearResults();
 }
 
 function slen(pcd,off,cr,n,erd,trou){
@@ -975,7 +1027,6 @@ function clearInvalids(){ document.querySelectorAll('.invalid').forEach(el=>el.c
 
 function showErr(key){ currentErrKey=key; const e=document.getElementById('err'); e.textContent=t(key); e.classList.add('show'); }
 
-function row(label,val){return`<div class="rrow"><span>${label}</span><strong>${val}</strong></div>`}
 
 // ── Arbitrage ──────────────────────────────────────────────────────────────
 var arbData  = { fo: null, fa: null };
@@ -986,15 +1037,29 @@ function renderSummary() {
   if (!summaryData) return;
   var d = summaryData;
   var cl = d.cross === 0 ? t('radial') : d.cross + '×';
-  document.getElementById('summary').innerHTML =
-    '<div class="si">ERD<strong>' + d.erd + ' mm</strong></div>' +
-    '<div class="si">' + t('wheelLabel') + '<strong>' + (d.wtype==='avant' ? t('frontLabel') : t('rearLabel')) + '</strong></div>' +
-    '<div class="si">' + t('spokeCount') + '<strong>' + d.n + ' (' + d.h + t('perSide') + ')</strong></div>' +
-    '<div class="si">' + t('crossLabel') + '<strong>' + cl + '</strong></div>' +
-    '<div class="si">' + t('hubType') + '<strong>' + (d.isSP ? 'Straightpull' : 'J-Bend') + '</strong></div>' +
-    '<div class="si">' + t('spokeSection2') + '<strong>' + d.sl + '</strong></div>' +
-    '<div class="si">' + t('rimAsym2') + '<strong>' + (d.asym > 0 ? '+' : '') + d.asym + ' mm</strong></div>' +
-    '<div class="si">' + t('tensionRatio') + '<strong style="color:' + (d.ratio>=0.7?'var(--success)':d.ratio>=0.6?'#e8a040':'#e06060') + '">' + (d.ratio*100).toFixed(1) + '%</strong></div>';
+  var ratioColor = d.ratio>=0.7?'var(--success)':d.ratio>=0.6?'#e8a040':'#e06060';
+  function item(lbl, val, color) {
+    return '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:.38rem 0;border-bottom:1px solid var(--border)">'
+      + '<span style="font-size:.6rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">' + lbl + '</span>'
+      + '<span style="font-family:DM Mono,monospace;font-size:.8rem;color:' + (color||'var(--text)') + '">' + val + '</span>'
+      + '</div>';
+  }
+  var col1 =
+    item(t('wheelLabel'),    d.wtype==='avant' ? t('frontLabel') : t('rearLabel')) +
+    item('ERD',              d.erd + ' mm') +
+    item(t('spokeCount'),    d.n + ' (' + d.h + t('perSide') + ')') +
+    item(t('crossLabel'),    cl);
+  var col2 =
+    item(t('hubType'),       d.isSP ? 'Straightpull' : 'J-Bend') +
+    item(t('spokeSection2'), d.sl) +
+    item(t('rimAsym2'),      (d.asym > 0 ? '+' : '') + d.asym + ' mm') +
+    item(t('tensionRatio'),  (d.ratio*100).toFixed(1) + '%', ratioColor);
+  var capsule = 'flex:1;background:var(--card-alt);border:1px solid var(--border);border-radius:var(--rs);padding:.6rem .9rem';
+  var el = document.getElementById('summary');
+  el.style.cssText = 'display:flex;gap:.5rem';
+  el.innerHTML =
+    '<div style="' + capsule + '">' + col1 + '</div>' +
+    '<div style="' + capsule + '">' + col2 + '</div>';
 }
 
 function buildArb(side, exactLen, elongation) {
@@ -1035,6 +1100,14 @@ function toggleEven(side) {
   renderArb(side);
 }
 
+function toggleSummaryCard() {
+  var body    = document.getElementById('sum-card-body');
+  var chevron = document.getElementById('sum-card-chevron');
+  var open    = body.style.display !== 'none';
+  body.style.display      = open ? 'none' : 'block';
+  chevron.style.transform = open ? '' : 'rotate(180deg)';
+}
+
 function toggleArbCard() {
   var body    = document.getElementById('arb-card-body');
   var chevron = document.getElementById('arb-card-chevron');
@@ -1058,9 +1131,18 @@ document.querySelectorAll('input[type=number], select').forEach(function(el){
   el.addEventListener('change', onCorrect);
 });
 
+// Live validation: liseret vert sur le bouton Calculer
+['nb-rayons','pcd-left','pcd-right','offset-left','offset-right',
+ 'erd-direct','nsd-val','erd-nsd-result','tension-forte','asym','sp-so-left','sp-so-right'].forEach(function(id){
+  const el = document.getElementById(id);
+  if(el){ el.addEventListener('input', updateCalcBtn); el.addEventListener('change', updateCalcBtn); }
+});
+document.getElementById('ecrou-type').addEventListener('change', updateCalcBtn);
+
 // Efface le champ au focus pour faciliter la correction
 document.querySelectorAll('input[type=number]').forEach(function(inp) {
-  if (inp.readOnly) return; // ne pas effacer les champs en lecture seule
+  if (inp.readOnly) return;
+  if (['sp-so-left','sp-so-right','offset-left','offset-right'].includes(inp.id)) return;
   inp.addEventListener('focus', function() {
     this.select();
     this._prevVal = this.value;
@@ -1072,25 +1154,6 @@ document.querySelectorAll('input[type=number]').forEach(function(inp) {
     }
   });
 });
-
-function playValidation(){
- try {
-   const ctx = new (window.AudioContext || window.webkitAudioContext)();
-   const t = ctx.currentTime;
-   [0, 0.12].forEach((delay, i) => {
-     const osc = ctx.createOscillator();
-     const gain = ctx.createGain();
-     osc.connect(gain); gain.connect(ctx.destination);
-     osc.type = 'sine';
-     osc.frequency.setValueAtTime(i === 0 ? 660 : 880, t + delay);
-     gain.gain.setValueAtTime(0, t + delay);
-     gain.gain.linearRampToValueAtTime(0.18, t + delay + 0.02);
-     gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.35);
-     osc.start(t + delay);
-     osc.stop(t + delay + 0.4);
-   });
- } catch(e) {}
-}
 
 function calc(){
  const e=document.getElementById('err');e.classList.remove('show');
@@ -1124,10 +1187,17 @@ function calc(){
  }
 
  const asym=parseFloat(document.getElementById('asym').value)||0;
- const isSP=hubType==='straightpull';
  const trou=parseFloat(document.getElementById('diam-trou').value)||2.55;
- const soL=parseFloat(document.getElementById('sp-so-left').value)||0;
- const soR=parseFloat(document.getElementById('sp-so-right').value)||0;
+ const isSP=hubType==='straightpull';
+ const soLraw=document.getElementById('sp-so-left').value;
+ const soRraw=document.getElementById('sp-so-right').value;
+ if(isSP && (soLraw===''||soRraw==='')){
+   if(soLraw==='') setInvalid('sp-so-left');
+   if(soRraw==='') setInvalid('sp-so-right');
+   return showErr('errSO');
+ }
+ const soL=parseFloat(soLraw)||0;
+ const soR=parseFloat(soRraw)||0;
  const tF=parseFloat(document.getElementById('tension-forte').value);
  if(isNaN(tF)){ setInvalid('tension-forte'); return showErr('errTension'); }
 
@@ -1177,7 +1247,6 @@ function calc(){
  saved[wtype] = readState();
  saved[wtype].wtype = wtype;
 
- playValidation();
  // Reorder result cards: nappe forte à droite pour roue arrière, à gauche pour avant
  const rg = document.querySelector('.rg');
  const rcFo = document.querySelector('.rc.fo');
