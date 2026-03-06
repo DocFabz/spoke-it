@@ -222,6 +222,28 @@ input[type=number]{-moz-appearance:textfield}
 .arb-right{display:flex;flex-direction:column;align-items:flex-end;gap:.07rem}
 .arb-delta{font-family:'DM Mono',monospace;font-size:.8rem;font-weight:500;color:var(--text2)}
 .arb-lbl{font-size:.53rem;color:var(--text3);letter-spacing:.06em}
+/* ─ Save ─ */
+.save-wrap{display:none;animation:fu .5s cubic-bezier(.22,1,.36,1)}
+.save-wrap.show{display:block}
+.save-row{display:flex;gap:.5rem;align-items:stretch}
+.save-input{flex:1;background:var(--inp);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:400;padding:.55rem .9rem;transition:border-color .2s}
+.save-input:focus{outline:none;border-color:rgba(126,200,227,.4);background:rgba(126,200,227,.025)}
+.save-input::placeholder{color:var(--text3)}
+.btn-save{padding:.55rem 1.1rem;background:transparent;border:1px solid rgba(126,200,227,.3);border-radius:var(--rs);color:var(--accent2);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .22s;white-space:nowrap}
+.btn-save:hover{border-color:rgba(126,200,227,.65);background:rgba(126,200,227,.06)}
+.btn-save:active{transform:scale(.97)}
+
+/* ─ Configs panel ─ */
+.cfg-list{display:flex;flex-direction:column;gap:.4rem;margin-top:1.1rem}
+.cfg-item{display:flex;align-items:center;gap:.5rem;padding:.6rem .9rem;background:var(--card-alt);border:1px solid var(--border);border-radius:var(--rs);transition:border-color .2s}
+.cfg-item:hover{border-color:var(--border-s)}
+.cfg-name{flex:1;font-size:.82rem;color:var(--text);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cfg-meta{font-family:'DM Mono',monospace;font-size:.63rem;color:var(--text3);white-space:nowrap;margin-right:.3rem}
+.cfg-load{background:transparent;border:1px solid var(--border);border-radius:20px;color:var(--text2);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;padding:.2rem .6rem;cursor:pointer;transition:all .2s;text-transform:uppercase}
+.cfg-load:hover{border-color:var(--accent);color:var(--accent)}
+.cfg-del{background:transparent;border:none;color:var(--text3);font-size:.95rem;cursor:pointer;padding:.1rem .2rem;line-height:1;transition:color .2s;flex-shrink:0}
+.cfg-del:hover{color:#f08080}
+.cfg-empty{font-size:.72rem;color:var(--text3);font-style:italic;text-align:center;padding:.8rem 0}
 
 </style>
 </head>
@@ -514,6 +536,37 @@ input[type=number]{-moz-appearance:textfield}
    </div>
  </div>
 
+ <!-- Sauvegarder -->
+ <div class="save-wrap" id="save-wrap">
+   <div class="card" style="border-color:rgba(255,255,255,.06)">
+     <div class="ch" onclick="toggleSaveCard()" style="cursor:pointer;user-select:none;margin-bottom:0">
+       <div class="cdot" style="opacity:.35"></div>
+       <div class="clabel" style="color:var(--text2)" id="save-label" data-i18n="saveLabel">Sauvegarder</div>
+       <em id="save-card-chevron" style="margin-left:auto;color:var(--text2);font-style:normal;font-size:.75rem;transition:transform .22s;display:inline-block">&#8964;</em>
+     </div>
+     <div id="save-card-body" style="display:none;margin-top:1.1rem">
+       <div class="save-row">
+         <input class="save-input" type="text" id="save-name" placeholder="Nom de la configuration…" maxlength="60">
+         <button class="btn-save" onclick="saveConfig()" id="save-btn" data-i18n="saveOk">OK</button>
+       </div>
+       <p class="help" style="margin-top:.55rem" id="save-feedback"></p>
+       <p class="help" style="margin-top:.8rem;color:var(--text3)" data-i18n="saveWarning">⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.</p>
+     </div>
+   </div>
+ </div>
+
+ <!-- Configurations sauvegardées -->
+ <div class="card configs-wrap" id="configs-wrap" style="display:none">
+   <div class="ch" onclick="toggleConfigsCard()" style="cursor:pointer;user-select:none;margin-bottom:0">
+     <div class="cdot" style="opacity:.35"></div>
+     <div class="clabel" style="color:var(--text2)" id="configs-title" data-i18n="configsTitle">Configurations sauvegardées</div>
+     <em id="configs-chevron" style="margin-left:auto;color:var(--text2);font-style:normal;font-size:.75rem;transition:transform .22s;display:inline-block">&#8964;</em>
+   </div>
+   <div id="configs-body" style="display:none">
+     <div class="cfg-list" id="cfg-list"></div>
+   </div>
+ </div>
+
 </div>
 
 <script>
@@ -575,6 +628,14 @@ const i18n = {
     evenSizes:  'Tailles paires',
     gapTarget:  'écart cible',
     spokeThread: 'Note : un filet = 0.45 mm',
+    saveLabel:   'Sauvegarder',
+    savePlaceholder: 'Nom de la configuration…',
+    saveOk:      'OK',
+    saveDone:    'Configuration sauvegardée.',
+    saveError:   'Veuillez saisir un nom.',
+    configsTitle: 'Configurations sauvegardées',
+    loadBtn:     'Charger',
+    saveWarning: '⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.',
   },
   en: {
     wheelType:      'Wheel Type',
@@ -629,6 +690,14 @@ const i18n = {
     evenSizes:  'Even sizes',
     gapTarget:  'gap to target',
     spokeThread: 'Note : one spoke thread is 0.45 mm',
+    saveLabel:   'Save',
+    savePlaceholder: 'Configuration name…',
+    saveOk:      'OK',
+    saveDone:    'Configuration saved.',
+    saveError:   'Please enter a name.',
+    configsTitle: 'Saved configurations',
+    loadBtn:     'Load',
+    saveWarning: '⚠︎ Locally stored in browser cache. Clearing the cache will erase all data.',
   }
 };
 
@@ -682,6 +751,11 @@ function applyLang(){
   // Note arbitrage (dans panneau masqué, data-i18n ne suffit pas)
   const noteEl = document.querySelector('[data-i18n="spokeThread"]');
   if(noteEl) noteEl.textContent = t('spokeThread');
+  // Placeholder champ save (attribut, non couvert par data-i18n)
+  const saveNameEl = document.getElementById('save-name');
+  if(saveNameEl) saveNameEl.placeholder = t('savePlaceholder');
+  // Rafraîchir la liste des configs (labels "Charger" / "Load")
+  if(document.getElementById('configs-wrap').style.display !== 'none') renderConfigsList();
 }
 
 function toggleLang(){
@@ -809,10 +883,13 @@ function clearForm(){
  document.getElementById('results').classList.remove('show');
  document.getElementById('arb-wrap').classList.remove('show');
  document.getElementById('summary-wrap').classList.remove('show');
+ document.getElementById('save-wrap').classList.remove('show');
  document.getElementById('arb-card-body').style.display = 'none';
  document.getElementById('arb-card-chevron').style.transform = '';
  document.getElementById('sum-card-body').style.display = 'none';
  document.getElementById('sum-card-chevron').style.transform = '';
+ document.getElementById('save-card-body').style.display = 'none';
+ document.getElementById('save-card-chevron').style.transform = '';
  summaryData = null;
  arbData.fo = null; arbData.fa = null;
  evenMode.fo = false; evenMode.fa = false;
@@ -904,8 +981,8 @@ function setHubType(htype){
  document.getElementById('field-sp-so-left').style.display=htype==='straightpull'?'':'none';
  document.getElementById('field-sp-so-right').style.display=htype==='straightpull'?'':'none';
  if(htype==='straightpull'){
-   var soL=document.getElementById('sp-so-left');
-   var soR=document.getElementById('sp-so-right');
+   const soL=document.getElementById('sp-so-left');
+   const soR=document.getElementById('sp-so-right');
    soL.value=''; soL._prevVal=undefined;
    soR.value=''; soR._prevVal=undefined;
  }
@@ -992,6 +1069,7 @@ function clearResults(){
  document.getElementById('results').classList.remove('show');
  document.getElementById('arb-wrap').classList.remove('show');
  document.getElementById('summary-wrap').classList.remove('show');
+ document.getElementById('save-wrap').classList.remove('show');
 }
 
 function updateCalcBtn(){
@@ -1028,9 +1106,9 @@ function showErr(key){ currentErrKey=key; const e=document.getElementById('err')
 
 
 // ── Arbitrage ──────────────────────────────────────────────────────────────
-var arbData  = { fo: null, fa: null };
-var evenMode = { fo: false, fa: false };
-var summaryData = null;
+let arbData  = { fo: null, fa: null };
+let evenMode = { fo: false, fa: false };
+let summaryData = null;
 
 function renderSummary() {
   if (!summaryData) return;
@@ -1149,6 +1227,119 @@ document.querySelectorAll('input[type=number]').forEach(function(inp) {
     }
   });
 });
+
+// ── Configurations (localStorage) ─────────────────────────────────────────
+
+const LS_KEY = 'spokeit_configs';
+
+function loadConfigs() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; }
+  catch(e) { return []; }
+}
+
+function persistConfigs(configs) {
+  localStorage.setItem(LS_KEY, JSON.stringify(configs));
+}
+
+function saveConfig() {
+  const nameEl = document.getElementById('save-name');
+  const name = nameEl.value.trim();
+  if (!name) {
+    const fb = document.getElementById('save-feedback');
+    fb.textContent = t('saveError');
+    fb.style.color = '#f08080';
+    return;
+  }
+  const state = readState();
+  state.wtype = wtype;
+  const configs = loadConfigs();
+  const d = summaryData;
+  const meta = d ? (d.wtype === 'avant' ? t('frontLabel') : t('rearLabel'))
+    + ' · ' + d.n + 'R · ' + (d.cross === 0 ? t('radial') : d.cross + '×') : '';
+  configs.unshift({ name, meta, state, ts: Date.now() });
+  persistConfigs(configs);
+  nameEl.value = '';
+  const fb = document.getElementById('save-feedback');
+  fb.textContent = t('saveDone');
+  fb.style.color = 'var(--success)';
+  setTimeout(() => { fb.textContent = ''; }, 2500);
+  renderConfigsList();
+  showConfigsPanel();
+  // Fermer la card sauvegarder
+  document.getElementById('save-card-body').style.display = 'none';
+  document.getElementById('save-card-chevron').style.transform = '';
+}
+
+function deleteConfig(idx) {
+  const configs = loadConfigs();
+  configs.splice(idx, 1);
+  persistConfigs(configs);
+  renderConfigsList();
+  if (configs.length === 0) hideConfigsPanel();
+}
+
+function loadConfig(idx) {
+  const configs = loadConfigs();
+  const cfg = configs[idx];
+  if (!cfg) return;
+  const wh = cfg.state.wtype || 'avant';
+  wtype = wh;
+  document.getElementById('btn-avant').classList.toggle('active', wh === 'avant');
+  document.getElementById('btn-arriere').classList.toggle('active', wh === 'arriere');
+  document.getElementById('btn-avant').classList.toggle('c', wh === 'avant');
+  document.getElementById('btn-arriere').classList.toggle('w', wh === 'arriere');
+  applyState(cfg.state);
+  reorderTensionFields(wh);
+  // Fermer la card configurations
+  document.getElementById('configs-body').style.display = 'none';
+  document.getElementById('configs-chevron').style.transform = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderConfigsList() {
+  const configs = loadConfigs();
+  const list = document.getElementById('cfg-list');
+  if (configs.length === 0) {
+    list.innerHTML = '<div class="cfg-empty">—</div>';
+    return;
+  }
+  list.innerHTML = configs.map((cfg, i) =>
+    '<div class="cfg-item">'
+    + '<span class="cfg-name">' + escHtml(cfg.name) + '</span>'
+    + (cfg.meta ? '<span class="cfg-meta">' + escHtml(cfg.meta) + '</span>' : '')
+    + '<button class="cfg-load" onclick="loadConfig(' + i + ')">' + t('loadBtn') + '</button>'
+    + '<button class="cfg-del" onclick="deleteConfig(' + i + ')" title="Supprimer">×</button>'
+    + '</div>'
+  ).join('');
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleSaveCard() {
+  const body = document.getElementById('save-card-body');
+  const chev = document.getElementById('save-card-chevron');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  chev.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+function showConfigsPanel() {
+  document.getElementById('configs-wrap').style.display = '';
+}
+
+function hideConfigsPanel() {
+  document.getElementById('configs-wrap').style.display = 'none';
+}
+
+function toggleConfigsCard() {
+  const body = document.getElementById('configs-body');
+  const chev = document.getElementById('configs-chevron');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  chev.style.transform = open ? '' : 'rotate(180deg)';
+}
 
 function calc(){
  if(document.activeElement) document.activeElement.blur();
@@ -1285,8 +1476,21 @@ function calc(){
  buildArb('fa', Lfa, eFa);
  document.getElementById('arb-wrap').classList.add('show');
 
+ // Afficher le panneau de sauvegarde
+ document.getElementById('save-wrap').classList.add('show');
+ document.getElementById('save-feedback').textContent = '';
+
  setTimeout(()=>document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'}),80);
 }
+
+// ── Init ───────────────────────────────────────────────────────────────────
+(function initSavedConfigs(){
+  const configs = loadConfigs();
+  if (configs.length > 0) {
+    renderConfigsList();
+    document.getElementById('configs-wrap').style.display = '';
+  }
+})();
 </script>
 
 </body>
