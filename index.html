@@ -194,6 +194,12 @@ select option{background:#161b27}
 .tip-icon:hover + .tip-box,.tip-wrap:hover .tip-box{opacity:1}
 .tip-box.visible{opacity:1}
 
+/* ─ Invalid field ─ */
+input.invalid, select.invalid{border-color:rgba(240,100,100,.6)!important;background:rgba(240,100,100,.04)!important}
+
+/* ─ Button Reset ─ */
+.btn-reset{width:auto;padding:1rem 1.6rem}
+
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:2px}
@@ -438,7 +444,10 @@ select option{background:#161b27}
  </div>
 
  <div class="err" id="err"></div>
- <button class="btn" onclick="calc()" data-i18n="calcBtn">Calculer</button>
+ <div style="display:grid;grid-template-columns:1fr auto;gap:.75rem;align-items:stretch">
+   <button class="btn" onclick="calc()" data-i18n="calcBtn">Calculer</button>
+   <button class="btn btn-reset" onclick="clearForm()">Reset</button>
+ </div>
 
  <!-- Results -->
  <div class="rw" id="results">
@@ -559,8 +568,6 @@ const i18n = {
     errErd:         'ERD invalide ou non renseigné.',
     errTension:     'Veuillez choisir la tension cible nappe forte.',
     errOffset:      'Les déports doivent être positifs.',
-    // tension field help
-    tensionFaibleHint: 'Entrez les déports',
     arbitrage:  'Arrondi suggéré',
     evenSizes:  'Tailles paires',
     gapTarget:  'écart cible',
@@ -615,8 +622,6 @@ const i18n = {
     errErd:         'ERD is invalid or missing.',
     errTension:     'Please select the high tension target.',
     errOffset:      'Offsets must be positive values.',
-    // tension field help
-    tensionFaibleHint: '',
     arbitrage:  'Suggested rounding',
     evenSizes:  'Even sizes',
     gapTarget:  'gap to target',
@@ -625,6 +630,19 @@ const i18n = {
 };
 
 function t(key){ return (i18n[lang] && i18n[lang][key]) || key; }
+
+// Retourne si la roue est symétrique selon les déports effectifs
+function isWheelSymmetric(){
+  const oL = parseFloat(document.getElementById('offset-left').value);
+  const oR = parseFloat(document.getElementById('offset-right').value);
+  const asym = parseFloat(document.getElementById('asym').value) || 0;
+  const asymSign = wtype === 'arriere' ? -1 : 1;
+  const effL = oL + asymSign * asym;
+  const effR = oR - asymSign * asym;
+  return Math.abs(effL - effR) < 0.01;
+}
+
+let currentErrKey = null;
 
 function applyLang(){
   // Static elements via data-i18n
@@ -637,45 +655,30 @@ function applyLang(){
   });
   // Lang button label: show the OTHER language
   document.getElementById('lang-btn').textContent = lang === 'fr' ? 'EN' : 'FR';
-  // Refresh tension faible hint if needed
-  const disp = document.getElementById('tension-faible-display');
-  if(disp && !disp.classList.contains('has-val')){
-    const oL = parseFloat(document.getElementById('offset-left').value);
-    const oR = parseFloat(document.getElementById('offset-right').value);
-    if(isNaN(oL)||isNaN(oR)||oL===0||oR===0){
-      disp.innerHTML = `<span style="color:var(--text3);font-size:.78rem">${t('tensionFaibleHint')}</span>`;
-    }
-  }
-  // Refresh result card labels if results are visible
+  // Refresh result card labels + arbitrage heads if visible
   if(document.getElementById('results').classList.contains('show')){
-    const oL = parseFloat(document.getElementById('offset-left').value);
-    const oR = parseFloat(document.getElementById('offset-right').value);
-    const asym = parseFloat(document.getElementById('asym').value)||0;
-    const asymSign = wtype === 'arriere' ? -1 : 1;
-    const effL = oL + asymSign*asym, effR = oR - asymSign*asym;
-    const isSymmetric = Math.abs(effL - effR) < 0.01;
-    document.getElementById('rtag-fo').textContent = isSymmetric ? t('leftSide')  : t('driveSide');
-    document.getElementById('rtag-fa').textContent = isSymmetric ? t('rightSide') : t('nonDriveSide');
+    const sym = isWheelSymmetric();
+    document.getElementById('rtag-fo').textContent = sym ? t('leftSide')  : t('driveSide');
+    document.getElementById('rtag-fa').textContent = sym ? t('rightSide') : t('nonDriveSide');
   }
   // Refresh arbitrage grids if visible
   if(document.getElementById('arb-wrap').classList.contains('show')){
     if(arbData.fo) renderArb('fo');
     if(arbData.fa) renderArb('fa');
-    // Refresh column heads
     if(summaryData){
-      const oL = parseFloat(document.getElementById('offset-left').value);
-      const oR = parseFloat(document.getElementById('offset-right').value);
-      const asym = parseFloat(document.getElementById('asym').value)||0;
-      const asymSign = wtype === 'arriere' ? -1 : 1;
-      const effL = oL + asymSign*asym, effR = oR - asymSign*asym;
-      const isSym = Math.abs(effL - effR) < 0.01;
-      document.getElementById('arb-head-fo').textContent = isSym ? t('leftSide')  : t('driveSide');
-      document.getElementById('arb-head-fa').textContent = isSym ? t('rightSide') : t('nonDriveSide');
+      const sym = isWheelSymmetric();
+      document.getElementById('arb-head-fo').textContent = sym ? t('leftSide')  : t('driveSide');
+      document.getElementById('arb-head-fa').textContent = sym ? t('rightSide') : t('nonDriveSide');
     }
   }
   // Refresh summary if visible
   if(document.getElementById('summary-wrap').classList.contains('show')){
     renderSummary();
+  }
+  // Refresh error message if visible
+  const errEl = document.getElementById('err');
+  if(errEl.classList.contains('show') && currentErrKey){
+    errEl.textContent = t(currentErrKey);
   }
   // Note arbitrage (dans panneau masqué, data-i18n ne suffit pas)
   const noteEl = document.querySelector('[data-i18n="spokeThread"]');
@@ -811,6 +814,8 @@ function clearForm(){
  arbData.fo = null; arbData.fa = null;
  evenMode.fo = false; evenMode.fa = false;
  document.getElementById('err').classList.remove('show');
+ currentErrKey = null;
+ clearInvalids();
  const disp=document.getElementById('tension-faible-display');
  disp.textContent=''; disp.classList.remove('has-val');
  document.getElementById('tension-faible-field').style.opacity='.35';
@@ -913,35 +918,28 @@ function setCross(b){
 }
 
 function onTension(){
- const oL=parseFloat(document.getElementById('offset-left').value);
- const oR=parseFloat(document.getElementById('offset-right').value);
- const tF=parseFloat(document.getElementById('tension-forte').value);
- const disp=document.getElementById('tension-faible-display');
- const field=document.getElementById('tension-faible-field');
+ const oL = parseFloat(document.getElementById('offset-left').value);
+ const oR = parseFloat(document.getElementById('offset-right').value);
+ const tF = parseFloat(document.getElementById('tension-forte').value);
+ const disp  = document.getElementById('tension-faible-display');
+ const field = document.getElementById('tension-faible-field');
 
- if(isNaN(tF)){
-   disp.textContent='';
+ if(isNaN(tF) || isNaN(oL) || isNaN(oR) || oL === 0 || oR === 0){
+   disp.textContent = '';
    disp.classList.remove('has-val');
-   field.style.opacity='.35';
+   field.style.opacity = '.35';
    return;
  }
 
- field.style.opacity='1';
-
- if(isNaN(oL)||isNaN(oR)||oL===0||oR===0){
-   disp.innerHTML=`<span style="color:var(--text3);font-size:.78rem">${t('tensionFaibleHint')}</span>`;
-   disp.classList.remove('has-val');
-   return;
- }
-
- const asym=parseFloat(document.getElementById('asym').value)||0;
+ field.style.opacity = '1';
+ const asym = parseFloat(document.getElementById('asym').value) || 0;
  const asymSign = wtype === 'arriere' ? -1 : 1;
- const effL = oL + asymSign*asym, effR = oR - asymSign*asym;
+ const effL = oL + asymSign * asym;
+ const effR = oR - asymSign * asym;
  const foOff = Math.min(effL, effR);
  const faOff = Math.max(effL, effR);
- const ratio = (faOff>0 && foOff>0) ? foOff/faOff : 1;
- const exact = tF * ratio;
- disp.textContent=exact.toFixed(1);
+ const ratio = (faOff > 0 && foOff > 0) ? foOff / faOff : 1;
+ disp.textContent = (tF * ratio).toFixed(1);
  disp.classList.add('has-val');
 }
 
@@ -972,7 +970,10 @@ function area(){
 
 function el(F,L){return(F*9.81*L)/(area()*210000)}
 
-function showErr(m){const e=document.getElementById('err');e.textContent=m;e.classList.add('show')}
+function setInvalid(id){ document.getElementById(id).classList.add('invalid'); }
+function clearInvalids(){ document.querySelectorAll('.invalid').forEach(el=>el.classList.remove('invalid')); }
+
+function showErr(key){ currentErrKey=key; const e=document.getElementById('err'); e.textContent=t(key); e.classList.add('show'); }
 
 function row(label,val){return`<div class="rrow"><span>${label}</span><strong>${val}</strong></div>`}
 
@@ -1042,6 +1043,21 @@ function toggleArbCard() {
   chevron.style.transform = open ? '' : 'rotate(180deg)';
 }
 
+// Efface le liseré rouge dès qu'on modifie un champ
+// Si plus aucun champ invalide, masque aussi le message d'erreur
+document.querySelectorAll('input[type=number], select').forEach(function(el){
+  function onCorrect(){
+    this.classList.remove('invalid');
+    // Corriger ADDON libère aussi NSD (ils forment une paire, ADDON était le manquant)
+    if(this.id === 'ecrou-type'){
+      document.getElementById('nsd-val').classList.remove('invalid');
+    }
+    if(!document.querySelector('.invalid')) document.getElementById('err').classList.remove('show');
+  }
+  el.addEventListener('input', onCorrect);
+  el.addEventListener('change', onCorrect);
+});
+
 // Efface le champ au focus pour faciliter la correction
 document.querySelectorAll('input[type=number]').forEach(function(inp) {
   if (inp.readOnly) return; // ne pas effacer les champs en lecture seule
@@ -1078,19 +1094,34 @@ function playValidation(){
 
 function calc(){
  const e=document.getElementById('err');e.classList.remove('show');
+ clearInvalids();
 
  const n=parseInt(document.getElementById('nb-rayons').value);
- if(!n) return showErr(t('errSpokes'));
+ if(!n){ setInvalid('nb-rayons'); return showErr('errSpokes'); }
 
  const pL=parseFloat(document.getElementById('pcd-left').value);
  const pR=parseFloat(document.getElementById('pcd-right').value);
  const oL=parseFloat(document.getElementById('offset-left').value);
  const oR=parseFloat(document.getElementById('offset-right').value);
- if([pL,pR,oL,oR].some(isNaN)) return showErr(t('errPcd'));
- if(pL<=0||pR<=0) return showErr(t('errPcd'));
+ if([pL,pR,oL,oR].some(isNaN)||pL<=0||pR<=0){
+   if(isNaN(pL)||pL<=0) setInvalid('pcd-left');
+   if(isNaN(pR)||pR<=0) setInvalid('pcd-right');
+   if(isNaN(oL)) setInvalid('offset-left');
+   if(isNaN(oR)) setInvalid('offset-right');
+   return showErr('errPcd');
+ }
 
  const erd=getERD();
- if(isNaN(erd)||erd<=0) return showErr(t('errErd'));
+ if(isNaN(erd)||erd<=0){
+   if(erdMode==='direct') setInvalid('erd-direct');
+   else{
+     const nsdVal = parseFloat(document.getElementById('nsd-val').value);
+     const addonVal = document.getElementById('ecrou-type').value;
+     if(isNaN(nsdVal)||nsdVal<=0) setInvalid('nsd-val');
+     if(!addonVal) setInvalid('ecrou-type');
+   }
+   return showErr('errErd');
+ }
 
  const asym=parseFloat(document.getElementById('asym').value)||0;
  const isSP=hubType==='straightpull';
@@ -1098,13 +1129,17 @@ function calc(){
  const soL=parseFloat(document.getElementById('sp-so-left').value)||0;
  const soR=parseFloat(document.getElementById('sp-so-right').value)||0;
  const tF=parseFloat(document.getElementById('tension-forte').value);
- if(isNaN(tF)) return showErr(t('errTension'));
+ if(isNaN(tF)){ setInvalid('tension-forte'); return showErr('errTension'); }
 
  // Roue arrière : asym vers droite (nappe forte), roue avant : vers gauche
  const asymSign = wtype === 'arriere' ? -1 : 1;
  const effL=oL + asymSign*asym, effR=oR - asymSign*asym;
 
- if(effL<=0||effR<=0) return showErr(t('errOffset'));
+ if(effL<=0||effR<=0){
+   if(effL<=0) setInvalid('offset-left');
+   if(effR<=0) setInvalid('offset-right');
+   return showErr('errOffset');
+ }
 
  let foOff,faOff,foPCD,faPCD;
  // Forte = cote avec le plus petit deport (plus tendu)
