@@ -87,9 +87,7 @@ header{text-align:center;padding:3.5rem 1rem 2rem}
 
 /* ─ Grid ─ */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
-@media(max-width:768px){.g3{grid-template-columns:1fr 1fr}}
-@media(max-width:560px){.g2,.g3{grid-template-columns:1fr 1fr}.hub-top{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.g2{grid-template-columns:1fr 1fr}.hub-top{grid-template-columns:1fr 1fr}}
 
 /* ─ Fields ─ */
 .f{display:flex;flex-direction:column;gap:.35rem}
@@ -541,13 +539,13 @@ input[type=number]{-moz-appearance:textfield}
    <div class="card" style="border-color:rgba(255,255,255,.06)">
      <div class="ch" onclick="toggleSaveCard()" style="cursor:pointer;user-select:none;margin-bottom:0">
        <div class="cdot" style="opacity:.35"></div>
-       <div class="clabel" style="color:var(--text2)" id="save-label" data-i18n="saveLabel">Sauvegarder</div>
+       <div class="clabel" style="color:var(--text2)" data-i18n="saveLabel">Sauvegarder</div>
        <em id="save-card-chevron" style="margin-left:auto;color:var(--text2);font-style:normal;font-size:.75rem;transition:transform .22s;display:inline-block">&#8964;</em>
      </div>
      <div id="save-card-body" style="display:none;margin-top:1.1rem">
        <div class="save-row">
          <input class="save-input" type="text" id="save-name" placeholder="Nom de la configuration…" maxlength="60">
-         <button class="btn-save" onclick="saveConfig()" id="save-btn" data-i18n="saveOk">OK</button>
+         <button class="btn-save" onclick="saveConfig()" data-i18n="saveOk">OK</button>
        </div>
        <p class="help" style="margin-top:.55rem" id="save-feedback"></p>
        <p class="help" style="margin-top:.8rem;color:var(--text3)" data-i18n="saveWarning">⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.</p>
@@ -559,7 +557,7 @@ input[type=number]{-moz-appearance:textfield}
  <div class="card configs-wrap" id="configs-wrap" style="display:none">
    <div class="ch" onclick="toggleConfigsCard()" style="cursor:pointer;user-select:none;margin-bottom:0">
      <div class="cdot" style="opacity:.35"></div>
-     <div class="clabel" style="color:var(--text2)" id="configs-title" data-i18n="configsTitle">Configurations sauvegardées</div>
+     <div class="clabel" style="color:var(--text2)" data-i18n="configsTitle">Configurations sauvegardées</div>
      <em id="configs-chevron" style="margin-left:auto;color:var(--text2);font-style:normal;font-size:.75rem;transition:transform .22s;display:inline-block">&#8964;</em>
    </div>
    <div id="configs-body" style="display:none">
@@ -616,6 +614,7 @@ const i18n = {
     tensionRatio:   'Tension ratio',
     frontLabel:     'Avant',
     rearLabel:      'Arrière',
+    bothWheels:     'Avant + Arrière',
     radial:         'Radial',
     // errors
     errSpokes:      'Veuillez choisir le nombre de rayons.',
@@ -678,6 +677,7 @@ const i18n = {
     tensionRatio:   'Tension ratio',
     frontLabel:     'Front',
     rearLabel:      'Rear',
+    bothWheels:     'Front + Rear',
     radial:         'Radial',
     // errors
     errSpokes:      'Please select the number of spokes.',
@@ -844,10 +844,13 @@ function applyState(s){
    document.getElementById('results').classList.add('show');
    if(s.summaryData){ summaryData = s.summaryData; renderSummary(); document.getElementById('summary-wrap').classList.add('show'); }
    if(s.arbData){ arbData = s.arbData; buildArb('fo', arbData.fo.exactLen, arbData.fo.elongation); buildArb('fa', arbData.fa.exactLen, arbData.fa.elongation); document.getElementById('arb-wrap').classList.add('show'); }
+   document.getElementById('save-wrap').classList.add('show');
+   document.getElementById('save-feedback').textContent = '';
  } else {
    document.getElementById('results').classList.remove('show');
    document.getElementById('arb-wrap').classList.remove('show');
    document.getElementById('summary-wrap').classList.remove('show');
+   document.getElementById('save-wrap').classList.remove('show');
  }
 
  onTension();
@@ -893,6 +896,8 @@ function clearForm(){
  summaryData = null;
  arbData.fo = null; arbData.fa = null;
  evenMode.fo = false; evenMode.fa = false;
+ // Reset saved state for current wheel only, leave the other wheel intact
+ saved[wtype] = null;
  document.getElementById('err').classList.remove('show');
  currentErrKey = null;
  clearInvalids();
@@ -1104,7 +1109,6 @@ function clearInvalids(){ document.querySelectorAll('.invalid').forEach(el=>el.c
 
 function showErr(key){ currentErrKey=key; const e=document.getElementById('err'); e.textContent=t(key); e.classList.add('show'); }
 
-
 // ── Arbitrage ──────────────────────────────────────────────────────────────
 let arbData  = { fo: null, fa: null };
 let evenMode = { fo: false, fa: false };
@@ -1254,8 +1258,15 @@ function saveConfig() {
   state.wtype = wtype;
   const configs = loadConfigs();
   const d = summaryData;
-  const meta = d ? (d.wtype === 'avant' ? t('frontLabel') : t('rearLabel'))
-    + ' · ' + d.n + 'R · ' + (d.cross === 0 ? t('radial') : d.cross + '×') : '';
+  const otherWtype = wtype === 'avant' ? 'arriere' : 'avant';
+  const otherSaved = saved[otherWtype];
+  const bothHaveResults = d && otherSaved && otherSaved.hasResult;
+  let meta = '';
+  if (bothHaveResults) {
+    meta = t('bothWheels');
+  } else if (d) {
+    meta = d.wtype === 'avant' ? t('frontLabel') : t('rearLabel');
+  }
   configs.unshift({ name, meta, state, ts: Date.now() });
   persistConfigs(configs);
   nameEl.value = '';
@@ -1294,6 +1305,9 @@ function loadConfig(idx) {
   document.getElementById('configs-body').style.display = 'none';
   document.getElementById('configs-chevron').style.transform = '';
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Fermer aussi la card save si ouverte
+  document.getElementById('save-card-body').style.display = 'none';
+  document.getElementById('save-card-chevron').style.transform = '';
 }
 
 function renderConfigsList() {
@@ -1449,9 +1463,9 @@ function calc(){
  const arbColFo = document.getElementById('arb-col-fo');
  const arbColFa = document.getElementById('arb-col-fa');
  if(wtype === 'arriere'){
-   arbCols.appendChild(arbColFo); // fa | fo
+   arbCols.appendChild(arbColFo);
  } else {
-   arbCols.insertBefore(arbColFo, arbColFa); // fo | fa
+   arbCols.insertBefore(arbColFo, arbColFa);
  }
 
  // Labels résultats + têtes arbitrage
