@@ -65,8 +65,9 @@ body {
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
 header        { text-align:center; padding:3.5rem 1rem 2rem }
-.logo-ring    { display:inline-block; width:50px; height:50px; margin-bottom:1.1rem; opacity:.5; animation:spin 20s linear infinite }
-@keyframes spin { to { transform:rotate(360deg) } }
+.logo-ring    { display:inline-block; width:50px; height:50px; margin-bottom:1.1rem; animation:spin 20s linear infinite, pulse 3s ease-in-out infinite }
+@keyframes spin  { to { transform:rotate(360deg) } }
+@keyframes pulse { 0%, 100% { opacity:.38 } 50% { opacity:.72 } }
 .brand        { font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:.18em; text-transform:uppercase; color:var(--text) }
 .brand em     { font-style:normal; color:var(--accent) }
 .sub          { font-family:'DM Mono',monospace; font-size:.67rem; font-weight:300; color:var(--text3); letter-spacing:.2em; margin-top:.45rem }
@@ -268,16 +269,29 @@ input[type=number] { -moz-appearance:textfield }
 
 <header>
   <svg class="logo-ring" viewBox="0 0 50 50" fill="none">
-    <circle cx="25" cy="25" r="22" stroke="rgba(126,200,227,.55)" stroke-width="1.5" stroke-dasharray="3.5 3"/>
-    <circle cx="25" cy="25" r="3" fill="rgba(126,200,227,.75)"/>
-    <line x1="25" y1="3"  x2="25" y2="11"  stroke="rgba(126,200,227,.5)" stroke-width="1.2"/>
-    <line x1="25" y1="39" x2="25" y2="47"  stroke="rgba(126,200,227,.5)" stroke-width="1.2"/>
-    <line x1="3"  y1="25" x2="11" y2="25"  stroke="rgba(232,146,124,.5)" stroke-width="1.2"/>
-    <line x1="39" y1="25" x2="47" y2="25"  stroke="rgba(232,146,124,.5)" stroke-width="1.2"/>
-    <line x1="8.5"  y1="8.5"  x2="14.5" y2="14.5" stroke="rgba(126,200,227,.3)" stroke-width="1"/>
-    <line x1="35.5" y1="35.5" x2="41.5" y2="41.5" stroke="rgba(126,200,227,.3)" stroke-width="1"/>
-    <line x1="41.5" y1="8.5"  x2="35.5" y2="14.5" stroke="rgba(232,146,124,.3)" stroke-width="1"/>
-    <line x1="14.5" y1="35.5" x2="8.5"  y2="41.5" stroke="rgba(232,146,124,.3)" stroke-width="1"/>
+    <!-- Jante extérieure fine -->
+    <circle cx="25" cy="25" r="21" stroke="rgba(126,200,227,.6)" stroke-width=".8"/>
+    <circle cx="25" cy="25" r="19" stroke="rgba(126,200,227,.2)" stroke-width=".4"/>
+    <!-- Moyeu -->
+    <circle cx="25" cy="25" r="2.8" stroke="rgba(126,200,227,.8)" stroke-width=".8"/>
+    <circle cx="25" cy="25" r="1.1" fill="rgba(126,200,227,.9)"/>
+    <!-- 16 rayons fins alternés accent/warm -->
+    <line x1="25.0" y1="22.2" x2="25.0" y2="4.0" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
+    <line x1="26.1" y1="22.4" x2="33.0" y2="5.6" stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
+    <line x1="27.0" y1="23.0" x2="39.8" y2="10.2" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
+    <line x1="27.6" y1="23.9" x2="44.4" y2="17.0" stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
+    <line x1="27.8" y1="25.0" x2="46.0" y2="25.0" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
+    <line x1="27.6" y1="26.1" x2="44.4" y2="33.0" stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
+    <line x1="27.0" y1="27.0" x2="39.8" y2="39.8" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
+    <line x1="26.1" y1="27.6" x2="33.0" y2="44.4" stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
+    <line x1="25.0" y1="27.8" x2="25.0" y2="46.0" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
+    <line x1="23.9" y1="27.6" x2="17.0" y2="44.4" stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
+    <line x1="23.0" y1="27.0" x2="10.2" y2="39.8" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
+    <line x1="22.4" y1="26.1" x2="5.6"  y2="33.0" stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
+    <line x1="22.2" y1="25.0" x2="4.0"  y2="25.0" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
+    <line x1="22.4" y1="23.9" x2="5.6"  y2="17.0" stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
+    <line x1="23.0" y1="23.0" x2="10.2" y2="10.2" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
+    <line x1="23.9" y1="22.4" x2="17.0" y2="5.6"  stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
   </svg>
   <div class="brand">Spoke <em>It</em></div>
   <div class="sub">
@@ -687,7 +701,7 @@ const i18n = {
     arbitrage:'Arrondi suggéré', evenSizes:'Tailles paires', gapTarget:'écart cible',
     spokeThread:'Note : un filet = 0.45 mm',
     saveLabel:'Sauvegarder', savePlaceholder:'Nom de la configuration…',
-    saveOk:'OK', saveDone:'Configuration sauvegardée.', saveError:'Veuillez saisir un nom.',
+    saveOk:'OK', saveError:'Veuillez saisir un nom.',
     configsTitle:'Configurations sauvegardées', loadBtn:'Charger',
     saveWarning:'⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.',
   },
@@ -718,13 +732,28 @@ const i18n = {
     arbitrage:'Suggested rounding', evenSizes:'Even sizes', gapTarget:'gap to target',
     spokeThread:'Note: one spoke thread is 0.45 mm',
     saveLabel:'Save', savePlaceholder:'Configuration name…',
-    saveOk:'OK', saveDone:'Configuration saved.', saveError:'Please enter a name.',
+    saveOk:'OK', saveError:'Please enter a name.',
     configsTitle:'Saved configurations', loadBtn:'Load',
     saveWarning:'⚠︎ Locally stored in browser cache. Clearing the cache will erase all data.',
   }
 };
 
 function t(key) { return (i18n[lang] && i18n[lang][key]) || key; }
+
+// ── Flash liseret vert sur la card type de roue ──────────────────────────────
+let _flashTimer = null;
+function flashWheelCard() {
+  const card = getCards()[0];
+  clearTimeout(_flashTimer);
+  card.style.transition = 'box-shadow .2s, border-color .2s';
+  card.style.borderColor = 'rgba(126,207,168,.7)';
+  card.style.boxShadow   = '0 0 0 2px rgba(126,207,168,.18)';
+  _flashTimer = setTimeout(() => {
+    card.style.borderColor = '';
+    card.style.boxShadow   = '';
+    setTimeout(() => { card.style.transition = ''; }, 200);
+  }, 1000);
+}
 
 // ── State ────────────────────────────────────────────────────────────────────
 let wtype = 'avant', erdMode = 'direct', sd = 2.0, sa = null, cross = null, hubType = 'jbend';
@@ -736,6 +765,7 @@ let evenMode = { fo: false, fa: false };
 
 // ── Scroll flags ─────────────────────────────────────────────────────────────
 let _hubScrolled = false, _rimScrolled = false, _tensionScrolled = false;
+let _switchingHub = false;
 function resetScrollFlags() { _hubScrolled = false; _rimScrolled = false; _tensionScrolled = false; }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -833,12 +863,8 @@ function applyState(s) {
   $id('tension-forte').value  = s.tensionForte;
   sd = s.sd; sa = s.sa; cross = s.cross;
   if (s.hubType) { hubType = s.hubType; setHubType(hubType, true); }
-  if (hubType === 'straightpull') {
-    $id('sp-so-left').value  = s.soLeft  || '';
-    $id('sp-so-right').value = s.soRight || '';
-  } else {
-    $id('sp-so-left').value = ''; $id('sp-so-right').value = '';
-  }
+  $id('sp-so-left').value  = s.soLeft  || '';
+  $id('sp-so-right').value = s.soRight || '';
 
   erdMode = s.erdMode;
   $id('btn-erd-direct').classList.toggle('active', erdMode === 'direct');
@@ -891,7 +917,9 @@ function clearFormSilent() {
   $id('diam-trou').value = '2.55'; $id('asym').value = '0';
   $id('ecrou-type').value = ''; $id('sp-so-left').value = ''; $id('sp-so-right').value = '';
   $id('spoke-select').value = '2.0|';
-  sd = 2.0; sa = null; cross = null; hubType = 'jbend'; setHubType('jbend');
+  sd = 2.0; sa = null; cross = null; hubType = 'jbend';
+  $id('btn-hub-jbend').classList.add('active'); $id('btn-hub-sp').classList.remove('active');
+  $id('field-diam-trou').style.display = ''; $id('field-sp-so-left').style.display = 'none'; $id('field-sp-so-right').style.display = 'none';
 
   erdMode = 'direct';
   $id('btn-erd-direct').classList.add('active'); $id('btn-erd-nsd').classList.remove('active');
@@ -915,7 +943,7 @@ function clearFormSilent() {
 function clearForm() {
   clearFormSilent();
   resetScrollFlags();
-  setTimeout(() => getCards()[0].scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+  setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 120);
 }
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
@@ -963,9 +991,18 @@ function setHubType(htype, skipClearSO) {
   $id('field-diam-trou').style.display   = htype === 'jbend'        ? '' : 'none';
   $id('field-sp-so-left').style.display  = htype === 'straightpull' ? '' : 'none';
   $id('field-sp-so-right').style.display = htype === 'straightpull' ? '' : 'none';
-  if (htype === 'straightpull' && !skipClearSO) {
+  if (!skipClearSO) {
+    // Effacer tous les champs du moyeu lors d'un switch manuel
+    $id('nb-rayons').value = '';
+    $id('diam-trou').value = '2.55';
+    $id('pcd-left').value  = ''; $id('offset-left').value  = '';
+    $id('pcd-right').value = ''; $id('offset-right').value = '';
     const soL = $id('sp-so-left');  soL.value = ''; soL._prevVal = undefined;
     const soR = $id('sp-so-right'); soR.value = ''; soR._prevVal = undefined;
+    // Bloquer le scroll pendant le switch (le blur du champ précédent arrive après le onclick)
+    _hubScrolled = false;
+    _switchingHub = true;
+    setTimeout(() => { _switchingHub = false; }, 100);
   }
   clearResults(); updateCalcBtn();
 }
@@ -1219,11 +1256,11 @@ function saveConfig() {
   const configs = loadConfigs();
   configs.unshift({ name, metaKey: wtype === 'avant' ? 'frontLabel' : 'rearLabel', state, ts: Date.now() });
   persistConfigs(configs);
-  nameEl.value = ''; fb.textContent = t('saveDone'); fb.style.color = 'var(--success)';
-  setTimeout(() => { fb.textContent = ''; }, 2500);
+  nameEl.value = ''; fb.textContent = '';
   renderConfigsList(); showConfigsPanel();
   $id('save-card-body').style.display = 'none'; $id('save-card-chevron').style.transform = '';
-  setTimeout(() => getCards()[0].scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+  const top = document.querySelector('header').getBoundingClientRect().bottom + window.pageYOffset - 30; window.scrollTo({ top, behavior: 'smooth' });
+  flashWheelCard();
 }
 
 function deleteConfig(idx) { const configs = loadConfigs(); configs.splice(idx, 1); persistConfigs(configs); renderConfigsList(); }
@@ -1239,7 +1276,8 @@ function loadConfig(idx) {
   ['configs-body','save-card-body','arb-card-body','sum-card-body'].forEach(id => { $id(id).style.display = 'none'; });
   ['configs-chevron','save-card-chevron','arb-card-chevron','sum-card-chevron'].forEach(id => { $id(id).style.transform = ''; });
   resetScrollFlags();
-  setTimeout(() => getCards()[0].scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+  const top = document.querySelector('header').getBoundingClientRect().bottom + window.pageYOffset - 30; window.scrollTo({ top, behavior: 'smooth' });
+  flashWheelCard();
 }
 
 function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -1270,16 +1308,20 @@ function checkHubComplete() {
   const nb  = $id('nb-rayons').value, pL = $id('pcd-left').value, oL = $id('offset-left').value;
   const pR  = $id('pcd-right').value, oR = $id('offset-right').value;
   const soL = $id('sp-so-left').value, soR = $id('sp-so-right').value;
-  if (nb && pL && oL && pR && oR && (hubType !== 'straightpull' || (soL && soR))) {
+  if (nb && pL && oL && pR && oR && (hubType !== 'straightpull' || (soL !== '' && soR !== ''))) {
     _hubScrolled = true; scrollToCard(getCards()[2]);
   }
 }
 
-function checkRimComplete(fromField) {
+function checkRimComplete() {
   if (_rimScrolled) return;
-  // En mode NSD, ne scroller que depuis erd-direct (jamais automatiquement)
-  if (erdMode === 'nsd') return;
-  const erdOk = !!$id('erd-direct').value;
+  let erdOk = false;
+  if (erdMode === 'direct') {
+    erdOk = !!$id('erd-direct').value;
+  } else {
+    // NSD : scroller uniquement si NSD et ADDON sont tous deux renseignés
+    erdOk = !!$id('nsd-val').value && !!$id('ecrou-type').value;
+  }
   if (erdOk) { _rimScrolled = true; scrollToCard(getCards()[3]); }
 }
 
@@ -1292,38 +1334,47 @@ function checkTensionComplete() {
 }
 
 // ── Live validation listeners ─────────────────────────────────────────────────
+const FIELD_GROUPS = {
+  hub:     ['nb-rayons','diam-trou','pcd-left','pcd-right','offset-left','offset-right','sp-so-left','sp-so-right'],
+  rim:     ['erd-direct','nsd-val','erd-nsd-result','ecrou-type'],
+  tension: ['tension-forte','asym'],
+};
+
+function resetScrollFlagFor(id) {
+  if (FIELD_GROUPS.hub.includes(id))     _hubScrolled     = false;
+  if (FIELD_GROUPS.rim.includes(id))     _rimScrolled     = false;
+  if (FIELD_GROUPS.tension.includes(id)) _tensionScrolled = false;
+}
+
+function checkAllScroll() {
+  checkHubComplete();
+  checkRimComplete();
+  checkTensionComplete();
+}
+
 document.querySelectorAll('input[type=number], select').forEach(el => {
-  // On input: remove invalid + hide error message immediately, but scroll only on blur
   el.addEventListener('input', function() {
     if (!this.classList.contains('invalid')) return;
     this.classList.remove('invalid');
     if (this.id === 'ecrou-type') $id('nsd-val').classList.remove('invalid');
-    if (!document.querySelector('.invalid')) {
-      $id('err').classList.remove('show');
-    }
+    if (!document.querySelector('.invalid')) $id('err').classList.remove('show');
   });
-  // On blur: if all fields now valid, trigger scroll
+  el.addEventListener('focus', function() { this._blurPrev = this.value; });
   el.addEventListener('blur', function() {
+    if (_switchingHub) return;
     if (!document.querySelector('.invalid')) {
-      _hubScrolled = false; _rimScrolled = false; _tensionScrolled = false;
-      checkHubComplete();
-      checkRimComplete();
-      checkTensionComplete();
+      if (this.value !== this._blurPrev) resetScrollFlagFor(this.id);
+      checkAllScroll();
     }
   });
-  // On change (for selects): immediate including scroll
   el.addEventListener('change', function() {
+    if (_switchingHub) return;
     this.classList.remove('invalid');
     if (this.id === 'ecrou-type') $id('nsd-val').classList.remove('invalid');
     if (!document.querySelector('.invalid')) {
       $id('err').classList.remove('show');
-      _hubScrolled = false; _tensionScrolled = false;
-      // Ne pas réinitialiser _rimScrolled si c'est ecrou-type qui change
-      // (évite le scroll lors du simple choix du mode NSD+ADDON)
-      if (this.id !== 'ecrou-type') _rimScrolled = false;
-      checkHubComplete();
-      checkRimComplete();
-      checkTensionComplete();
+      resetScrollFlagFor(this.id);
+      checkAllScroll();
     }
   });
 });
