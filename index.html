@@ -15,1570 +15,1308 @@
 <link rel="shortcut icon" href="favicon-32x32.png">
 <meta name="theme-color" content="#181c24">
 
-<!-- Open Graph (Messenger, WhatsApp, Twitter…) -->
+<!-- Open Graph -->
 <meta property="og:title" content="Spoke It">
 <meta property="og:description" content="Calculateur de longueur de rayons pour roues de vélo">
 <meta property="og:image" content="https://docfabz.github.io/Spoke-It/favicon-512x512.png">
 <meta property="og:type" content="website">
+
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet">
+
 <style>
+/* ── Variables ─────────────────────────────────────────────────────────────── */
 :root {
- --bg:       #181c24;
- --bg2:      #1e2330;
- --card:     #232a38;
- --card-alt: #1a2030;
- --border:   rgba(255,255,255,0.07);
- --border-s: rgba(255,255,255,0.13);
- --accent:   #7ec8e3;
- --accent2:  #a8d8ea;
- --warm:     #e8927c;
- --warm2:    #f0b49a;
- --success:  #7ecfa8;
- --text:     #dce4ed;
- --text2:    #9aaabb;
- --text3:    #596778;
- --inp:      #161b27;
- --r:        14px;
- --rs:       9px;
- --sh:       0 4px 24px rgba(0,0,0,0.32);
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{
- background:var(--bg);
- color:var(--text);
- font-family:'DM Sans',sans-serif;
- font-weight:400;
- min-height:100vh;
- line-height:1.55;
- background-image:
-   radial-gradient(ellipse 60% 40% at 15% 5%, rgba(126,200,227,.055) 0%,transparent 70%),
-   radial-gradient(ellipse 50% 35% at 85% 95%,rgba(232,146,124,.04)  0%,transparent 70%);
+  --bg:       #181c24;
+  --bg2:      #1e2330;
+  --card:     #232a38;
+  --card-alt: #1a2030;
+  --border:   rgba(255,255,255,0.07);
+  --border-s: rgba(255,255,255,0.13);
+  --accent:   #7ec8e3;
+  --accent2:  #a8d8ea;
+  --warm:     #e8927c;
+  --warm2:    #f0b49a;
+  --success:  #7ecfa8;
+  --text:     #dce4ed;
+  --text2:    #9aaabb;
+  --text3:    #596778;
+  --inp:      #161b27;
+  --r:        14px;
+  --rs:       9px;
+  --sh:       0 4px 24px rgba(0,0,0,0.32);
 }
 
-/* ─ Header ─ */
-header{text-align:center;padding:3.5rem 1rem 2rem}
-.logo-ring{display:inline-block;width:50px;height:50px;margin-bottom:1.1rem;opacity:.5;animation:spin 20s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.brand{font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:300;letter-spacing:.18em;text-transform:uppercase;color:var(--text)}
-.brand em{font-style:normal;color:var(--accent)}
-.sub{font-family:'DM Mono',monospace;font-size:.67rem;font-weight:300;color:var(--text3);letter-spacing:.2em;margin-top:.45rem}
-.insta-link{display:inline-flex;align-items:center;gap:.35rem;color:var(--text3);text-decoration:none;letter-spacing:.15em;transition:color .2s}
-.insta-link:hover{color:var(--accent)}
-.insta-icon{width:13px;height:13px;flex-shrink:0;vertical-align:middle}
-.hline{width:44px;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);margin:1.3rem auto 0}
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+*    { box-sizing:border-box; margin:0; padding:0 }
+html { scroll-behavior:smooth }
 
-/* ─ Layout ─ */
-.wrap{max-width:880px;margin:0 auto;padding:0 1.2rem 4rem;display:flex;flex-direction:column;gap:1rem}
-
-/* ─ Card ─ */
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.6rem 1.8rem;box-shadow:var(--sh);transition:border-color .3s}
-.card:hover{border-color:var(--border-s)}
-.ch{display:flex;align-items:center;gap:.5rem;margin-bottom:1.35rem}
-.cdot{width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:.55;flex-shrink:0}
-.clabel{font-size:.63rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--accent)}
-
-/* ─ Seg ─ */
-.seg{display:flex;background:var(--inp);border:1px solid var(--border-s);border-radius:var(--rs);padding:3px;gap:3px}
-.sb{flex:1;padding:.6rem 1rem;border:none;border-radius:calc(var(--rs) - 2px);background:transparent;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500;cursor:pointer;transition:all .22s}
-.sb.active{background:var(--bg2);color:var(--text);box-shadow:0 2px 12px rgba(0,0,0,.4)}
-.sb.active.w{color:var(--warm);text-shadow:0 0 12px rgba(232,146,124,.5)}
-.sb.active.c{color:var(--accent);text-shadow:0 0 12px rgba(126,200,227,.5)}
-
-/* ─ Grid ─ */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-@media(max-width:560px){.g2{grid-template-columns:1fr 1fr}.hub-top{grid-template-columns:1fr 1fr}}
-
-/* ─ Fields ─ */
-.f{display:flex;flex-direction:column;gap:.35rem}
-label{font-size:.67rem;font-weight:500;letter-spacing:.07em;color:var(--text3);text-transform:uppercase}
-input[type=number],select{background:var(--inp);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:'DM Mono',monospace;font-size:.85rem;font-weight:300;padding:.55rem .9rem;width:100%;transition:border-color .2s,background .2s;-webkit-appearance:none;appearance:none}
-/* Empêche le zoom auto iOS (nécessite font-size ≥ 16px au focus) */
-@supports (-webkit-touch-callout: none){
-  input[type=number],select{font-size:16px}
+/* ── Body ──────────────────────────────────────────────────────────────────── */
+body {
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  font-weight:400;
+  min-height:100vh;
+  line-height:1.55;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 15%  5%, rgba(126,200,227,.055) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 35% at 85% 95%, rgba(232,146,124,.04)  0%, transparent 70%);
 }
-input:focus,select:focus{outline:none;border-color:rgba(126,200,227,.4);background:rgba(126,200,227,.025)}
-input::placeholder{color:var(--text3);opacity:1}
-select option{background:#161b27}
 
-/* ─ Panel ─ */
-.plabel{font-size:.6rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;margin-bottom:.75rem;display:flex;align-items:center;gap:.38rem}
-.plabel.L{color:var(--accent)}
-.plabel.R{color:var(--warm)}
-.pdot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.L .pdot{background:var(--accent)}
-.R .pdot{background:var(--warm)}
+/* ── Header ────────────────────────────────────────────────────────────────── */
+header        { text-align:center; padding:3.5rem 1rem 2rem }
+.logo-ring    { display:inline-block; width:50px; height:50px; margin-bottom:1.1rem; opacity:.5; animation:spin 20s linear infinite }
+@keyframes spin { to { transform:rotate(360deg) } }
+.brand        { font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:.18em; text-transform:uppercase; color:var(--text) }
+.brand em     { font-style:normal; color:var(--accent) }
+.sub          { font-family:'DM Mono',monospace; font-size:.67rem; font-weight:300; color:var(--text3); letter-spacing:.2em; margin-top:.45rem }
+.insta-link   { display:inline-flex; align-items:center; gap:.35rem; color:var(--text3); text-decoration:none; letter-spacing:.15em; transition:color .2s }
+.insta-link:hover { color:var(--accent) }
+.insta-icon   { width:13px; height:13px; flex-shrink:0; vertical-align:middle }
+.hline        { width:44px; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent); margin:1.3rem auto 0 }
+.lang-btn     { margin-top:1.1rem; background:transparent; border:1px solid var(--border-s); border-radius:20px; color:var(--text3); font-family:'DM Mono',monospace; font-size:.65rem; font-weight:400; letter-spacing:.15em; padding:.28rem .9rem; cursor:pointer; transition:all .2s }
+.lang-btn:hover { border-color:var(--accent); color:var(--accent) }
 
-/* Hub top row */
-.hub-top{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem}
+/* ── Layout ────────────────────────────────────────────────────────────────── */
+.wrap { max-width:880px; margin:0 auto; padding:0 1.2rem 4rem; display:flex; flex-direction:column; gap:1rem }
 
-/* Hub sides: two columns always, separated by a thin line */
-.hub-sides{display:grid;grid-template-columns:1fr 1px 1fr;gap:0;background:var(--card-alt);border:1px solid var(--border);border-radius:var(--rs);overflow:hidden}
-.hub-side{padding:1.1rem 1.2rem;display:flex;flex-direction:column;gap:.75rem}
-.hub-divider{background:var(--border);width:1px;margin:0}
+/* ── Card ──────────────────────────────────────────────────────────────────── */
+.card         { background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:1.6rem 1.8rem; box-shadow:var(--sh); transition:border-color .3s }
+.card:hover   { border-color:var(--border-s) }
+.card-success { border-color:rgba(126,207,168,.35); box-shadow:0 0 0 1px rgba(126,207,168,.1) }
+.card-muted   { border-color:rgba(255,255,255,.06) }
+.card-result  { border-color:rgba(126,200,227,.13) }
 
-/* ─ Pills ─ */
-.prow{display:flex;gap:.38rem;margin-bottom:1.1rem}
-.pill{padding:.28rem .85rem;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:.73rem;font-weight:500;cursor:pointer;transition:all .2s}
-.pill.active{border-color:rgba(126,200,227,.4);color:var(--accent2);background:rgba(126,200,227,.07)}
+/* ── Card header ───────────────────────────────────────────────────────────── */
+.ch            { display:flex; align-items:center; gap:.5rem; margin-bottom:1.35rem }
+.ch-toggle     { cursor:pointer; user-select:none; margin-bottom:0 }
+.clabel        { font-size:.63rem; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--accent) }
+.clabel-success { color:var(--success) }
+.clabel-muted   { color:var(--text2) }
+.cicon         { width:13px; height:13px; flex-shrink:0; opacity:.7; color:var(--accent) }
+.cicon-success  { color:var(--success); opacity:.7 }
+.cicon-muted    { color:var(--text2); opacity:.7 }
+.cicon-hub     { width:26px; height:13px }
+.chevron       { margin-left:auto; font-style:normal; font-size:.75rem; transition:transform .22s; display:inline-block }
+.chevron-success { color:var(--success) }
+.chevron-muted   { color:var(--text2) }
 
-.crow{display:flex;gap:.38rem}
-.cp{flex:1;padding:.48rem;border:1px solid var(--border);border-radius:var(--rs);background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s;text-align:center}
-.cp.active{border-color:rgba(126,200,227,.4);color:var(--accent2);background:rgba(126,200,227,.07)}
+/* ── Segment control ───────────────────────────────────────────────────────── */
+.seg         { display:flex; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); padding:3px; gap:3px }
+.sb          { flex:1; padding:.6rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500; cursor:pointer; transition:all .22s }
+.sb.active   { background:var(--bg2); color:var(--text); box-shadow:0 2px 12px rgba(0,0,0,.4) }
+.sb.active.c { color:var(--accent); text-shadow:0 0 12px rgba(126,200,227,.5) }
+.sb.active.w { color:var(--warm);   text-shadow:0 0 12px rgba(232,146,124,.5) }
 
-/* ─ Misc ─ */
-.div{height:1px;background:var(--border);margin:1.15rem 0}
-.help{font-size:.66rem;color:var(--text3);margin-top:.22rem;font-style:italic;line-height:1.4}
+/* ── Grid ──────────────────────────────────────────────────────────────────── */
+.g2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem }
 
+/* ── Fields ────────────────────────────────────────────────────────────────── */
+.f     { display:flex; flex-direction:column; gap:.35rem }
+label  { font-size:.67rem; font-weight:500; letter-spacing:.07em; color:var(--text3); text-transform:uppercase }
+input[type=number], select {
+  background:var(--inp); border:1px solid var(--border); border-radius:var(--rs);
+  color:var(--text); font-family:'DM Mono',monospace; font-size:.85rem; font-weight:300;
+  padding:.55rem .9rem; width:100%; transition:border-color .2s, background .2s;
+  -webkit-appearance:none; appearance:none;
+}
+/* Prevent iOS auto-zoom */
+@supports (-webkit-touch-callout: none) {
+  input[type=number], select { font-size:16px }
+}
+input:focus, select:focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
+input::placeholder        { color:var(--text3); opacity:1 }
+select option             { background:#161b27 }
+.inp-readonly             { opacity:.55; cursor:not-allowed }
 
-/* ─ Lang button ─ */
-.lang-btn{margin-top:1.1rem;background:transparent;border:1px solid var(--border-s);border-radius:20px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.65rem;font-weight:400;letter-spacing:.15em;padding:.28rem .9rem;cursor:pointer;transition:all .2s}
-.lang-btn:hover{border-color:var(--accent);color:var(--accent)}
+/* ── Hub layout ────────────────────────────────────────────────────────────── */
+.hub-top     { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.2rem }
+.hub-sides   { display:grid; grid-template-columns:1fr 1px 1fr; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); overflow:hidden }
+.hub-side    { padding:1.1rem 1.2rem; display:flex; flex-direction:column; gap:.75rem }
+.hub-divider { background:var(--border); width:1px }
 
-/* ─ Button ─ */
-.btn{width:100%;padding:1rem 1.5rem;background:var(--card);border:1px solid rgba(126,200,227,.22);border-radius:var(--r);color:var(--accent2);font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
-.btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(126,200,227,.055),rgba(232,146,124,.035));opacity:0;transition:opacity .25s}
-.btn:hover{border-color:rgba(126,200,227,.48);transform:translateY(-1px)}
-.btn:hover::before{opacity:1}
-.btn:active{transform:translateY(0)}
-.btn.ready{border-color:rgba(126,207,168,.6);transition:border-color .3s,transform .25s}
-.btn.ready:hover{border-color:rgba(126,207,168,.9);transform:translateY(-1px)}
+/* ── Side labels ───────────────────────────────────────────────────────────── */
+.plabel   { font-size:.6rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; margin-bottom:.75rem; display:flex; align-items:center; gap:.38rem }
+.plabel.L { color:var(--accent) }
+.plabel.R { color:var(--warm) }
+.pdot     { width:5px; height:5px; border-radius:50%; flex-shrink:0 }
+.L .pdot  { background:var(--accent) }
+.R .pdot  { background:var(--warm) }
 
-/* ─ Error ─ */
-.err{background:rgba(240,100,100,.08);border:1px solid rgba(240,100,100,.2);border-radius:var(--rs);padding:.7rem 1rem;color:#f08080;font-family:'DM Mono',monospace;font-size:.77rem;display:none}
-.err.show{display:block}
-.err:hover{background:rgba(240,100,100,.14);border-color:rgba(240,100,100,.35)}
+/* ── Pills ─────────────────────────────────────────────────────────────────── */
+.prow        { display:flex; gap:.38rem; margin-bottom:1.1rem }
+.pill        { padding:.28rem .85rem; border:1px solid var(--border); border-radius:20px; background:transparent; color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.73rem; font-weight:500; cursor:pointer; transition:all .2s }
+.pill.active { border-color:rgba(126,200,227,.4); color:var(--accent2); background:rgba(126,200,227,.07) }
+.pill-icon   { display:inline-flex; align-items:center; gap:.3rem; padding:.18rem .65rem; font-size:.65rem }
 
-/* ─ Results ─ */
-.rw{display:none;animation:fu .5s cubic-bezier(.22,1,.36,1)}
-.rw.show{display:block}
-@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+/* ── Cross buttons ─────────────────────────────────────────────────────────── */
+.crow      { display:flex; gap:.38rem }
+.cp        { flex:1; padding:.48rem; border:1px solid var(--border); border-radius:var(--rs); background:transparent; color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:500; cursor:pointer; transition:all .2s; text-align:center }
+.cp.active { border-color:rgba(126,200,227,.4); color:var(--accent2); background:rgba(126,200,227,.07) }
 
-.rg{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+/* ── Misc ──────────────────────────────────────────────────────────────────── */
+.div  { height:1px; background:var(--border); margin:1.15rem 0 }
+.help { font-size:.66rem; color:var(--text3); margin-top:.22rem; font-style:italic; line-height:1.4 }
 
-.rc{border-radius:var(--rs);padding:1.4rem 1.5rem;position:relative;overflow:hidden}
-.rc.fo{background:linear-gradient(145deg,rgba(232,146,124,.07),rgba(232,146,124,.025));border:1px solid rgba(232,146,124,.18)}
-.rc.fa{background:linear-gradient(145deg,rgba(126,200,227,.07),rgba(126,200,227,.025));border:1px solid rgba(126,200,227,.18)}
+/* ── Tooltip ───────────────────────────────────────────────────────────────── */
+.tip-wrap  { position:relative; display:inline-flex; align-items:center; gap:.3rem }
+.tip-icon  { width:13px; height:13px; border-radius:50%; border:1px solid var(--text3); color:var(--text3); font-size:.6rem; font-family:'DM Mono',monospace; display:inline-flex; align-items:center; justify-content:center; cursor:default; flex-shrink:0; line-height:1; user-select:none }
+.tip-icon:hover { border-color:var(--accent); color:var(--accent) }
+.tip-box   { position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); background:#0e1420; border:1px solid var(--border-s); border-radius:6px; padding:.45rem .7rem; font-family:'DM Sans',sans-serif; font-size:.68rem; font-weight:400; color:var(--text2); white-space:normal; max-width:220px; text-align:center; pointer-events:none; opacity:0; transition:opacity .18s; z-index:99; letter-spacing:0; text-transform:none }
+.tip-box::after { content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color:#0e1420 }
+.tip-icon:hover + .tip-box, .tip-wrap:hover .tip-box { opacity:1 }
+.tip-box.visible { opacity:1 }
 
-.rtag{font-size:.59rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;margin-bottom:.65rem}
-.fo .rtag{color:var(--warm)}
-.fa .rtag{color:var(--accent)}
+/* ── Tension display ───────────────────────────────────────────────────────── */
+.faible-display         { background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text); font-family:'DM Mono',monospace; font-size:.85rem; font-weight:300; padding:.55rem .9rem; width:100%; min-height:2.35rem; display:flex; align-items:center }
+.faible-display.has-val { border-color:rgba(126,200,227,.3) }
+.tension-dot            { display:inline-block; width:7px; height:7px; border-radius:2px; margin-right:.3rem; vertical-align:middle }
+.tension-dot-warm       { background:var(--warm) }
+.tension-dot-accent     { background:var(--accent) }
 
-.rnum{font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:300;line-height:1}
-.fo .rnum{color:var(--warm2)}
-.fa .rnum{color:var(--accent2)}
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.btn           { width:100%; padding:1rem 1.5rem; background:var(--card); border:1px solid rgba(126,200,227,.22); border-radius:var(--r); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.9rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .25s; position:relative; overflow:hidden }
+.btn::before   { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(126,200,227,.055),rgba(232,146,124,.035)); opacity:0; transition:opacity .25s }
+.btn:hover     { border-color:rgba(126,200,227,.48); transform:translateY(-1px) }
+.btn:hover::before { opacity:1 }
+.btn:active    { transform:translateY(0) }
+.btn.ready     { border-color:rgba(126,207,168,.6); transition:border-color .3s, transform .25s }
+.btn.ready:hover { border-color:rgba(126,207,168,.9); transform:translateY(-1px) }
+.btn-reset     { width:auto; padding:1rem 1.6rem }
+.btn-row       { display:grid; grid-template-columns:1fr auto; gap:.75rem; align-items:stretch }
+.btn-save      { padding:.55rem 1.1rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:all .22s; white-space:nowrap }
+.btn-save:hover  { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06) }
+.btn-save:active { transform:scale(.97) }
 
-.runit{font-family:'DM Mono',monospace;font-size:.68rem;font-weight:300;color:var(--text3);margin:.08rem 0 .9rem}
+/* ── Error ─────────────────────────────────────────────────────────────────── */
+.err       { background:rgba(240,100,100,.08); border:1px solid rgba(240,100,100,.2); border-radius:var(--rs); padding:.7rem 1rem; color:#f08080; font-family:'DM Mono',monospace; font-size:.77rem; display:none }
+.err.show  { display:block }
+.err:hover { background:rgba(240,100,100,.14); border-color:rgba(240,100,100,.35) }
+input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !important; background:rgba(240,100,100,.04) !important }
 
-.rrows{border-top:1px solid var(--border);padding-top:.8rem;display:flex;flex-direction:column;gap:.32rem}
-.rrow{display:flex;justify-content:space-between;align-items:baseline;font-size:.72rem;color:var(--text2)}
-.rrow strong{font-family:'DM Mono',monospace;font-weight:400;font-size:.77rem;color:var(--text)}
-.ev{font-family:'DM Mono',monospace;font-weight:500;color:var(--success);font-size:.8rem}
+/* ── Results ───────────────────────────────────────────────────────────────── */
+.rw       { display:none; animation:fu .5s cubic-bezier(.22,1,.36,1) }
+.rw.show  { display:block }
+@keyframes fu { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:translateY(0) } }
+.rg       { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem }
+.rc       { border-radius:var(--rs); padding:1.4rem 1.5rem; position:relative; overflow:hidden }
+.rc.fo    { background:linear-gradient(145deg,rgba(232,146,124,.07),rgba(232,146,124,.025)); border:1px solid rgba(232,146,124,.18) }
+.rc.fa    { background:linear-gradient(145deg,rgba(126,200,227,.07),rgba(126,200,227,.025)); border:1px solid rgba(126,200,227,.18) }
+.rtag     { font-size:.59rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; margin-bottom:.65rem }
+.fo .rtag { color:var(--warm) }
+.fa .rtag { color:var(--accent) }
+.rnum     { font-family:'Cormorant Garamond',serif; font-size:2.4rem; font-weight:300; line-height:1 }
+.fo .rnum { color:var(--warm2) }
+.fa .rnum { color:var(--accent2) }
+.runit    { font-family:'DM Mono',monospace; font-size:.68rem; font-weight:300; color:var(--text3); margin:.08rem 0 .9rem }
+.rrows    { border-top:1px solid var(--border); padding-top:.8rem; display:flex; flex-direction:column; gap:.32rem }
+.rrow     { display:flex; justify-content:space-between; align-items:baseline; font-size:.72rem; color:var(--text2) }
+.rrow strong { font-family:'DM Mono',monospace; font-weight:400; font-size:.77rem; color:var(--text) }
+.ev       { font-family:'DM Mono',monospace; font-weight:500; color:var(--success); font-size:.8rem }
 
+/* ── Arbitrage ─────────────────────────────────────────────────────────────── */
+.arb-wrap          { display:none; animation:fu .5s cubic-bezier(.22,1,.36,1) }
+.arb-wrap.show     { display:block }
+.arb-cols          { display:grid; grid-template-columns:1fr 1fr; gap:1rem }
+.arb-col-head      { font-size:.56rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; margin-bottom:.7rem }
+.arb-col-head.fo   { color:var(--warm) }
+.arb-col-head.fa   { color:var(--accent) }
+.arb-even-btn      { margin-bottom:.6rem; padding:.28rem .8rem; background:transparent; border:1px solid var(--border); border-radius:20px; color:var(--text3); font-family:'DM Mono',monospace; font-size:.61rem; font-weight:400; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; transition:all .22s }
+.arb-even-btn:hover  { border-color:var(--border-s); color:var(--text2) }
+.arb-even-btn.active { border-color:rgba(126,200,227,.4); color:var(--accent2); background:rgba(126,200,227,.06) }
+.arb-grid          { display:flex; flex-direction:column; gap:.3rem }
+.arb-row           { display:flex; align-items:center; justify-content:space-between; padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--rs); background:var(--card-alt) }
+.arb-row.best      { border-color:var(--success) }
+.arb-row.arb-muted { opacity:.25; border-color:transparent }
+.arb-sz            { font-family:'DM Mono',monospace; font-size:.88rem; font-weight:500; color:var(--text) }
+.arb-right         { display:flex; flex-direction:column; align-items:flex-end; gap:.07rem }
+.arb-delta         { font-family:'DM Mono',monospace; font-size:.8rem; font-weight:500; color:var(--text2) }
+.arb-lbl           { font-size:.53rem; color:var(--text3); letter-spacing:.06em }
 
-/* ─ Faible display ─ */
-.faible-display{background:var(--inp);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:'DM Mono',monospace;font-size:.85rem;font-weight:300;padding:.55rem .9rem;width:100%;min-height:2.35rem;display:flex;align-items:center}
-.faible-display.has-val{border-color:rgba(126,200,227,.3)}
+/* ── Save ──────────────────────────────────────────────────────────────────── */
+.save-wrap       { display:none; animation:fu .5s cubic-bezier(.22,1,.36,1) }
+.save-wrap.show  { display:block }
+.save-row        { display:flex; gap:.5rem; align-items:stretch }
+.save-input      { flex:1; background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:400; padding:.55rem .9rem; transition:border-color .2s }
+.save-input:focus        { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
+.save-input::placeholder { color:var(--text3) }
 
-/* ─ Tooltip ─ */
-.tip-wrap{position:relative;display:inline-flex;align-items:center;gap:.3rem}
-.tip-icon{width:13px;height:13px;border-radius:50%;border:1px solid var(--text3);color:var(--text3);font-size:.6rem;font-family:'DM Mono',monospace;display:inline-flex;align-items:center;justify-content:center;cursor:default;flex-shrink:0;line-height:1;user-select:none}
-.tip-icon:hover{border-color:var(--accent);color:var(--accent)}
-.tip-box{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#0e1420;border:1px solid var(--border-s);border-radius:6px;padding:.45rem .7rem;font-family:'DM Sans',sans-serif;font-size:.68rem;font-weight:400;color:var(--text2);white-space:normal;max-width:220px;text-align:center;pointer-events:none;opacity:0;transition:opacity .18s;z-index:99;letter-spacing:0;text-transform:none}
-.tip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#0e1420}
-.tip-icon:hover + .tip-box,.tip-wrap:hover .tip-box{opacity:1}
-.tip-box.visible{opacity:1}
+/* ── Configs ───────────────────────────────────────────────────────────────── */
+.cfg-list       { display:flex; flex-direction:column; gap:.4rem; margin-top:1.1rem }
+.cfg-item       { display:flex; align-items:center; gap:.5rem; padding:.6rem .9rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); transition:border-color .2s }
+.cfg-item:hover { border-color:var(--border-s) }
+.cfg-name       { flex:1; font-size:.82rem; color:var(--text); font-weight:400; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.cfg-meta       { font-family:'DM Mono',monospace; font-size:.63rem; color:var(--text3); white-space:nowrap; margin-right:.3rem }
+.cfg-load       { background:transparent; border:1px solid var(--border); border-radius:20px; color:var(--text2); font-family:'DM Mono',monospace; font-size:.6rem; letter-spacing:.1em; padding:.2rem .6rem; cursor:pointer; transition:all .2s; text-transform:uppercase }
+.cfg-load:hover { border-color:var(--accent); color:var(--accent) }
+.cfg-del        { background:transparent; border:none; color:var(--text3); font-size:.95rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
+.cfg-del:hover  { color:#f08080 }
+.cfg-empty      { font-size:.72rem; color:var(--text3); font-style:italic; text-align:center; padding:.8rem 0 }
 
-/* ─ Invalid field ─ */
-input.invalid, select.invalid{border-color:rgba(240,100,100,.6)!important;background:rgba(240,100,100,.04)!important}
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width:4px }
+::-webkit-scrollbar-track { background:transparent }
+::-webkit-scrollbar-thumb { background:var(--border-s); border-radius:2px }
 
-/* ─ Button Reset ─ */
-.btn-reset{width:auto;padding:1rem 1.6rem}
-
+/* ── Number input spin buttons ─────────────────────────────────────────────── */
 input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-input[type=number]{-moz-appearance:textfield}
-
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:2px}
-
-/* ─ Arbitrage ─ */
-.arb-wrap{display:none;animation:fu .5s cubic-bezier(.22,1,.36,1)}
-.arb-wrap.show{display:block}
-.arb-cols{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-.arb-col-head{font-size:.56rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.7rem}
-.arb-col-head.fo{color:var(--warm)}
-.arb-col-head.fa{color:var(--accent)}
-.arb-even-btn{margin-bottom:.6rem;padding:.28rem .8rem;background:transparent;border:1px solid var(--border);border-radius:20px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.61rem;font-weight:400;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:all .22s}
-.arb-even-btn:hover{border-color:var(--border-s);color:var(--text2)}
-.arb-even-btn.active{border-color:rgba(126,200,227,.4);color:var(--accent2);background:rgba(126,200,227,.06)}
-.arb-grid{display:flex;flex-direction:column;gap:.3rem}
-.arb-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem .85rem;border:1px solid var(--border);border-radius:var(--rs);background:var(--card-alt)}
-.arb-row.best{border-color:var(--success)}
-.arb-row.arb-muted{opacity:.25;border-color:transparent}
-.arb-sz{font-family:'DM Mono',monospace;font-size:.88rem;font-weight:500;color:var(--text)}
-.arb-right{display:flex;flex-direction:column;align-items:flex-end;gap:.07rem}
-.arb-delta{font-family:'DM Mono',monospace;font-size:.8rem;font-weight:500;color:var(--text2)}
-.arb-lbl{font-size:.53rem;color:var(--text3);letter-spacing:.06em}
-/* ─ Save ─ */
-.save-wrap{display:none;animation:fu .5s cubic-bezier(.22,1,.36,1)}
-.save-wrap.show{display:block}
-.save-row{display:flex;gap:.5rem;align-items:stretch}
-.save-input{flex:1;background:var(--inp);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:400;padding:.55rem .9rem;transition:border-color .2s}
-.save-input:focus{outline:none;border-color:rgba(126,200,227,.4);background:rgba(126,200,227,.025)}
-.save-input::placeholder{color:var(--text3)}
-.btn-save{padding:.55rem 1.1rem;background:transparent;border:1px solid rgba(126,200,227,.3);border-radius:var(--rs);color:var(--accent2);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .22s;white-space:nowrap}
-.btn-save:hover{border-color:rgba(126,200,227,.65);background:rgba(126,200,227,.06)}
-.btn-save:active{transform:scale(.97)}
-
-/* ─ Configs panel ─ */
-.cfg-list{display:flex;flex-direction:column;gap:.4rem;margin-top:1.1rem}
-.cfg-item{display:flex;align-items:center;gap:.5rem;padding:.6rem .9rem;background:var(--card-alt);border:1px solid var(--border);border-radius:var(--rs);transition:border-color .2s}
-.cfg-item:hover{border-color:var(--border-s)}
-.cfg-name{flex:1;font-size:.82rem;color:var(--text);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cfg-meta{font-family:'DM Mono',monospace;font-size:.63rem;color:var(--text3);white-space:nowrap;margin-right:.3rem}
-.cfg-load{background:transparent;border:1px solid var(--border);border-radius:20px;color:var(--text2);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;padding:.2rem .6rem;cursor:pointer;transition:all .2s;text-transform:uppercase}
-.cfg-load:hover{border-color:var(--accent);color:var(--accent)}
-.cfg-del{background:transparent;border:none;color:var(--text3);font-size:.95rem;cursor:pointer;padding:.1rem .2rem;line-height:1;transition:color .2s;flex-shrink:0}
-.cfg-del:hover{color:#f08080}
-.cfg-empty{font-size:.72rem;color:var(--text3);font-style:italic;text-align:center;padding:.8rem 0}
-
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0 }
+input[type=number] { -moz-appearance:textfield }
 </style>
 </head>
 <body>
 
 <header>
- <svg class="logo-ring" viewBox="0 0 50 50" fill="none">
-   <circle cx="25" cy="25" r="22" stroke="rgba(126,200,227,.55)" stroke-width="1.5" stroke-dasharray="3.5 3"/>
-   <circle cx="25" cy="25" r="3" fill="rgba(126,200,227,.75)"/>
-   <line x1="25" y1="3"  x2="25" y2="11" stroke="rgba(126,200,227,.5)" stroke-width="1.2"/>
-   <line x1="25" y1="39" x2="25" y2="47" stroke="rgba(126,200,227,.5)" stroke-width="1.2"/>
-   <line x1="3"  y1="25" x2="11" y2="25" stroke="rgba(232,146,124,.5)" stroke-width="1.2"/>
-   <line x1="39" y1="25" x2="47" y2="25" stroke="rgba(232,146,124,.5)" stroke-width="1.2"/>
-   <line x1="8.5" y1="8.5"  x2="14.5" y2="14.5" stroke="rgba(126,200,227,.3)" stroke-width="1"/>
-   <line x1="35.5" y1="35.5" x2="41.5" y2="41.5" stroke="rgba(126,200,227,.3)" stroke-width="1"/>
-   <line x1="41.5" y1="8.5"  x2="35.5" y2="14.5" stroke="rgba(232,146,124,.3)" stroke-width="1"/>
-   <line x1="14.5" y1="35.5" x2="8.5"  y2="41.5" stroke="rgba(232,146,124,.3)" stroke-width="1"/>
- </svg>
- <div class="brand">Spoke <em>It</em></div>
- <div class="sub">
-   by
-   <a href="https://www.instagram.com/Docfab21" target="_blank" rel="noopener noreferrer" class="insta-link">
-     <svg class="insta-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Instagram">
-       <rect x="2" y="2" width="20" height="20" rx="5.5" stroke="currentColor" stroke-width="1.5"/>
-       <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.5"/>
-       <circle cx="17.5" cy="6.5" r="1" fill="currentColor"/>
-     </svg>
-     @Docfab21
-   </a>
- </div>
- <div class="hline"></div>
- <button id="lang-btn" onclick="toggleLang()" class="lang-btn">EN</button>
+  <svg class="logo-ring" viewBox="0 0 50 50" fill="none">
+    <circle cx="25" cy="25" r="22" stroke="rgba(126,200,227,.55)" stroke-width="1.5" stroke-dasharray="3.5 3"/>
+    <circle cx="25" cy="25" r="3" fill="rgba(126,200,227,.75)"/>
+    <line x1="25" y1="3"  x2="25" y2="11"  stroke="rgba(126,200,227,.5)" stroke-width="1.2"/>
+    <line x1="25" y1="39" x2="25" y2="47"  stroke="rgba(126,200,227,.5)" stroke-width="1.2"/>
+    <line x1="3"  y1="25" x2="11" y2="25"  stroke="rgba(232,146,124,.5)" stroke-width="1.2"/>
+    <line x1="39" y1="25" x2="47" y2="25"  stroke="rgba(232,146,124,.5)" stroke-width="1.2"/>
+    <line x1="8.5"  y1="8.5"  x2="14.5" y2="14.5" stroke="rgba(126,200,227,.3)" stroke-width="1"/>
+    <line x1="35.5" y1="35.5" x2="41.5" y2="41.5" stroke="rgba(126,200,227,.3)" stroke-width="1"/>
+    <line x1="41.5" y1="8.5"  x2="35.5" y2="14.5" stroke="rgba(232,146,124,.3)" stroke-width="1"/>
+    <line x1="14.5" y1="35.5" x2="8.5"  y2="41.5" stroke="rgba(232,146,124,.3)" stroke-width="1"/>
+  </svg>
+  <div class="brand">Spoke <em>It</em></div>
+  <div class="sub">
+    by
+    <a href="https://www.instagram.com/Docfab21" target="_blank" rel="noopener noreferrer" class="insta-link">
+      <svg class="insta-icon" viewBox="0 0 24 24" fill="none" aria-label="Instagram">
+        <rect x="2" y="2" width="20" height="20" rx="5.5" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="17.5" cy="6.5" r="1" fill="currentColor"/>
+      </svg>
+      @Docfab21
+    </a>
+  </div>
+  <div class="hline"></div>
+  <button id="lang-btn" onclick="toggleLang()" class="lang-btn">EN</button>
 </header>
 
 <div class="wrap">
 
- <!-- Wheel type -->
- <div class="card">
-   <div class="ch"><div class="cdot"></div><div class="clabel" data-i18n="wheelType">Type de roue</div></div>
-   <div class="seg">
-     <button class="sb active c" id="btn-avant"   onclick="setWheel('avant')" data-i18n="frontWheel">Roue Avant</button>
-     <button class="sb w"        id="btn-arriere" onclick="setWheel('arriere')" data-i18n="rearWheel">Roue Arrière</button>
-   </div>
- </div>
+  <!-- ── Wheel type ── -->
+  <div class="card">
+    <div class="ch">
+      <svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+        <circle cx="12" cy="12" r="10.5"/>
+        <circle cx="12" cy="12" r="8" stroke-width="2" stroke-opacity=".35"/>
+        <circle cx="12" cy="12" r="2"/>
+        <circle cx="12" cy="12" r=".7" fill="currentColor" stroke="none"/>
+        <line x1="12" y1="2.5"  x2="12" y2="10"/>  <line x1="12"   y1="14"  x2="12"  y2="21.5"/>
+        <line x1="21.5" y1="12" x2="14" y2="12"/>  <line x1="10"   y1="12"  x2="2.5" y2="12"/>
+        <line x1="19.1" y1="5.1"  x2="13.4" y2="10.6"/>  <line x1="10.6" y1="13.4" x2="4.9"  y2="18.9"/>
+        <line x1="4.9"  y1="5.1"  x2="10.6" y2="10.6"/>  <line x1="13.4" y1="13.4" x2="19.1" y2="18.9"/>
+      </svg>
+      <div class="clabel" data-i18n="wheelType">Type de roue</div>
+    </div>
+    <div class="seg">
+      <button class="sb active c" id="btn-avant"   onclick="setWheel('avant')"   data-i18n="frontWheel">Roue Avant</button>
+      <button class="sb w"        id="btn-arriere" onclick="setWheel('arriere')" data-i18n="rearWheel">Roue Arrière</button>
+    </div>
+  </div>
 
- <!-- Hub -->
- <div class="card">
-   <div class="ch"><div class="cdot"></div><div class="clabel" data-i18n="hub">Moyeu</div><div style="margin-left:auto;display:flex;gap:.3rem"><button class="pill active" id="btn-hub-jbend" onclick="setHubType('jbend')" style="padding:.18rem .65rem;font-size:.65rem">J-bend</button><button class="pill" id="btn-hub-sp" onclick="setHubType('straightpull')" style="padding:.18rem .65rem;font-size:.65rem">Straightpull</button></div></div>
+  <!-- ── Hub ── -->
+  <div class="card">
+    <div class="ch">
+      <svg class="cicon cicon-hub" viewBox="0 0 40 20" fill="none" stroke="currentColor" stroke-width="1.2">
+        <line x1="0" y1="10" x2="5" y2="10" stroke-width="1"/>  <line x1="35" y1="10" x2="40" y2="10" stroke-width="1"/>
+        <rect x="14" y="6.5" width="12" height="7" rx="1.5"/>
+        <path d="M5 3 Q8 3 9 6.5 L9 13.5 Q8 17 5 17 L5 3Z"/>
+        <path d="M35 3 Q32 3 31 6.5 L31 13.5 Q32 17 35 17 L35 3Z"/>
+        <line x1="5"  y1="3"  x2="5"  y2="17"/>  <line x1="35" y1="3"  x2="35" y2="17"/>
+        <path d="M9 7.5 L14 7.5" stroke-width="1"/>   <path d="M9 12.5 L14 12.5" stroke-width="1"/>
+        <path d="M26 7.5 L31 7.5" stroke-width="1"/>  <path d="M26 12.5 L31 12.5" stroke-width="1"/>
+        <circle cx="7"  cy="6"  r="1" fill="currentColor" stroke="none" opacity=".8"/>
+        <circle cx="7"  cy="14" r="1" fill="currentColor" stroke="none" opacity=".8"/>
+        <circle cx="33" cy="6"  r="1" fill="currentColor" stroke="none" opacity=".8"/>
+        <circle cx="33" cy="14" r="1" fill="currentColor" stroke="none" opacity=".8"/>
+        <circle cx="20" cy="10" r="2"/>
+        <circle cx="20" cy="10" r=".7" fill="currentColor" stroke="none"/>
+      </svg>
+      <div class="clabel" data-i18n="hub">Moyeu</div>
+      <div style="margin-left:auto;display:flex;gap:.3rem">
+        <button class="pill pill-icon active" id="btn-hub-jbend" onclick="setHubType('jbend')">
+          <svg viewBox="0 0 24 10" fill="none" stroke="currentColor" stroke-width="1.2" style="width:18px;height:8px;flex-shrink:0">
+            <line x1="3" y1="8" x2="3" y2="4"/>
+            <path d="M3 4 Q3 1.5 5.5 1.5" stroke-linecap="round"/>
+            <line x1="5.5" y1="1.5" x2="20" y2="1.5"/>
+            <line x1="19" y1="1" x2="22" y2="1"/>  <line x1="19.5" y1="1.5" x2="22" y2="1.5"/>  <line x1="19" y1="2" x2="22" y2="2"/>
+          </svg>
+          J-bend
+        </button>
+        <button class="pill pill-icon" id="btn-hub-sp" onclick="setHubType('straightpull')">
+          <svg viewBox="0 0 24 10" fill="none" stroke="currentColor" stroke-width="1.2" style="width:18px;height:8px;flex-shrink:0">
+            <line x1="2"  y1="5" x2="19" y2="5"/>
+            <line x1="2"  y1="4.2" x2="2" y2="5.8"/>
+            <line x1="18" y1="4.5" x2="21" y2="4.5"/>  <line x1="18" y1="5" x2="21" y2="5"/>  <line x1="18" y1="5.5" x2="21" y2="5.5"/>
+          </svg>
+          Straightpull
+        </button>
+      </div>
+    </div>
 
-   <div class="hub-top">
-     <div class="f">
-       <label data-i18n="totalSpokes">Nb total de rayons</label>
-       <select id="nb-rayons">
-         <option value="" disabled selected hidden></option>
-         <option>16</option><option>20</option><option>24</option>
-         <option>28</option><option>32</option><option>36</option>
-       </select>
-     </div>
-     <div class="f" id="field-diam-trou">
-       <label data-i18n="holeDiam">Ø trous de bride (mm)</label>
-       <input type="number" id="diam-trou" value="2.55" step="0.05" min="1" max="5" inputmode="decimal">
-     </div>
-   </div>
+    <div class="hub-top">
+      <div class="f">
+        <label data-i18n="totalSpokes">Nb total de rayons</label>
+        <select id="nb-rayons" onchange="checkHubComplete()">
+          <option value="" disabled selected hidden></option>
+          <option>16</option><option>20</option><option>24</option>
+          <option>28</option><option>32</option><option>36</option>
+        </select>
+      </div>
+      <div class="f" id="field-diam-trou">
+        <label data-i18n="holeDiam">Ø trous de bride (mm)</label>
+        <input type="number" id="diam-trou" value="2.55" step="0.05" min="1" max="5" inputmode="decimal">
+      </div>
+    </div>
 
-   <div class="hub-sides">
-     <div class="hub-side">
-       <div class="plabel L"><div class="pdot"></div><span data-i18n="left">Gauche</span></div>
-       <div class="f">
-         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTip">Diam utile flasque</span></label>
-         <input type="number" id="pcd-left" step="0.1" inputmode="decimal">
-       </div>
-       <div class="f">
-         <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTip">Centre vers flasque</span></label>
-         <input type="number" id="offset-left" step="0.1" inputmode="decimal" oninput="onTension()" onkeydown="if(event.key==='-')event.preventDefault()">
-       </div>
-       <div class="f" id="field-sp-so-left" style="display:none">
-         <label class="tip-wrap"><span data-i18n="soLeft">SO gauche</span> (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
-         <input type="number" id="sp-so-left" step="0.1" min="0" max="5" inputmode="decimal">
-       </div>
-     </div>
-     <div class="hub-divider"></div>
-     <div class="hub-side">
-       <div class="plabel R"><div class="pdot"></div><span data-i18n="right">Droit</span></div>
-       <div class="f">
-         <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTip">Diam utile flasque</span></label>
-         <input type="number" id="pcd-right" step="0.1" inputmode="decimal">
-       </div>
-       <div class="f">
-         <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTip">Centre vers flasque</span></label>
-         <input type="number" id="offset-right" step="0.1" inputmode="decimal" oninput="onTension()" onkeydown="if(event.key==='-')event.preventDefault()">
-       </div>
-       <div class="f" id="field-sp-so-right" style="display:none">
-         <label class="tip-wrap"><span data-i18n="soRight">SO droit</span> (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
-         <input type="number" id="sp-so-right" step="0.1" min="0" max="5" inputmode="decimal">
-       </div>
-     </div>
-   </div>
- </div>
+    <div class="hub-sides">
+      <div class="hub-side">
+        <div class="plabel L"><div class="pdot"></div><span data-i18n="left">Gauche</span></div>
+        <div class="f">
+          <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTip">Diam utile flasque</span></label>
+          <input type="number" id="pcd-left" step="0.1" inputmode="decimal" oninput="checkHubComplete()">
+        </div>
+        <div class="f">
+          <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTip">Centre vers flasque</span></label>
+          <input type="number" id="offset-left" step="0.1" inputmode="decimal" oninput="onTension();checkHubComplete()" onkeydown="if(event.key==='-')event.preventDefault()">
+        </div>
+        <div class="f" id="field-sp-so-left" style="display:none">
+          <label class="tip-wrap"><span data-i18n="soLeft">SO gauche</span> (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
+          <input type="number" id="sp-so-left" step="0.1" min="0" max="5" inputmode="decimal" oninput="checkHubComplete()">
+        </div>
+      </div>
+      <div class="hub-divider"></div>
+      <div class="hub-side">
+        <div class="plabel R"><div class="pdot"></div><span data-i18n="right">Droit</span></div>
+        <div class="f">
+          <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTip">Diam utile flasque</span></label>
+          <input type="number" id="pcd-right" step="0.1" inputmode="decimal" oninput="checkHubComplete()">
+        </div>
+        <div class="f">
+          <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTip">Centre vers flasque</span></label>
+          <input type="number" id="offset-right" step="0.1" inputmode="decimal" oninput="onTension();checkHubComplete()" onkeydown="if(event.key==='-')event.preventDefault()">
+        </div>
+        <div class="f" id="field-sp-so-right" style="display:none">
+          <label class="tip-wrap"><span data-i18n="soRight">SO droit</span> (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
+          <input type="number" id="sp-so-right" step="0.1" min="0" max="5" inputmode="decimal" oninput="checkHubComplete()">
+        </div>
+      </div>
+    </div>
+  </div>
 
- <!-- Rim -->
- <div class="card">
-   <div class="ch"><div class="cdot"></div><div class="clabel" data-i18n="rim">Jante</div></div>
+  <!-- ── Rim ── -->
+  <div class="card">
+    <div class="ch">
+      <svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+        <circle cx="12" cy="12" r="10"/>
+      </svg>
+      <div class="clabel" data-i18n="rim">Jante</div>
+    </div>
 
-   <div class="prow">
-     <button class="pill active" id="btn-erd-direct" onclick="setErdMode('direct')" data-i18n="erdDirect">ERD DIRECT</button>
-     <button class="pill"        id="btn-erd-nsd"    onclick="setErdMode('nsd')">NSD + ADDON</button>
-   </div>
+    <div class="prow">
+      <button class="pill active" id="btn-erd-direct" onclick="setErdMode('direct')" data-i18n="erdDirect">ERD DIRECT</button>
+      <button class="pill"        id="btn-erd-nsd"    onclick="setErdMode('nsd')">NSD + ADDON</button>
+    </div>
 
-   <div id="erd-direct-section">
-     <div class="f" style="max-width:185px">
-       <label>ERD (mm)</label>
-       <input type="number" id="erd-direct" step="0.1" inputmode="decimal">
-     </div>
-   </div>
+    <div id="erd-direct-section">
+      <div class="f" style="max-width:185px">
+        <label>ERD (mm)</label>
+        <input type="number" id="erd-direct" step="0.1" inputmode="decimal">
+      </div>
+    </div>
 
-   <div id="erd-nsd-section" style="display:none">
-     <div class="g2" style="max-width:400px">
-       <div class="f">
-         <label>NSD (mm)</label>
-         <input type="number" id="nsd-val" step="0.1" inputmode="decimal" oninput="calcNsd()">
-       </div>
-       <div class="f">
-         <label class="tip-wrap">ADDON (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="addonTip">Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.</span></label>
-         <select id="ecrou-type" onchange="calcNsd()">
-           <option value="" disabled selected>— mm —</option>
-           <option value="1.8">1.8</option>
-           <option value="1.9">1.9</option>
-           <option value="2.0">2.0</option>
-           <option value="2.1">2.1</option>
-           <option value="2.2">2.2</option>
-           <option value="2.3">2.3</option>
-           <option value="2.4">2.4</option>
-           <option value="2.5">2.5</option>
-           <option value="2.6">2.6</option>
-           <option value="2.7">2.7</option>
-           <option value="2.8">2.8</option>
-           <option value="2.9">2.9</option>
-           <option value="3.0">3.0</option>
-           <option value="3.1">3.1</option>
-           <option value="3.2">3.2</option>
-           <option value="3.3">3.3</option>
-           <option value="3.4">3.4</option>
-           <option value="3.5">3.5</option>
-           <option value="3.6">3.6</option>
-         </select>
-       </div>
-     </div>
-     <div class="f" style="max-width:185px;margin-top:.8rem">
-       <label data-i18n="erdCalc">ERD calculé (mm)</label>
-       <input type="number" id="erd-nsd-result" readonly tabindex="-1" style="opacity:.55;cursor:not-allowed">
-     </div>
-   </div>
+    <div id="erd-nsd-section" style="display:none">
+      <div class="g2" style="max-width:400px">
+        <div class="f">
+          <label>NSD (mm)</label>
+          <input type="number" id="nsd-val" step="0.1" inputmode="decimal" oninput="calcNsd()">
+        </div>
+        <div class="f">
+          <label class="tip-wrap">ADDON (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="addonTip">Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.</span></label>
+          <select id="ecrou-type" onchange="calcNsd()">
+            <option value="" disabled selected>— mm —</option>
+            <option value="1.8">1.8</option><option value="1.9">1.9</option>
+            <option value="2.0">2.0</option><option value="2.1">2.1</option>
+            <option value="2.2">2.2</option><option value="2.3">2.3</option>
+            <option value="2.4">2.4</option><option value="2.5">2.5</option>
+            <option value="2.6">2.6</option><option value="2.7">2.7</option>
+            <option value="2.8">2.8</option><option value="2.9">2.9</option>
+            <option value="3.0">3.0</option><option value="3.1">3.1</option>
+            <option value="3.2">3.2</option><option value="3.3">3.3</option>
+            <option value="3.4">3.4</option><option value="3.5">3.5</option>
+            <option value="3.6">3.6</option>
+          </select>
+        </div>
+      </div>
+      <div class="f" style="max-width:185px;margin-top:.8rem">
+        <label data-i18n="erdCalc">ERD calculé (mm)</label>
+        <input type="number" id="erd-nsd-result" readonly tabindex="-1" class="inp-readonly">
+      </div>
+    </div>
 
-   <div class="div"></div>
+    <div class="div"></div>
 
-   <div class="g2">
-     <div class="f">
-       <label data-i18n="rimAsym">Asymétrie jante (mm)</label>
-       <input type="number" id="asym" value="0" step="0.5" min="0" inputmode="decimal" onkeydown="if(event.key==='-')event.preventDefault()">
-     </div>
-     <div class="f">
-       <label data-i18n="spokeSection">Section de rayon</label>
-       <select id="spoke-select" onchange="setSpokeFromSelect(this)">
-         <option value="1.6|">1.6 mm</option>
-         <option value="1.7|">1.7 mm</option>
-         <option value="1.8|">1.8 mm</option>
-         <option value="1.9|">1.9 mm</option>
-         <option value="2.0|" selected>2.0 mm</option>
-         <option value="2.1|">2.1 mm</option>
-         <option value="2.2|">2.2 mm</option>
-         <option value="2.3|">2.3 mm</option>
-         <option value="0.9|2.2">CX-Ray 0.9×2.2</option>
-         <option value="0.9|2.3">Aerolite 0.9×2.3</option>
-       </select>
-     </div>
-   </div>
+    <div class="g2">
+      <div class="f">
+        <label data-i18n="rimAsym">Asymétrie jante (mm)</label>
+        <input type="number" id="asym" value="0" step="0.5" min="0" inputmode="decimal" onkeydown="if(event.key==='-')event.preventDefault()">
+      </div>
+      <div class="f">
+        <label data-i18n="spokeSection">Section de rayon</label>
+        <select id="spoke-select" onchange="setSpokeFromSelect(this)">
+          <option value="1.6|">1.6 mm</option>  <option value="1.7|">1.7 mm</option>
+          <option value="1.8|">1.8 mm</option>  <option value="1.9|">1.9 mm</option>
+          <option value="2.0|" selected>2.0 mm</option>
+          <option value="2.1|">2.1 mm</option>  <option value="2.2|">2.2 mm</option>
+          <option value="2.3|">2.3 mm</option>
+          <option value="0.9|2.2">CX-Ray 0.9×2.2</option>
+          <option value="0.9|2.3">Aerolite 0.9×2.3</option>
+        </select>
+      </div>
+    </div>
 
-   <div class="div"></div>
+    <div class="div"></div>
 
-   <div class="f">
-     <label data-i18n="cross">Croisement</label>
-     <div class="crow">
-       <button class="cp"        data-cross="0" onclick="setCross(this)">Radial</button>
-       <button class="cp"        data-cross="1" onclick="setCross(this)">1×</button>
-       <button class="cp"        data-cross="2" onclick="setCross(this)">2×</button>
-       <button class="cp active" data-cross="3" onclick="setCross(this)">3×</button>
-       <button class="cp"        data-cross="4" onclick="setCross(this)">4×</button>
-     </div>
-   </div>
- </div>
+    <div class="f">
+      <label data-i18n="cross">Croisement</label>
+      <div class="crow">
+        <button class="cp" data-cross="0" onclick="setCross(this)">Radial</button>
+        <button class="cp" data-cross="1" onclick="setCross(this)">1×</button>
+        <button class="cp" data-cross="2" onclick="setCross(this)">2×</button>
+        <button class="cp" data-cross="3" onclick="setCross(this)">3×</button>
+        <button class="cp" data-cross="4" onclick="setCross(this)">4×</button>
+      </div>
+    </div>
+  </div>
 
- <!-- Tensions -->
- <div class="card">
-   <div class="ch">
-     <div class="cdot"></div>
-     <div class="clabel" data-i18n="targetTensions">Tensions cibles</div>
-   </div>
-   <div class="g2" id="tension-g2">
-     <div class="f" id="tension-forte-field">
-       <label>
-         <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--warm);margin-right:.3rem;vertical-align:middle"></span>
-         <span data-i18n="highTensionLabel">Nappe forte</span>
-       </label>
-       <select id="tension-forte" onchange="onTension()">
-         <option value="" disabled selected>—</option>
-         <option>80</option><option>85</option><option>90</option><option>95</option>
-         <option>100</option><option>105</option><option>110</option><option>115</option>
-         <option>120</option><option>125</option><option>130</option>
-       </select>
-     </div>
-     <div class="f" id="tension-faible-field" style="opacity:.35">
-       <label>
-         <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:var(--accent);margin-right:.3rem;vertical-align:middle"></span>
-         <span data-i18n="lowTensionLabel">Nappe faible</span>
-       </label>
-       <div class="faible-display" id="tension-faible-display"></div>
-     </div>
-   </div>
-   <p class="help" style="margin-top:.6rem" data-i18n="tensionHelp">La tension faible est calculée automatiquement selon le ratio des déports.</p>
- </div>
+  <!-- ── Tensions ── -->
+  <div class="card">
+    <div class="ch">
+      <svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+        <circle cx="10" cy="12" r="8"/>  <circle cx="10" cy="12" r="4.5"/>
+        <circle cx="10" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+        <line x1="14.5" y1="7.5" x2="21" y2="3"/>
+        <polyline points="17 3 21 3 21 7"/>
+      </svg>
+      <div class="clabel" data-i18n="targetTensions">Tensions cibles</div>
+    </div>
+    <div class="g2" id="tension-g2">
+      <div class="f" id="tension-forte-field">
+        <label>
+          <span class="tension-dot tension-dot-warm"></span>
+          <span data-i18n="highTensionLabel">Nappe forte</span>
+        </label>
+        <select id="tension-forte" onchange="onTension();checkTensionComplete()">
+          <option value="" disabled selected>—</option>
+          <option>80</option><option>85</option><option>90</option><option>95</option>
+          <option>100</option><option>105</option><option>110</option><option>115</option>
+          <option>120</option><option>125</option><option>130</option>
+        </select>
+      </div>
+      <div class="f" id="tension-faible-field" style="opacity:.35">
+        <label>
+          <span class="tension-dot tension-dot-accent"></span>
+          <span data-i18n="lowTensionLabel">Nappe faible</span>
+        </label>
+        <div class="faible-display" id="tension-faible-display"></div>
+      </div>
+    </div>
+    <p class="help" style="margin-top:.6rem" data-i18n="tensionHelp">La tension faible est calculée automatiquement selon le ratio des déports.</p>
+  </div>
 
- <div class="err" id="err"></div>
- <div style="display:grid;grid-template-columns:1fr auto;gap:.75rem;align-items:stretch">
-   <button class="btn" onclick="calc()" data-i18n="calcBtn">Calculer</button>
-   <button class="btn btn-reset" onclick="clearForm()">Reset</button>
- </div>
+  <div class="err" id="err"></div>
+  <div class="btn-row">
+    <button class="btn" onclick="calc()" data-i18n="calcBtn">Calculer</button>
+    <button class="btn btn-reset" onclick="clearForm()">Reset</button>
+  </div>
 
- <!-- Results -->
- <div class="rw" id="results">
-   <div class="card" style="border-color:rgba(126,200,227,.13)">
-     <div class="ch">
-       <div class="cdot" style="background:var(--success);opacity:.7"></div>
-       <div class="clabel" style="color:var(--success)" data-i18n="results">Résultats</div>
-     </div>
+  <!-- ── Results ── -->
+  <div class="rw" id="results">
+    <div class="card card-result">
+      <div class="ch">
+        <svg class="cicon cicon-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <rect x="4" y="2" width="16" height="20" rx="2"/>
+          <rect x="7" y="5" width="10" height="4" rx="1" fill="currentColor" opacity=".3" stroke="none"/>
+          <line x1="7" y1="5" x2="17" y2="5"/>  <line x1="7" y1="9" x2="17" y2="9"/>
+          <line x1="7" y1="5" x2="7" y2="9"/>   <line x1="17" y1="5" x2="17" y2="9"/>
+          <circle cx="8"  cy="13" r=".9" fill="currentColor" stroke="none"/>
+          <circle cx="12" cy="13" r=".9" fill="currentColor" stroke="none"/>
+          <circle cx="16" cy="13" r=".9" fill="currentColor" stroke="none"/>
+          <circle cx="8"  cy="17" r=".9" fill="currentColor" stroke="none"/>
+          <circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/>
+          <circle cx="16" cy="17" r=".9" fill="currentColor" stroke="none"/>
+        </svg>
+        <div class="clabel clabel-success" data-i18n="results">Résultats</div>
+      </div>
+      <div class="rg">
+        <div class="rc fo">
+          <div class="rtag" id="rtag-fo">Nappe forte</div>
+          <div class="rnum" id="r-fo">—</div>
+          <div class="runit">mm</div>
+          <div class="rrows" id="m-fo"></div>
+        </div>
+        <div class="rc fa">
+          <div class="rtag" id="rtag-fa">Nappe faible</div>
+          <div class="rnum" id="r-fa">—</div>
+          <div class="runit">mm</div>
+          <div class="rrows" id="m-fa"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-     <div class="rg">
-       <div class="rc fo">
-         <div class="rtag" id="rtag-fo">Nappe forte</div>
-         <div class="rnum" id="r-fo">—</div>
-         <div class="runit">mm</div>
-         <div class="rrows" id="m-fo"></div>
-       </div>
-       <div class="rc fa">
-         <div class="rtag" id="rtag-fa">Nappe faible</div>
-         <div class="rnum" id="r-fa">—</div>
-         <div class="runit">mm</div>
-         <div class="rrows" id="m-fa"></div>
-       </div>
-     </div>
-   </div>
- </div>
+  <!-- ── Arbitrage ── -->
+  <div class="arb-wrap" id="arb-wrap">
+    <div class="card card-success">
+      <div class="ch ch-toggle" onclick="toggleArbCard()">
+        <svg class="cicon cicon-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M9 21h6M12 3a6 6 0 016 6c0 2.5-1.5 4.5-3 6H9c-1.5-1.5-3-3.5-3-6a6 6 0 016-6z"/>
+          <line x1="9" y1="17" x2="15" y2="17"/>
+        </svg>
+        <div class="clabel clabel-success" data-i18n="arbitrage">Arrondi suggéré</div>
+        <em id="arb-card-chevron" class="chevron chevron-success">&#8964;</em>
+      </div>
+      <div id="arb-card-body" style="display:none;margin-top:1.35rem">
+        <div class="arb-cols" id="arb-cols">
+          <div id="arb-col-fo">
+            <div class="arb-col-head fo" id="arb-head-fo">Nappe forte</div>
+            <button class="arb-even-btn" id="arb-even-fo" onclick="toggleEven('fo')" data-i18n="evenSizes">Tailles paires</button>
+            <div class="arb-grid" id="arb-grid-fo"></div>
+          </div>
+          <div id="arb-col-fa">
+            <div class="arb-col-head fa" id="arb-head-fa">Nappe faible</div>
+            <button class="arb-even-btn" id="arb-even-fa" onclick="toggleEven('fa')" data-i18n="evenSizes">Tailles paires</button>
+            <div class="arb-grid" id="arb-grid-fa"></div>
+          </div>
+        </div>
+        <p class="help" style="margin-top:1rem" data-i18n="spokeThread">Note : un filet = 0.45 mm</p>
+      </div>
+    </div>
+  </div>
 
- <!-- Arbitrage -->
- <div class="arb-wrap" id="arb-wrap">
-   <div class="card" style="border-color:rgba(126,207,168,.35);box-shadow:0 0 0 1px rgba(126,207,168,.1)">
-     <div class="ch" onclick="toggleArbCard()" style="cursor:pointer;user-select:none;margin-bottom:0">
-       <div class="cdot" style="background:var(--success);opacity:.7"></div>
-       <div class="clabel" style="color:var(--success)" data-i18n="arbitrage">Arrondi suggéré</div>
-       <em id="arb-card-chevron" style="margin-left:auto;color:var(--success);font-style:normal;font-size:.75rem;transition:transform .22s;display:inline-block">&#8964;</em>
-     </div>
-     <div id="arb-card-body" style="display:none;margin-top:1.35rem">
-       <div class="arb-cols" id="arb-cols">
-         <div id="arb-col-fo">
-           <div class="arb-col-head fo" id="arb-head-fo">Nappe forte</div>
-           <button class="arb-even-btn" id="arb-even-fo" onclick="toggleEven('fo')" data-i18n="evenSizes">Tailles paires</button>
-           <div class="arb-grid" id="arb-grid-fo"></div>
-         </div>
-         <div id="arb-col-fa">
-           <div class="arb-col-head fa" id="arb-head-fa">Nappe faible</div>
-           <button class="arb-even-btn" id="arb-even-fa" onclick="toggleEven('fa')" data-i18n="evenSizes">Tailles paires</button>
-           <div class="arb-grid" id="arb-grid-fa"></div>
-         </div>
-       </div>
-       <p class="help" style="margin-top:1rem" data-i18n="spokeThread">Note : un filet = 0.45 mm</p>
-     </div>
-   </div>
- </div>
+  <!-- ── Summary ── -->
+  <div class="rw" id="summary-wrap">
+    <div class="card card-muted">
+      <div class="ch ch-toggle" onclick="toggleSummaryCard()">
+        <svg class="cicon cicon-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <line x1="8" y1="6"  x2="21" y2="6"/>  <line x1="8" y1="12" x2="21" y2="12"/>  <line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6"  x2="3.01" y2="6"/> <line x1="3" y1="12" x2="3.01" y2="12"/> <line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+        <div class="clabel clabel-muted" data-i18n="configSummary">Résumé de configuration</div>
+        <em id="sum-card-chevron" class="chevron chevron-muted">&#8964;</em>
+      </div>
+      <div id="sum-card-body" style="display:none;margin-top:1.35rem">
+        <div id="summary"></div>
+      </div>
+    </div>
+  </div>
 
- <!-- Résumé de configuration -->
- <div class="rw" id="summary-wrap">
-   <div class="card" style="border-color:rgba(255,255,255,.06)">
-     <div class="ch" onclick="toggleSummaryCard()" style="cursor:pointer;user-select:none;margin-bottom:0">
-       <div class="cdot" style="opacity:.35"></div>
-       <div class="clabel" style="color:var(--text2)" data-i18n="configSummary">Résumé de configuration</div>
-       <em id="sum-card-chevron" style="margin-left:auto;color:var(--text2);font-style:normal;font-size:.75rem;transition:transform .22s;display:inline-block">&#8964;</em>
-     </div>
-     <div id="sum-card-body" style="display:none;margin-top:1.35rem">
-       <div id="summary"></div>
-     </div>
-   </div>
- </div>
+  <!-- ── Save ── -->
+  <div class="save-wrap" id="save-wrap">
+    <div class="card card-muted">
+      <div class="ch ch-toggle" onclick="toggleSaveCard()">
+        <svg class="cicon cicon-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        <div class="clabel clabel-muted" data-i18n="saveLabel">Sauvegarder</div>
+        <em id="save-card-chevron" class="chevron chevron-muted">&#8964;</em>
+      </div>
+      <div id="save-card-body" style="display:none;margin-top:1.1rem">
+        <div class="save-row">
+          <input class="save-input" type="text" id="save-name" placeholder="Nom de la configuration…" maxlength="60">
+          <button class="btn-save" onclick="saveConfig()" data-i18n="saveOk">OK</button>
+        </div>
+        <p class="help" style="margin-top:.55rem" id="save-feedback"></p>
+        <p class="help" style="margin-top:.8rem" data-i18n="saveWarning">⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.</p>
+      </div>
+    </div>
+  </div>
 
- <!-- Sauvegarder -->
- <div class="save-wrap" id="save-wrap">
-   <div class="card" style="border-color:rgba(255,255,255,.06)">
-     <div class="ch" onclick="toggleSaveCard()" style="cursor:pointer;user-select:none;margin-bottom:0">
-       <div class="cdot" style="opacity:.35"></div>
-       <div class="clabel" style="color:var(--text2)" data-i18n="saveLabel">Sauvegarder</div>
-       <em id="save-card-chevron" style="margin-left:auto;color:var(--text2);font-style:normal;font-size:.75rem;transition:transform .22s;display:inline-block">&#8964;</em>
-     </div>
-     <div id="save-card-body" style="display:none;margin-top:1.1rem">
-       <div class="save-row">
-         <input class="save-input" type="text" id="save-name" placeholder="Nom de la configuration…" maxlength="60">
-         <button class="btn-save" onclick="saveConfig()" data-i18n="saveOk">OK</button>
-       </div>
-       <p class="help" style="margin-top:.55rem" id="save-feedback"></p>
-       <p class="help" style="margin-top:.8rem;color:var(--text3)" data-i18n="saveWarning">⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.</p>
-     </div>
-   </div>
- </div>
-
- <!-- Configurations sauvegardées -->
- <div class="card configs-wrap" id="configs-wrap" style="display:none">
-   <div class="ch" onclick="toggleConfigsCard()" style="cursor:pointer;user-select:none;margin-bottom:0">
-     <div class="cdot" style="opacity:.35"></div>
-     <div class="clabel" style="color:var(--text2)" data-i18n="configsTitle">Configurations sauvegardées</div>
-     <em id="configs-chevron" style="margin-left:auto;color:var(--text2);font-style:normal;font-size:.75rem;transition:transform .22s;display:inline-block">&#8964;</em>
-   </div>
-   <div id="configs-body" style="display:none">
-     <div class="cfg-list" id="cfg-list"></div>
-   </div>
- </div>
+  <!-- ── Saved configs ── -->
+  <div class="card configs-wrap" id="configs-wrap" style="display:none">
+    <div class="ch ch-toggle" onclick="toggleConfigsCard()">
+      <svg class="cicon cicon-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+        <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+      </svg>
+      <div class="clabel clabel-muted" data-i18n="configsTitle">Configurations sauvegardées</div>
+      <em id="configs-chevron" class="chevron chevron-muted">&#8964;</em>
+    </div>
+    <div id="configs-body" style="display:none">
+      <div class="cfg-list" id="cfg-list"></div>
+    </div>
+  </div>
 
 </div>
 
 <script>
 
-// ── i18n ──────────────────────────────────────────────────────────────────
+// ── i18n ────────────────────────────────────────────────────────────────────
 let lang = 'fr';
 
 const i18n = {
   fr: {
-    wheelType:      'Type de roue',
-    hub:            'Moyeu',
-    rim:            'Jante',
-    targetTensions: 'Tensions cibles',
-    results:        'Résultats',
-    frontWheel:     'Roue Avant',
-    rearWheel:      'Roue Arrière',
-    totalSpokes:    'Nb total de rayons',
-    holeDiam:       'Ø trous de bride (mm)',
-    left:           'Gauche',
-    right:          'Droit',
-    pcdTip:         'Diam utile flasque',
-    offset:         'Déport',
-    offsetTip:      'Centre vers flasque',
-    soLeft:         'SO gauche',
-    soRight:        'SO droit',
-    erdDirect:      'ERD DIRECT',
-    addonTip:       "Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.",
-    erdCalc:        'ERD calculé (mm)',
-    rimAsym:        'Asymétrie jante (mm)',
-    spokeSection:   'Section de rayon',
-    cross:          'Croisement',
-    highTensionLabel: 'Nappe forte',
-    lowTensionLabel:  'Nappe faible',
-    highTensionFront: 'Nappe forte',
-    lowTensionFront:  'Nappe faible',
-    highTensionRear:  'Nappe forte',
-    lowTensionRear:   'Nappe faible',
-    leftSide:       'Côté gauche',
-    rightSide:      'Côté droit',
-    tensionHelp:    'La tension faible est calculée automatiquement selon le ratio des déports.',
-    calcBtn:        'Calculer',
-    // dynamic
-    perSide:        '/côté',
-    configSummary:  'Résumé de configuration',
-    wheelLabel:     'Roue',
-    spokeCount:     'Nb rayons',
-    crossLabel:     'Croisement',
-    hubType:        'Type moyeu',
-    spokeSection2:  'Section rayon',
-    rimAsym2:       'Asymétrie jante',
-    tensionRatio:   'Tension ratio',
-    frontLabel:     'Avant',
-    rearLabel:      'Arrière',
-    radial:         'Radial',
-    // errors
-    errSpokes:      'Veuillez choisir le nombre de rayons.',
-    errPcd:         'Veuillez renseigner PCD et déport pour les deux côtés.',
-    errErd:         'ERD invalide ou non renseigné.',
-    errTension:     'Veuillez choisir la tension cible nappe forte.',
-    errOffset:      'Les déports doivent être positifs.',
-    errSO:          'Veuillez renseigner le Spoke Offset (SO) pour les deux côtés.',
-    arbitrage:  'Arrondi suggéré',
-    evenSizes:  'Tailles paires',
-    gapTarget:  'écart cible',
-    spokeThread: 'Note : un filet = 0.45 mm',
-    saveLabel:   'Sauvegarder',
-    savePlaceholder: 'Nom de la configuration…',
-    saveOk:      'OK',
-    saveDone:    'Configuration sauvegardée.',
-    saveError:   'Veuillez saisir un nom.',
-    configsTitle: 'Configurations sauvegardées',
-    loadBtn:     'Charger',
-    saveWarning: '⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.',
+    wheelType:'Type de roue', hub:'Moyeu', rim:'Jante', targetTensions:'Tensions cibles', results:'Résultats',
+    frontWheel:'Roue Avant', rearWheel:'Roue Arrière',
+    totalSpokes:'Nb total de rayons', holeDiam:'Ø trous de bride (mm)',
+    left:'Gauche', right:'Droit',
+    pcdTip:'Diam utile flasque', offset:'Déport', offsetTip:'Centre vers flasque',
+    soLeft:'SO gauche', soRight:'SO droit',
+    erdDirect:'ERD DIRECT', addonTip:"Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.",
+    erdCalc:'ERD calculé (mm)', rimAsym:'Asymétrie jante (mm)', spokeSection:'Section de rayon', cross:'Croisement',
+    highTensionLabel:'Nappe forte', lowTensionLabel:'Nappe faible',
+    highTensionFront:'Nappe forte', lowTensionFront:'Nappe faible',
+    highTensionRear:'Nappe forte',  lowTensionRear:'Nappe faible',
+    leftSide:'Côté gauche', rightSide:'Côté droit',
+    tensionHelp:'La tension faible est calculée automatiquement selon le ratio des déports.',
+    calcBtn:'Calculer', perSide:'/côté', configSummary:'Résumé de configuration',
+    wheelLabel:'Roue', spokeCount:'Nb rayons', crossLabel:'Croisement',
+    hubType:'Type moyeu', spokeSection2:'Section rayon', rimAsym2:'Asymétrie jante',
+    tensionRatio:'Tension ratio', frontLabel:'Avant', rearLabel:'Arrière', radial:'Radial',
+    errSpokes:'Veuillez choisir le nombre de rayons.',
+    errPcd:'Veuillez renseigner PCD et déport pour les deux côtés.',
+    errErd:'ERD invalide ou non renseigné.', errCross:'Veuillez choisir un croisement.',
+    errTension:'Veuillez choisir la tension cible nappe forte.',
+    errOffset:'Les déports doivent être positifs.',
+    errSO:'Veuillez renseigner le Spoke Offset (SO) pour les deux côtés.',
+    arbitrage:'Arrondi suggéré', evenSizes:'Tailles paires', gapTarget:'écart cible',
+    spokeThread:'Note : un filet = 0.45 mm',
+    saveLabel:'Sauvegarder', savePlaceholder:'Nom de la configuration…',
+    saveOk:'OK', saveDone:'Configuration sauvegardée.', saveError:'Veuillez saisir un nom.',
+    configsTitle:'Configurations sauvegardées', loadBtn:'Charger',
+    saveWarning:'⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.',
   },
   en: {
-    wheelType:      'Wheel Type',
-    hub:            'Hub',
-    rim:            'Rim',
-    targetTensions: 'Target Tensions',
-    results:        'Results',
-    frontWheel:     'Front Wheel',
-    rearWheel:      'Rear Wheel',
-    totalSpokes:    'Total spoke count',
-    holeDiam:       'Flange hole Ø (mm)',
-    left:           'Left',
-    right:          'Right',
-    pcdTip:         'Flange pitch circle',
-    offset:         'Offset',
-    offsetTip:      'Center to flange',
-    soLeft:         'SO left',
-    soRight:        'SO right',
-    erdDirect:      'ERD DIRECT',
-    addonTip:       'Depends on nipple used. Select 2 mm for standard 12 mm nipples.',
-    erdCalc:        'Calculated ERD (mm)',
-    rimAsym:        'Rim asymmetry (mm)',
-    spokeSection:   'Spoke section',
-    cross:          'Lacing',
-    highTensionLabel: 'High tension side',
-    lowTensionLabel:  'Low tension side',
-    highTensionFront: 'High tension side',
-    lowTensionFront:  'Low tension side',
-    highTensionRear:  'High tension side',
-    lowTensionRear:   'Low tension side',
-    leftSide:       'Left side',
-    rightSide:      'Right side',
-    tensionHelp:    'Low tension is calculated automatically from the offset ratio.',
-    calcBtn:        'Calculate',
-    // dynamic
-    perSide:        '/side',
-    configSummary:  'Configuration summary',
-    wheelLabel:     'Wheel',
-    spokeCount:     'Spoke count',
-    crossLabel:     'Lacing',
-    hubType:        'Hub type',
-    spokeSection2:  'Spoke section',
-    rimAsym2:       'Rim asymmetry',
-    tensionRatio:   'Tension ratio',
-    frontLabel:     'Front',
-    rearLabel:      'Rear',
-    radial:         'Radial',
-    // errors
-    errSpokes:      'Please select the number of spokes.',
-    errPcd:         'Please enter PCD and offset for both sides.',
-    errErd:         'ERD is invalid or missing.',
-    errTension:     'Please select the high tension target.',
-    errOffset:      'Offsets must be positive values.',
-    errSO:          'Please enter Spoke Offset (SO) for both sides.',
-    arbitrage:  'Suggested rounding',
-    evenSizes:  'Even sizes',
-    gapTarget:  'gap to target',
-    spokeThread: 'Note : one spoke thread is 0.45 mm',
-    saveLabel:   'Save',
-    savePlaceholder: 'Configuration name…',
-    saveOk:      'OK',
-    saveDone:    'Configuration saved.',
-    saveError:   'Please enter a name.',
-    configsTitle: 'Saved configurations',
-    loadBtn:     'Load',
-    saveWarning: '⚠︎ Locally stored in browser cache. Clearing the cache will erase all data.',
+    wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
+    frontWheel:'Front Wheel', rearWheel:'Rear Wheel',
+    totalSpokes:'Total spoke count', holeDiam:'Flange hole Ø (mm)',
+    left:'Left', right:'Right',
+    pcdTip:'Flange pitch circle', offset:'Offset', offsetTip:'Center to flange',
+    soLeft:'SO left', soRight:'SO right',
+    erdDirect:'ERD DIRECT', addonTip:'Depends on nipple used. Select 2 mm for standard 12 mm nipples.',
+    erdCalc:'Calculated ERD (mm)', rimAsym:'Rim asymmetry (mm)', spokeSection:'Spoke section', cross:'Lacing',
+    highTensionLabel:'High tension side', lowTensionLabel:'Low tension side',
+    highTensionFront:'High tension side', lowTensionFront:'Low tension side',
+    highTensionRear:'High tension side',  lowTensionRear:'Low tension side',
+    leftSide:'Left side', rightSide:'Right side',
+    tensionHelp:'Low tension is calculated automatically from the offset ratio.',
+    calcBtn:'Calculate', perSide:'/side', configSummary:'Configuration summary',
+    wheelLabel:'Wheel', spokeCount:'Spoke count', crossLabel:'Lacing',
+    hubType:'Hub type', spokeSection2:'Spoke section', rimAsym2:'Rim asymmetry',
+    tensionRatio:'Tension ratio', frontLabel:'Front', rearLabel:'Rear', radial:'Radial',
+    errSpokes:'Please select the number of spokes.',
+    errPcd:'Please enter PCD and offset for both sides.',
+    errErd:'ERD is invalid or missing.', errCross:'Please select a lacing pattern.',
+    errTension:'Please select the high tension target.',
+    errOffset:'Offsets must be positive values.',
+    errSO:'Please enter Spoke Offset (SO) for both sides.',
+    arbitrage:'Suggested rounding', evenSizes:'Even sizes', gapTarget:'gap to target',
+    spokeThread:'Note: one spoke thread is 0.45 mm',
+    saveLabel:'Save', savePlaceholder:'Configuration name…',
+    saveOk:'OK', saveDone:'Configuration saved.', saveError:'Please enter a name.',
+    configsTitle:'Saved configurations', loadBtn:'Load',
+    saveWarning:'⚠︎ Locally stored in browser cache. Clearing the cache will erase all data.',
   }
 };
 
-function t(key){ return (i18n[lang] && i18n[lang][key]) || key; }
+function t(key) { return (i18n[lang] && i18n[lang][key]) || key; }
 
-// Retourne si la roue est symétrique selon les déports effectifs
-function isWheelSymmetric(){
-  const oL = parseFloat(document.getElementById('offset-left').value);
-  const oR = parseFloat(document.getElementById('offset-right').value);
-  const asym = parseFloat(document.getElementById('asym').value) || 0;
-  const asymSign = wtype === 'arriere' ? -1 : 1;
-  const effL = oL + asymSign * asym;
-  const effR = oR - asymSign * asym;
-  return Math.abs(effL - effR) < 0.01;
-}
-
+// ── State ────────────────────────────────────────────────────────────────────
+let wtype = 'avant', erdMode = 'direct', sd = 2.0, sa = null, cross = null, hubType = 'jbend';
+const saved = { avant: null, arriere: null };
 let currentErrKey = null;
+let summaryData = null;
+let arbData  = { fo: null, fa: null };
+let evenMode = { fo: false, fa: false };
 
-function applyLang(){
-  // Static elements via data-i18n
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    el.textContent = t(el.dataset.i18n);
-  });
-  // Lang button label: show the OTHER language
-  document.getElementById('lang-btn').textContent = lang === 'fr' ? 'EN' : 'FR';
-  // Refresh result card labels + arbitrage heads if visible
-  if(document.getElementById('results').classList.contains('show')){
-    const rtagFoEl = document.getElementById('rtag-fo');
-    const rtagFaEl = document.getElementById('rtag-fa');
-    if(rtagFoEl.dataset.i18nKey) rtagFoEl.textContent = t(rtagFoEl.dataset.i18nKey);
-    if(rtagFaEl.dataset.i18nKey) rtagFaEl.textContent = t(rtagFaEl.dataset.i18nKey);
+// ── Scroll flags ─────────────────────────────────────────────────────────────
+let _hubScrolled = false, _rimScrolled = false, _tensionScrolled = false;
+function resetScrollFlags() { _hubScrolled = false; _rimScrolled = false; _tensionScrolled = false; }
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function $id(id) { return document.getElementById(id); }
+function getCards() { return document.querySelectorAll('.wrap > .card'); }
+function getERD() {
+  return erdMode === 'direct'
+    ? parseFloat($id('erd-direct').value)
+    : parseFloat($id('erd-nsd-result').value);
+}
+function setInvalid(id)  { $id(id).classList.add('invalid'); }
+function clearInvalids() { document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid')); }
+
+// ── i18n apply ───────────────────────────────────────────────────────────────
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  $id('lang-btn').textContent = lang === 'fr' ? 'EN' : 'FR';
+  if ($id('results').classList.contains('show')) {
+    const fo = $id('rtag-fo'); const fa = $id('rtag-fa');
+    if (fo.dataset.i18nKey) fo.textContent = t(fo.dataset.i18nKey);
+    if (fa.dataset.i18nKey) fa.textContent = t(fa.dataset.i18nKey);
   }
-  // Refresh arbitrage grids if visible
-  if(document.getElementById('arb-wrap').classList.contains('show')){
-    if(arbData.fo) renderArb('fo');
-    if(arbData.fa) renderArb('fa');
-    const arbHFo = document.getElementById('arb-head-fo');
-    const arbHFa = document.getElementById('arb-head-fa');
-    if(arbHFo.dataset.i18nKey) arbHFo.textContent = t(arbHFo.dataset.i18nKey);
-    if(arbHFa.dataset.i18nKey) arbHFa.textContent = t(arbHFa.dataset.i18nKey);
+  if ($id('arb-wrap').classList.contains('show')) {
+    if (arbData.fo) renderArb('fo');
+    if (arbData.fa) renderArb('fa');
+    const hFo = $id('arb-head-fo'); const hFa = $id('arb-head-fa');
+    if (hFo.dataset.i18nKey) hFo.textContent = t(hFo.dataset.i18nKey);
+    if (hFa.dataset.i18nKey) hFa.textContent = t(hFa.dataset.i18nKey);
   }
-  // Refresh summary if visible
-  if(document.getElementById('summary-wrap').classList.contains('show')){
-    renderSummary();
-  }
-  // Refresh error message if visible
-  const errEl = document.getElementById('err');
-  if(errEl.classList.contains('show') && currentErrKey){
-    errEl.textContent = t(currentErrKey);
-  }
-  // Placeholder champ save (attribut, non couvert par data-i18n)
-  const saveNameEl = document.getElementById('save-name');
-  if(saveNameEl) saveNameEl.placeholder = t('savePlaceholder');
-  // Rafraîchir la liste des configs (labels "Charger" / "Load")
+  if ($id('summary-wrap').classList.contains('show')) renderSummary();
+  const errEl = $id('err');
+  if (errEl.classList.contains('show') && currentErrKey) errEl.textContent = t(currentErrKey);
+  const saveNameEl = $id('save-name');
+  if (saveNameEl) saveNameEl.placeholder = t('savePlaceholder');
   renderConfigsList();
 }
 
-function toggleLang(){
-  lang = lang === 'fr' ? 'en' : 'fr';
-  applyLang();
-}
+function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; applyLang(); }
 
-// ── State ──────────────────────────────────────────────────────────────────
-let wtype='avant', erdMode='direct', sd=2.0, sa=null, cross=3, hubType='jbend';
-
-// Per-wheel saved state (null = never saved)
-const saved = { avant: null, arriere: null };
-
-// ── Helpers: read/write all form fields ───────────────────────────────────
-function readState(){
- return {
-   nbRayons:    document.getElementById('nb-rayons').value,
-   diamTrou:    document.getElementById('diam-trou').value,
-   pcdLeft:     document.getElementById('pcd-left').value,
-   offsetLeft:  document.getElementById('offset-left').value,
-   pcdRight:    document.getElementById('pcd-right').value,
-   offsetRight: document.getElementById('offset-right').value,
-   erdMode:     erdMode,
-   erdDirect:   document.getElementById('erd-direct').value,
-   nsdVal:      document.getElementById('nsd-val').value,
-   ecrouType:   document.getElementById('ecrou-type').value,
-   erdNsdResult:document.getElementById('erd-nsd-result').value,
-   asym:        document.getElementById('asym').value,
-   spokeSelect: document.getElementById('spoke-select').value,
-   cross:       cross,
-   hubType:     hubType,
-   tensionForte:document.getElementById('tension-forte').value,
-   sd: sd, sa: sa,
-   hasResult:   document.getElementById('results').classList.contains('show'),
-   rFo:         document.getElementById('r-fo').textContent,
-   rFa:         document.getElementById('r-fa').textContent,
-   mFo:         document.getElementById('m-fo').innerHTML,
-   mFa:         document.getElementById('m-fa').innerHTML,
-   rtagFoKey:   document.getElementById('rtag-fo').dataset.i18nKey || '',
-   rtagFaKey:   document.getElementById('rtag-fa').dataset.i18nKey || '',
-   summaryData: summaryData,
-   arbData:     (arbData.fo && arbData.fa) ? JSON.parse(JSON.stringify(arbData)) : null,
- };
-}
-
-function applyState(s){
- if(!s) return;
- document.getElementById('nb-rayons').value    = s.nbRayons;
- document.getElementById('diam-trou').value    = s.diamTrou;
- document.getElementById('pcd-left').value     = s.pcdLeft;
- document.getElementById('offset-left').value  = s.offsetLeft;
- document.getElementById('pcd-right').value    = s.pcdRight;
- document.getElementById('offset-right').value = s.offsetRight;
- document.getElementById('erd-direct').value   = s.erdDirect;
- document.getElementById('nsd-val').value      = s.nsdVal;
- document.getElementById('ecrou-type').value   = s.ecrouType;
- document.getElementById('erd-nsd-result').value = s.erdNsdResult;
- document.getElementById('asym').value         = s.asym;
- document.getElementById('spoke-select').value = s.spokeSelect;
- document.getElementById('tension-forte').value= s.tensionForte;
- sd = s.sd; sa = s.sa; cross = s.cross;
- if(s.hubType){hubType=s.hubType;setHubType(hubType);}
- document.getElementById('sp-so-left').value='';
- document.getElementById('sp-so-right').value='';
-
- // ERD mode
- erdMode = s.erdMode;
- document.getElementById('btn-erd-direct').classList.toggle('active', erdMode==='direct');
- document.getElementById('btn-erd-nsd').classList.toggle('active', erdMode==='nsd');
- document.getElementById('erd-direct-section').style.display = erdMode==='direct' ? '' : 'none';
- document.getElementById('erd-nsd-section').style.display    = erdMode==='nsd'    ? '' : 'none';
-
- // Cross buttons
- document.querySelectorAll('.cp').forEach(b=>{
-   b.classList.toggle('active', parseInt(b.dataset.cross)===cross);
- });
-
- // Results
- if(s.hasResult){
-   document.getElementById('r-fo').textContent = s.rFo;
-   document.getElementById('r-fa').textContent = s.rFa;
-   document.getElementById('m-fo').innerHTML   = s.mFo;
-   document.getElementById('m-fa').innerHTML   = s.mFa;
-   // Determine rtag keys: use saved keys if present, else deduce from wheel type + symmetry
-   const oLv = parseFloat(document.getElementById('offset-left').value);
-   const oRv = parseFloat(document.getElementById('offset-right').value);
-   const asymV = parseFloat(document.getElementById('asym').value) || 0;
-   const asymSignV = wtype === 'arriere' ? -1 : 1;
-   const effLv = oLv + asymSignV * asymV, effRv = oRv - asymSignV * asymV;
-   const isSymV = Math.abs(effLv - effRv) < 0.01;
-   const foKey = s.rtagFoKey || (isSymV ? 'leftSide'  : (wtype === 'arriere' ? 'highTensionRear' : 'highTensionFront'));
-   const faKey = s.rtagFaKey || (isSymV ? 'rightSide' : (wtype === 'arriere' ? 'lowTensionRear'  : 'lowTensionFront'));
-   { const el=document.getElementById('rtag-fo'); el.textContent=t(foKey); el.dataset.i18nKey=foKey; }
-   { const el=document.getElementById('rtag-fa'); el.textContent=t(faKey); el.dataset.i18nKey=faKey; }
-
-   // Réordonner les cartes résultats selon le type de roue
-   const rg = document.querySelector('.rg');
-   const rcFo = document.querySelector('.rc.fo');
-   const rcFa = document.querySelector('.rc.fa');
-   if(wtype === 'arriere') rg.appendChild(rcFo);
-   else rg.insertBefore(rcFo, rcFa);
-
-   document.getElementById('results').classList.add('show');
-   if(s.summaryData){ summaryData = s.summaryData; renderSummary(); document.getElementById('summary-wrap').classList.add('show'); }
-   if(s.arbData && s.arbData.fo && s.arbData.fa){
-     arbData = s.arbData;
-     buildArb('fo', arbData.fo.exactLen, arbData.fo.elongation);
-     buildArb('fa', arbData.fa.exactLen, arbData.fa.elongation);
-     // Restore arb-head labels with current language
-     if(s.rtagFoKey || foKey){ const el=document.getElementById('arb-head-fo'); el.textContent=t(foKey); el.dataset.i18nKey=foKey; }
-     if(s.rtagFaKey || faKey){ const el=document.getElementById('arb-head-fa'); el.textContent=t(faKey); el.dataset.i18nKey=faKey; }
-     // Réordonner les colonnes arbitrage
-     const arbCols = document.getElementById('arb-cols');
-     const arbColFo = document.getElementById('arb-col-fo');
-     const arbColFa = document.getElementById('arb-col-fa');
-     if(wtype === 'arriere') arbCols.appendChild(arbColFo);
-     else arbCols.insertBefore(arbColFo, arbColFa);
-     document.getElementById('arb-wrap').classList.add('show');
-   } else {
-     arbData = { fo: null, fa: null };
-   }
-   document.getElementById('save-wrap').classList.add('show');
-   document.getElementById('save-feedback').textContent = '';
- } else {
-   document.getElementById('results').classList.remove('show');
-   document.getElementById('arb-wrap').classList.remove('show');
-   document.getElementById('summary-wrap').classList.remove('show');
-   document.getElementById('save-wrap').classList.remove('show');
- }
-
- onTension();
- reorderTensionFields(wtype);
- // update btn readiness without clearing results (state already applied)
- const btn=document.querySelector('.btn[onclick="calc()"]');
- if(btn) btn.classList.toggle('ready', checkReady());
-}
-
-function clearForm(){
- ['nb-rayons','pcd-left','offset-left','pcd-right','offset-right',
-  'erd-direct','nsd-val','erd-nsd-result','tension-forte'].forEach(id=>{
-   document.getElementById(id).value='';
- });
- document.getElementById('diam-trou').value = '2.55';
- document.getElementById('asym').value = '0';
- document.getElementById('ecrou-type').value = '';
- document.getElementById('sp-so-left').value = '';
- document.getElementById('sp-so-right').value = '';
- document.getElementById('spoke-select').value = '2.0|';
- sd=2.0; sa=null; cross=3; hubType='jbend'; setHubType('jbend');
-
- erdMode='direct';
- document.getElementById('btn-erd-direct').classList.add('active');
- document.getElementById('btn-erd-nsd').classList.remove('active');
- document.getElementById('erd-direct-section').style.display='';
- document.getElementById('erd-nsd-section').style.display='none';
-
- document.querySelectorAll('.cp').forEach(b=>{
-   b.classList.toggle('active', parseInt(b.dataset.cross)===3);
- });
-
- document.getElementById('results').classList.remove('show');
- document.getElementById('arb-wrap').classList.remove('show');
- document.getElementById('summary-wrap').classList.remove('show');
- document.getElementById('save-wrap').classList.remove('show');
- document.getElementById('arb-card-body').style.display = 'none';
- document.getElementById('arb-card-chevron').style.transform = '';
- document.getElementById('sum-card-body').style.display = 'none';
- document.getElementById('sum-card-chevron').style.transform = '';
- document.getElementById('save-card-body').style.display = 'none';
- document.getElementById('save-card-chevron').style.transform = '';
- summaryData = null;
- arbData.fo = null; arbData.fa = null;
- evenMode.fo = false; evenMode.fa = false;
- // Reset saved state for current wheel only, leave the other wheel intact
- saved[wtype] = null;
- document.getElementById('err').classList.remove('show');
- currentErrKey = null;
- clearInvalids();
- const disp=document.getElementById('tension-faible-display');
- disp.textContent=''; disp.classList.remove('has-val');
- document.getElementById('tension-faible-field').style.opacity='.35';
- window.scrollTo({top:0,behavior:'smooth'});
- renderConfigsList();
-}
-
-// ── Tab switching ──────────────────────────────────────────────────────────
-function switchTo(wh){
- if(wh === wtype) return;
-
- // Sauvegarder l'état de l'onglet courant avant de switcher
- saved[wtype] = readState();
- saved[wtype].wtype = wtype;
-
- wtype = wh;
- document.getElementById('btn-avant').classList.toggle('active', wh==='avant');
- document.getElementById('btn-arriere').classList.toggle('active', wh==='arriere');
-
- if(saved[wh]){
-   applyState(saved[wh]);
- } else {
-   clearForm();
- }
- reorderTensionFields(wh);
-}
-
-function reorderTensionFields(wh){
- const g2 = document.getElementById('tension-g2');
- const fo = document.getElementById('tension-forte-field');
- const fa = document.getElementById('tension-faible-field');
- if(wh === 'arriere'){
-   g2.appendChild(fo);
- } else {
-   g2.insertBefore(fo, fa);
- }
-}
-
-function setWheel(wh){
- switchTo(wh);
- renderConfigsList();
- closeConfigsCardIfOpen();
- document.getElementById('arb-card-body').style.display = 'none';
- document.getElementById('arb-card-chevron').style.transform = '';
-}
-
-// ── Tooltip touch support (iOS) ────────────────────────────────────────────
-(function(){
- let current = null;
- function closeAll(){
-   document.querySelectorAll('.tip-box.visible').forEach(b=>b.classList.remove('visible'));
-   current = null;
- }
- document.addEventListener('touchstart', function(e){
-   const icon = e.target.closest('.tip-icon');
-   if(icon){
-     e.preventDefault();
-     const box = icon.nextElementSibling;
-     if(box && box.classList.contains('tip-box')){
-       if(current === box){ closeAll(); return; }
-       closeAll();
-       box.classList.add('visible');
-       current = box;
-     }
-   } else if(!e.target.closest('.tip-box')){
-     closeAll();
-   }
- }, {passive:false});
-})();
-
-// ── ERD mode ───────────────────────────────────────────────────────────────
-function setErdMode(m){
- erdMode=m;
- document.getElementById('btn-erd-direct').classList.toggle('active',m==='direct');
- document.getElementById('btn-erd-nsd').classList.toggle('active',m==='nsd');
- document.getElementById('erd-direct-section').style.display=m==='direct'?'':'none';
- document.getElementById('erd-nsd-section').style.display=m==='nsd'?'':'none';
- clearResults(); updateCalcBtn();
-}
-
-function setHubType(htype){
- hubType=htype;
- document.getElementById('btn-hub-jbend').classList.toggle('active',htype==='jbend');
- document.getElementById('btn-hub-sp').classList.toggle('active',htype==='straightpull');
- document.getElementById('field-diam-trou').style.display=htype==='jbend'?'':'none';
- document.getElementById('field-sp-so-left').style.display=htype==='straightpull'?'':'none';
- document.getElementById('field-sp-so-right').style.display=htype==='straightpull'?'':'none';
- if(htype==='straightpull'){
-   const soL=document.getElementById('sp-so-left');
-   const soR=document.getElementById('sp-so-right');
-   soL.value=''; soL._prevVal=undefined;
-   soR.value=''; soR._prevVal=undefined;
- }
- clearResults(); updateCalcBtn();
-}
-
-function calcNsd(){
- const n=parseFloat(document.getElementById('nsd-val').value);
- const addon=parseFloat(document.getElementById('ecrou-type').value);
- if(!isNaN(n) && !isNaN(addon)) document.getElementById('erd-nsd-result').value=(n+2*addon).toFixed(2);
-}
-
-function setSpokeFromSelect(sel){
- const parts = sel.value.split('|');
- sd = parseFloat(parts[0]);
- sa = parts[1] ? parseFloat(parts[1]) : null;
- clearResults(); updateCalcBtn();
-}
-
-function setCross(b){
- document.querySelectorAll('.cp').forEach(x=>x.classList.remove('active'));
- b.classList.add('active');
- cross=parseInt(b.dataset.cross);
- clearResults(); updateCalcBtn();
-}
-
-function onTension(){
- const oL = parseFloat(document.getElementById('offset-left').value);
- const oR = parseFloat(document.getElementById('offset-right').value);
- const tF = parseFloat(document.getElementById('tension-forte').value);
- const disp  = document.getElementById('tension-faible-display');
- const field = document.getElementById('tension-faible-field');
-
- if(isNaN(tF) || isNaN(oL) || isNaN(oR)){
-   disp.textContent = '';
-   disp.classList.remove('has-val');
-   field.style.opacity = '.35';
-   return;
- }
-
- field.style.opacity = '1';
- const asym = parseFloat(document.getElementById('asym').value) || 0;
- const asymSign = wtype === 'arriere' ? -1 : 1;
- const effL = oL + asymSign * asym;
- const effR = oR - asymSign * asym;
- const foOff = Math.min(effL, effR);
- const faOff = Math.max(effL, effR);
- const ratio = (faOff > 0 && foOff > 0) ? foOff / faOff : 1;
- disp.textContent = (tF * ratio).toFixed(1);
- disp.classList.add('has-val');
-}
-
-function getERD(){
- return erdMode==='direct'
-   ?parseFloat(document.getElementById('erd-direct').value)
-   :parseFloat(document.getElementById('erd-nsd-result').value);
-}
-
-function checkReady(){
- const n=parseInt(document.getElementById('nb-rayons').value);
- if(!n) return false;
- const pL=parseFloat(document.getElementById('pcd-left').value);
- const pR=parseFloat(document.getElementById('pcd-right').value);
- const oL=parseFloat(document.getElementById('offset-left').value);
- const oR=parseFloat(document.getElementById('offset-right').value);
- if([pL,pR,oL,oR].some(isNaN)||pL<=0||pR<=0) return false;
- const erd=getERD();
- if(isNaN(erd)||erd<=0) return false;
- const tF=parseFloat(document.getElementById('tension-forte').value);
- if(isNaN(tF)) return false;
- if(hubType==='straightpull'){
-   const soL=document.getElementById('sp-so-left').value;
-   const soR=document.getElementById('sp-so-right').value;
-   if(soL===''||soR==='') return false;
- }
- const asymSign = wtype === 'arriere' ? -1 : 1;
- const asym=parseFloat(document.getElementById('asym').value)||0;
- const effL=oL+asymSign*asym, effR=oR-asymSign*asym;
- if(effL<=0||effR<=0) return false;
- return true;
-}
-
-function clearResults(){
- document.getElementById('results').classList.remove('show');
- document.getElementById('arb-wrap').classList.remove('show');
- document.getElementById('summary-wrap').classList.remove('show');
- document.getElementById('save-wrap').classList.remove('show');
-}
-
-function updateCalcBtn(){
- const btn=document.querySelector('.btn[onclick="calc()"]');
- if(btn) btn.classList.toggle('ready', checkReady());
- clearResults();
-}
-
-function slen(pcd,off,cr,n,erd,trou){
- const R=pcd/2, Rj=erd/2, a=cr*(2*Math.PI)/(n/2);
- return Math.sqrt(R*R+Rj*Rj-2*R*Rj*Math.cos(a)+off*off)-trou/2;
-}
-
-function slenSP(pcd,off,cr,n,erd,so){
- // H1 : θ = 2π×(cr+0.5)/(n/2)
- // L = √( (R·sinθ)² + (ERD/2 − R·cosθ)² + W² ) + SO
- const R=pcd/2, Rj=erd/2;
- const theta=cr===0?0:(cr+0.5)*(2*Math.PI)/(n/2);
- const sinT=Math.sin(theta),cosT=Math.cos(theta);
- return Math.sqrt((R*sinT)*(R*sinT)+(Rj-R*cosT)*(Rj-R*cosT)+off*off)+so;
-}
-
-function area(){
- const a = (sa !== null && !isNaN(sa)) ? sa : sd;
- return Math.PI/4*sd*a;
-}
-
-function el(F,L){return(F*9.81*L)/(area()*210000)}
-
-function setInvalid(id){ document.getElementById(id).classList.add('invalid'); }
-function clearInvalids(){ document.querySelectorAll('.invalid').forEach(el=>el.classList.remove('invalid')); }
-
-function showErr(key){
+// ── Error display ─────────────────────────────────────────────────────────────
+function showErr(key) {
   currentErrKey = key;
-  const e = document.getElementById('err');
-  e.textContent = t(key);
+  const e = $id('err');
+  e.textContent  = t(key);
   e.classList.add('show');
   e.style.cursor = 'pointer';
-  e.onclick = function(){
+  e.onclick = function() {
+    resetScrollFlags();
     const first = document.querySelector('.invalid');
-    if(first){
-      const rect = first.getBoundingClientRect();
+    if (first) {
+      const rect   = first.getBoundingClientRect();
       const target = window.pageYOffset + rect.top - window.innerHeight * 0.25 + rect.height / 2;
       window.scrollTo({ top: target, behavior: 'smooth' });
     }
   };
 }
 
-// ── Arbitrage ──────────────────────────────────────────────────────────────
-let arbData  = { fo: null, fa: null };
-let evenMode = { fo: false, fa: false };
-let summaryData = null;
+// ── Read / write form state ───────────────────────────────────────────────────
+function readState() {
+  return {
+    nbRayons: $id('nb-rayons').value, diamTrou: $id('diam-trou').value,
+    pcdLeft: $id('pcd-left').value, offsetLeft: $id('offset-left').value,
+    pcdRight: $id('pcd-right').value, offsetRight: $id('offset-right').value,
+    erdMode, erdDirect: $id('erd-direct').value,
+    nsdVal: $id('nsd-val').value, ecrouType: $id('ecrou-type').value,
+    erdNsdResult: $id('erd-nsd-result').value,
+    asym: $id('asym').value, spokeSelect: $id('spoke-select').value,
+    cross, hubType, sd, sa,
+    tensionForte: $id('tension-forte').value,
+    hasResult: $id('results').classList.contains('show'),
+    rFo: $id('r-fo').textContent, rFa: $id('r-fa').textContent,
+    mFo: $id('m-fo').innerHTML,   mFa: $id('m-fa').innerHTML,
+    rtagFoKey: $id('rtag-fo').dataset.i18nKey || '',
+    rtagFaKey: $id('rtag-fa').dataset.i18nKey || '',
+    summaryData,
+    arbData: (arbData.fo && arbData.fa) ? JSON.parse(JSON.stringify(arbData)) : null,
+  };
+}
 
+function applyState(s) {
+  if (!s) return;
+  $id('nb-rayons').value      = s.nbRayons;
+  $id('diam-trou').value      = s.diamTrou;
+  $id('pcd-left').value       = s.pcdLeft;
+  $id('offset-left').value    = s.offsetLeft;
+  $id('pcd-right').value      = s.pcdRight;
+  $id('offset-right').value   = s.offsetRight;
+  $id('erd-direct').value     = s.erdDirect;
+  $id('nsd-val').value        = s.nsdVal;
+  $id('ecrou-type').value     = s.ecrouType;
+  $id('erd-nsd-result').value = s.erdNsdResult;
+  $id('asym').value           = s.asym;
+  $id('spoke-select').value   = s.spokeSelect;
+  $id('tension-forte').value  = s.tensionForte;
+  sd = s.sd; sa = s.sa; cross = s.cross;
+  if (s.hubType) { hubType = s.hubType; setHubType(hubType); }
+  $id('sp-so-left').value = ''; $id('sp-so-right').value = '';
+
+  erdMode = s.erdMode;
+  $id('btn-erd-direct').classList.toggle('active', erdMode === 'direct');
+  $id('btn-erd-nsd').classList.toggle('active', erdMode === 'nsd');
+  $id('erd-direct-section').style.display = erdMode === 'direct' ? '' : 'none';
+  $id('erd-nsd-section').style.display    = erdMode === 'nsd'    ? '' : 'none';
+  document.querySelectorAll('.cp').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cross) === cross));
+
+  if (s.hasResult) {
+    $id('r-fo').textContent = s.rFo; $id('r-fa').textContent = s.rFa;
+    $id('m-fo').innerHTML   = s.mFo; $id('m-fa').innerHTML   = s.mFa;
+    const oL = parseFloat($id('offset-left').value);
+    const oR = parseFloat($id('offset-right').value);
+    const asym = parseFloat($id('asym').value) || 0;
+    const sign = wtype === 'arriere' ? -1 : 1;
+    const isSym = Math.abs((oL + sign * asym) - (oR - sign * asym)) < 0.01;
+    const foKey = s.rtagFoKey || (isSym ? 'leftSide'  : (wtype === 'arriere' ? 'highTensionRear' : 'highTensionFront'));
+    const faKey = s.rtagFaKey || (isSym ? 'rightSide' : (wtype === 'arriere' ? 'lowTensionRear'  : 'lowTensionFront'));
+    const rFo = $id('rtag-fo'); rFo.textContent = t(foKey); rFo.dataset.i18nKey = foKey;
+    const rFa = $id('rtag-fa'); rFa.textContent = t(faKey); rFa.dataset.i18nKey = faKey;
+    const rg = document.querySelector('.rg'), rcFo = document.querySelector('.rc.fo'), rcFa = document.querySelector('.rc.fa');
+    wtype === 'arriere' ? rg.appendChild(rcFo) : rg.insertBefore(rcFo, rcFa);
+    $id('results').classList.add('show');
+    if (s.summaryData) { summaryData = s.summaryData; renderSummary(); $id('summary-wrap').classList.add('show'); }
+    if (s.arbData && s.arbData.fo && s.arbData.fa) {
+      arbData = s.arbData;
+      buildArb('fo', arbData.fo.exactLen, arbData.fo.elongation);
+      buildArb('fa', arbData.fa.exactLen, arbData.fa.elongation);
+      const hFo = $id('arb-head-fo'); hFo.textContent = t(foKey); hFo.dataset.i18nKey = foKey;
+      const hFa = $id('arb-head-fa'); hFa.textContent = t(faKey); hFa.dataset.i18nKey = faKey;
+      const arbCols = $id('arb-cols'), arbColFo = $id('arb-col-fo'), arbColFa = $id('arb-col-fa');
+      wtype === 'arriere' ? arbCols.appendChild(arbColFo) : arbCols.insertBefore(arbColFo, arbColFa);
+      $id('arb-wrap').classList.add('show');
+    } else { arbData = { fo: null, fa: null }; }
+    $id('save-wrap').classList.add('show'); $id('save-feedback').textContent = '';
+  } else {
+    ['results','arb-wrap','summary-wrap','save-wrap'].forEach(id => $id(id).classList.remove('show'));
+  }
+
+  onTension();
+  reorderTensionFields(wtype);
+  const btn = document.querySelector('.btn[onclick="calc()"]');
+  if (btn) btn.classList.toggle('ready', checkReady());
+}
+
+// ── Clear form ────────────────────────────────────────────────────────────────
+function clearFormSilent() {
+  ['nb-rayons','pcd-left','offset-left','pcd-right','offset-right',
+   'erd-direct','nsd-val','erd-nsd-result','tension-forte'].forEach(id => { $id(id).value = ''; });
+  $id('diam-trou').value = '2.55'; $id('asym').value = '0';
+  $id('ecrou-type').value = ''; $id('sp-so-left').value = ''; $id('sp-so-right').value = '';
+  $id('spoke-select').value = '2.0|';
+  sd = 2.0; sa = null; cross = null; hubType = 'jbend'; setHubType('jbend');
+
+  erdMode = 'direct';
+  $id('btn-erd-direct').classList.add('active'); $id('btn-erd-nsd').classList.remove('active');
+  $id('erd-direct-section').style.display = ''; $id('erd-nsd-section').style.display = 'none';
+  document.querySelectorAll('.cp').forEach(b => b.classList.remove('active'));
+
+  ['results','arb-wrap','summary-wrap','save-wrap'].forEach(id => $id(id).classList.remove('show'));
+  $id('arb-card-body').style.display  = 'none'; $id('arb-card-chevron').style.transform  = '';
+  $id('sum-card-body').style.display  = 'none'; $id('sum-card-chevron').style.transform  = '';
+  $id('save-card-body').style.display = 'none'; $id('save-card-chevron').style.transform = '';
+
+  summaryData = null; arbData.fo = null; arbData.fa = null; evenMode.fo = false; evenMode.fa = false;
+  saved[wtype] = null; $id('err').classList.remove('show'); currentErrKey = null;
+  clearInvalids();
+  const disp = $id('tension-faible-display');
+  disp.textContent = ''; disp.classList.remove('has-val');
+  $id('tension-faible-field').style.opacity = '.35';
+  renderConfigsList();
+}
+
+function clearForm() {
+  clearFormSilent();
+  resetScrollFlags();
+  setTimeout(() => getCards()[0].scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTo(wh) {
+  if (wh === wtype) return;
+  resetScrollFlags();
+  saved[wtype] = readState(); saved[wtype].wtype = wtype;
+  wtype = wh;
+  $id('btn-avant').classList.toggle('active', wh === 'avant');
+  $id('btn-arriere').classList.toggle('active', wh === 'arriere');
+  saved[wh] ? applyState(saved[wh]) : clearFormSilent();
+  reorderTensionFields(wh);
+}
+
+function setWheel(wh) {
+  const isNew = wh !== wtype;
+  switchTo(wh);
+  renderConfigsList();
+  closeConfigsCardIfOpen();
+  $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
+  if (isNew) scrollToCard(getCards()[1]);
+}
+
+function reorderTensionFields(wh) {
+  const g2 = $id('tension-g2'), fo = $id('tension-forte-field'), fa = $id('tension-faible-field');
+  wh === 'arriere' ? g2.appendChild(fo) : g2.insertBefore(fo, fa);
+}
+
+// ── Field interactions ────────────────────────────────────────────────────────
+function setErdMode(m) {
+  erdMode = m;
+  $id('btn-erd-direct').classList.toggle('active', m === 'direct');
+  $id('btn-erd-nsd').classList.toggle('active', m === 'nsd');
+  $id('erd-direct-section').style.display = m === 'direct' ? '' : 'none';
+  $id('erd-nsd-section').style.display    = m === 'nsd'    ? '' : 'none';
+  clearResults(); updateCalcBtn();
+}
+
+function setHubType(htype) {
+  hubType = htype;
+  $id('btn-hub-jbend').classList.toggle('active', htype === 'jbend');
+  $id('btn-hub-sp').classList.toggle('active', htype === 'straightpull');
+  $id('field-diam-trou').style.display   = htype === 'jbend'        ? '' : 'none';
+  $id('field-sp-so-left').style.display  = htype === 'straightpull' ? '' : 'none';
+  $id('field-sp-so-right').style.display = htype === 'straightpull' ? '' : 'none';
+  if (htype === 'straightpull') {
+    const soL = $id('sp-so-left');  soL.value = ''; soL._prevVal = undefined;
+    const soR = $id('sp-so-right'); soR.value = ''; soR._prevVal = undefined;
+  }
+  clearResults(); updateCalcBtn();
+}
+
+function calcNsd() {
+  const n = parseFloat($id('nsd-val').value), addon = parseFloat($id('ecrou-type').value);
+  if (!isNaN(n) && !isNaN(addon)) $id('erd-nsd-result').value = (n + 2 * addon).toFixed(2);
+}
+
+function setSpokeFromSelect(sel) {
+  const parts = sel.value.split('|');
+  sd = parseFloat(parts[0]); sa = parts[1] ? parseFloat(parts[1]) : null;
+  clearResults(); updateCalcBtn();
+}
+
+function setCross(b) {
+  document.querySelectorAll('.cp').forEach(x => { x.classList.remove('active'); x.classList.remove('invalid'); });
+  b.classList.add('active');
+  cross = parseInt(b.dataset.cross);
+  if (!document.querySelector('.invalid')) $id('err').classList.remove('show');
+  clearResults(); updateCalcBtn();
+  checkRimComplete();
+}
+
+function onTension() {
+  const oL = parseFloat($id('offset-left').value);
+  const oR = parseFloat($id('offset-right').value);
+  const tF = parseFloat($id('tension-forte').value);
+  const disp = $id('tension-faible-display'), field = $id('tension-faible-field');
+  if (isNaN(tF) || isNaN(oL) || isNaN(oR)) {
+    disp.textContent = ''; disp.classList.remove('has-val'); field.style.opacity = '.35';
+    return;
+  }
+  field.style.opacity = '1';
+  const asym = parseFloat($id('asym').value) || 0, sign = wtype === 'arriere' ? -1 : 1;
+  const effL = oL + sign * asym, effR = oR - sign * asym;
+  const ratio = (Math.max(effL,effR) > 0 && Math.min(effL,effR) > 0) ? Math.min(effL,effR) / Math.max(effL,effR) : 1;
+  disp.textContent = (tF * ratio).toFixed(1); disp.classList.add('has-val');
+}
+
+// ── Validation ────────────────────────────────────────────────────────────────
+function checkReady() {
+  const n = parseInt($id('nb-rayons').value); if (!n) return false;
+  const pL = parseFloat($id('pcd-left').value),  pR = parseFloat($id('pcd-right').value);
+  const oL = parseFloat($id('offset-left').value), oR = parseFloat($id('offset-right').value);
+  if ([pL,pR,oL,oR].some(isNaN) || pL <= 0 || pR <= 0) return false;
+  const erd = getERD(); if (isNaN(erd) || erd <= 0) return false;
+  if (cross === null) return false;
+  if (isNaN(parseFloat($id('tension-forte').value))) return false;
+  if (hubType === 'straightpull' && ($id('sp-so-left').value === '' || $id('sp-so-right').value === '')) return false;
+  const sign = wtype === 'arriere' ? -1 : 1, asym = parseFloat($id('asym').value) || 0;
+  if ((oL + sign * asym) <= 0 || (oR - sign * asym) <= 0) return false;
+  return true;
+}
+
+function clearResults() {
+  ['results','arb-wrap','summary-wrap','save-wrap'].forEach(id => $id(id).classList.remove('show'));
+}
+
+function updateCalcBtn() {
+  const btn = document.querySelector('.btn[onclick="calc()"]');
+  if (btn) btn.classList.toggle('ready', checkReady());
+  clearResults();
+}
+
+// ── Physics ───────────────────────────────────────────────────────────────────
+function slen(pcd, off, cr, n, erd, trou) {
+  const R = pcd/2, Rj = erd/2, a = cr * (2*Math.PI) / (n/2);
+  return Math.sqrt(R*R + Rj*Rj - 2*R*Rj*Math.cos(a) + off*off) - trou/2;
+}
+function slenSP(pcd, off, cr, n, erd, so) {
+  const R = pcd/2, Rj = erd/2, theta = cr === 0 ? 0 : (cr+0.5) * (2*Math.PI) / (n/2);
+  return Math.sqrt((R*Math.sin(theta))**2 + (Rj - R*Math.cos(theta))**2 + off*off) + so;
+}
+function area() { const a = (sa !== null && !isNaN(sa)) ? sa : sd; return Math.PI/4 * sd * a; }
+function el(F, L) { return (F * 9.81 * L) / (area() * 210000); }
+
+// ── Calc ──────────────────────────────────────────────────────────────────────
+function calc() {
+  if (document.activeElement) document.activeElement.blur();
+  $id('err').classList.remove('show'); clearInvalids();
+
+  const n = parseInt($id('nb-rayons').value);
+  if (!n) { setInvalid('nb-rayons'); return showErr('errSpokes'); }
+
+  const pL = parseFloat($id('pcd-left').value),  pR = parseFloat($id('pcd-right').value);
+  const oL = parseFloat($id('offset-left').value), oR = parseFloat($id('offset-right').value);
+  if ([pL,pR,oL,oR].some(isNaN) || pL <= 0 || pR <= 0) {
+    if (isNaN(pL)||pL<=0) setInvalid('pcd-left');   if (isNaN(pR)||pR<=0) setInvalid('pcd-right');
+    if (isNaN(oL)) setInvalid('offset-left');         if (isNaN(oR)) setInvalid('offset-right');
+    return showErr('errPcd');
+  }
+
+  const erd = getERD();
+  if (isNaN(erd) || erd <= 0) {
+    if (erdMode === 'direct') { setInvalid('erd-direct'); }
+    else {
+      if (isNaN(parseFloat($id('nsd-val').value))) setInvalid('nsd-val');
+      if (!$id('ecrou-type').value) setInvalid('ecrou-type');
+    }
+    return showErr('errErd');
+  }
+
+  const asym = parseFloat($id('asym').value) || 0;
+  const trou = parseFloat($id('diam-trou').value) || 2.55;
+
+  if (cross === null) {
+    document.querySelectorAll('.cp').forEach(b => b.classList.add('invalid'));
+    return showErr('errCross');
+  }
+
+  const isSP = hubType === 'straightpull';
+  const soLraw = $id('sp-so-left').value, soRraw = $id('sp-so-right').value;
+  if (isSP && (soLraw === '' || soRraw === '')) {
+    if (soLraw === '') setInvalid('sp-so-left'); if (soRraw === '') setInvalid('sp-so-right');
+    return showErr('errSO');
+  }
+  const soL = parseFloat(soLraw) || 0, soR = parseFloat(soRraw) || 0;
+
+  const tF = parseFloat($id('tension-forte').value);
+  if (isNaN(tF)) { setInvalid('tension-forte'); return showErr('errTension'); }
+
+  const sign = wtype === 'arriere' ? -1 : 1;
+  const effL = oL + sign * asym, effR = oR - sign * asym;
+  if (effL <= 0 || effR <= 0) {
+    if (effL <= 0) setInvalid('offset-left'); if (effR <= 0) setInvalid('offset-right');
+    return showErr('errOffset');
+  }
+
+  // Forte = côté avec le plus petit déport (plus tendu)
+  let foOff, faOff, foPCD, faPCD;
+  if (effL <= effR) { foOff=effL; faOff=effR; foPCD=pL; faPCD=pR; }
+  else              { foOff=effR; faOff=effL; foPCD=pR; faPCD=pL; }
+
+  const ratio = (faOff > 0 && foOff > 0) ? foOff / faOff : 1;
+  const tf    = tF * ratio;
+  const soFo  = isSP ? (effL <= effR ? soL : soR) : 0;
+  const soFa  = isSP ? (effL <= effR ? soR : soL) : 0;
+  const Lfo   = isSP ? slenSP(foPCD, foOff, cross, n, erd, soFo) : slen(foPCD, foOff, cross, n, erd, trou);
+  const Lfa   = isSP ? slenSP(faPCD, faOff, cross, n, erd, soFa) : slen(faPCD, faOff, cross, n, erd, trou);
+  const eFo   = el(tF, Lfo), eFa = el(tf, Lfa);
+  const h     = n / 2;
+
+  $id('r-fo').textContent = Lfo.toFixed(2); $id('r-fa').textContent = Lfa.toFixed(2);
+  $id('m-fo').innerHTML = `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFo.toFixed(3)} mm</span></div><div class="rrow"><strong>${tF} kgf</strong></div>`;
+  $id('m-fa').innerHTML = `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFa.toFixed(3)} mm</span></div><div class="rrow"><strong>${tf.toFixed(1)} kgf</strong></div>`;
+
+  const sl = sa ? `${sd}×${sa} mm` : `${sd} mm`;
+  summaryData = { erd: erd.toFixed(1), wtype, n, h, cross, isSP, sl, asym, ratio };
+  renderSummary(); $id('summary-wrap').classList.add('show');
+
+  saved[wtype] = readState(); saved[wtype].wtype = wtype;
+
+  // Reorder result cards: fo à gauche pour avant, à droite pour arrière
+  const rg = document.querySelector('.rg'), rcFo = document.querySelector('.rc.fo'), rcFa = document.querySelector('.rc.fa');
+  wtype === 'arriere' ? rg.appendChild(rcFo) : rg.insertBefore(rcFo, rcFa);
+  const arbCols = $id('arb-cols'), arbColFo = $id('arb-col-fo'), arbColFa = $id('arb-col-fa');
+  wtype === 'arriere' ? arbCols.appendChild(arbColFo) : arbCols.insertBefore(arbColFo, arbColFa);
+
+  const isSym = Math.abs(effL - effR) < 0.01;
+  const keyFo = isSym ? 'leftSide'  : (wtype === 'arriere' ? 'highTensionRear' : 'highTensionFront');
+  const keyFa = isSym ? 'rightSide' : (wtype === 'arriere' ? 'lowTensionRear'  : 'lowTensionFront');
+  const rtagFo = $id('rtag-fo'); rtagFo.textContent = t(keyFo); rtagFo.dataset.i18nKey = keyFo;
+  const rtagFa = $id('rtag-fa'); rtagFa.textContent = t(keyFa); rtagFa.dataset.i18nKey = keyFa;
+  $id('results').classList.add('show');
+
+  const arbHFo = $id('arb-head-fo'); arbHFo.textContent = t(keyFo); arbHFo.dataset.i18nKey = keyFo;
+  const arbHFa = $id('arb-head-fa'); arbHFa.textContent = t(keyFa); arbHFa.dataset.i18nKey = keyFa;
+  evenMode.fo = false; evenMode.fa = false;
+  $id('arb-even-fo').classList.remove('active'); $id('arb-even-fa').classList.remove('active');
+  buildArb('fo', Lfo, eFo); buildArb('fa', Lfa, eFa);
+  $id('arb-wrap').classList.add('show');
+
+  $id('save-wrap').classList.add('show'); $id('save-feedback').textContent = '';
+  setTimeout(() => $id('results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+}
+
+// ── Summary ───────────────────────────────────────────────────────────────────
 function renderSummary() {
   if (!summaryData) return;
   const d = summaryData;
   const cl = d.cross === 0 ? t('radial') : d.cross + '×';
-  const ratioColor = d.ratio>=0.7?'var(--success)':d.ratio>=0.6?'#e8a040':'#e06060';
+  const ratioColor = d.ratio >= 0.7 ? 'var(--success)' : d.ratio >= 0.6 ? '#e8a040' : '#e06060';
   function item(lbl, val, color) {
-    return '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:.38rem 0;border-bottom:1px solid var(--border)">'
-      + '<span style="font-size:.6rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">' + lbl + '</span>'
-      + '<span style="font-family:DM Mono,monospace;font-size:.8rem;color:' + (color||'var(--text)') + '">' + val + '</span>'
-      + '</div>';
+    return `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:.38rem 0;border-bottom:1px solid var(--border)"><span style="font-size:.6rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">${lbl}</span><span style="font-family:DM Mono,monospace;font-size:.8rem;color:${color||'var(--text)'}">${val}</span></div>`;
   }
-  const rows =
-    item(t('wheelLabel'),    d.wtype==='avant' ? t('frontLabel') : t('rearLabel')) +
-    item('ERD',              d.erd + ' mm') +
-    item(t('spokeCount'),    d.n + ' (' + d.h + t('perSide') + ')') +
-    item(t('crossLabel'),    cl) +
-    item(t('hubType'),       d.isSP ? 'Straightpull' : 'J-Bend') +
+  $id('summary').innerHTML =
+    item(t('wheelLabel'),   d.wtype === 'avant' ? t('frontLabel') : t('rearLabel')) +
+    item('ERD',             d.erd + ' mm') +
+    item(t('spokeCount'),   d.n + ' (' + d.h + t('perSide') + ')') +
+    item(t('crossLabel'),   cl) +
+    item(t('hubType'),      d.isSP ? 'Straightpull' : 'J-Bend') +
     item(t('spokeSection2'), d.sl) +
-    item(t('rimAsym2'),      (d.asym > 0 ? '+' : '') + d.asym + ' mm') +
-    item(t('tensionRatio'),  (d.ratio*100).toFixed(1) + '%', ratioColor);
-  const summaryEl = document.getElementById('summary');
-  summaryEl.style.cssText = '';
-  summaryEl.innerHTML = rows;
+    item(t('rimAsym2'),     (d.asym > 0 ? '+' : '') + d.asym + ' mm') +
+    item(t('tensionRatio'), (d.ratio * 100).toFixed(1) + '%', ratioColor);
 }
 
-function buildArb(side, exactLen, elongation) {
-  arbData[side] = { exactLen, elongation };
-  renderArb(side);
-}
+// ── Arbitrage ─────────────────────────────────────────────────────────────────
+function buildArb(side, exactLen, elongation) { arbData[side] = { exactLen, elongation }; renderArb(side); }
 
 function renderArb(side) {
-  const d        = arbData[side];
-  const onlyEven = evenMode[side];
-  const base     = Math.floor(d.exactLen);
-  const sizes    = [base - 1, base, base + 1];
-  const deltas   = sizes.map(function(s){ return (s + d.elongation) - d.exactLen; });
-  let minAbs     = Infinity;
-  sizes.forEach(function(s, i){
-    if (onlyEven && s % 2 !== 0) return;
-    if (Math.abs(deltas[i]) < minAbs) minAbs = Math.abs(deltas[i]);
-  });
-  let html = '';
-  sizes.forEach(function(sz, i){
-    const delta  = deltas[i];
-    let cls      = 'arb-row';
-    if (onlyEven && sz % 2 !== 0) cls += ' arb-muted';
+  const d = arbData[side], onlyEven = evenMode[side];
+  const base = Math.floor(d.exactLen), sizes = [base-1, base, base+1];
+  const deltas = sizes.map(s => (s + d.elongation) - d.exactLen);
+  let minAbs = Infinity;
+  sizes.forEach((s, i) => { if (onlyEven && s%2!==0) return; if (Math.abs(deltas[i]) < minAbs) minAbs = Math.abs(deltas[i]); });
+  $id('arb-grid-' + side).innerHTML = sizes.map((sz, i) => {
+    const delta = deltas[i];
+    let cls = 'arb-row';
+    if (onlyEven && sz%2!==0) cls += ' arb-muted';
     else if (Math.abs(delta) <= minAbs + 0.0001) cls += ' best';
-    html += '<div class="' + cls + '">'
-          + '<span class="arb-sz">' + sz + ' mm</span>'
-          + '<div class="arb-right">'
-          + '<span class="arb-delta">' + (delta >= 0 ? '+' : '') + delta.toFixed(2) + ' mm</span>'
-          + '<span class="arb-lbl">' + t('gapTarget') + '</span>'
-          + '</div></div>';
-  });
-  document.getElementById('arb-grid-' + side).innerHTML = html;
+    return `<div class="${cls}"><span class="arb-sz">${sz} mm</span><div class="arb-right"><span class="arb-delta">${delta>=0?'+':''}${delta.toFixed(2)} mm</span><span class="arb-lbl">${t('gapTarget')}</span></div></div>`;
+  }).join('');
 }
 
-function toggleEven(side) {
-  evenMode[side] = !evenMode[side];
-  document.getElementById('arb-even-' + side).classList.toggle('active', evenMode[side]);
-  renderArb(side);
+function toggleEven(side) { evenMode[side] = !evenMode[side]; $id('arb-even-'+side).classList.toggle('active', evenMode[side]); renderArb(side); }
+
+// ── Card toggles ──────────────────────────────────────────────────────────────
+function toggleCard(bodyId, chevronId) {
+  const body = $id(bodyId), chevron = $id(chevronId), open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block'; chevron.style.transform = open ? '' : 'rotate(180deg)';
 }
+function toggleArbCard()     { toggleCard('arb-card-body',  'arb-card-chevron'); }
+function toggleSummaryCard() { toggleCard('sum-card-body',  'sum-card-chevron'); }
+function toggleSaveCard()    { toggleCard('save-card-body', 'save-card-chevron'); }
+function toggleConfigsCard() { toggleCard('configs-body',   'configs-chevron'); }
 
-function toggleSummaryCard() {
-  const body    = document.getElementById('sum-card-body');
-  const chevron = document.getElementById('sum-card-chevron');
-  const open    = body.style.display !== 'none';
-  body.style.display      = open ? 'none' : 'block';
-  chevron.style.transform = open ? '' : 'rotate(180deg)';
-}
-
-function toggleArbCard() {
-  const body    = document.getElementById('arb-card-body');
-  const chevron = document.getElementById('arb-card-chevron');
-  const open    = body.style.display !== 'none';
-  body.style.display    = open ? 'none' : 'block';
-  chevron.style.transform = open ? '' : 'rotate(180deg)';
-}
-
-// Efface le liseré rouge dès qu'on modifie un champ
-// Si plus aucun champ invalide, masque aussi le message d'erreur
-document.querySelectorAll('input[type=number], select').forEach(function(el){
-  function onCorrect(){
-    this.classList.remove('invalid');
-    // Corriger ADDON libère aussi NSD (ils forment une paire, ADDON était le manquant)
-    if(this.id === 'ecrou-type'){
-      document.getElementById('nsd-val').classList.remove('invalid');
-    }
-    if(!document.querySelector('.invalid')) document.getElementById('err').classList.remove('show');
-  }
-  el.addEventListener('input', onCorrect);
-  el.addEventListener('change', onCorrect);
-});
-
-// Ferme la card configurations si elle est ouverte
 function closeConfigsCardIfOpen() {
-  const body = document.getElementById('configs-body');
-  const chev = document.getElementById('configs-chevron');
-  if (body && body.style.display !== 'none') {
-    body.style.display = 'none';
-    chev.style.transform = '';
-  }
+  const body = $id('configs-body');
+  if (body && body.style.display !== 'none') { body.style.display = 'none'; $id('configs-chevron').style.transform = ''; }
 }
 
-// Live validation: liseret vert sur le bouton Calculer + fermeture card configs
-['nb-rayons','pcd-left','pcd-right','offset-left','offset-right',
- 'erd-direct','nsd-val','erd-nsd-result','tension-forte','asym','sp-so-left','sp-so-right'].forEach(function(id){
-  const el = document.getElementById(id);
-  if(!el) return;
-  ['input','change'].forEach(function(ev){
-    el.addEventListener(ev, updateCalcBtn);
-    el.addEventListener(ev, closeConfigsCardIfOpen);
-  });
-});
-document.getElementById('ecrou-type').addEventListener('change', updateCalcBtn);
-document.getElementById('ecrou-type').addEventListener('change', closeConfigsCardIfOpen);
-
-// Efface le champ au focus pour faciliter la correction
-document.querySelectorAll('input[type=number]').forEach(function(inp) {
-  if (inp.readOnly) return;
-  if (['sp-so-left','sp-so-right'].includes(inp.id)) return;
-  inp.addEventListener('focus', function() {
-    this.select();
-    this._prevVal = this.value;
-    this.value = '';
-  });
-  inp.addEventListener('blur', function() {
-    if (this.value === '' && this._prevVal !== undefined) {
-      this.value = this._prevVal;
-    }
-  });
-});
-
-// ── Configurations (localStorage) ─────────────────────────────────────────
-
+// ── Configs (localStorage) ────────────────────────────────────────────────────
 const LS_KEY = 'spokeit_configs';
-
-function loadConfigs() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; }
-  catch(e) { return []; }
-}
-
-function persistConfigs(configs) {
-  localStorage.setItem(LS_KEY, JSON.stringify(configs));
-}
+function loadConfigs()        { try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch(e) { return []; } }
+function persistConfigs(cfg)  { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); }
+function showConfigsPanel()   { $id('configs-wrap').style.display = ''; }
+function hideConfigsPanel()   { $id('configs-wrap').style.display = 'none'; }
 
 function saveConfig() {
-  const nameEl = document.getElementById('save-name');
-  const name = nameEl.value.trim();
-  if (!name) {
-    const fb = document.getElementById('save-feedback');
-    fb.textContent = t('saveError');
-    fb.style.color = '#f08080';
-    return;
-  }
-  const state = readState();
-  state.wtype = wtype;
+  const nameEl = $id('save-name'), name = nameEl.value.trim(), fb = $id('save-feedback');
+  if (!name) { fb.textContent = t('saveError'); fb.style.color = '#f08080'; return; }
+  const state = readState(); state.wtype = wtype;
   const configs = loadConfigs();
-  const metaKey = wtype === 'avant' ? 'frontLabel' : 'rearLabel';
-  configs.unshift({ name, metaKey, state, ts: Date.now() });
+  configs.unshift({ name, metaKey: wtype === 'avant' ? 'frontLabel' : 'rearLabel', state, ts: Date.now() });
   persistConfigs(configs);
-  nameEl.value = '';
-  const fb = document.getElementById('save-feedback');
-  fb.textContent = t('saveDone');
-  fb.style.color = 'var(--success)';
+  nameEl.value = ''; fb.textContent = t('saveDone'); fb.style.color = 'var(--success)';
   setTimeout(() => { fb.textContent = ''; }, 2500);
-  renderConfigsList();
-  showConfigsPanel();
-  // Fermer la card sauvegarder
-  document.getElementById('save-card-body').style.display = 'none';
-  document.getElementById('save-card-chevron').style.transform = '';
+  renderConfigsList(); showConfigsPanel();
+  $id('save-card-body').style.display = 'none'; $id('save-card-chevron').style.transform = '';
+  setTimeout(() => getCards()[0].scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
 }
 
-function deleteConfig(idx) {
-  const configs = loadConfigs();
-  configs.splice(idx, 1);
-  persistConfigs(configs);
-  renderConfigsList();
-}
+function deleteConfig(idx) { const configs = loadConfigs(); configs.splice(idx, 1); persistConfigs(configs); renderConfigsList(); }
 
 function loadConfig(idx) {
-  const configs = loadConfigs();
-  const cfg = configs[idx];
-  if (!cfg) return;
-  const wh = cfg.state.wtype || 'avant';
-
-  // Ne charger que si la config correspond à l'onglet actif
-  if (wh !== wtype) return;
-
-  document.getElementById('btn-avant').classList.toggle('active', wh === 'avant');
-  document.getElementById('btn-arriere').classList.toggle('active', wh === 'arriere');
-  document.getElementById('btn-avant').classList.toggle('c', wh === 'avant');
-  document.getElementById('btn-arriere').classList.toggle('w', wh === 'arriere');
-  applyState(cfg.state);
-  // Force full UI refresh in current language after loading config
-  applyLang();
-  // Sync saved[wh] pour que switchTo ne l'écrase pas au premier clic
+  const configs = loadConfigs(), cfg = configs[idx]; if (!cfg) return;
+  const wh = cfg.state.wtype || 'avant'; if (wh !== wtype) return;
+  $id('btn-avant').classList.toggle('active', wh==='avant'); $id('btn-avant').classList.toggle('c', wh==='avant');
+  $id('btn-arriere').classList.toggle('active', wh==='arriere'); $id('btn-arriere').classList.toggle('w', wh==='arriere');
+  applyState(cfg.state); applyLang();
   saved[wh] = JSON.parse(JSON.stringify(cfg.state));
   reorderTensionFields(wh);
-  // Fermer toutes les cards déroulantes
-  document.getElementById('configs-body').style.display = 'none';
-  document.getElementById('configs-chevron').style.transform = '';
-  document.getElementById('save-card-body').style.display = 'none';
-  document.getElementById('save-card-chevron').style.transform = '';
-  document.getElementById('arb-card-body').style.display = 'none';
-  document.getElementById('arb-card-chevron').style.transform = '';
-  document.getElementById('sum-card-body').style.display = 'none';
-  document.getElementById('sum-card-chevron').style.transform = '';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  ['configs-body','save-card-body','arb-card-body','sum-card-body'].forEach(id => { $id(id).style.display = 'none'; });
+  ['configs-chevron','save-card-chevron','arb-card-chevron','sum-card-chevron'].forEach(id => { $id(id).style.transform = ''; });
+  resetScrollFlags();
+  setTimeout(() => getCards()[0].scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
 }
 
+function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 function renderConfigsList() {
-  const configs = loadConfigs();
-  const list = document.getElementById('cfg-list');
-  // Filtrer uniquement les configs correspondant à l'onglet actif
+  const configs  = loadConfigs(), list = $id('cfg-list');
   const filtered = configs.map((cfg, i) => ({ cfg, i })).filter(({ cfg }) => (cfg.state.wtype || 'avant') === wtype);
-  if (filtered.length === 0) {
-    hideConfigsPanel();
-    return;
-  }
+  if (filtered.length === 0) { hideConfigsPanel(); return; }
   showConfigsPanel();
   list.innerHTML = filtered.map(({ cfg, i }) =>
-    '<div class="cfg-item">'
-    + '<span class="cfg-name">' + escHtml(cfg.name) + '</span>'
-    + (cfg.metaKey ? '<span class="cfg-meta">' + t(cfg.metaKey) + '</span>' : '')
-    + '<button class="cfg-load" onclick="loadConfig(' + i + ')">' + t('loadBtn') + '</button>'
-    + '<button class="cfg-del" onclick="deleteConfig(' + i + ')" title="Supprimer">×</button>'
-    + '</div>'
+    `<div class="cfg-item"><span class="cfg-name">${escHtml(cfg.name)}</span>`
+    + (cfg.metaKey ? `<span class="cfg-meta">${t(cfg.metaKey)}</span>` : '')
+    + `<button class="cfg-load" onclick="loadConfig(${i})">${t('loadBtn')}</button>`
+    + `<button class="cfg-del" onclick="deleteConfig(${i})" title="Supprimer">×</button></div>`
   ).join('');
 }
 
-function escHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+// ── Auto-scroll to next card ──────────────────────────────────────────────────
+function scrollToCard(cardEl) { setTimeout(() => cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120); }
 
-function toggleSaveCard() {
-  const body = document.getElementById('save-card-body');
-  const chev = document.getElementById('save-card-chevron');
-  const open = body.style.display !== 'none';
-  body.style.display = open ? 'none' : 'block';
-  chev.style.transform = open ? '' : 'rotate(180deg)';
-}
-
-function showConfigsPanel() {
-  document.getElementById('configs-wrap').style.display = '';
-}
-
-function hideConfigsPanel() {
-  document.getElementById('configs-wrap').style.display = 'none';
-}
-
-function toggleConfigsCard() {
-  const body = document.getElementById('configs-body');
-  const chev = document.getElementById('configs-chevron');
-  const open = body.style.display !== 'none';
-  body.style.display = open ? 'none' : 'block';
-  chev.style.transform = open ? '' : 'rotate(180deg)';
-}
-
-function calc(){
- if(document.activeElement) document.activeElement.blur();
- const e=document.getElementById('err');e.classList.remove('show');
- clearInvalids();
-
- const n=parseInt(document.getElementById('nb-rayons').value);
- if(!n){ setInvalid('nb-rayons'); return showErr('errSpokes'); }
-
- const pL=parseFloat(document.getElementById('pcd-left').value);
- const pR=parseFloat(document.getElementById('pcd-right').value);
- const oL=parseFloat(document.getElementById('offset-left').value);
- const oR=parseFloat(document.getElementById('offset-right').value);
- if([pL,pR,oL,oR].some(isNaN)||pL<=0||pR<=0){
-   if(isNaN(pL)||pL<=0) setInvalid('pcd-left');
-   if(isNaN(pR)||pR<=0) setInvalid('pcd-right');
-   if(isNaN(oL)) setInvalid('offset-left');
-   if(isNaN(oR)) setInvalid('offset-right');
-   return showErr('errPcd');
- }
-
- const erd=getERD();
- if(isNaN(erd)||erd<=0){
-   if(erdMode==='direct') setInvalid('erd-direct');
-   else{
-     const nsdVal = parseFloat(document.getElementById('nsd-val').value);
-     const addonVal = document.getElementById('ecrou-type').value;
-     if(isNaN(nsdVal)||nsdVal<=0) setInvalid('nsd-val');
-     if(!addonVal) setInvalid('ecrou-type');
-   }
-   return showErr('errErd');
- }
-
- const asym=parseFloat(document.getElementById('asym').value)||0;
- const trou=parseFloat(document.getElementById('diam-trou').value)||2.55;
- const isSP=hubType==='straightpull';
- const soLraw=document.getElementById('sp-so-left').value;
- const soRraw=document.getElementById('sp-so-right').value;
- if(isSP && (soLraw===''||soRraw==='')){
-   if(soLraw==='') setInvalid('sp-so-left');
-   if(soRraw==='') setInvalid('sp-so-right');
-   return showErr('errSO');
- }
- const soL=parseFloat(soLraw)||0;
- const soR=parseFloat(soRraw)||0;
- const tF=parseFloat(document.getElementById('tension-forte').value);
- if(isNaN(tF)){ setInvalid('tension-forte'); return showErr('errTension'); }
-
- // Roue arrière : asym vers droite (nappe forte), roue avant : vers gauche
- const asymSign = wtype === 'arriere' ? -1 : 1;
- const effL=oL + asymSign*asym, effR=oR - asymSign*asym;
-
- if(effL<=0||effR<=0){
-   if(effL<=0) setInvalid('offset-left');
-   if(effR<=0) setInvalid('offset-right');
-   return showErr('errOffset');
- }
-
- let foOff,faOff,foPCD,faPCD;
- // Forte = cote avec le plus petit deport (plus tendu)
- if(effL<=effR){foOff=effL;faOff=effR;foPCD=pL;faPCD=pR}
- else{foOff=effR;faOff=effL;foPCD=pR;faPCD=pL}
-
- const ratio=(faOff>0&&foOff>0)?foOff/faOff:1;
- const tf=tF*ratio;
-
- const soFo=isSP?(effL<=effR?soL:soR):0;
- const soFa=isSP?(effL<=effR?soR:soL):0;
- const Lfo=isSP?slenSP(foPCD,foOff,cross,n,erd,soFo):slen(foPCD,foOff,cross,n,erd,trou);
- const Lfa=isSP?slenSP(faPCD,faOff,cross,n,erd,soFa):slen(faPCD,faOff,cross,n,erd,trou);
- const eFo=el(tF,Lfo), eFa=el(tf,Lfa);
- const h=n/2;
-
- document.getElementById('r-fo').textContent=Lfo.toFixed(2);
- document.getElementById('r-fa').textContent=Lfa.toFixed(2);
-
- document.getElementById('m-fo').innerHTML=
-   `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFo.toFixed(3)} mm</span></div>`+
-   `<div class="rrow"><strong>${tF} kgf</strong></div>`;
-
- document.getElementById('m-fa').innerHTML=
-   `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFa.toFixed(3)} mm</span></div>`+
-   `<div class="rrow"><strong>${tf.toFixed(1)} kgf</strong></div>`;
-
- const sl=sa?`${sd}×${sa} mm`:`${sd} mm`;
-
- summaryData = { erd: erd.toFixed(1), wtype, n, h, cross, isSP, sl, asym, ratio };
- renderSummary();
- document.getElementById('summary-wrap').classList.add('show');
-
- // Auto-save current wheel state after calc
- saved[wtype] = readState();
- saved[wtype].wtype = wtype;
-
- // Reorder result cards: high tension (fo) à gauche pour avant, à droite pour arrière
- const rg = document.querySelector('.rg');
- const rcFo = document.querySelector('.rc.fo');
- const rcFa = document.querySelector('.rc.fa');
- if(wtype === 'arriere'){
-   rg.appendChild(rcFo);
- } else {
-   rg.insertBefore(rcFo, rcFa);
- }
-
- // Même logique pour les colonnes arbitrage
- const arbCols = document.getElementById('arb-cols');
- const arbColFo = document.getElementById('arb-col-fo');
- const arbColFa = document.getElementById('arb-col-fa');
- if(wtype === 'arriere'){
-   arbCols.appendChild(arbColFo);
- } else {
-   arbCols.insertBefore(arbColFo, arbColFa);
- }
-
- // Labels résultats + têtes arbitrage
- const isSymmetric = Math.abs(effL - effR) < 0.01;
- const keyFo = isSymmetric ? 'leftSide'  : (wtype === 'arriere' ? 'highTensionRear' : 'highTensionFront');
- const keyFa = isSymmetric ? 'rightSide' : (wtype === 'arriere' ? 'lowTensionRear'  : 'lowTensionFront');
- const rtagFoEl = document.getElementById('rtag-fo');
- const rtagFaEl = document.getElementById('rtag-fa');
- rtagFoEl.textContent = t(keyFo); rtagFoEl.dataset.i18nKey = keyFo;
- rtagFaEl.textContent = t(keyFa); rtagFaEl.dataset.i18nKey = keyFa;
-
- document.getElementById('results').classList.add('show');
-
- // Arbitrage
- const arbHeadFoEl = document.getElementById('arb-head-fo');
- const arbHeadFaEl = document.getElementById('arb-head-fa');
- arbHeadFoEl.textContent = t(keyFo); arbHeadFoEl.dataset.i18nKey = keyFo;
- arbHeadFaEl.textContent = t(keyFa); arbHeadFaEl.dataset.i18nKey = keyFa;
- evenMode.fo = false; evenMode.fa = false;
- document.getElementById('arb-even-fo').classList.remove('active');
- document.getElementById('arb-even-fa').classList.remove('active');
- buildArb('fo', Lfo, eFo);
- buildArb('fa', Lfa, eFa);
- document.getElementById('arb-wrap').classList.add('show');
-
- // Afficher le panneau de sauvegarde
- document.getElementById('save-wrap').classList.add('show');
- document.getElementById('save-feedback').textContent = '';
-
- setTimeout(()=>document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'}),80);
-}
-
-// ── Init ───────────────────────────────────────────────────────────────────
-(function initSavedConfigs(){
-  const configs = loadConfigs();
-  if (configs.length > 0) {
-    renderConfigsList();
-    document.getElementById('configs-wrap').style.display = '';
+function checkHubComplete() {
+  if (_hubScrolled) return;
+  const nb  = $id('nb-rayons').value, pL = $id('pcd-left').value, oL = $id('offset-left').value;
+  const pR  = $id('pcd-right').value, oR = $id('offset-right').value;
+  const soL = $id('sp-so-left').value, soR = $id('sp-so-right').value;
+  if (nb && pL && oL && pR && oR && (hubType !== 'straightpull' || (soL && soR))) {
+    _hubScrolled = true; scrollToCard(getCards()[2]);
   }
-})();
-</script>
+}
 
+function checkRimComplete() {
+  if (_rimScrolled) return;
+  const erdOk = erdMode === 'direct' ? !!$id('erd-direct').value : (!!$id('nsd-val').value && !!$id('ecrou-type').value);
+  if (erdOk) { _rimScrolled = true; scrollToCard(getCards()[3]); }
+}
+
+function checkTensionComplete() {
+  if (_tensionScrolled) return;
+  if ($id('tension-forte').value) {
+    _tensionScrolled = true;
+    setTimeout(() => $id('err').nextElementSibling.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+  }
+}
+
+// ── Live validation listeners ─────────────────────────────────────────────────
+document.querySelectorAll('input[type=number], select').forEach(el => {
+  function onCorrect() {
+    this.classList.remove('invalid');
+    if (this.id === 'ecrou-type') $id('nsd-val').classList.remove('invalid');
+    if (!document.querySelector('.invalid')) $id('err').classList.remove('show');
+  }
+  el.addEventListener('input', onCorrect); el.addEventListener('change', onCorrect);
+});
+
+['nb-rayons','pcd-left','pcd-right','offset-left','offset-right',
+ 'erd-direct','nsd-val','erd-nsd-result','tension-forte','asym','sp-so-left','sp-so-right'].forEach(id => {
+  const el = $id(id); if (!el) return;
+  ['input','change'].forEach(ev => { el.addEventListener(ev, updateCalcBtn); el.addEventListener(ev, closeConfigsCardIfOpen); });
+});
+$id('ecrou-type').addEventListener('change', updateCalcBtn);
+$id('ecrou-type').addEventListener('change', closeConfigsCardIfOpen);
+
+// ── iOS focus: select field content ──────────────────────────────────────────
+document.querySelectorAll('input[type=number]').forEach(inp => {
+  if (inp.readOnly || ['sp-so-left','sp-so-right'].includes(inp.id)) return;
+  inp.addEventListener('focus', function() { this.select(); this._prevVal = this.value; this.value = ''; });
+  inp.addEventListener('blur',  function() { if (this.value === '' && this._prevVal !== undefined) this.value = this._prevVal; });
+});
+
+// ── Tooltip touch support (iOS) ───────────────────────────────────────────────
+(function() {
+  let current = null;
+  function closeAll() { document.querySelectorAll('.tip-box.visible').forEach(b => b.classList.remove('visible')); current = null; }
+  document.addEventListener('touchstart', function(e) {
+    const icon = e.target.closest('.tip-icon');
+    if (icon) {
+      e.preventDefault();
+      const box = icon.nextElementSibling;
+      if (box && box.classList.contains('tip-box')) {
+        if (current === box) { closeAll(); return; }
+        closeAll(); box.classList.add('visible'); current = box;
+      }
+    } else if (!e.target.closest('.tip-box')) { closeAll(); }
+  }, { passive: false });
+})();
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(function() {
+  const configs = loadConfigs();
+  if (configs.length > 0) { renderConfigsList(); $id('configs-wrap').style.display = ''; }
+})();
+
+</script>
 </body>
 </html>
