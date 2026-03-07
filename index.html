@@ -843,8 +843,17 @@ function applyState(s){
    document.getElementById('r-fa').textContent = s.rFa;
    document.getElementById('m-fo').innerHTML   = s.mFo;
    document.getElementById('m-fa').innerHTML   = s.mFa;
-   if(s.rtagFoKey){ const el=document.getElementById('rtag-fo'); el.textContent=t(s.rtagFoKey); el.dataset.i18nKey=s.rtagFoKey; }
-   if(s.rtagFaKey){ const el=document.getElementById('rtag-fa'); el.textContent=t(s.rtagFaKey); el.dataset.i18nKey=s.rtagFaKey; }
+   // Determine rtag keys: use saved keys if present, else deduce from wheel type + symmetry
+   const oLv = parseFloat(document.getElementById('offset-left').value);
+   const oRv = parseFloat(document.getElementById('offset-right').value);
+   const asymV = parseFloat(document.getElementById('asym').value) || 0;
+   const asymSignV = wtype === 'arriere' ? -1 : 1;
+   const effLv = oLv + asymSignV * asymV, effRv = oRv - asymSignV * asymV;
+   const isSymV = Math.abs(effLv - effRv) < 0.01;
+   const foKey = s.rtagFoKey || (isSymV ? 'leftSide'  : (wtype === 'arriere' ? 'highTensionRear' : 'highTensionFront'));
+   const faKey = s.rtagFaKey || (isSymV ? 'rightSide' : (wtype === 'arriere' ? 'lowTensionRear'  : 'lowTensionFront'));
+   { const el=document.getElementById('rtag-fo'); el.textContent=t(foKey); el.dataset.i18nKey=foKey; }
+   { const el=document.getElementById('rtag-fa'); el.textContent=t(faKey); el.dataset.i18nKey=faKey; }
 
    // Réordonner les cartes résultats selon le type de roue
    const rg = document.querySelector('.rg');
@@ -860,8 +869,8 @@ function applyState(s){
      buildArb('fo', arbData.fo.exactLen, arbData.fo.elongation);
      buildArb('fa', arbData.fa.exactLen, arbData.fa.elongation);
      // Restore arb-head labels with current language
-     if(s.rtagFoKey){ const el=document.getElementById('arb-head-fo'); el.textContent=t(s.rtagFoKey); el.dataset.i18nKey=s.rtagFoKey; }
-     if(s.rtagFaKey){ const el=document.getElementById('arb-head-fa'); el.textContent=t(s.rtagFaKey); el.dataset.i18nKey=s.rtagFaKey; }
+     if(s.rtagFoKey || foKey){ const el=document.getElementById('arb-head-fo'); el.textContent=t(foKey); el.dataset.i18nKey=foKey; }
+     if(s.rtagFaKey || faKey){ const el=document.getElementById('arb-head-fa'); el.textContent=t(faKey); el.dataset.i18nKey=faKey; }
      // Réordonner les colonnes arbitrage
      const arbCols = document.getElementById('arb-cols');
      const arbColFo = document.getElementById('arb-col-fo');
@@ -1353,6 +1362,8 @@ function loadConfig(idx) {
   document.getElementById('btn-avant').classList.toggle('c', wh === 'avant');
   document.getElementById('btn-arriere').classList.toggle('w', wh === 'arriere');
   applyState(cfg.state);
+  // Force full UI refresh in current language after loading config
+  applyLang();
   // Sync saved[wh] pour que switchTo ne l'écrase pas au premier clic
   saved[wh] = JSON.parse(JSON.stringify(cfg.state));
   reorderTensionFields(wh);
