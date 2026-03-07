@@ -122,7 +122,7 @@ input[type=number], select {
 }
 /* Prevent iOS auto-zoom */
 @supports (-webkit-touch-callout: none) {
-  input[type=number], select { font-size:16px }
+  input[type=number], select, .save-input { font-size:16px }
 }
 input:focus, select:focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
 input::placeholder        { color:var(--text3); opacity:1 }
@@ -919,7 +919,9 @@ function switchTo(wh) {
   saved[wtype] = readState(); saved[wtype].wtype = wtype;
   wtype = wh;
   $id('btn-avant').classList.toggle('active', wh === 'avant');
+  $id('btn-avant').classList.toggle('c', wh === 'avant');
   $id('btn-arriere').classList.toggle('active', wh === 'arriere');
+  $id('btn-arriere').classList.toggle('w', wh === 'arriere');
   saved[wh] ? applyState(saved[wh]) : clearFormSilent();
   reorderTensionFields(wh);
 }
@@ -1179,6 +1181,13 @@ function toggleEven(side) { evenMode[side] = !evenMode[side]; $id('arb-even-'+si
 function toggleCard(bodyId, chevronId) {
   const body = $id(bodyId), chevron = $id(chevronId), open = body.style.display !== 'none';
   body.style.display = open ? 'none' : 'block'; chevron.style.transform = open ? '' : 'rotate(180deg)';
+  if (!open) {
+    const card = body.closest('.card');
+    if (card) setTimeout(() => {
+      const top = card.getBoundingClientRect().top + window.pageYOffset - 12;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }, 30);
+  }
 }
 function toggleArbCard()     { toggleCard('arb-card-body',  'arb-card-chevron'); }
 function toggleSummaryCard() { toggleCard('sum-card-body',  'sum-card-chevron'); }
@@ -1243,7 +1252,12 @@ function renderConfigsList() {
 }
 
 // ── Auto-scroll to next card ──────────────────────────────────────────────────
-function scrollToCard(cardEl) { setTimeout(() => cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120); }
+function scrollToCard(cardEl) {
+  setTimeout(() => {
+    const top = cardEl.getBoundingClientRect().top + window.pageYOffset - 12;
+    window.scrollTo({ top, behavior: 'smooth' });
+  }, 120);
+}
 
 function checkHubComplete() {
   if (_hubScrolled) return;
@@ -1271,12 +1285,36 @@ function checkTensionComplete() {
 
 // ── Live validation listeners ─────────────────────────────────────────────────
 document.querySelectorAll('input[type=number], select').forEach(el => {
-  function onCorrect() {
+  // On input: remove invalid + hide error message immediately, but scroll only on blur
+  el.addEventListener('input', function() {
+    if (!this.classList.contains('invalid')) return;
     this.classList.remove('invalid');
     if (this.id === 'ecrou-type') $id('nsd-val').classList.remove('invalid');
-    if (!document.querySelector('.invalid')) $id('err').classList.remove('show');
-  }
-  el.addEventListener('input', onCorrect); el.addEventListener('change', onCorrect);
+    if (!document.querySelector('.invalid')) {
+      $id('err').classList.remove('show');
+    }
+  });
+  // On blur: if all fields now valid, trigger scroll
+  el.addEventListener('blur', function() {
+    if (!document.querySelector('.invalid')) {
+      _hubScrolled = false; _rimScrolled = false; _tensionScrolled = false;
+      checkHubComplete();
+      checkRimComplete();
+      checkTensionComplete();
+    }
+  });
+  // On change (for selects): immediate including scroll
+  el.addEventListener('change', function() {
+    this.classList.remove('invalid');
+    if (this.id === 'ecrou-type') $id('nsd-val').classList.remove('invalid');
+    if (!document.querySelector('.invalid')) {
+      $id('err').classList.remove('show');
+      _hubScrolled = false; _rimScrolled = false; _tensionScrolled = false;
+      checkHubComplete();
+      checkRimComplete();
+      checkTensionComplete();
+    }
+  });
 });
 
 ['nb-rayons','pcd-left','pcd-right','offset-left','offset-right',
