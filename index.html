@@ -1295,8 +1295,8 @@ function saveConfig() {
   const state = readState();
   state.wtype = wtype;
   const configs = loadConfigs();
-  const meta = wtype === 'avant' ? t('frontLabel') : t('rearLabel');
-  configs.unshift({ name, meta, state, ts: Date.now() });
+  const metaKey = wtype === 'avant' ? 'frontLabel' : 'rearLabel';
+  configs.unshift({ name, metaKey, state, ts: Date.now() });
   persistConfigs(configs);
   nameEl.value = '';
   const fb = document.getElementById('save-feedback');
@@ -1360,7 +1360,7 @@ function renderConfigsList() {
   list.innerHTML = filtered.map(({ cfg, i }) =>
     '<div class="cfg-item">'
     + '<span class="cfg-name">' + escHtml(cfg.name) + '</span>'
-    + (cfg.meta ? '<span class="cfg-meta">' + escHtml(cfg.meta) + '</span>' : '')
+    + (cfg.metaKey ? '<span class="cfg-meta">' + t(cfg.metaKey) + '</span>' : '')
     + '<button class="cfg-load" onclick="loadConfig(' + i + ')">' + t('loadBtn') + '</button>'
     + '<button class="cfg-del" onclick="deleteConfig(' + i + ')" title="Supprimer">×</button>'
     + '</div>'
