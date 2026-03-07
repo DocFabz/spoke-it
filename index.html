@@ -804,6 +804,7 @@ function readState() {
     erdNsdResult: $id('erd-nsd-result').value,
     asym: $id('asym').value, spokeSelect: $id('spoke-select').value,
     cross, hubType, sd, sa,
+    soLeft: $id('sp-so-left').value, soRight: $id('sp-so-right').value,
     tensionForte: $id('tension-forte').value,
     hasResult: $id('results').classList.contains('show'),
     rFo: $id('r-fo').textContent, rFa: $id('r-fa').textContent,
@@ -831,8 +832,13 @@ function applyState(s) {
   $id('spoke-select').value   = s.spokeSelect;
   $id('tension-forte').value  = s.tensionForte;
   sd = s.sd; sa = s.sa; cross = s.cross;
-  if (s.hubType) { hubType = s.hubType; setHubType(hubType); }
-  $id('sp-so-left').value = ''; $id('sp-so-right').value = '';
+  if (s.hubType) { hubType = s.hubType; setHubType(hubType, true); }
+  if (hubType === 'straightpull') {
+    $id('sp-so-left').value  = s.soLeft  || '';
+    $id('sp-so-right').value = s.soRight || '';
+  } else {
+    $id('sp-so-left').value = ''; $id('sp-so-right').value = '';
+  }
 
   erdMode = s.erdMode;
   $id('btn-erd-direct').classList.toggle('active', erdMode === 'direct');
@@ -950,14 +956,14 @@ function setErdMode(m) {
   clearResults(); updateCalcBtn();
 }
 
-function setHubType(htype) {
+function setHubType(htype, skipClearSO) {
   hubType = htype;
   $id('btn-hub-jbend').classList.toggle('active', htype === 'jbend');
   $id('btn-hub-sp').classList.toggle('active', htype === 'straightpull');
   $id('field-diam-trou').style.display   = htype === 'jbend'        ? '' : 'none';
   $id('field-sp-so-left').style.display  = htype === 'straightpull' ? '' : 'none';
   $id('field-sp-so-right').style.display = htype === 'straightpull' ? '' : 'none';
-  if (htype === 'straightpull') {
+  if (htype === 'straightpull' && !skipClearSO) {
     const soL = $id('sp-so-left');  soL.value = ''; soL._prevVal = undefined;
     const soR = $id('sp-so-right'); soR.value = ''; soR._prevVal = undefined;
   }
@@ -1269,9 +1275,11 @@ function checkHubComplete() {
   }
 }
 
-function checkRimComplete() {
+function checkRimComplete(fromField) {
   if (_rimScrolled) return;
-  const erdOk = erdMode === 'direct' ? !!$id('erd-direct').value : (!!$id('nsd-val').value && !!$id('ecrou-type').value);
+  // En mode NSD, ne scroller que depuis erd-direct (jamais automatiquement)
+  if (erdMode === 'nsd') return;
+  const erdOk = !!$id('erd-direct').value;
   if (erdOk) { _rimScrolled = true; scrollToCard(getCards()[3]); }
 }
 
@@ -1309,7 +1317,10 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
     if (this.id === 'ecrou-type') $id('nsd-val').classList.remove('invalid');
     if (!document.querySelector('.invalid')) {
       $id('err').classList.remove('show');
-      _hubScrolled = false; _rimScrolled = false; _tensionScrolled = false;
+      _hubScrolled = false; _tensionScrolled = false;
+      // Ne pas réinitialiser _rimScrolled si c'est ecrou-type qui change
+      // (évite le scroll lors du simple choix du mode NSD+ADDON)
+      if (this.id !== 'ecrou-type') _rimScrolled = false;
       checkHubComplete();
       checkRimComplete();
       checkTensionComplete();
@@ -1324,6 +1335,7 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
 });
 $id('ecrou-type').addEventListener('change', updateCalcBtn);
 $id('ecrou-type').addEventListener('change', closeConfigsCardIfOpen);
+
 
 // ── iOS focus: select field content ──────────────────────────────────────────
 document.querySelectorAll('input[type=number]').forEach(inp => {
