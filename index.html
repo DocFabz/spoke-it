@@ -361,7 +361,7 @@ input[type=number] { -moz-appearance:textfield }
     <div class="hub-top">
       <div class="f">
         <label data-i18n="totalSpokes">Nb total de rayons</label>
-        <select id="nb-rayons" onchange="checkHubComplete()">
+        <select id="nb-rayons">
           <option value="" disabled selected hidden></option>
           <option>16</option><option>20</option><option>24</option>
           <option>28</option><option>32</option><option>36</option>
@@ -378,15 +378,15 @@ input[type=number] { -moz-appearance:textfield }
         <div class="plabel L"><div class="pdot"></div><span data-i18n="left">Gauche</span></div>
         <div class="f">
           <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTip">Diam utile flasque</span></label>
-          <input type="number" id="pcd-left" step="0.1" inputmode="decimal" oninput="checkHubComplete()">
+          <input type="number" id="pcd-left" step="0.1" inputmode="decimal">
         </div>
         <div class="f">
           <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTip">Centre vers flasque</span></label>
-          <input type="number" id="offset-left" step="0.1" inputmode="decimal" oninput="onTension();checkHubComplete()" onkeydown="if(event.key==='-')event.preventDefault()">
+          <input type="number" id="offset-left" step="0.1" inputmode="decimal" oninput="onTension()" onkeydown="if(event.key==='-')event.preventDefault()">
         </div>
         <div class="f" id="field-sp-so-left" style="display:none">
           <label class="tip-wrap"><span data-i18n="soLeft">SO gauche</span> (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
-          <input type="number" id="sp-so-left" step="0.1" min="0" max="5" inputmode="decimal" oninput="checkHubComplete()">
+          <input type="number" id="sp-so-left" step="0.1" min="0" max="5" inputmode="decimal">
         </div>
       </div>
       <div class="hub-divider"></div>
@@ -394,15 +394,15 @@ input[type=number] { -moz-appearance:textfield }
         <div class="plabel R"><div class="pdot"></div><span data-i18n="right">Droit</span></div>
         <div class="f">
           <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTip">Diam utile flasque</span></label>
-          <input type="number" id="pcd-right" step="0.1" inputmode="decimal" oninput="checkHubComplete()">
+          <input type="number" id="pcd-right" step="0.1" inputmode="decimal">
         </div>
         <div class="f">
           <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTip">Centre vers flasque</span></label>
-          <input type="number" id="offset-right" step="0.1" inputmode="decimal" oninput="onTension();checkHubComplete()" onkeydown="if(event.key==='-')event.preventDefault()">
+          <input type="number" id="offset-right" step="0.1" inputmode="decimal" oninput="onTension()" onkeydown="if(event.key==='-')event.preventDefault()">
         </div>
         <div class="f" id="field-sp-so-right" style="display:none">
           <label class="tip-wrap"><span data-i18n="soRight">SO droit</span> (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
-          <input type="number" id="sp-so-right" step="0.1" min="0" max="5" inputmode="decimal" oninput="checkHubComplete()">
+          <input type="number" id="sp-so-right" step="0.1" min="0" max="5" inputmode="decimal">
         </div>
       </div>
     </div>
