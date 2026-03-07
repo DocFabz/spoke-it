@@ -147,6 +147,7 @@ select option{background:#161b27}
 /* ─ Error ─ */
 .err{background:rgba(240,100,100,.08);border:1px solid rgba(240,100,100,.2);border-radius:var(--rs);padding:.7rem 1rem;color:#f08080;font-family:'DM Mono',monospace;font-size:.77rem;display:none}
 .err.show{display:block}
+.err:hover{background:rgba(240,100,100,.14);border-color:rgba(240,100,100,.35)}
 
 /* ─ Results ─ */
 .rw{display:none;animation:fu .5s cubic-bezier(.22,1,.36,1)}
@@ -614,7 +615,6 @@ const i18n = {
     tensionRatio:   'Tension ratio',
     frontLabel:     'Avant',
     rearLabel:      'Arrière',
-    bothWheels:     'Avant + Arrière',
     radial:         'Radial',
     // errors
     errSpokes:      'Veuillez choisir le nombre de rayons.',
@@ -677,7 +677,6 @@ const i18n = {
     tensionRatio:   'Tension ratio',
     frontLabel:     'Front',
     rearLabel:      'Rear',
-    bothWheels:     'Front + Rear',
     radial:         'Radial',
     // errors
     errSpokes:      'Please select the number of spokes.',
@@ -843,7 +842,7 @@ function applyState(s){
    if(s.rtagFa) document.getElementById('rtag-fa').textContent = s.rtagFa;
    document.getElementById('results').classList.add('show');
    if(s.summaryData){ summaryData = s.summaryData; renderSummary(); document.getElementById('summary-wrap').classList.add('show'); }
-   if(s.arbData){ arbData = s.arbData; buildArb('fo', arbData.fo.exactLen, arbData.fo.elongation); buildArb('fa', arbData.fa.exactLen, arbData.fa.elongation); document.getElementById('arb-wrap').classList.add('show'); }
+   if(s.arbData && s.arbData.fo && s.arbData.fa){ arbData = s.arbData; buildArb('fo', arbData.fo.exactLen, arbData.fo.elongation); buildArb('fa', arbData.fa.exactLen, arbData.fa.elongation); document.getElementById('arb-wrap').classList.add('show'); } else { arbData = { fo: null, fa: null }; }
    document.getElementById('save-wrap').classList.add('show');
    document.getElementById('save-feedback').textContent = '';
  } else {
@@ -912,7 +911,7 @@ function clearForm(){
 function switchTo(wh){
  if(wh === wtype) return;
 
- // Save current tab
+ // Sauvegarder l'état de l'onglet courant avant de switcher
  saved[wtype] = readState();
  saved[wtype].wtype = wtype;
 
@@ -942,6 +941,10 @@ function reorderTensionFields(wh){
 function setWheel(wh){
  switchTo(wh);
  reorderTensionFields(wh);
+ // Rafraîchir la liste filtrée selon l'onglet actif
+ if(document.getElementById('configs-wrap').style.display !== 'none') renderConfigsList();
+ // Fermer la card configurations
+ closeConfigsCardIfOpen();
 }
 
 // ── Tooltip touch support (iOS) ────────────────────────────────────────────
@@ -1107,7 +1110,21 @@ function el(F,L){return(F*9.81*L)/(area()*210000)}
 function setInvalid(id){ document.getElementById(id).classList.add('invalid'); }
 function clearInvalids(){ document.querySelectorAll('.invalid').forEach(el=>el.classList.remove('invalid')); }
 
-function showErr(key){ currentErrKey=key; const e=document.getElementById('err'); e.textContent=t(key); e.classList.add('show'); }
+function showErr(key){
+  currentErrKey = key;
+  const e = document.getElementById('err');
+  e.textContent = t(key);
+  e.classList.add('show');
+  e.style.cursor = 'pointer';
+  e.onclick = function(){
+    const first = document.querySelector('.invalid');
+    if(first){
+      const rect = first.getBoundingClientRect();
+      const target = window.pageYOffset + rect.top - window.innerHeight * 0.25 + rect.height / 2;
+      window.scrollTo({ top: target, behavior: 'smooth' });
+    }
+  };
+}
 
 // ── Arbitrage ──────────────────────────────────────────────────────────────
 let arbData  = { fo: null, fa: null };
@@ -1208,13 +1225,30 @@ document.querySelectorAll('input[type=number], select').forEach(function(el){
   el.addEventListener('change', onCorrect);
 });
 
-// Live validation: liseret vert sur le bouton Calculer
+// Ferme la card configurations si elle est ouverte
+function closeConfigsCardIfOpen() {
+  const body = document.getElementById('configs-body');
+  const chev = document.getElementById('configs-chevron');
+  if (body && body.style.display !== 'none') {
+    body.style.display = 'none';
+    chev.style.transform = '';
+  }
+}
+
+// Live validation: liseret vert sur le bouton Calculer + fermeture card configs
 ['nb-rayons','pcd-left','pcd-right','offset-left','offset-right',
  'erd-direct','nsd-val','erd-nsd-result','tension-forte','asym','sp-so-left','sp-so-right'].forEach(function(id){
   const el = document.getElementById(id);
-  if(el){ el.addEventListener('input', updateCalcBtn); el.addEventListener('change', updateCalcBtn); }
+  if(!el) return;
+  ['input','change'].forEach(function(ev){
+    el.addEventListener(ev, updateCalcBtn);
+    el.addEventListener(ev, closeConfigsCardIfOpen);
+  });
 });
-document.getElementById('ecrou-type').addEventListener('change', updateCalcBtn);
+['change'].forEach(function(ev){
+  document.getElementById('ecrou-type').addEventListener(ev, updateCalcBtn);
+  document.getElementById('ecrou-type').addEventListener(ev, closeConfigsCardIfOpen);
+});
 
 // Efface le champ au focus pour faciliter la correction
 document.querySelectorAll('input[type=number]').forEach(function(inp) {
@@ -1257,16 +1291,7 @@ function saveConfig() {
   const state = readState();
   state.wtype = wtype;
   const configs = loadConfigs();
-  const d = summaryData;
-  const otherWtype = wtype === 'avant' ? 'arriere' : 'avant';
-  const otherSaved = saved[otherWtype];
-  const bothHaveResults = d && otherSaved && otherSaved.hasResult;
-  let meta = '';
-  if (bothHaveResults) {
-    meta = t('bothWheels');
-  } else if (d) {
-    meta = d.wtype === 'avant' ? t('frontLabel') : t('rearLabel');
-  }
+  const meta = wtype === 'avant' ? t('frontLabel') : t('rearLabel');
   configs.unshift({ name, meta, state, ts: Date.now() });
   persistConfigs(configs);
   nameEl.value = '';
@@ -1294,30 +1319,41 @@ function loadConfig(idx) {
   const cfg = configs[idx];
   if (!cfg) return;
   const wh = cfg.state.wtype || 'avant';
+
+  // Ne charger que si la config correspond à l'onglet actif
+  if (wh !== wtype) return;
+
   wtype = wh;
   document.getElementById('btn-avant').classList.toggle('active', wh === 'avant');
   document.getElementById('btn-arriere').classList.toggle('active', wh === 'arriere');
   document.getElementById('btn-avant').classList.toggle('c', wh === 'avant');
   document.getElementById('btn-arriere').classList.toggle('w', wh === 'arriere');
   applyState(cfg.state);
+  // Sync saved[wh] pour que switchTo ne l'écrase pas au premier clic
+  saved[wh] = JSON.parse(JSON.stringify(cfg.state));
   reorderTensionFields(wh);
-  // Fermer la card configurations
+  // Fermer toutes les cards déroulantes
   document.getElementById('configs-body').style.display = 'none';
   document.getElementById('configs-chevron').style.transform = '';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  // Fermer aussi la card save si ouverte
   document.getElementById('save-card-body').style.display = 'none';
   document.getElementById('save-card-chevron').style.transform = '';
+  document.getElementById('arb-card-body').style.display = 'none';
+  document.getElementById('arb-card-chevron').style.transform = '';
+  document.getElementById('sum-card-body').style.display = 'none';
+  document.getElementById('sum-card-chevron').style.transform = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function renderConfigsList() {
   const configs = loadConfigs();
   const list = document.getElementById('cfg-list');
-  if (configs.length === 0) {
+  // Filtrer uniquement les configs correspondant à l'onglet actif
+  const filtered = configs.map((cfg, i) => ({ cfg, i })).filter(({ cfg }) => (cfg.state.wtype || 'avant') === wtype);
+  if (filtered.length === 0) {
     list.innerHTML = '<div class="cfg-empty">—</div>';
     return;
   }
-  list.innerHTML = configs.map((cfg, i) =>
+  list.innerHTML = filtered.map(({ cfg, i }) =>
     '<div class="cfg-item">'
     + '<span class="cfg-name">' + escHtml(cfg.name) + '</span>'
     + (cfg.meta ? '<span class="cfg-meta">' + escHtml(cfg.meta) + '</span>' : '')
