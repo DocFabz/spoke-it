@@ -754,7 +754,7 @@ function applyLang(){
   const saveNameEl = document.getElementById('save-name');
   if(saveNameEl) saveNameEl.placeholder = t('savePlaceholder');
   // Rafraîchir la liste des configs (labels "Charger" / "Load")
-  if(document.getElementById('configs-wrap').style.display !== 'none') renderConfigsList();
+  renderConfigsList();
 }
 
 function toggleLang(){
@@ -842,7 +842,14 @@ function applyState(s){
    if(s.rtagFa) document.getElementById('rtag-fa').textContent = s.rtagFa;
    document.getElementById('results').classList.add('show');
    if(s.summaryData){ summaryData = s.summaryData; renderSummary(); document.getElementById('summary-wrap').classList.add('show'); }
-   if(s.arbData && s.arbData.fo && s.arbData.fa){ arbData = s.arbData; buildArb('fo', arbData.fo.exactLen, arbData.fo.elongation); buildArb('fa', arbData.fa.exactLen, arbData.fa.elongation); document.getElementById('arb-wrap').classList.add('show'); } else { arbData = { fo: null, fa: null }; }
+   if(s.arbData && s.arbData.fo && s.arbData.fa){
+     arbData = s.arbData;
+     buildArb('fo', arbData.fo.exactLen, arbData.fo.elongation);
+     buildArb('fa', arbData.fa.exactLen, arbData.fa.elongation);
+     document.getElementById('arb-wrap').classList.add('show');
+   } else {
+     arbData = { fo: null, fa: null };
+   }
    document.getElementById('save-wrap').classList.add('show');
    document.getElementById('save-feedback').textContent = '';
  } else {
@@ -904,7 +911,7 @@ function clearForm(){
  disp.textContent=''; disp.classList.remove('has-val');
  document.getElementById('tension-faible-field').style.opacity='.35';
  window.scrollTo({top:0,behavior:'smooth'});
- updateCalcBtn();
+ renderConfigsList();
 }
 
 // ── Tab switching ──────────────────────────────────────────────────────────
@@ -915,7 +922,6 @@ function switchTo(wh){
  saved[wtype] = readState();
  saved[wtype].wtype = wtype;
 
- // Switch
  wtype = wh;
  document.getElementById('btn-avant').classList.toggle('active', wh==='avant');
  document.getElementById('btn-arriere').classList.toggle('active', wh==='arriere');
@@ -925,6 +931,7 @@ function switchTo(wh){
  } else {
    clearForm();
  }
+ reorderTensionFields(wh);
 }
 
 function reorderTensionFields(wh){
@@ -940,10 +947,7 @@ function reorderTensionFields(wh){
 
 function setWheel(wh){
  switchTo(wh);
- reorderTensionFields(wh);
- // Rafraîchir la liste filtrée selon l'onglet actif
- if(document.getElementById('configs-wrap').style.display !== 'none') renderConfigsList();
- // Fermer la card configurations
+ renderConfigsList();
  closeConfigsCardIfOpen();
 }
 
@@ -1245,10 +1249,8 @@ function closeConfigsCardIfOpen() {
     el.addEventListener(ev, closeConfigsCardIfOpen);
   });
 });
-['change'].forEach(function(ev){
-  document.getElementById('ecrou-type').addEventListener(ev, updateCalcBtn);
-  document.getElementById('ecrou-type').addEventListener(ev, closeConfigsCardIfOpen);
-});
+document.getElementById('ecrou-type').addEventListener('change', updateCalcBtn);
+document.getElementById('ecrou-type').addEventListener('change', closeConfigsCardIfOpen);
 
 // Efface le champ au focus pour faciliter la correction
 document.querySelectorAll('input[type=number]').forEach(function(inp) {
@@ -1311,7 +1313,6 @@ function deleteConfig(idx) {
   configs.splice(idx, 1);
   persistConfigs(configs);
   renderConfigsList();
-  if (configs.length === 0) hideConfigsPanel();
 }
 
 function loadConfig(idx) {
@@ -1350,9 +1351,10 @@ function renderConfigsList() {
   // Filtrer uniquement les configs correspondant à l'onglet actif
   const filtered = configs.map((cfg, i) => ({ cfg, i })).filter(({ cfg }) => (cfg.state.wtype || 'avant') === wtype);
   if (filtered.length === 0) {
-    list.innerHTML = '<div class="cfg-empty">—</div>';
+    hideConfigsPanel();
     return;
   }
+  showConfigsPanel();
   list.innerHTML = filtered.map(({ cfg, i }) =>
     '<div class="cfg-item">'
     + '<span class="cfg-name">' + escHtml(cfg.name) + '</span>'
