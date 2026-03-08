@@ -553,7 +553,7 @@ input[type=number] { -moz-appearance:textfield }
       <div class="f" id="tension-forte-field">
         <label>
           <span class="tension-dot tension-dot-warm"></span>
-          <span data-i18n="driveSide">Côté Droit (DS)</span>
+          <span><span data-i18n="driveSide">Côté Droit</span><br><span data-i18n="driveSideAbbr">(DS)</span></span>
         </label>
         <select id="tension-forte" onchange="onTension();checkTensionComplete()">
           <option value="" disabled selected>—</option>
@@ -565,7 +565,7 @@ input[type=number] { -moz-appearance:textfield }
       <div class="f" id="tension-faible-field" style="opacity:.35">
         <label>
           <span class="tension-dot tension-dot-accent"></span>
-          <span data-i18n="nonDriveSide">Côté Gauche (NDS)</span>
+          <span><span data-i18n="nonDriveSide">Côté Gauche</span><br><span data-i18n="nonDriveSideAbbr">(NDS)</span></span>
         </label>
         <div class="faible-display" id="tension-faible-display"></div>
       </div>
@@ -714,7 +714,7 @@ const i18n = {
     soLeft:'SO gauche', soRight:'SO droit',
     erdDirect:'ERD DIRECT', addonTip:"Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.",
     erdCalc:'ERD calculé (mm)', rimAsym:'Asymétrie jante (mm)', spokeSection:'Section de rayon', cross:'Croisement',
-    driveSide:'Côté Droit (DS)', nonDriveSide:'Côté Gauche (NDS)',
+    driveSide:'Côté Droit', driveSideAbbr:'(DS)', nonDriveSide:'Côté Gauche', nonDriveSideAbbr:'(NDS)',
     tensionHelpRear:'La tension NDS est calculée automatiquement selon le ratio des déports.',
     tensionHelpFront:'La tension DS est calculée automatiquement selon le ratio des déports.',
     calcBtn:'Calculer', perSide:'/côté', configSummary:'Résumé de configuration',
@@ -744,7 +744,7 @@ const i18n = {
     soLeft:'SO left', soRight:'SO right',
     erdDirect:'ERD DIRECT', addonTip:'Depends on nipple used. Select 2 mm for standard 12 mm nipples.',
     erdCalc:'Calculated ERD (mm)', rimAsym:'Rim asymmetry (mm)', spokeSection:'Spoke section', cross:'Lacing',
-    driveSide:'Drive Side (DS)', nonDriveSide:'Non-Drive Side (NDS)',
+    driveSide:'Drive Side', driveSideAbbr:'(DS)', nonDriveSide:'Non-Drive Side', nonDriveSideAbbr:'(NDS)',
     tensionHelpRear:'NDS tension is calculated automatically from the offset ratio.',
     tensionHelpFront:'DS tension is calculated automatically from the offset ratio.',
     calcBtn:'Calculate', perSide:'/side', configSummary:'Configuration summary',
@@ -1035,13 +1035,18 @@ function reorderTensionFields(wh) {
   // Avant   : NDS (fort) saisi à gauche, DS (faible) calculé à droite
   const g2 = $id('tension-g2'), fo = $id('tension-forte-field'), fa = $id('tension-faible-field');
   wh === 'arriere' ? g2.appendChild(fo) : g2.insertBefore(fo, fa);
-  // Mettre à jour les labels
-  const fortLabel  = wh === 'arriere' ? 'driveSide'    : 'nonDriveSide';
-  const faibleLabel = wh === 'arriere' ? 'nonDriveSide' : 'driveSide';
-  const fortEl  = $id('tension-forte-field').querySelector('[data-i18n]');
-  const faibleEl = $id('tension-faible-field').querySelector('[data-i18n]');
-  if (fortEl)  { fortEl.textContent  = t(fortLabel);  fortEl.dataset.i18n  = fortLabel; }
-  if (faibleEl) { faibleEl.textContent = t(faibleLabel); faibleEl.dataset.i18n = faibleLabel; }
+  // Mettre à jour les labels (structure: span[data-i18n=xSide] + br + span[data-i18n=xSideAbbr])
+  const fortSide   = wh === 'arriere' ? 'driveSide'    : 'nonDriveSide';
+  const faibleSide = wh === 'arriere' ? 'nonDriveSide' : 'driveSide';
+  function setLabel(fieldId, sideKey) {
+    const field = $id(fieldId);
+    const mainEl = field.querySelector('[data-i18n$="Side"]');
+    const abbrEl = field.querySelector('[data-i18n$="Abbr"]');
+    if (mainEl) { mainEl.textContent = t(sideKey);          mainEl.dataset.i18n = sideKey; }
+    if (abbrEl) { abbrEl.textContent = t(sideKey + 'Abbr'); abbrEl.dataset.i18n = sideKey + 'Abbr'; }
+  }
+  setLabel('tension-forte-field',  fortSide);
+  setLabel('tension-faible-field', faibleSide);
 }
 
 // ── Field interactions ────────────────────────────────────────────────────────
