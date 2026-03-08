@@ -115,7 +115,7 @@ header        { text-align:center; padding:3.5rem 1rem 2rem }
 
 /* ── Fields ────────────────────────────────────────────────────────────────── */
 .f     { display:flex; flex-direction:column; gap:.35rem }
-label  { font-size:.67rem; font-weight:500; letter-spacing:.07em; color:var(--text3); text-transform:uppercase }
+label  { font-size:.67rem; font-weight:500; letter-spacing:.07em; color:var(--text3); text-transform:uppercase; word-break:break-word; hyphens:auto; line-height:1.3 }
 input[type=number], select {
   background:var(--inp); border:1px solid var(--border); border-radius:var(--rs);
   color:var(--text); font-family:'DM Mono',monospace; font-size:.85rem; font-weight:300;
@@ -180,7 +180,9 @@ select option             { background:#161b27 }
 /* ── Tension display ───────────────────────────────────────────────────────── */
 .faible-display         { background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text); font-family:'DM Mono',monospace; font-size:.85rem; font-weight:300; padding:.55rem .9rem; width:100%; min-height:2.35rem; display:flex; align-items:center }
 .faible-display.has-val { border-color:rgba(126,200,227,.3) }
-.tension-dot            { display:inline-block; width:7px; height:7px; border-radius:2px; margin-right:.3rem; vertical-align:middle }
+.tension-dot            { display:inline-block; width:7px; height:7px; border-radius:2px; margin-right:.3rem; vertical-align:middle; flex-shrink:0 }
+#tension-forte-field label, #tension-faible-field label { display:flex; align-items:flex-start; gap:.3rem; line-height:1.35 }
+#tension-forte-field label .tension-dot, #tension-faible-field label .tension-dot { margin-top:.13em; margin-right:0 }
 .tension-dot-warm       { background:var(--warm) }
 .tension-dot-accent     { background:var(--accent) }
 
@@ -1103,7 +1105,8 @@ function onTension() {
   const tF = parseFloat($id('tension-forte').value);
   const disp = $id('tension-faible-display'), field = $id('tension-faible-field');
   const helpKey = wtype === 'arriere' ? 'tensionHelpRear' : 'tensionHelpFront';
-  $id('tension-help-text').textContent = t(helpKey);
+  const helpEl = $id('tension-help-text');
+  if (helpEl) helpEl.textContent = t(helpKey);
   if (isNaN(tF) || isNaN(oL) || isNaN(oR)) {
     disp.textContent = ''; disp.classList.remove('has-val'); field.style.opacity = '.35';
     return;
