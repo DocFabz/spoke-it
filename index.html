@@ -130,6 +130,14 @@ input:focus, select:focus { outline:none; border-color:rgba(126,200,227,.4); bac
 input::placeholder        { color:var(--text3); opacity:1 }
 select option             { background:#161b27 }
 .inp-readonly             { opacity:.55; cursor:not-allowed }
+.inp-disabled             { opacity:.35; cursor:not-allowed; pointer-events:none }
+
+/* ── Asym warning ──────────────────────────────────────────────────────────── */
+.asym-warn {
+  display:none; font-size:.66rem; font-style:italic; line-height:1.4; margin-top:.22rem;
+  color:#e8927c;
+  animation: fu .25s cubic-bezier(.22,1,.36,1);
+}
 
 /* ── Hub layout ────────────────────────────────────────────────────────────── */
 .hub-top     { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.2rem }
@@ -497,6 +505,7 @@ input[type=number] { -moz-appearance:textfield }
       <div class="f">
         <label data-i18n="rimAsym">Asymétrie jante (mm)</label>
         <input type="number" id="asym" value="0" step="0.5" min="0" inputmode="decimal" onkeydown="if(event.key==='-')event.preventDefault()">
+        <p class="asym-warn" id="asym-warn" data-i18n="asymWarn">Moyeu symétrique : Jante asymétrique déconseillée.</p>
       </div>
       <div class="f">
         <label data-i18n="spokeSection">Section de rayon</label>
@@ -721,6 +730,7 @@ const i18n = {
     saveOk:'OK', saveError:'Veuillez saisir un nom.',
     configsTitle:'Configurations sauvegardées', loadBtn:'Charger',
     saveWarning:'⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.',
+    asymWarn:'Moyeu symétrique : Jante asymétrique déconseillée.',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -750,6 +760,7 @@ const i18n = {
     saveOk:'OK', saveError:'Please enter a name.',
     configsTitle:'Saved configurations', loadBtn:'Load',
     saveWarning:'⚠︎ Locally stored in browser cache. Clearing the cache will erase all data.',
+    asymWarn:'Symmetric hub: Asymmetric rim not recommended.',
   }
 };
 
@@ -835,6 +846,7 @@ function applyLang() {
   const saveNameEl = $id('save-name');
   if (saveNameEl) saveNameEl.placeholder = t('savePlaceholder');
   renderConfigsList();
+  onTension(); // met à jour le texte d'aide (tension-help-text) dans la langue courante
 }
 
 function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; applyLang(); }
@@ -935,6 +947,7 @@ function applyState(s) {
 
   onTension();
   reorderTensionFields(wtype);
+  updateAsymField();
   const btn = document.querySelector('.btn[onclick="calc()"]');
   if (btn) btn.classList.toggle('ready', checkReady());
 }
@@ -967,6 +980,7 @@ function clearFormSilent() {
   disp.textContent = ''; disp.classList.remove('has-val');
   $id('tension-faible-field').style.opacity = '.35';
   renderConfigsList();
+  updateAsymField();
 }
 
 function clearForm() {
@@ -988,6 +1002,7 @@ function switchTo(wh) {
   $id('btn-arriere').classList.toggle('w', wh === 'arriere');
   saved[wh] ? applyState(saved[wh]) : clearFormSilent();
   reorderTensionFields(wh); // clearFormSilent ne l'appelle pas, nécessaire dans les deux cas
+  onTension(); // met à jour le texte d'aide selon le type de roue dans tous les cas
 }
 
 function setWheel(wh) {
@@ -1097,6 +1112,25 @@ function onTension() {
   const effL = oL + sign * asym, effR = oR - sign * asym;
   const ratio = (Math.max(effL,effR) > 0 && Math.min(effL,effR) > 0) ? Math.min(effL,effR) / Math.max(effL,effR) : 1;
   disp.textContent = (tF * ratio).toFixed(1); disp.classList.add('has-val');
+}
+
+// ── Asym field enable/disable ────────────────────────────────────────────────
+function hideAsymWarn() { $id('asym-warn').style.display = 'none'; }
+
+function updateAsymField() {
+  const oL = parseFloat($id('offset-left').value);
+  const oR = parseFloat($id('offset-right').value);
+  const asymEl = $id('asym');
+  const equal = !isNaN(oL) && !isNaN(oR) && oL === oR;
+  asymEl.disabled = equal;
+  asymEl.classList.toggle('inp-disabled', equal);
+  // Cacher le warning si le champ redevient actif
+  if (!equal) hideAsymWarn();
+  if (equal) {
+    asymEl.value = '0';
+    onTension();
+    updateCalcBtn();
+  }
 }
 
 // ── Validation ────────────────────────────────────────────────────────────────
@@ -1419,6 +1453,7 @@ function checkAllScroll() {
 
 document.querySelectorAll('input[type=number], select').forEach(el => {
   el.addEventListener('input', function() {
+    if (this.id !== 'asym') hideAsymWarn();
     if (!this.classList.contains('invalid')) return;
     this.classList.remove('invalid');
     if (this.id === 'ecrou-type') $id('nsd-val').classList.remove('invalid');
@@ -1451,6 +1486,9 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
     el.addEventListener(ev, updateCalcBtn);
     el.addEventListener(ev, closeConfigsCardIfOpen);
     el.addEventListener(ev, markModified);
+    if (id === 'offset-left' || id === 'offset-right') {
+      el.addEventListener(ev, updateAsymField);
+    }
   });
 });
 $id('ecrou-type').addEventListener('change', updateCalcBtn);
@@ -1488,6 +1526,19 @@ document.querySelectorAll('input[type=number]').forEach(inp => {
   if (configs.length > 0) { renderConfigsList(); $id('configs-wrap').style.display = ''; }
   reorderTensionFields(wtype); // initialise les labels DS/NDS selon le type de roue par défaut
   onTension();                 // initialise le texte d'aide
+  updateAsymField();           // initialise l'état du champ asymétrie
+
+  // Clic sur le wrapper du champ asym quand il est grisé → warning
+  $id('asym').closest('.f').addEventListener('click', function() {
+    const asymEl = $id('asym');
+    if (!asymEl.disabled) return;
+    const warn = $id('asym-warn');
+    warn.style.display = 'block';
+    // Réinitialise l'animation
+    warn.style.animation = 'none';
+    void warn.offsetWidth;
+    warn.style.animation = '';
+  });
 })();
 
 </script>
