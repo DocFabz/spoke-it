@@ -522,7 +522,7 @@ input[type=number] { -moz-appearance:textfield }
       <div class="f" id="tension-forte-field">
         <label>
           <span class="tension-dot tension-dot-warm"></span>
-          <span data-i18n="highTensionLabel">Nappe forte</span>
+          <span data-i18n="driveSide">Côté Droit (DS)</span>
         </label>
         <select id="tension-forte" onchange="onTension();checkTensionComplete()">
           <option value="" disabled selected>—</option>
@@ -534,12 +534,12 @@ input[type=number] { -moz-appearance:textfield }
       <div class="f" id="tension-faible-field" style="opacity:.35">
         <label>
           <span class="tension-dot tension-dot-accent"></span>
-          <span data-i18n="lowTensionLabel">Nappe faible</span>
+          <span data-i18n="nonDriveSide">Côté Gauche (NDS)</span>
         </label>
         <div class="faible-display" id="tension-faible-display"></div>
       </div>
     </div>
-    <p class="help" style="margin-top:.6rem" data-i18n="tensionHelp">La tension faible est calculée automatiquement selon le ratio des déports.</p>
+    <p class="help" style="margin-top:.6rem" id="tension-help-text">La tension NDS est calculée automatiquement selon le ratio des déports.</p>
   </div>
 
   <div class="err" id="err"></div>
@@ -568,13 +568,13 @@ input[type=number] { -moz-appearance:textfield }
       </div>
       <div class="rg">
         <div class="rc fo">
-          <div class="rtag" id="rtag-fo">Nappe forte</div>
+          <div class="rtag" id="rtag-fo">Côté Droit (DS)</div>
           <div class="rnum" id="r-fo">—</div>
           <div class="runit">mm</div>
           <div class="rrows" id="m-fo"></div>
         </div>
         <div class="rc fa">
-          <div class="rtag" id="rtag-fa">Nappe faible</div>
+          <div class="rtag" id="rtag-fa">Côté Gauche (NDS)</div>
           <div class="rnum" id="r-fa">—</div>
           <div class="runit">mm</div>
           <div class="rrows" id="m-fa"></div>
@@ -597,12 +597,12 @@ input[type=number] { -moz-appearance:textfield }
       <div id="arb-card-body" style="display:none;margin-top:1.35rem">
         <div class="arb-cols" id="arb-cols">
           <div id="arb-col-fo">
-            <div class="arb-col-head fo" id="arb-head-fo">Nappe forte</div>
+            <div class="arb-col-head fo" id="arb-head-fo">Côté Droit (DS)</div>
             <button class="arb-even-btn" id="arb-even-fo" onclick="toggleEven('fo')" data-i18n="evenSizes">Tailles paires</button>
             <div class="arb-grid" id="arb-grid-fo"></div>
           </div>
           <div id="arb-col-fa">
-            <div class="arb-col-head fa" id="arb-head-fa">Nappe faible</div>
+            <div class="arb-col-head fa" id="arb-head-fa">Côté Gauche (NDS)</div>
             <button class="arb-even-btn" id="arb-even-fa" onclick="toggleEven('fa')" data-i18n="evenSizes">Tailles paires</button>
             <div class="arb-grid" id="arb-grid-fa"></div>
           </div>
@@ -683,11 +683,9 @@ const i18n = {
     soLeft:'SO gauche', soRight:'SO droit',
     erdDirect:'ERD DIRECT', addonTip:"Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.",
     erdCalc:'ERD calculé (mm)', rimAsym:'Asymétrie jante (mm)', spokeSection:'Section de rayon', cross:'Croisement',
-    highTensionLabel:'Nappe forte', lowTensionLabel:'Nappe faible',
-    highTensionFront:'Nappe forte', lowTensionFront:'Nappe faible',
-    highTensionRear:'Nappe forte',  lowTensionRear:'Nappe faible',
-    leftSide:'Côté gauche', rightSide:'Côté droit',
-    tensionHelp:'La tension faible est calculée automatiquement selon le ratio des déports.',
+    driveSide:'Côté Droit (DS)', nonDriveSide:'Côté Gauche (NDS)',
+    tensionHelpRear:'La tension NDS est calculée automatiquement selon le ratio des déports.',
+    tensionHelpFront:'La tension DS est calculée automatiquement selon le ratio des déports.',
     calcBtn:'Calculer', perSide:'/côté', configSummary:'Résumé de configuration',
     wheelLabel:'Roue', spokeCount:'Nb rayons', crossLabel:'Croisement',
     hubType:'Type moyeu', spokeSection2:'Section rayon', rimAsym2:'Asymétrie jante',
@@ -695,7 +693,7 @@ const i18n = {
     errSpokes:'Veuillez choisir le nombre de rayons.',
     errPcd:'Veuillez renseigner PCD et déport pour les deux côtés.',
     errErd:'ERD invalide ou non renseigné.', errCross:'Veuillez choisir un croisement.',
-    errTension:'Veuillez choisir la tension cible nappe forte.',
+    errTension:'Veuillez choisir la tension cible du côté fort.',
     errOffset:'Les déports doivent être positifs.',
     errSO:'Veuillez renseigner le Spoke Offset (SO) pour les deux côtés.',
     arbitrage:'Arrondi suggéré', evenSizes:'Tailles paires', gapTarget:'écart cible',
@@ -714,11 +712,9 @@ const i18n = {
     soLeft:'SO left', soRight:'SO right',
     erdDirect:'ERD DIRECT', addonTip:'Depends on nipple used. Select 2 mm for standard 12 mm nipples.',
     erdCalc:'Calculated ERD (mm)', rimAsym:'Rim asymmetry (mm)', spokeSection:'Spoke section', cross:'Lacing',
-    highTensionLabel:'High tension side', lowTensionLabel:'Low tension side',
-    highTensionFront:'High tension side', lowTensionFront:'Low tension side',
-    highTensionRear:'High tension side',  lowTensionRear:'Low tension side',
-    leftSide:'Left side', rightSide:'Right side',
-    tensionHelp:'Low tension is calculated automatically from the offset ratio.',
+    driveSide:'Drive Side (DS)', nonDriveSide:'Non-Drive Side (NDS)',
+    tensionHelpRear:'NDS tension is calculated automatically from the offset ratio.',
+    tensionHelpFront:'DS tension is calculated automatically from the offset ratio.',
     calcBtn:'Calculate', perSide:'/side', configSummary:'Configuration summary',
     wheelLabel:'Wheel', spokeCount:'Spoke count', crossLabel:'Lacing',
     hubType:'Hub type', spokeSection2:'Spoke section', rimAsym2:'Rim asymmetry',
@@ -726,7 +722,7 @@ const i18n = {
     errSpokes:'Please select the number of spokes.',
     errPcd:'Please enter PCD and offset for both sides.',
     errErd:'ERD is invalid or missing.', errCross:'Please select a lacing pattern.',
-    errTension:'Please select the high tension target.',
+    errTension:'Please select the tension target for the strong side.',
     errOffset:'Offsets must be positive values.',
     errSO:'Please enter Spoke Offset (SO) for both sides.',
     arbitrage:'Suggested rounding', evenSizes:'Even sizes', gapTarget:'gap to target',
@@ -876,13 +872,8 @@ function applyState(s) {
   if (s.hasResult) {
     $id('r-fo').textContent = s.rFo; $id('r-fa').textContent = s.rFa;
     $id('m-fo').innerHTML   = s.mFo; $id('m-fa').innerHTML   = s.mFa;
-    const oL = parseFloat($id('offset-left').value);
-    const oR = parseFloat($id('offset-right').value);
-    const asym = parseFloat($id('asym').value) || 0;
-    const sign = wtype === 'arriere' ? -1 : 1;
-    const isSym = Math.abs((oL + sign * asym) - (oR - sign * asym)) < 0.01;
-    const foKey = s.rtagFoKey || (isSym ? 'leftSide'  : (wtype === 'arriere' ? 'highTensionRear' : 'highTensionFront'));
-    const faKey = s.rtagFaKey || (isSym ? 'rightSide' : (wtype === 'arriere' ? 'lowTensionRear'  : 'lowTensionFront'));
+    const foKey = s.rtagFoKey || 'driveSide';
+    const faKey = s.rtagFaKey || 'nonDriveSide';
     const rFo = $id('rtag-fo'); rFo.textContent = t(foKey); rFo.dataset.i18nKey = foKey;
     const rFa = $id('rtag-fa'); rFa.textContent = t(faKey); rFa.dataset.i18nKey = faKey;
     const rg = document.querySelector('.rg'), rcFo = document.querySelector('.rc.fo'), rcFa = document.querySelector('.rc.fa');
@@ -957,7 +948,7 @@ function switchTo(wh) {
   $id('btn-arriere').classList.toggle('active', wh === 'arriere');
   $id('btn-arriere').classList.toggle('w', wh === 'arriere');
   saved[wh] ? applyState(saved[wh]) : clearFormSilent();
-  reorderTensionFields(wh);
+  reorderTensionFields(wh); // clearFormSilent ne l'appelle pas, nécessaire dans les deux cas
 }
 
 function setWheel(wh) {
@@ -970,8 +961,17 @@ function setWheel(wh) {
 }
 
 function reorderTensionFields(wh) {
+  // Arrière : DS (fort) saisi à droite, NDS (faible) calculé à gauche
+  // Avant   : NDS (fort) saisi à gauche, DS (faible) calculé à droite
   const g2 = $id('tension-g2'), fo = $id('tension-forte-field'), fa = $id('tension-faible-field');
   wh === 'arriere' ? g2.appendChild(fo) : g2.insertBefore(fo, fa);
+  // Mettre à jour les labels
+  const fortLabel  = wh === 'arriere' ? 'driveSide'    : 'nonDriveSide';
+  const faibleLabel = wh === 'arriere' ? 'nonDriveSide' : 'driveSide';
+  const fortEl  = $id('tension-forte-field').querySelector('[data-i18n]');
+  const faibleEl = $id('tension-faible-field').querySelector('[data-i18n]');
+  if (fortEl)  { fortEl.textContent  = t(fortLabel);  fortEl.dataset.i18n  = fortLabel; }
+  if (faibleEl) { faibleEl.textContent = t(faibleLabel); faibleEl.dataset.i18n = faibleLabel; }
 }
 
 // ── Field interactions ────────────────────────────────────────────────────────
@@ -1032,6 +1032,8 @@ function onTension() {
   const oR = parseFloat($id('offset-right').value);
   const tF = parseFloat($id('tension-forte').value);
   const disp = $id('tension-faible-display'), field = $id('tension-faible-field');
+  const helpKey = wtype === 'arriere' ? 'tensionHelpRear' : 'tensionHelpFront';
+  $id('tension-help-text').textContent = t(helpKey);
   if (isNaN(tF) || isNaN(oL) || isNaN(oR)) {
     disp.textContent = ''; disp.classList.remove('has-val'); field.style.opacity = '.35';
     return;
@@ -1132,23 +1134,35 @@ function calc() {
     return showErr('errOffset');
   }
 
-  // Forte = côté avec le plus petit déport (plus tendu)
-  let foOff, faOff, foPCD, faPCD;
-  if (effL <= effR) { foOff=effL; faOff=effR; foPCD=pL; faPCD=pR; }
-  else              { foOff=effR; faOff=effL; foPCD=pR; faPCD=pL; }
+  // fo = Drive Side (Côté Droit), fa = Non-Drive Side (Côté Gauche)
+  const foOff = effR, faOff = effL;
+  const foPCD = pR,   faPCD = pL;
 
-  const ratio = (faOff > 0 && foOff > 0) ? foOff / faOff : 1;
+  const ratio = (faOff > 0 && foOff > 0) ? Math.min(faOff, foOff) / Math.max(faOff, foOff) : 1;
   const tf    = tF * ratio;
-  const soFo  = isSP ? (effL <= effR ? soL : soR) : 0;
-  const soFa  = isSP ? (effL <= effR ? soR : soL) : 0;
+  const soFo  = isSP ? soR : 0;
+  const soFa  = isSP ? soL : 0;
   const Lfo   = isSP ? slenSP(foPCD, foOff, cross, n, erd, soFo) : slen(foPCD, foOff, cross, n, erd, trou);
   const Lfa   = isSP ? slenSP(faPCD, faOff, cross, n, erd, soFa) : slen(faPCD, faOff, cross, n, erd, trou);
-  const eFo   = el(tF, Lfo), eFa = el(tf, Lfa);
+  // Roue arrière : tF = tension DS, tf = tension NDS
+  // Roue avant   : tF = tension NDS (côté fort avant), tf = tension DS
+  const isArriere = wtype === 'arriere';
+  const tDS  = isArriere ? tF : tf;
+  const tNDS = isArriere ? tf : tF;
+  const eFo   = el(tDS,  Lfo);   // élongation DS
+  const eFa   = el(tNDS, Lfa);   // élongation NDS
   const h     = n / 2;
 
-  $id('r-fo').textContent = Lfo.toFixed(2); $id('r-fa').textContent = Lfa.toFixed(2);
-  $id('m-fo').innerHTML = `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFo.toFixed(3)} mm</span></div><div class="rrow"><strong>${tF} kgf</strong></div>`;
-  $id('m-fa').innerHTML = `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFa.toFixed(3)} mm</span></div><div class="rrow"><strong>${tf.toFixed(1)} kgf</strong></div>`;
+  // Swap display : roue avant → card fo (orange/gauche) = NDS, card fa (bleu/droite) = DS
+  const LfoDisplay = isArriere ? Lfo  : Lfa,  LfaDisplay = isArriere ? Lfa  : Lfo;
+  const eFoDisplay = isArriere ? eFo  : eFa,  eFaDisplay = isArriere ? eFa  : eFo;
+  const tFoDisplay = isArriere ? tDS  : tNDS, tFaDisplay = isArriere ? tNDS : tDS;
+  const keyFo      = isArriere ? 'driveSide'    : 'nonDriveSide';
+  const keyFa      = isArriere ? 'nonDriveSide' : 'driveSide';
+
+  $id('r-fo').textContent = LfoDisplay.toFixed(2); $id('r-fa').textContent = LfaDisplay.toFixed(2);
+  $id('m-fo').innerHTML = `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFoDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFoDisplay.toFixed(1)} kgf</strong></div>`;
+  $id('m-fa').innerHTML = `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFaDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFaDisplay.toFixed(1)} kgf</strong></div>`;
 
   const sl = sa ? `${sd}×${sa} mm` : `${sd} mm`;
   summaryData = { erd: erd.toFixed(1), wtype, n, h, cross, isSP, sl, asym, ratio };
@@ -1156,15 +1170,12 @@ function calc() {
 
   saved[wtype] = readState(); saved[wtype].wtype = wtype;
 
-  // Reorder result cards: fo à gauche pour avant, à droite pour arrière
+  // Roue arrière : card fo (orange) à droite | Roue avant : card fo (orange) à gauche
   const rg = document.querySelector('.rg'), rcFo = document.querySelector('.rc.fo'), rcFa = document.querySelector('.rc.fa');
-  wtype === 'arriere' ? rg.appendChild(rcFo) : rg.insertBefore(rcFo, rcFa);
+  isArriere ? rg.appendChild(rcFo) : rg.insertBefore(rcFo, rcFa);
   const arbCols = $id('arb-cols'), arbColFo = $id('arb-col-fo'), arbColFa = $id('arb-col-fa');
-  wtype === 'arriere' ? arbCols.appendChild(arbColFo) : arbCols.insertBefore(arbColFo, arbColFa);
+  isArriere ? arbCols.appendChild(arbColFo) : arbCols.insertBefore(arbColFo, arbColFa);
 
-  const isSym = Math.abs(effL - effR) < 0.01;
-  const keyFo = isSym ? 'leftSide'  : (wtype === 'arriere' ? 'highTensionRear' : 'highTensionFront');
-  const keyFa = isSym ? 'rightSide' : (wtype === 'arriere' ? 'lowTensionRear'  : 'lowTensionFront');
   const rtagFo = $id('rtag-fo'); rtagFo.textContent = t(keyFo); rtagFo.dataset.i18nKey = keyFo;
   const rtagFa = $id('rtag-fa'); rtagFa.textContent = t(keyFa); rtagFa.dataset.i18nKey = keyFa;
   $id('results').classList.add('show');
@@ -1173,7 +1184,7 @@ function calc() {
   const arbHFa = $id('arb-head-fa'); arbHFa.textContent = t(keyFa); arbHFa.dataset.i18nKey = keyFa;
   evenMode.fo = false; evenMode.fa = false;
   $id('arb-even-fo').classList.remove('active'); $id('arb-even-fa').classList.remove('active');
-  buildArb('fo', Lfo, eFo); buildArb('fa', Lfa, eFa);
+  buildArb('fo', LfoDisplay, eFoDisplay); buildArb('fa', LfaDisplay, eFaDisplay);
   $id('arb-wrap').classList.add('show');
 
   $id('save-wrap').classList.add('show'); $id('save-feedback').textContent = '';
@@ -1270,9 +1281,8 @@ function loadConfig(idx) {
   const wh = cfg.state.wtype || 'avant'; if (wh !== wtype) return;
   $id('btn-avant').classList.toggle('active', wh==='avant'); $id('btn-avant').classList.toggle('c', wh==='avant');
   $id('btn-arriere').classList.toggle('active', wh==='arriere'); $id('btn-arriere').classList.toggle('w', wh==='arriere');
-  applyState(cfg.state); applyLang();
+  applyState(cfg.state); applyLang(); // applyState appelle déjà reorderTensionFields
   saved[wh] = JSON.parse(JSON.stringify(cfg.state));
-  reorderTensionFields(wh);
   ['configs-body','save-card-body','arb-card-body','sum-card-body'].forEach(id => { $id(id).style.display = 'none'; });
   ['configs-chevron','save-card-chevron','arb-card-chevron','sum-card-chevron'].forEach(id => { $id(id).style.transform = ''; });
   resetScrollFlags();
@@ -1416,6 +1426,8 @@ document.querySelectorAll('input[type=number]').forEach(inp => {
 (function() {
   const configs = loadConfigs();
   if (configs.length > 0) { renderConfigsList(); $id('configs-wrap').style.display = ''; }
+  reorderTensionFields(wtype); // initialise les labels DS/NDS selon le type de roue par défaut
+  onTension();                 // initialise le texte d'aide
 })();
 
 </script>
