@@ -127,7 +127,7 @@ input[type=number], select {
 @supports (-webkit-touch-callout: none) {
   input[type=number], input[type=text], select, .save-input { font-size:16px }
 }
-input:focus, select:focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
+input:focus, select:not(#tension-forte):focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
 input::placeholder        { color:var(--text3); opacity:1 }
 select option             { background:#161b27 }
 .inp-readonly             { opacity:.55; cursor:not-allowed }
@@ -163,7 +163,7 @@ select option             { background:#161b27 }
 /* ── Cross buttons ─────────────────────────────────────────────────────────── */
 .crow      { display:flex; gap:.38rem }
 .cp        { flex:1; padding:.48rem; border:1px solid var(--border); border-radius:var(--rs); background:transparent; color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:500; cursor:pointer; transition:all .2s; text-align:center }
-.cp.active { border-color:rgba(126,200,227,.4); color:var(--accent2); background:rgba(126,200,227,.07) }
+.cp.active { border-color:rgba(126,200,227,.4); color:var(--accent2); background:var(--inp) }
 
 /* ── Misc ──────────────────────────────────────────────────────────────────── */
 .div  { height:1px; background:var(--border); margin:1.15rem 0 }
@@ -179,13 +179,16 @@ select option             { background:#161b27 }
 .tip-box.visible { opacity:1 }
 
 /* ── Tension display ───────────────────────────────────────────────────────── */
-.faible-display         { background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text); font-family:'DM Mono',monospace; font-size:.85rem; font-weight:300; padding:.55rem .9rem; width:100%; height:2.35rem; box-sizing:border-box; display:flex; align-items:center }
-.faible-display.has-val { border-color:rgba(126,200,227,.3) }
-.tension-dot            { display:inline-block; width:7px; height:7px; border-radius:2px; margin-right:.3rem; vertical-align:middle; flex-shrink:0 }
+.faible-display               { background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); color:var(--text2); font-family:'DM Mono',monospace; font-size:.85rem; font-weight:300; padding:.55rem .9rem; width:100%; height:2.35rem; box-sizing:border-box; display:flex; align-items:center; transition:background .2s, border-color .2s, color .2s }
+.faible-display.has-val-accent { background:var(--inp); border-color:rgba(126,200,227,.4); color:var(--text) }
+.faible-display.has-val-warm   { background:var(--inp); border-color:rgba(232,146,124,.4);  color:var(--text) }
+.tension-select-warm.has-val,  .tension-select-warm:focus  { border-color:rgba(232,146,124,.4); background:var(--inp) }
+.tension-select-accent.has-val, .tension-select-accent:focus { border-color:rgba(126,200,227,.4); background:var(--inp) }
+.tension-dot         { display:inline-block; width:7px; height:7px; border-radius:2px; flex-shrink:0 }
+.tension-dot-warm    { background:var(--warm) }
+.tension-dot-accent  { background:var(--accent) }
 #tension-forte-field label, #tension-faible-field label { display:flex; align-items:flex-start; gap:.3rem; line-height:1.35 }
-#tension-forte-field label .tension-dot, #tension-faible-field label .tension-dot { margin-top:.13em; margin-right:0 }
-.tension-dot-warm       { background:var(--warm) }
-.tension-dot-accent     { background:var(--accent) }
+#tension-forte-field label .tension-dot, #tension-faible-field label .tension-dot { margin-top:.13em }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
 .btn           { width:100%; padding:1rem 1.5rem; background:var(--card); border:1px solid rgba(126,200,227,.22); border-radius:var(--r); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.9rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .25s; position:relative; overflow:hidden }
@@ -552,7 +555,7 @@ input[type=number] { -moz-appearance:textfield }
     <div class="g2" id="tension-g2">
       <div class="f" id="tension-forte-field">
         <label>
-          <span class="tension-dot tension-dot-warm"></span>
+          <span class="tension-dot"></span>
           <span><span data-i18n="driveSide">Côté Droit</span><br><span data-i18n="driveSideAbbr">(DS)</span></span>
         </label>
         <select id="tension-forte" onchange="onTension();checkTensionComplete()">
@@ -564,7 +567,7 @@ input[type=number] { -moz-appearance:textfield }
       </div>
       <div class="f" id="tension-faible-field" style="opacity:.35">
         <label>
-          <span class="tension-dot tension-dot-accent"></span>
+          <span class="tension-dot"></span>
           <span><span data-i18n="nonDriveSide">Côté Gauche</span><br><span data-i18n="nonDriveSideAbbr">(NDS)</span></span>
         </label>
         <div class="faible-display" id="tension-faible-display"></div>
@@ -981,7 +984,8 @@ function clearFormSilent() {
   saved[wtype] = null; $id('err').classList.remove('show'); currentErrKey = null;
   clearInvalids();
   const disp = $id('tension-faible-display');
-  disp.textContent = ''; disp.classList.remove('has-val');
+  disp.textContent = ''; disp.classList.remove('has-val-accent', 'has-val-warm');
+  $id('tension-forte').classList.remove('has-val');
   $id('tension-faible-field').style.opacity = '.35';
   renderConfigsList();
   updateAsymField();
@@ -1047,6 +1051,16 @@ function reorderTensionFields(wh) {
   }
   setLabel('tension-forte-field',  fortSide);
   setLabel('tension-faible-field', faibleSide);
+  // Couleur : fort (saisi) = warm (orange), faible (calculé) = accent (bleu) — toujours
+  const fortDot   = $id('tension-forte-field').querySelector('.tension-dot');
+  const faibleDot = $id('tension-faible-field').querySelector('.tension-dot');
+  if (fortDot)  { fortDot.classList.add('tension-dot-warm');    fortDot.classList.remove('tension-dot-accent'); }
+  if (faibleDot){ faibleDot.classList.add('tension-dot-accent'); faibleDot.classList.remove('tension-dot-warm'); }
+  const sel = $id('tension-forte');
+  sel.classList.add('tension-select-warm');
+  sel.classList.remove('tension-select-accent');
+  const disp = $id('tension-faible-display');
+  disp._colorClass = 'has-val-accent';
 }
 
 // ── Field interactions ────────────────────────────────────────────────────────
@@ -1110,18 +1124,26 @@ function onTension() {
   const oR = parseFloat($id('offset-right').value);
   const tF = parseFloat($id('tension-forte').value);
   const disp = $id('tension-faible-display'), field = $id('tension-faible-field');
+  const sel  = $id('tension-forte');
   const helpKey = wtype === 'arriere' ? 'tensionHelpRear' : 'tensionHelpFront';
   const helpEl = $id('tension-help-text');
   if (helpEl) helpEl.textContent = t(helpKey);
+  // Liseret select : orange/bleu selon côté, actif dès qu'une valeur est choisie
+  sel.classList.toggle('has-val', !isNaN(tF));
   if (isNaN(tF) || isNaN(oL) || isNaN(oR)) {
-    disp.textContent = ''; disp.classList.remove('has-val'); field.style.opacity = '.35';
+    disp.textContent = '';
+    disp.classList.remove('has-val-accent', 'has-val-warm');
+    field.style.opacity = '.35';
     return;
   }
   field.style.opacity = '1';
   const asym = parseFloat($id('asym').value) || 0, sign = wtype === 'arriere' ? -1 : 1;
   const effL = oL + sign * asym, effR = oR - sign * asym;
   const ratio = (Math.max(effL,effR) > 0 && Math.min(effL,effR) > 0) ? Math.min(effL,effR) / Math.max(effL,effR) : 1;
-  disp.textContent = (tF * ratio).toFixed(1); disp.classList.add('has-val');
+  disp.textContent = (tF * ratio).toFixed(1);
+  const colorClass = disp._colorClass || 'has-val-accent';
+  disp.classList.remove('has-val-accent', 'has-val-warm');
+  disp.classList.add(colorClass);
 }
 
 // ── Asym field enable/disable ────────────────────────────────────────────────
