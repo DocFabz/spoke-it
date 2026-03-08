@@ -945,8 +945,8 @@ function applyState(s) {
     ['results','arb-wrap','summary-wrap','save-wrap'].forEach(id => $id(id).classList.remove('show'));
   }
 
-  onTension();
   reorderTensionFields(wtype);
+  onTension();
   updateAsymField();
   const btn = document.querySelector('.btn[onclick="calc()"]');
   if (btn) btn.classList.toggle('ready', checkReady());
