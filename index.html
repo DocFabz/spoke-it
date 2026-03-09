@@ -245,7 +245,9 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .arb-row           { display:flex; align-items:center; justify-content:space-between; padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--rs); background:var(--card-alt) }
 .arb-row.best      { border-color:var(--success) }
 .arb-row.arb-muted { opacity:.25; border-color:transparent }
-.arb-sz            { font-family:'DM Mono',monospace; font-size:.88rem; font-weight:500; color:var(--text) }
+.arb-left          { display:flex; flex-direction:column; align-items:flex-start; gap:.05rem }
+.arb-sz            { font-family:'DM Mono',monospace; font-size:.88rem; font-weight:500; color:var(--text); line-height:1 }
+.arb-unit          { font-family:'DM Mono',monospace; font-size:.58rem; font-weight:300; color:var(--text3) }
 .arb-right         { display:flex; flex-direction:column; align-items:flex-end; gap:.07rem }
 .arb-delta         { font-family:'DM Mono',monospace; font-size:.8rem; font-weight:500; color:var(--text2) }
 .arb-lbl           { font-size:.53rem; color:var(--text3); letter-spacing:.06em }
@@ -1363,7 +1365,7 @@ function renderArb(side) {
       ? (Math.abs(roundedThreads) <= 1 ? 'filet' : 'filets')
       : (Math.abs(roundedThreads) <= 1 ? 'thread' : 'threads');
     const threadStr = '≈ ' + (roundedThreads === 0 ? '' : roundedThreads > 0 ? '+' : '') + roundedThreads + ' ' + threadWord;
-    return `<div class="${cls}"><span class="arb-sz">${sz} mm</span><div class="arb-right"><span class="arb-delta">${delta>=0?'+':''}${delta.toFixed(2)} mm</span><span class="arb-lbl" style="margin-bottom:.08rem">${t('gapTarget')}</span><span class="arb-lbl" style="color:var(--text2);font-size:.58rem">${threadStr}</span></div></div>`;
+    return `<div class="${cls}"><div class="arb-left"><span class="arb-sz">${sz}</span><span class="arb-unit">mm</span></div><div class="arb-right"><span class="arb-delta">${delta>=0?'+':''}${delta.toFixed(2)} mm</span><span class="arb-lbl" style="margin-bottom:.08rem">${t('gapTarget')}</span><span class="arb-lbl" style="color:var(--text2);font-size:.58rem">${threadStr}</span></div></div>`;
   }).join('');
 }
 
