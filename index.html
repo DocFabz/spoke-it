@@ -184,6 +184,7 @@ select option             { background:#161b27 }
 .faible-display.has-val-warm   { background:var(--inp); border-color:rgba(232,146,124,.4);  color:var(--text) }
 .tension-select-warm.has-val,  .tension-select-warm:focus  { border-color:rgba(232,146,124,.4); background:var(--inp) }
 .tension-select-accent.has-val, .tension-select-accent:focus { border-color:rgba(126,200,227,.4); background:var(--inp) }
+#tension-forte { outline:none; transition:border-color .2s, background .2s }
 .tension-dot         { display:inline-block; width:7px; height:7px; border-radius:2px; flex-shrink:0 }
 .tension-dot-warm    { background:var(--warm) }
 .tension-dot-accent  { background:var(--accent) }
@@ -278,6 +279,12 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   animation:fu .35s cubic-bezier(.22,1,.36,1);
 }
 .cfg-loaded-name.show { display:inline-flex }
+.cfg-loaded-name.flash { animation:badge-flash 1.4s ease forwards }
+@keyframes badge-flash {
+  0%   { border-color:rgba(126,200,227,.9); box-shadow:0 0 0 2px rgba(126,200,227,.25); background:rgba(126,200,227,.18) }
+  70%  { border-color:rgba(126,200,227,.5); box-shadow:0 0 0 1px rgba(126,200,227,.1);  background:rgba(126,200,227,.1) }
+  100% { border-color:rgba(126,200,227,.22); box-shadow:none; background:rgba(126,200,227,.06) }
+}
 .cfg-loaded-icon { width:11px; height:11px; flex-shrink:0; color:var(--accent); opacity:.85 }
 .cfg-loaded-text { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:400; color:var(--accent); letter-spacing:.08em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:220px }
 
@@ -585,7 +592,7 @@ input[type=number] { -moz-appearance:textfield }
   <!-- ── Results ── -->
   <div class="rw" id="results">
     <div class="card card-result">
-      <div class="ch">
+      <div class="ch ch-toggle" onclick="toggleResultsCard()">
         <svg class="cicon cicon-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
           <rect x="4" y="2" width="16" height="20" rx="2"/>
           <rect x="7" y="5" width="10" height="4" rx="1" fill="currentColor" opacity=".3" stroke="none"/>
@@ -599,19 +606,22 @@ input[type=number] { -moz-appearance:textfield }
           <circle cx="16" cy="17" r=".9" fill="currentColor" stroke="none"/>
         </svg>
         <div class="clabel clabel-success" data-i18n="results">Résultats</div>
+        <em id="results-card-chevron" class="chevron chevron-success">&#8964;</em>
       </div>
-      <div class="rg">
-        <div class="rc fo">
-          <div class="rtag" id="rtag-fo">Côté Droit (DS)</div>
-          <div class="rnum" id="r-fo">—</div>
-          <div class="runit">mm</div>
-          <div class="rrows" id="m-fo"></div>
-        </div>
-        <div class="rc fa">
-          <div class="rtag" id="rtag-fa">Côté Gauche (NDS)</div>
-          <div class="rnum" id="r-fa">—</div>
-          <div class="runit">mm</div>
-          <div class="rrows" id="m-fa"></div>
+      <div id="results-card-body" style="margin-top:1.35rem">
+        <div class="rg">
+          <div class="rc fo">
+            <div class="rtag" id="rtag-fo">Côté Droit (DS)</div>
+            <div class="rnum" id="r-fo">—</div>
+            <div class="runit">mm</div>
+            <div class="rrows" id="m-fo"></div>
+          </div>
+          <div class="rc fa">
+            <div class="rtag" id="rtag-fa">Côté Gauche (NDS)</div>
+            <div class="rnum" id="r-fa">—</div>
+            <div class="runit">mm</div>
+            <div class="rrows" id="m-fa"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -774,12 +784,23 @@ function t(key) { return (i18n[lang] && i18n[lang][key]) || key; }
 
 // ── Flash liseret vert sur la card type de roue ──────────────────────────────
 let _flashTimer = null;
-function flashWheelCard() {
+function flashWheelCard(configName) {
   const card = getCards()[0];
   clearTimeout(_flashTimer);
   card.style.transition = 'box-shadow .2s, border-color .2s';
   card.style.borderColor = 'rgba(126,207,168,.7)';
   card.style.boxShadow   = '0 0 0 2px rgba(126,207,168,.18)';
+  if (configName) {
+    _loadedConfigName[wtype] = configName;
+    _configModified[wtype] = false;
+    const badge = $id('cfg-loaded-name'), text = $id('cfg-loaded-text');
+    if (badge && text) {
+      text.textContent = configName;
+      badge.classList.remove('show', 'flash');
+      void badge.offsetWidth;
+      badge.classList.add('show', 'flash');
+    }
+  }
   _flashTimer = setTimeout(() => {
     card.style.borderColor = '';
     card.style.boxShadow   = '';
@@ -788,16 +809,6 @@ function flashWheelCard() {
 }
 
 // ── Loaded config name badge ──────────────────────────────────────────────────
-function showLoadedConfigName(name) {
-  _loadedConfigName[wtype] = name;
-  _configModified[wtype] = false;
-  const badge = $id('cfg-loaded-name'), text = $id('cfg-loaded-text');
-  if (!badge || !text) return;
-  text.textContent = name;
-  badge.classList.remove('show');
-  void badge.offsetWidth;
-  badge.classList.add('show');
-}
 function markModified() { _configModified[wtype] = true; _loadedConfigName[wtype] = null; clearLoadedConfigName(); }
 function clearLoadedConfigName() {
   const badge = $id('cfg-loaded-name');
@@ -976,6 +987,7 @@ function clearFormSilent() {
   document.querySelectorAll('.cp').forEach(b => b.classList.remove('active'));
 
   ['results','arb-wrap','summary-wrap','save-wrap'].forEach(id => $id(id).classList.remove('show'));
+  $id('results-card-body').style.display = '';    $id('results-card-chevron').style.transform = '';
   $id('arb-card-body').style.display  = 'none'; $id('arb-card-chevron').style.transform  = '';
   $id('sum-card-body').style.display  = 'none'; $id('sum-card-chevron').style.transform  = '';
   $id('save-card-body').style.display = 'none'; $id('save-card-chevron').style.transform = '';
@@ -1345,7 +1357,13 @@ function renderArb(side) {
     let cls = 'arb-row';
     if (onlyEven && sz%2!==0) cls += ' arb-muted';
     else if (Math.abs(delta) <= minAbs + 0.0001) cls += ' best';
-    return `<div class="${cls}"><span class="arb-sz">${sz} mm</span><div class="arb-right"><span class="arb-delta">${delta>=0?'+':''}${delta.toFixed(2)} mm</span><span class="arb-lbl">${t('gapTarget')}</span></div></div>`;
+    const rawThreads = delta / 0.45;
+    const roundedThreads = Math.round(rawThreads * 2) / 2;
+    const threadWord = lang === 'fr'
+      ? (Math.abs(roundedThreads) <= 1 ? 'filet' : 'filets')
+      : (Math.abs(roundedThreads) <= 1 ? 'thread' : 'threads');
+    const threadStr = '≈ ' + (roundedThreads === 0 ? '' : roundedThreads > 0 ? '+' : '') + roundedThreads + ' ' + threadWord;
+    return `<div class="${cls}"><span class="arb-sz">${sz} mm</span><div class="arb-right"><span class="arb-delta">${delta>=0?'+':''}${delta.toFixed(2)} mm</span><span class="arb-lbl" style="margin-bottom:.08rem">${t('gapTarget')}</span><span class="arb-lbl" style="color:var(--text2);font-size:.58rem">${threadStr}</span></div></div>`;
   }).join('');
 }
 
@@ -1363,6 +1381,7 @@ function toggleCard(bodyId, chevronId) {
     }, 30);
   }
 }
+function toggleResultsCard() { toggleCard('results-card-body', 'results-card-chevron'); }
 function toggleArbCard()     { toggleCard('arb-card-body',  'arb-card-chevron'); }
 function toggleSummaryCard() { toggleCard('sum-card-body',  'sum-card-chevron'); }
 function toggleSaveCard()    { toggleCard('save-card-body', 'save-card-chevron'); }
@@ -1407,8 +1426,7 @@ function loadConfig(idx) {
   ['configs-chevron','save-card-chevron','arb-card-chevron','sum-card-chevron'].forEach(id => { $id(id).style.transform = ''; });
   resetScrollFlags();
   const top = document.querySelector('header').getBoundingClientRect().bottom + window.pageYOffset - 30; window.scrollTo({ top, behavior: 'smooth' });
-  flashWheelCard();
-  showLoadedConfigName(cfg.name);
+  flashWheelCard(cfg.name);
 }
 
 function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
