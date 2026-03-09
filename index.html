@@ -87,7 +87,6 @@ header        { text-align:center; padding:3.5rem 1rem 2rem }
 .card:hover   { border-color:var(--border-s) }
 .card-success { border-color:rgba(126,207,168,.35); box-shadow:0 0 0 1px rgba(126,207,168,.1) }
 .card-muted   { border-color:rgba(255,255,255,.06) }
-.card-result  { border-color:rgba(126,200,227,.13) }
 
 /* ── Card header ───────────────────────────────────────────────────────────── */
 .ch            { display:flex; align-items:center; gap:.5rem; margin-bottom:1.35rem }
@@ -216,17 +215,9 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .rw.show  { display:block }
 @keyframes fu { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:translateY(0) } }
 .rg       { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem }
-.rc       { border-radius:var(--rs); padding:1.4rem 1.5rem; position:relative; overflow:hidden }
-.rc.fo    { background:linear-gradient(145deg,rgba(232,146,124,.07),rgba(232,146,124,.025)); border:1px solid rgba(232,146,124,.18); animation:glow-fo 6s ease-in-out infinite }
-.rc.fa    { background:linear-gradient(145deg,rgba(126,200,227,.07),rgba(126,200,227,.025)); border:1px solid rgba(126,200,227,.18); animation:glow-fa 6s ease-in-out infinite }
-@keyframes glow-fo {
-  0%, 100% { border-color:rgba(232,146,124,.12); box-shadow:0 0 0px rgba(232,146,124,0) }
-  50%       { border-color:rgba(232,146,124,.65); box-shadow:0 0 14px rgba(232,146,124,.18), inset 0 0 10px rgba(232,146,124,.04) }
-}
-@keyframes glow-fa {
-  0%, 100% { border-color:rgba(126,200,227,.12); box-shadow:0 0 0px rgba(126,200,227,0) }
-  50%       { border-color:rgba(126,200,227,.65); box-shadow:0 0 14px rgba(126,200,227,.18), inset 0 0 10px rgba(126,200,227,.04) }
-}
+.rc       { border-radius:var(--rs); padding:1.4rem 1.5rem }
+.rc.fo    { background:linear-gradient(145deg,rgba(232,146,124,.07),rgba(232,146,124,.025)); border:1px solid rgba(232,146,124,.28) }
+.rc.fa    { background:linear-gradient(145deg,rgba(126,200,227,.07),rgba(126,200,227,.025)); border:1px solid rgba(126,200,227,.28) }
 .rtag     { font-size:.59rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; margin-bottom:.65rem }
 .fo .rtag { color:var(--warm) }
 .fa .rtag { color:var(--accent) }
@@ -1590,7 +1581,6 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
 $id('ecrou-type').addEventListener('change', updateCalcBtn);
 $id('ecrou-type').addEventListener('change', closeConfigsCardIfOpen);
 $id('ecrou-type').addEventListener('change', markModified);
-
 
 // ── iOS focus: select field content ──────────────────────────────────────────
 document.querySelectorAll('input[type=number]').forEach(inp => {
