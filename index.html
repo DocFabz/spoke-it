@@ -217,8 +217,16 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 @keyframes fu { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:translateY(0) } }
 .rg       { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem }
 .rc       { border-radius:var(--rs); padding:1.4rem 1.5rem; position:relative; overflow:hidden }
-.rc.fo    { background:linear-gradient(145deg,rgba(232,146,124,.07),rgba(232,146,124,.025)); border:1px solid rgba(232,146,124,.18) }
-.rc.fa    { background:linear-gradient(145deg,rgba(126,200,227,.07),rgba(126,200,227,.025)); border:1px solid rgba(126,200,227,.18) }
+.rc.fo    { background:linear-gradient(145deg,rgba(232,146,124,.07),rgba(232,146,124,.025)); border:1px solid rgba(232,146,124,.18); animation:glow-fo 6s ease-in-out infinite }
+.rc.fa    { background:linear-gradient(145deg,rgba(126,200,227,.07),rgba(126,200,227,.025)); border:1px solid rgba(126,200,227,.18); animation:glow-fa 6s ease-in-out infinite }
+@keyframes glow-fo {
+  0%, 100% { border-color:rgba(232,146,124,.12); box-shadow:0 0 0px rgba(232,146,124,0) }
+  50%       { border-color:rgba(232,146,124,.65); box-shadow:0 0 14px rgba(232,146,124,.18), inset 0 0 10px rgba(232,146,124,.04) }
+}
+@keyframes glow-fa {
+  0%, 100% { border-color:rgba(126,200,227,.12); box-shadow:0 0 0px rgba(126,200,227,0) }
+  50%       { border-color:rgba(126,200,227,.65); box-shadow:0 0 14px rgba(126,200,227,.18), inset 0 0 10px rgba(126,200,227,.04) }
+}
 .rtag     { font-size:.59rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; margin-bottom:.65rem }
 .fo .rtag { color:var(--warm) }
 .fa .rtag { color:var(--accent) }
@@ -612,13 +620,13 @@ input[type=number] { -moz-appearance:textfield }
       </div>
       <div id="results-card-body" style="margin-top:1.35rem">
         <div class="rg">
-          <div class="rc fo">
+          <div class="rc fo" onclick="openArbCard()" style="cursor:pointer">
             <div class="rtag" id="rtag-fo">Côté Droit (DS)</div>
             <div class="rnum" id="r-fo">—</div>
             <div class="runit">mm</div>
             <div class="rrows" id="m-fo"></div>
           </div>
-          <div class="rc fa">
+          <div class="rc fa" onclick="openArbCard()" style="cursor:pointer">
             <div class="rtag" id="rtag-fa">Côté Gauche (NDS)</div>
             <div class="rnum" id="r-fa">—</div>
             <div class="runit">mm</div>
@@ -830,6 +838,7 @@ let _hubScrolled = false, _rimScrolled = false, _tensionScrolled = false;
 const _configModified = { avant: false, arriere: false };
 const _loadedConfigName = { avant: null, arriere: null };
 let _switchingHub = false;
+let _applyingState = false;
 function resetScrollFlags() { _hubScrolled = false; _rimScrolled = false; _tensionScrolled = false; }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -914,6 +923,7 @@ function readState() {
 
 function applyState(s) {
   if (!s) return;
+  _applyingState = true;
   $id('nb-rayons').value      = s.nbRayons;
   $id('diam-trou').value      = s.diamTrou;
   $id('pcd-left').value       = s.pcdLeft;
@@ -958,7 +968,8 @@ function applyState(s) {
       const hFa = $id('arb-head-fa'); hFa.textContent = t(faKey); hFa.dataset.i18nKey = faKey;
       const arbCols = $id('arb-cols'), arbColFo = $id('arb-col-fo'), arbColFa = $id('arb-col-fa');
       wtype === 'arriere' ? arbCols.appendChild(arbColFo) : arbCols.insertBefore(arbColFo, arbColFa);
-      $id('arb-wrap').classList.add('show');
+      $id('arb-wrap').classList.remove('show');
+      $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
     } else { arbData = { fo: null, fa: null }; }
     $id('save-wrap').classList.add('show'); $id('save-feedback').textContent = '';
   } else {
@@ -970,6 +981,11 @@ function applyState(s) {
   updateAsymField();
   const btn = document.querySelector('.btn[onclick="calc()"]');
   if (btn) btn.classList.toggle('ready', checkReady());
+  if (s.hasResult) {
+    $id('results-card-body').style.display = 'block';
+    $id('results-card-chevron').style.transform = 'rotate(180deg)';
+  }
+  _applyingState = false;
 }
 
 // ── Clear form ────────────────────────────────────────────────────────────────
@@ -1195,6 +1211,7 @@ function checkReady() {
 }
 
 function clearResults() {
+  if (_applyingState) return;
   ['results','arb-wrap','summary-wrap','save-wrap'].forEach(id => $id(id).classList.remove('show'));
 }
 
@@ -1219,6 +1236,16 @@ function el(F, L) { return (F * 9.81 * L) / (area() * 210000); }
 // ── Calc ──────────────────────────────────────────────────────────────────────
 function calc() {
   if (document.activeElement) document.activeElement.blur();
+
+  if ($id('results').classList.contains('show')) {
+    const body = $id('results-card-body'), chevron = $id('results-card-chevron');
+    if (body.style.display === 'none') {
+      body.style.display = 'block'; chevron.style.transform = 'rotate(180deg)';
+    }
+    setTimeout(() => $id('results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    return;
+  }
+
   $id('err').classList.remove('show'); clearInvalids();
 
   const n = parseInt($id('nb-rayons').value);
@@ -1319,7 +1346,8 @@ function calc() {
   evenMode.fo = false; evenMode.fa = false;
   $id('arb-even-fo').classList.remove('active'); $id('arb-even-fa').classList.remove('active');
   buildArb('fo', LfoDisplay, eFoDisplay); buildArb('fa', LfaDisplay, eFaDisplay);
-  $id('arb-wrap').classList.add('show');
+  $id('arb-wrap').classList.remove('show');
+  $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
 
   $id('save-wrap').classList.add('show'); $id('save-feedback').textContent = '';
   setTimeout(() => $id('results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
@@ -1384,7 +1412,23 @@ function toggleCard(bodyId, chevronId) {
   }
 }
 function toggleResultsCard() { toggleCard('results-card-body', 'results-card-chevron'); }
-function toggleArbCard()     { toggleCard('arb-card-body',  'arb-card-chevron'); }
+function toggleArbCard() {
+  const body = $id('arb-card-body'), chevron = $id('arb-card-chevron'), wrap = $id('arb-wrap');
+  if (body.style.display === 'none') {
+    body.style.display = 'block'; chevron.style.transform = 'rotate(180deg)';
+  } else {
+    body.style.display = 'none'; chevron.style.transform = '';
+    wrap.classList.remove('show');
+  }
+}
+function openArbCard() {
+  const wrap = $id('arb-wrap'), body = $id('arb-card-body'), chevron = $id('arb-card-chevron');
+  if (!wrap.classList.contains('show')) {
+    wrap.classList.add('show');
+    body.style.display = 'block'; chevron.style.transform = 'rotate(180deg)';
+  }
+  setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+}
 function toggleSummaryCard() { toggleCard('sum-card-body',  'sum-card-chevron'); }
 function toggleSaveCard()    { toggleCard('save-card-body', 'save-card-chevron'); }
 function toggleConfigsCard() { toggleCard('configs-body',   'configs-chevron'); }
