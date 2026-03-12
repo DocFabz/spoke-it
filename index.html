@@ -1171,7 +1171,6 @@ function flashWheelCard(configName) {
 // ── Loaded config name badge ──────────────────────────────────────────────────
 let _lastLoadTime = 0;
 function markModified() {
-  // Ignore events fired within 500ms of loading a config (async change events on iOS)
   if (Date.now() - _lastLoadTime < 500) return;
   _loadedConfigName[wtype] = null;
   _refreshLoadedBadges();
@@ -1550,6 +1549,7 @@ function setErdMode(m) {
   $id('btn-erd-nsd').classList.toggle('active', m === 'nsd');
   $id('erd-direct-section').style.display = m === 'direct' ? '' : 'none';
   $id('erd-nsd-section').style.display    = m === 'nsd'    ? '' : 'none';
+  _lastLoadTime = Date.now();
   clearResults(); updateCalcBtn();
 }
 
