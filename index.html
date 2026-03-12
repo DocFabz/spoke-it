@@ -1041,6 +1041,21 @@ input[type=number] { -moz-appearance:textfield }
 
 <script>
 
+// ── Fix iOS Safari auto-zoom on orientation change ──────────────────────
+(function() {
+  if (!/iPhone|iPad|iPod/.test(navigator.userAgent)) return;
+  var meta = document.querySelector('meta[name="viewport"]');
+  if (!meta) return;
+  window.addEventListener('orientationchange', function() {
+    // Temporarily lock scale to reset Safari's zoom state
+    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0');
+    setTimeout(function() {
+      // Re-enable manual zoom after Safari has settled
+      meta.setAttribute('content', 'width=device-width, initial-scale=1.0');
+    }, 200);
+  });
+})();
+
 // ── i18n ────────────────────────────────────────────────────────────────────
 let lang = 'fr';
 
