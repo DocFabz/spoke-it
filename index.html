@@ -339,8 +339,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-hl-btn:hover  { border-color:var(--warm2); color:var(--warm2) }
 .tm-hl-btn.active { border-color:rgba(232,146,124,.65); color:var(--warm2); background:rgba(232,146,124,.08); box-shadow:0 0 0 1px rgba(232,146,124,.15) }
 .tm-hl-group      { margin-left:auto; display:flex; align-items:center; gap:.5rem; white-space:nowrap }
-.tm-hl-count      { font-family:'DM Mono',monospace; font-size:.64rem; color:var(--text3); transition:color .2s }
-.tm-hl-count.has  { color:var(--warm) }
 
 .defl-inp.outlier-fo { border-color:rgba(232,146,124,.75) !important; background:rgba(232,146,124,.06) !important; box-shadow:0 0 0 2px rgba(232,146,124,.18), 0 0 8px rgba(232,146,124,.15) !important }
 .defl-inp.outlier-fa { border-color:rgba(126,200,227,.7)  !important; background:rgba(126,200,227,.05) !important; box-shadow:0 0 0 2px rgba(126,200,227,.15), 0 0 8px rgba(126,200,227,.12) !important }
@@ -441,9 +439,6 @@ input[type=number] { -moz-appearance:textfield }
   /* Légende radar : un peu plus compacte */
   .radar-legend { gap: .7rem; margin-top: .5rem; }
 }
-
-/* Masquer le compteur de rayons hors seuil */
-.tm-hl-count { display: none; }
 </style>
 </head>
 <body>
@@ -1031,7 +1026,6 @@ input[type=number] { -moz-appearance:textfield }
       </select>
       <div class="tm-hl-group">
         <button class="tm-hl-btn" id="tm-hl-btn" onclick="tmToggleHighlight()">Highlight</button>
-        <span class="tm-hl-count" id="tm-hl-count"></span>
       </div>
     </div><!-- /tm-outlier-bar -->
   </div><!-- /tm-result-card -->
@@ -1081,13 +1075,12 @@ const i18n = {
     tmLeft:'Côté Gauche', tmRight:'Côté Droit',
     tmSpokeLabel:'Rayon',
     tmRadarTitle:'Diagramme de tension',
-    tmAvg:'Moyenne', tmStd:'Écart-type', tmCount:'Rayons mesurés',
+    tmAvg:'Moyenne', tmStd:'Écart-type',
     tmCVMaxLabel:'Tolérance',
     tmHintWF:'WF : lecture décimale — ex\u00a0<code>0.55</code> ou <code>,55</code> ou <code>55</code>. La valeur kgf est interpolée.',
     tmHintPT:'Park Tool : numéro entier de déflection — ex\u00a0<code>18</code>',
     tmNoSpokes:'Saisir le nombre de rayons dans le Calculateur.',
     tmReadingKgf:'lecture · kgf',
-    tmOutOfRange:(n) => `${n} rayon${n > 1 ? 's' : ''} hors seuil`,
     tmChooseSpoke:'Choisir un rayon ci-dessus',
     tmSpokeSelectPlaceholder:'— Choisir un rayon —',
     tmWarnAerolite2:'⚠ Valeurs valables UNIQUEMENT avec le Tensiomètre Aerolite II',
@@ -1132,13 +1125,12 @@ const i18n = {
     tmLeft:'Left Side', tmRight:'Right Side',
     tmSpokeLabel:'Spoke',
     tmRadarTitle:'Tension diagram',
-    tmAvg:'Average', tmStd:'Std deviation', tmCount:'Spokes measured',
+    tmAvg:'Average', tmStd:'Std deviation',
     tmCVMaxLabel:'Tolerance',
     tmHintWF:'WF: decimal reading — e.g.\u00a0<code>0.55</code> or <code>,55</code> or <code>55</code>. kgf value is interpolated.',
     tmHintPT:'Park Tool: integer deflection number — e.g.\u00a0<code>18</code>',
     tmNoSpokes:'Enter the spoke count in the Calculator.',
     tmReadingKgf:'reading · kgf',
-    tmOutOfRange:(n) => `${n} spoke${n > 1 ? 's' : ''} out of range`,
     tmChooseSpoke:'Choose a spoke above',
     tmSpokeSelectPlaceholder:'— Choose a spoke —',
     tmWarnAerolite2:'⚠ Values valid ONLY with the Aerolite II Tensiometer',
@@ -1150,7 +1142,6 @@ const i18n = {
 };
 
 function t(key) { return (i18n[lang] && i18n[lang][key]) || key; }
-function tf(key, ...args) { const v = i18n[lang] && i18n[lang][key]; return typeof v === 'function' ? v(...args) : key; }
 
 // ── Flash liseret vert sur la card type de roue ──────────────────────────────
 let _flashTimer = null;
@@ -1289,7 +1280,7 @@ function applyLang() {
   if (typeof TM_TABLES !== 'undefined') {
     tmPopulateSpokeSelect();  // rafraîchit le placeholder du dropdown
     tmBuildTable();           // rafraîchit les messages dans le tbody
-    tmUpdateOutlierCount();   // rafraîchit le texte "N rayons hors seuil"
+    tmUpdateOutlierCount();
   }
   if ($id('tm-result-card').style.display !== 'none') tmTryRenderRadar();
 }
@@ -2683,9 +2674,9 @@ function tmToggleHighlight() {
   else tmClearHighlight();
 }
 
-// Calcule les outliers pour un tableau de kgf et un seuil CV %
+// Calcule les outliers via médiane + MAD (robuste aux valeurs extrêmes)
 // Si le CV de la nappe est sous le seuil → aucun outlier (roue OK)
-// Si le CV dépasse le seuil → marque les rayons dont l'écart à la moyenne > 1 écart-type
+// Si le CV dépasse → marque les rayons dont l'écart à la médiane > 2× MAD
 function tmComputeOutliers(kgfs, thresholdPct) {
   const valid = kgfs.map((v, i) => ({ v, i })).filter(x => x.v !== null);
   if (valid.length < 2) return new Set();
@@ -2695,24 +2686,26 @@ function tmComputeOutliers(kgfs, thresholdPct) {
   const cv  = (std / avg) * 100;
   // Si le CV est sous la tolérance, la nappe est OK → rien à signaler
   if (cv <= thresholdPct) return new Set();
-  // Sinon, marquer les rayons qui s'écartent de plus de 1 écart-type
-  return new Set(valid.filter(x => Math.abs(x.v - avg) > std).map(x => x.i));
+  // Médiane
+  const sorted = valid.map(x => x.v).sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  // MAD (Median Absolute Deviation)
+  const absDevs = valid.map(x => Math.abs(x.v - median)).sort((a, b) => a - b);
+  const madMid = Math.floor(absDevs.length / 2);
+  const mad = absDevs.length % 2 ? absDevs[madMid] : (absDevs[madMid - 1] + absDevs[madMid]) / 2;
+  // Seuil : 2× MAD (avec un plancher à 1 kgf pour éviter de tout flaguer si la roue est quasi-parfaite)
+  const limit = Math.max(2 * mad, 1);
+  return new Set(valid.filter(x => Math.abs(x.v - median) > limit).map(x => x.i));
 }
 
 function tmUpdateOutlierCount() {
-  // Recalcule outliers sans appliquer le visuel
   const nb = parseInt($id('nb-rayons').value) || 0;
   const perSide = Math.floor(nb / 2);
   const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v));
   const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v));
   tmOutliers.fo = tmComputeOutliers(foKgfs, tmCVThreshold);
   tmOutliers.fa = tmComputeOutliers(faKgfs, tmCVThreshold);
-  const total = tmOutliers.fo.size + tmOutliers.fa.size;
-  const countEl = $id('tm-hl-count');
-  if (countEl) {
-    countEl.textContent = total > 0 ? tf('tmOutOfRange', total) : '';
-    countEl.classList.toggle('has', total > 0);
-  }
 }
 
 function tmApplyHighlight() {
@@ -2917,7 +2910,7 @@ function tmRenderStats(foKgfs, faKgfs) {
     const delta = max - min;
     const std   = Math.sqrt(v.reduce((a, b) => a + (b - avg) ** 2, 0) / v.length);
     const cv    = avg > 0 ? (std / avg * 100) : 0;
-    return { avg: avg.toFixed(1), min, max, delta, std: std.toFixed(1), cv: cv.toFixed(1), cvNum: cv, count: v.length };
+    return { avg: avg.toFixed(1), min, max, delta, std: std.toFixed(1), cv: cv.toFixed(1), cvNum: cv };
   }
 
   const fo = stats(foKgfs), fa = stats(faKgfs);
@@ -2940,8 +2933,7 @@ function tmRenderStats(foKgfs, faKgfs) {
       <div class="tm-stat-row"><span>Min → Max</span><strong>${s.min} → ${s.max} kgf</strong></div>
       <div class="tm-stat-row"><span>Δ max</span><strong>${s.delta} kgf</strong></div>
       <div class="tm-stat-row"><span>${t('tmStd')}</span><strong>± ${s.std} kgf</strong></div>
-      <div class="tm-stat-row"><span></span><strong style="${cvColor}">${s.cv} %</strong></div>
-      <div class="tm-stat-row" style="margin-top:.3rem;opacity:.5"><span>${t('tmCount')}</span><strong>${s.count}</strong></div>`;
+      <div class="tm-stat-row"><span></span><strong style="${cvColor}">${s.cv} %</strong></div>`;
     container.appendChild(div);
   }
   // NDS toujours à gauche, DS toujours à droite
