@@ -49,7 +49,7 @@
 
 /* ── Reset ─────────────────────────────────────────────────────────────────── */
 *    { box-sizing:border-box; margin:0; padding:0 }
-html { scroll-behavior:smooth; -webkit-text-size-adjust:none; -moz-text-size-adjust:none; text-size-adjust:none }
+html { scroll-behavior:smooth }
 
 /* ── Body ──────────────────────────────────────────────────────────────────── */
 body {
@@ -310,8 +310,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .defl-result.fa  { color:rgba(126,200,227,.6) }
 
 /* Radar chart */
-.radar-wrap      { width:100%; max-width:440px; margin:0 auto }
-.radar-canvas    { display:block; margin:0 auto }
+.radar-canvas    { display:block; margin:0 auto; max-width:100% }
 .radar-legend    { display:flex; gap:1.2rem; justify-content:center; margin-top:.75rem; flex-wrap:wrap }
 .radar-leg-item  { display:flex; align-items:center; gap:.38rem; font-size:.68rem; color:var(--text2); font-family:'DM Sans',sans-serif }
 .radar-leg-dot   { width:10px; height:10px; border-radius:50%; flex-shrink:0 }
@@ -335,9 +334,12 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-cv-select     { width:4.2rem; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); color:var(--accent); font-family:'DM Mono',monospace; font-size:.75rem; font-weight:400; padding:.28rem .4rem; padding-right:1.4rem; cursor:pointer; transition:border-color .2s; appearance:none; -webkit-appearance:none; background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22 fill=%22none%22 stroke=%22%23596778%22 stroke-width=%221.5%22><path d=%22M1 1l5 5 5-5%22/></svg>'); background-repeat:no-repeat; background-position:right .35rem center; background-size:7px }
 .tm-cv-select:focus { outline:none; border-color:rgba(126,200,227,.4) }
 .tm-cv-select option { background:#161b27 }
-.tm-hl-btn        { margin-left:auto; padding:.35rem 1rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.7rem; font-weight:500; cursor:pointer; transition:all .22s; letter-spacing:.08em; text-transform:uppercase }
+.tm-hl-btn        { padding:.35rem 1rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.7rem; font-weight:500; cursor:pointer; transition:all .22s; letter-spacing:.08em; text-transform:uppercase }
 .tm-hl-btn:hover  { border-color:var(--warm2); color:var(--warm2) }
 .tm-hl-btn.active { border-color:rgba(232,146,124,.65); color:var(--warm2); background:rgba(232,146,124,.08); box-shadow:0 0 0 1px rgba(232,146,124,.15) }
+.tm-hl-group      { margin-left:auto; display:flex; align-items:center; gap:.5rem; white-space:nowrap }
+.tm-hl-count      { font-family:'DM Mono',monospace; font-size:.64rem; color:var(--text3); transition:color .2s }
+.tm-hl-count.has  { color:var(--warm) }
 
 .defl-inp.outlier-fo { border-color:rgba(232,146,124,.75) !important; background:rgba(232,146,124,.06) !important; box-shadow:0 0 0 2px rgba(232,146,124,.18), 0 0 8px rgba(232,146,124,.15) !important }
 .defl-inp.outlier-fa { border-color:rgba(126,200,227,.7)  !important; background:rgba(126,200,227,.05) !important; box-shadow:0 0 0 2px rgba(126,200,227,.15), 0 0 8px rgba(126,200,227,.12) !important }
@@ -411,32 +413,6 @@ input[type=number] { -moz-appearance:textfield }
 .tm-th-reset   { background:none; border:none; cursor:pointer; padding:.1rem .3rem; border-radius:4px; opacity:.45; font-size:.7rem; color:inherit; line-height:1; transition:opacity .15s }
 .tm-th-reset:hover { opacity:.9 }
 
-/* ── Mobile: radar + stats + outlier bar ─────────────────────────────────── */
-@media (max-width: 520px) {
-  /* Carte résultat radar : réduire le padding pour maximiser le canvas */
-  #tm-result-card { padding: 1.2rem .8rem; }
-
-  /* Stats : empiler en colonne */
-  .tm-stats { grid-template-columns: 1fr; gap: .6rem; }
-  .tm-stat  { padding: .65rem .85rem; }
-  .tm-stat-row      { font-size: .74rem; }
-  .tm-stat-row strong { font-size: .77rem; }
-  .tm-stat-label    { font-size: .6rem; }
-
-  /* Outlier bar : wrap propre en portrait étroit */
-  .tm-outlier-bar {
-    flex-wrap: wrap;
-    padding: .6rem .8rem;
-  }
-  .tm-hl-btn {
-    margin-left: 0;
-    flex: 1 1 100%;
-    text-align: center;
-  }
-
-  /* Légende radar : un peu plus compacte */
-  .radar-legend { gap: .7rem; margin-top: .5rem; }
-}
 </style>
 </head>
 <body>
@@ -990,9 +966,7 @@ input[type=number] { -moz-appearance:textfield }
       <div class="clabel clabel-success" data-i18n="tmRadarTitle">Diagramme de tension</div>
     </div>
 
-    <div class="radar-wrap">
-      <canvas class="radar-canvas" id="tm-radar"></canvas>
-    </div>
+    <canvas class="radar-canvas" id="tm-radar" width="440" height="440" style="display:block;margin:0 auto;max-width:100%"></canvas>
 
     <div class="radar-legend">
       <div class="radar-leg-item"><span class="radar-leg-dot" style="background:rgba(232,146,124,.9)"></span><span id="radar-leg-fo">Nappe Forte (DS)</span></div>
@@ -1022,7 +996,10 @@ input[type=number] { -moz-appearance:textfield }
         <option value="14">14 %</option>
         <option value="15">15 %</option>
       </select>
-      <button class="tm-hl-btn" id="tm-hl-btn" onclick="tmToggleHighlight()">Highlight</button>
+      <div class="tm-hl-group">
+        <button class="tm-hl-btn" id="tm-hl-btn" onclick="tmToggleHighlight()">Highlight</button>
+        <span class="tm-hl-count" id="tm-hl-count"></span>
+      </div>
     </div><!-- /tm-outlier-bar -->
   </div><!-- /tm-result-card -->
 
@@ -1071,12 +1048,13 @@ const i18n = {
     tmLeft:'Côté Gauche', tmRight:'Côté Droit',
     tmSpokeLabel:'Rayon',
     tmRadarTitle:'Diagramme de tension',
-    tmAvg:'Moyenne', tmStd:'Écart-type',
+    tmAvg:'Moyenne', tmStd:'Écart-type', tmCount:'Rayons mesurés',
     tmCVMaxLabel:'Tolérance',
     tmHintWF:'WF : lecture décimale — ex\u00a0<code>0.55</code> ou <code>,55</code> ou <code>55</code>. La valeur kgf est interpolée.',
     tmHintPT:'Park Tool : numéro entier de déflection — ex\u00a0<code>18</code>',
     tmNoSpokes:'Saisir le nombre de rayons dans le Calculateur.',
     tmReadingKgf:'lecture · kgf',
+    tmOutOfRange:(n) => `${n} rayon${n > 1 ? 's' : ''} hors seuil`,
     tmChooseSpoke:'Choisir un rayon ci-dessus',
     tmSpokeSelectPlaceholder:'— Choisir un rayon —',
     tmWarnAerolite2:'⚠ Valeurs valables UNIQUEMENT avec le Tensiomètre Aerolite II',
@@ -1121,12 +1099,13 @@ const i18n = {
     tmLeft:'Left Side', tmRight:'Right Side',
     tmSpokeLabel:'Spoke',
     tmRadarTitle:'Tension diagram',
-    tmAvg:'Average', tmStd:'Std deviation',
+    tmAvg:'Average', tmStd:'Std deviation', tmCount:'Spokes measured',
     tmCVMaxLabel:'Tolerance',
     tmHintWF:'WF: decimal reading — e.g.\u00a0<code>0.55</code> or <code>,55</code> or <code>55</code>. kgf value is interpolated.',
     tmHintPT:'Park Tool: integer deflection number — e.g.\u00a0<code>18</code>',
     tmNoSpokes:'Enter the spoke count in the Calculator.',
     tmReadingKgf:'reading · kgf',
+    tmOutOfRange:(n) => `${n} spoke${n > 1 ? 's' : ''} out of range`,
     tmChooseSpoke:'Choose a spoke above',
     tmSpokeSelectPlaceholder:'— Choose a spoke —',
     tmWarnAerolite2:'⚠ Values valid ONLY with the Aerolite II Tensiometer',
@@ -1138,6 +1117,7 @@ const i18n = {
 };
 
 function t(key) { return (i18n[lang] && i18n[lang][key]) || key; }
+function tf(key, ...args) { const v = i18n[lang] && i18n[lang][key]; return typeof v === 'function' ? v(...args) : key; }
 
 // ── Flash liseret vert sur la card type de roue ──────────────────────────────
 let _flashTimer = null;
@@ -1149,7 +1129,7 @@ function flashWheelCard(configName) {
   card.style.boxShadow   = '0 0 0 2px rgba(126,207,168,.18)';
   if (configName) {
     _loadedConfigName[wtype] = configName;
-    _lastLoadTime = Date.now();
+    _configModified[wtype] = false;
   }
   _refreshLoadedBadges();
   // Flash animation sur les deux badges
@@ -1169,29 +1149,35 @@ function flashWheelCard(configName) {
 }
 
 // ── Loaded config name badge ──────────────────────────────────────────────────
-let _lastLoadTime = 0;
+// Ne supprime plus le nom — marque juste visuellement "modifié" (badge légèrement atténué)
 function markModified() {
-  if (Date.now() - _lastLoadTime < 500) return;
-  _loadedConfigName[wtype] = null;
+  _configModified[wtype] = true;
   _refreshLoadedBadges();
 }
 
 function _refreshLoadedBadges() {
   const name = _loadedConfigName[wtype];
-  _setBadge('cfg-loaded-name', 'cfg-loaded-text', name);
-  _setBadge('tm-cfg-loaded-name', 'tm-cfg-loaded-text', name);
+  const modified = _configModified[wtype];
+  // Calculateur
+  _setBadge('cfg-loaded-name', 'cfg-loaded-text', name, modified);
+  // Module tension
+  _setBadge('tm-cfg-loaded-name', 'tm-cfg-loaded-text', name, modified);
 }
 
-function _setBadge(badgeId, textId, name) {
+function _setBadge(badgeId, textId, name, modified) {
   const badge = $id(badgeId), text = $id(textId);
   if (!badge || !text) return;
-  if (!name) { badge.classList.remove('show'); badge.style.opacity = ''; return; }
-  text.textContent = name;
-  badge.style.opacity = '1';
+  if (!name) { badge.classList.remove('show'); return; }
+  text.textContent = modified ? name + ' ●' : name;
+  badge.style.opacity = modified ? '0.55' : '1';
   badge.classList.add('show');
 }
 
-function clearLoadedConfigName() { markModified(); }
+function clearLoadedConfigName() {
+  _loadedConfigName[wtype] = null;
+  _configModified[wtype] = false;
+  _refreshLoadedBadges();
+}
 
 // ── State ────────────────────────────────────────────────────────────────────
 let wtype = 'avant', erdMode = 'direct', sd = 2.0, sa = null, cross = null, hubType = 'jbend';
@@ -1223,6 +1209,7 @@ let evenMode = { fo: false, fa: false };
 
 // ── Scroll flags ─────────────────────────────────────────────────────────────
 let _hubScrolled = false, _rimScrolled = false, _tensionScrolled = false;
+const _configModified = { avant: false, arriere: false };
 const _loadedConfigName = { avant: null, arriere: null };
 let _switchingHub = false;
 let _applyingState = false;
@@ -1269,7 +1256,7 @@ function applyLang() {
   if (typeof TM_TABLES !== 'undefined') {
     tmPopulateSpokeSelect();  // rafraîchit le placeholder du dropdown
     tmBuildTable();           // rafraîchit les messages dans le tbody
-    tmUpdateOutlierCount();
+    tmUpdateOutlierCount();   // rafraîchit le texte "N rayons hors seuil"
   }
   if ($id('tm-result-card').style.display !== 'none') tmTryRenderRadar();
 }
@@ -1339,14 +1326,7 @@ function applyState(s) {
   $id('spoke-select').value   = s.spokeSelect;
   $id('tension-forte').value  = s.tensionForte;
   sd = s.sd; sa = s.sa; cross = s.cross;
-  if (s.hubType) {
-    hubType = s.hubType;
-    $id('btn-hub-jbend').classList.toggle('active', hubType === 'jbend');
-    $id('btn-hub-sp').classList.toggle('active', hubType === 'straightpull');
-    $id('field-diam-trou').style.display   = hubType === 'jbend'        ? '' : 'none';
-    $id('field-sp-so-left').style.display  = hubType === 'straightpull' ? '' : 'none';
-    $id('field-sp-so-right').style.display = hubType === 'straightpull' ? '' : 'none';
-  }
+  if (s.hubType) { hubType = s.hubType; setHubType(hubType, true); }
   $id('sp-so-left').value  = s.soLeft  || '';
   $id('sp-so-right').value = s.soRight || '';
 
@@ -1559,21 +1539,27 @@ function setErdMode(m) {
   clearResults(); updateCalcBtn();
 }
 
-function setHubType(htype) {
-  if (htype === hubType) return;
-  if (htype === 'straightpull') {
-    // Nouvelle roue : reset complet
-    clearFormSilent();
-    clearLoadedConfigName();
-  }
+function setHubType(htype, skipClearSO) {
   hubType = htype;
   $id('btn-hub-jbend').classList.toggle('active', htype === 'jbend');
   $id('btn-hub-sp').classList.toggle('active', htype === 'straightpull');
   $id('field-diam-trou').style.display   = htype === 'jbend'        ? '' : 'none';
   $id('field-sp-so-left').style.display  = htype === 'straightpull' ? '' : 'none';
   $id('field-sp-so-right').style.display = htype === 'straightpull' ? '' : 'none';
-  _switchingHub = true;
-  setTimeout(() => { _switchingHub = false; }, 100);
+  if (!skipClearSO) {
+    markModified();
+    // Effacer tous les champs du moyeu lors d'un switch manuel
+    $id('nb-rayons').value = '';
+    $id('diam-trou').value = '2.55';
+    $id('pcd-left').value  = ''; $id('offset-left').value  = '';
+    $id('pcd-right').value = ''; $id('offset-right').value = '';
+    const soL = $id('sp-so-left');  soL.value = ''; soL._prevVal = undefined;
+    const soR = $id('sp-so-right'); soR.value = ''; soR._prevVal = undefined;
+    // Bloquer le scroll pendant le switch (le blur du champ précédent arrive après le onclick)
+    _hubScrolled = false;
+    _switchingHub = true;
+    setTimeout(() => { _switchingHub = false; }, 100);
+  }
   clearResults(); updateCalcBtn();
 }
 
@@ -2052,12 +2038,13 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
   });
 });
 
-['nb-rayons','diam-trou','pcd-left','pcd-right','offset-left','offset-right',
- 'erd-direct','nsd-val','erd-nsd-result','tension-forte','asym','sp-so-left','sp-so-right','spoke-select'].forEach(id => {
+['nb-rayons','pcd-left','pcd-right','offset-left','offset-right',
+ 'erd-direct','nsd-val','erd-nsd-result','tension-forte','asym','sp-so-left','sp-so-right'].forEach(id => {
   const el = $id(id); if (!el) return;
   ['input','change'].forEach(ev => {
     el.addEventListener(ev, updateCalcBtn);
     el.addEventListener(ev, closeConfigsCardIfOpen);
+    el.addEventListener(ev, markModified);
     if (id === 'offset-left' || id === 'offset-right') {
       el.addEventListener(ev, updateAsymField);
     }
@@ -2066,12 +2053,7 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
 const ecrouEl = $id('ecrou-type');
 ecrouEl.addEventListener('change', updateCalcBtn);
 ecrouEl.addEventListener('change', closeConfigsCardIfOpen);
-
-// ── Toute modification d'un champ (input/select) efface le badge config ──
-document.querySelectorAll('#calc-module input, #calc-module select, #tension-module input, #tension-module select').forEach(el => {
-  el.addEventListener('input',  markModified);
-  el.addEventListener('change', markModified);
-});
+ecrouEl.addEventListener('change', markModified);
 
 // ── Sync nb rayons calc → module tension ──────────────────────────────────────
 $id('nb-rayons').addEventListener('change', function() {
@@ -2668,38 +2650,31 @@ function tmToggleHighlight() {
   else tmClearHighlight();
 }
 
-// Calcule les outliers via médiane + MAD (robuste aux valeurs extrêmes)
-// Si le CV de la nappe est sous le seuil → aucun outlier (roue OK)
-// Si le CV dépasse → marque les rayons dont l'écart à la médiane > 2× MAD
+// Calcule les outliers pour un tableau de kgf et un seuil CV %
+// Retourne un Set d'indices qui s'écartent de la moyenne de plus de threshold% relatif
 function tmComputeOutliers(kgfs, thresholdPct) {
   const valid = kgfs.map((v, i) => ({ v, i })).filter(x => x.v !== null);
   if (valid.length < 2) return new Set();
   const avg = valid.reduce((s, x) => s + x.v, 0) / valid.length;
   if (avg === 0) return new Set();
-  const std = Math.sqrt(valid.reduce((s, x) => s + (x.v - avg) ** 2, 0) / valid.length);
-  const cv  = (std / avg) * 100;
-  // Si le CV est sous la tolérance, la nappe est OK → rien à signaler
-  if (cv <= thresholdPct) return new Set();
-  // Médiane
-  const sorted = valid.map(x => x.v).sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-  // MAD (Median Absolute Deviation)
-  const absDevs = valid.map(x => Math.abs(x.v - median)).sort((a, b) => a - b);
-  const madMid = Math.floor(absDevs.length / 2);
-  const mad = absDevs.length % 2 ? absDevs[madMid] : (absDevs[madMid - 1] + absDevs[madMid]) / 2;
-  // Seuil : 2× MAD (avec un plancher à 1 kgf pour éviter de tout flaguer si la roue est quasi-parfaite)
-  const limit = Math.max(2 * mad, 1);
-  return new Set(valid.filter(x => Math.abs(x.v - median) > limit).map(x => x.i));
+  const limit = avg * (thresholdPct / 100);
+  return new Set(valid.filter(x => Math.abs(x.v - avg) > limit).map(x => x.i));
 }
 
 function tmUpdateOutlierCount() {
+  // Recalcule outliers sans appliquer le visuel
   const nb = parseInt($id('nb-rayons').value) || 0;
   const perSide = Math.floor(nb / 2);
   const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v));
   const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v));
   tmOutliers.fo = tmComputeOutliers(foKgfs, tmCVThreshold);
   tmOutliers.fa = tmComputeOutliers(faKgfs, tmCVThreshold);
+  const total = tmOutliers.fo.size + tmOutliers.fa.size;
+  const countEl = $id('tm-hl-count');
+  if (countEl) {
+    countEl.textContent = total > 0 ? tf('tmOutOfRange', total) : '';
+    countEl.classList.toggle('has', total > 0);
+  }
 }
 
 function tmApplyHighlight() {
@@ -2755,8 +2730,6 @@ function tmTryRenderRadar() {
   if (!foKgfs.some(v => v !== null) && !faKgfs.some(v => v !== null)) { tmHideResult(); return; }
 
   $id('tm-result-card').style.display = '';
-  // Force reflow so clientWidth is accurate after display change
-  void $id('tm-result-card').offsetWidth;
   // Recalculer outliers pour le radar
   tmOutliers.fo = tmComputeOutliers(foKgfs, tmCVThreshold);
   tmOutliers.fa = tmComputeOutliers(faKgfs, tmCVThreshold);
@@ -2769,18 +2742,12 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
   const canvas = $id('tm-radar');
   const ctx    = canvas.getContext('2d');
   const dpr    = window.devicePixelRatio || 1;
-
-  // Temporarily hide canvas so wrapper returns its natural width
-  canvas.style.display = 'none';
-  const size = Math.min(canvas.parentElement.clientWidth, 440);
-  canvas.style.display = 'block';
-
-  // Force exact square — both CSS and buffer
+  const size   = Math.min(canvas.parentElement.clientWidth || 440, 440);
   canvas.style.width  = size + 'px';
   canvas.style.height = size + 'px';
-  canvas.width  = Math.round(size * dpr);
-  canvas.height = Math.round(size * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  canvas.width  = size * dpr;
+  canvas.height = size * dpr;
+  ctx.scale(dpr, dpr);
 
   const W = size, H = size;
   const cx = W / 2, cy = H / 2;
@@ -2836,7 +2803,7 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
     // Numéro rayon
     if (perSide <= 16 || i % 2 === 0) {
       const spokeNum = Math.floor(i / 2) + 1;
-      const labelR   = R + Math.max(10, W * 0.032);
+      const labelR   = R + 13;
       ctx.fillStyle  = isFo ? 'rgba(232,146,124,0.45)' : 'rgba(126,200,227,0.38)';
       ctx.font       = `${Math.round(W * 0.023)}px 'DM Mono', monospace`;
       ctx.textAlign  = 'center';
@@ -2904,7 +2871,7 @@ function tmRenderStats(foKgfs, faKgfs) {
     const delta = max - min;
     const std   = Math.sqrt(v.reduce((a, b) => a + (b - avg) ** 2, 0) / v.length);
     const cv    = avg > 0 ? (std / avg * 100) : 0;
-    return { avg: avg.toFixed(1), min, max, delta, std: std.toFixed(1), cv: cv.toFixed(1), cvNum: cv };
+    return { avg: avg.toFixed(1), min, max, delta, std: std.toFixed(1), cv: cv.toFixed(1), cvNum: cv, count: v.length };
   }
 
   const fo = stats(foKgfs), fa = stats(faKgfs);
@@ -2927,7 +2894,8 @@ function tmRenderStats(foKgfs, faKgfs) {
       <div class="tm-stat-row"><span>Min → Max</span><strong>${s.min} → ${s.max} kgf</strong></div>
       <div class="tm-stat-row"><span>Δ max</span><strong>${s.delta} kgf</strong></div>
       <div class="tm-stat-row"><span>${t('tmStd')}</span><strong>± ${s.std} kgf</strong></div>
-      <div class="tm-stat-row"><span></span><strong style="${cvColor}">${s.cv} %</strong></div>`;
+      <div class="tm-stat-row"><span></span><strong style="${cvColor}">${s.cv} %</strong></div>
+      <div class="tm-stat-row" style="margin-top:.3rem;opacity:.5"><span>${t('tmCount')}</span><strong>${s.count}</strong></div>`;
     container.appendChild(div);
   }
   // NDS toujours à gauche, DS toujours à droite
