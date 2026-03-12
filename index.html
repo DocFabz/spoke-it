@@ -311,7 +311,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 
 /* Radar chart */
 .radar-wrap      { width:100%; max-width:440px; margin:0 auto }
-.radar-canvas    { display:block; width:100% }
+.radar-canvas    { display:block; margin:0 auto }
 .radar-legend    { display:flex; gap:1.2rem; justify-content:center; margin-top:.75rem; flex-wrap:wrap }
 .radar-leg-item  { display:flex; align-items:center; gap:.38rem; font-size:.68rem; color:var(--text2); font-family:'DM Sans',sans-serif }
 .radar-leg-dot   { width:10px; height:10px; border-radius:50%; flex-shrink:0 }
@@ -2778,15 +2778,16 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
   const ctx    = canvas.getContext('2d');
   const dpr    = window.devicePixelRatio || 1;
 
-  // Read the wrapper's laid-out width (the wrapper has max-width:440px + width:100%)
-  const wrapW = canvas.parentElement.clientWidth;
-  const size  = Math.round(wrapW);
+  // Temporarily hide canvas so wrapper returns its natural width
+  canvas.style.display = 'none';
+  const size = Math.min(canvas.parentElement.clientWidth, 440);
+  canvas.style.display = 'block';
 
-  // Buffer = CSS size × device pixel ratio → sharp on retina
-  canvas.width  = size * dpr;
-  canvas.height = size * dpr;
-  // CSS display size — force exact square via inline style
+  // Force exact square — both CSS and buffer
+  canvas.style.width  = size + 'px';
   canvas.style.height = size + 'px';
+  canvas.width  = Math.round(size * dpr);
+  canvas.height = Math.round(size * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   const W = size, H = size;
