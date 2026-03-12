@@ -1325,7 +1325,6 @@ function readState() {
 function applyState(s) {
   if (!s) return;
   _applyingState = true;
-  _hubSnap.jbend = null; _hubSnap.straightpull = null;
   $id('nb-rayons').value      = s.nbRayons;
   $id('diam-trou').value      = s.diamTrou;
   $id('pcd-left').value       = s.pcdLeft;
@@ -1444,7 +1443,6 @@ function applyState(s) {
 
 // ── Clear form ────────────────────────────────────────────────────────────────
 function clearFormSilent() {
-  _hubSnap.jbend = null; _hubSnap.straightpull = null;
   ['nb-rayons','pcd-left','offset-left','pcd-right','offset-right',
    'erd-direct','nsd-val','erd-nsd-result','tension-forte'].forEach(id => { $id(id).value = ''; });
   $id('diam-trou').value = '2.55'; $id('asym').value = '0';
@@ -1554,64 +1552,15 @@ function setErdMode(m) {
   clearResults(); updateCalcBtn();
 }
 
-// Snapshots des champs pour chaque type de moyeu
-const _hubSnap = { jbend: null, straightpull: null };
-const _hubCommonIds = ['nb-rayons','pcd-left','pcd-right','offset-left','offset-right'];
-
-function _saveHubSnap(htype) {
-  const snap = {};
-  _hubCommonIds.forEach(id => { snap[id] = $id(id).value; });
-  if (htype === 'jbend') {
-    snap['diam-trou'] = $id('diam-trou').value;
-  } else {
-    snap['sp-so-left'] = $id('sp-so-left').value;
-    snap['sp-so-right'] = $id('sp-so-right').value;
-  }
-  _hubSnap[htype] = snap;
-}
-
-function _restoreHubSnap(htype) {
-  const snap = _hubSnap[htype];
-  if (!snap) return false;
-  _hubCommonIds.forEach(id => { $id(id).value = snap[id] || ''; });
-  if (htype === 'jbend') {
-    $id('diam-trou').value = snap['diam-trou'] || '2.55';
-  } else {
-    $id('sp-so-left').value = snap['sp-so-left'] || '';
-    $id('sp-so-right').value = snap['sp-so-right'] || '';
-  }
-  return true;
-}
-
-function _clearHubFields(htype) {
-  _hubCommonIds.forEach(id => { $id(id).value = ''; });
-  if (htype === 'straightpull') {
-    $id('sp-so-left').value = ''; $id('sp-so-right').value = '';
-  } else {
-    $id('diam-trou').value = '2.55';
-  }
-}
-
 function setHubType(htype) {
   if (htype === hubType) return;
   _lastLoadTime = Date.now();
-  // Sauvegarder les champs du mode qu'on quitte
-  _saveHubSnap(hubType);
   hubType = htype;
   $id('btn-hub-jbend').classList.toggle('active', htype === 'jbend');
   $id('btn-hub-sp').classList.toggle('active', htype === 'straightpull');
   $id('field-diam-trou').style.display   = htype === 'jbend'        ? '' : 'none';
   $id('field-sp-so-left').style.display  = htype === 'straightpull' ? '' : 'none';
   $id('field-sp-so-right').style.display = htype === 'straightpull' ? '' : 'none';
-  if (htype === 'jbend') {
-    // Retour en J-bend : restaurer le snapshot complet, sinon valeurs par défaut
-    if (!_restoreHubSnap('jbend')) _clearHubFields('jbend');
-  } else {
-    // Arrivée en Straightpull : tout vide
-    _hubCommonIds.forEach(id => { $id(id).value = ''; });
-    $id('sp-so-left').value = '';
-    $id('sp-so-right').value = '';
-  }
   _switchingHub = true;
   setTimeout(() => { _switchingHub = false; }, 100);
   clearResults(); updateCalcBtn();
