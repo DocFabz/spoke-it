@@ -2129,7 +2129,6 @@ window.addEventListener('resize', function() {
   const MARGIN = 12; // marge min par rapport aux bords du viewport
 
   function positionTip(icon, box) {
-    // Rendre visible mais transparent pour mesurer
     box.style.opacity = '0';
     box.style.left = '0';
     box.style.top = '0';
@@ -2138,7 +2137,6 @@ window.addEventListener('resize', function() {
     const ir = icon.getBoundingClientRect();
     const br = box.getBoundingClientRect();
     const vw = window.innerWidth;
-    const vh = window.innerHeight;
 
     // Préférer au-dessus, sinon en dessous
     let top, pos;
@@ -2162,11 +2160,6 @@ window.addEventListener('resize', function() {
     box.style.top = top + 'px';
     box.setAttribute('data-pos', pos);
     box.style.setProperty('--arrow-left', arrowPct + '%');
-    // Appliquer la position de la flèche
-    box.style.cssText += ''; // force reflow
-    const afterRule = `left:${arrowPct}%`;
-    box.querySelectorAll('.tip-arrow-override').forEach(e => e.remove());
-    // On utilise un style inline sur ::after via une custom property
     box.style.opacity = '';
   }
 
@@ -2184,7 +2177,6 @@ window.addEventListener('resize', function() {
     if (current === box) { closeAll(); return; }
     closeAll();
     positionTip(icon, box);
-    box.classList.add('visible');
     current = box;
   }
 
