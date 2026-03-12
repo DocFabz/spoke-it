@@ -1559,6 +1559,7 @@ function setHubType(htype) {
   $id('field-diam-trou').style.display   = htype === 'jbend'        ? '' : 'none';
   $id('field-sp-so-left').style.display  = htype === 'straightpull' ? '' : 'none';
   $id('field-sp-so-right').style.display = htype === 'straightpull' ? '' : 'none';
+  _lastLoadTime = Date.now();
   _switchingHub = true;
   setTimeout(() => { _switchingHub = false; }, 100);
   clearResults(); updateCalcBtn();
