@@ -2423,6 +2423,12 @@ function tmUpdateBadges() {
     tmSel.classList.toggle('locked', !!_loadedConfigName[wtype]);
   }
 
+  // Rayon : verrouiller si config chargée
+  const tmSpokeSel = $id('tm-spoke-select');
+  if (tmSpokeSel) {
+    tmSpokeSel.classList.toggle('locked', !!_loadedConfigName[wtype]);
+  }
+
   // Type de roue
   tmSyncWheelButtons();
 
