@@ -2774,9 +2774,20 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
   const canvas = $id('tm-radar');
   const ctx    = canvas.getContext('2d');
   const dpr    = window.devicePixelRatio || 1;
-  const size   = Math.min(canvas.parentElement.clientWidth || 440, 440);
+
+  // Reset inline size so CSS can determine the natural layout size
+  canvas.style.width  = '';
+  canvas.style.height = '';
+
+  // Read the actual CSS-rendered width (respects max-width, padding, etc.)
+  const rect = canvas.getBoundingClientRect();
+  const size = Math.min(Math.floor(rect.width), 440);
+
+  // Set CSS display size explicitly to a perfect square
   canvas.style.width  = size + 'px';
   canvas.style.height = size + 'px';
+
+  // Set buffer size for sharp rendering
   canvas.width  = size * dpr;
   canvas.height = size * dpr;
   ctx.scale(dpr, dpr);
