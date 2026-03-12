@@ -1603,8 +1603,17 @@ function setHubType(htype) {
   $id('field-diam-trou').style.display   = htype === 'jbend'        ? '' : 'none';
   $id('field-sp-so-left').style.display  = htype === 'straightpull' ? '' : 'none';
   $id('field-sp-so-right').style.display = htype === 'straightpull' ? '' : 'none';
-  // Restaurer le snapshot si on y est déjà passé, sinon tout vider
-  if (!_restoreHubSnap(htype)) _clearHubFields(htype);
+  if (htype === 'jbend') {
+    // Retour en J-bend : restaurer le snapshot complet, sinon valeurs par défaut
+    if (!_restoreHubSnap('jbend')) _clearHubFields('jbend');
+  } else {
+    // Arrivée en Straightpull : toujours vierge (champs communs + SO)
+    _hubCommonIds.forEach(id => { $id(id).value = ''; });
+    // Restaurer uniquement les SO si on y est déjà passé
+    const snap = _hubSnap.straightpull;
+    $id('sp-so-left').value  = snap ? (snap['sp-so-left'] || '')  : '';
+    $id('sp-so-right').value = snap ? (snap['sp-so-right'] || '') : '';
+  }
   _switchingHub = true;
   setTimeout(() => { _switchingHub = false; }, 100);
   clearResults(); updateCalcBtn();
