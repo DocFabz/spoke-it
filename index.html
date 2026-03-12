@@ -230,6 +230,15 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .rrow strong { font-family:'DM Mono',monospace; font-weight:400; font-size:.77rem; color:var(--text) }
 .ev       { font-family:'DM Mono',monospace; font-weight:500; color:var(--success); font-size:.8rem }
 
+/* ── Summary items ────────────────────────────────────────────────────── */
+.sum-row  { display:flex; justify-content:space-between; align-items:baseline; padding:.38rem 0; border-bottom:1px solid var(--border) }
+.sum-lbl  { font-size:.6rem; font-weight:500; letter-spacing:.12em; text-transform:uppercase; color:var(--text3) }
+.sum-val  { font-family:'DM Mono',monospace; font-size:.8rem; color:var(--text) }
+
+/* ── Defl cell layout ─────────────────────────────────────────────────── */
+.defl-cell { display:flex; flex-direction:column; align-items:center; gap:.08rem }
+.defl-td   { padding:.22rem .35rem }
+
 /* ── Arbitrage ─────────────────────────────────────────────────────────────── */
 .arb-wrap          { display:none; animation:fu .5s cubic-bezier(.22,1,.36,1) }
 .arb-wrap.show     { display:block }
@@ -251,6 +260,92 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .arb-delta         { font-family:'DM Mono',monospace; font-size:.8rem; font-weight:500; color:var(--text2) }
 .arb-lbl           { font-size:.53rem; color:var(--text3); letter-spacing:.06em }
 
+/* ── Module Tension ─────────────────────────────────────────────────────────── */
+/* Nav pill pour basculer entre Calculateur et Module Tension */
+.module-nav      { display:flex; gap:.5rem; justify-content:center; margin:0 0 1.2rem; padding:0 1.2rem }
+.module-nav-btn  { flex:1; max-width:220px; padding:.52rem 1rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.72rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .22s; display:flex; align-items:center; justify-content:center; gap:.4rem }
+.module-nav-btn.active { border-color:rgba(126,200,227,.5); color:var(--accent); background:rgba(126,200,227,.07) }
+.module-nav-btn:hover:not(.active) { border-color:var(--border-s); color:var(--text2) }
+
+/* Conteneur principal du module */
+#tension-module  { display:none }
+#calc-module     { display:block }
+
+/* Sélecteur de tensiomètre */
+.tm-seg          { display:flex; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); padding:3px; gap:3px; margin-bottom:1.35rem }
+.tm-btn          { flex:1; padding:.55rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.84rem; font-weight:500; cursor:pointer; transition:all .22s }
+.tm-btn.active   { background:var(--bg2); color:var(--accent); box-shadow:0 2px 12px rgba(0,0,0,.4); text-shadow:0 0 12px rgba(126,200,227,.4) }
+
+/* Grille de saisie des déflections */
+.tm-grid-wrap    { overflow-x:auto; border-radius:var(--rs); border:1px solid var(--border) }
+.tm-table        { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:.82rem; min-width:300px }
+.tm-table th     { padding:.55rem .6rem; font-family:'DM Sans',sans-serif; font-size:.6rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; text-align:center; border-bottom:1px solid var(--border) }
+.tm-table th.th-rayon { background:rgba(126,200,227,.06); color:var(--accent); border-right:1px solid rgba(126,200,227,.1) }
+.tm-table th.th-fo    { background:rgba(232,146,124,.06); color:var(--warm); border-right:1px solid rgba(255,255,255,.05) }
+.tm-table th.th-fa    { background:rgba(126,200,227,.06); color:var(--accent) }
+.tm-table td     { padding:.28rem .4rem; text-align:center; border-bottom:1px solid rgba(255,255,255,.035) }
+.tm-table td.td-r { font-size:.75rem; color:var(--text3); border-right:1px solid rgba(126,200,227,.1); background:rgba(126,200,227,.015); padding:.28rem .5rem; font-weight:400 }
+.tm-table tr:last-child td { border-bottom:none }
+.tm-table tr:nth-child(even) { background:rgba(0,0,0,.07) }
+.tm-table .th-rayon { width:2.8rem }
+.tm-th-row    { display:flex; align-items:center; justify-content:space-between; gap:.4rem }
+.tm-th-sub    { font-size:.5rem; opacity:.6; font-weight:400; margin-top:.1rem }
+.tm-empty-msg { padding:.8rem; color:var(--text3); font-size:.72rem; font-family:'DM Sans',sans-serif; font-style:italic; text-align:center }
+
+/* Input déflection */
+.defl-inp        { width:62px; background:var(--inp); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'DM Mono',monospace; font-size:.8rem; font-weight:300; padding:.3rem .4rem; text-align:center; transition:border-color .18s, background .18s; -webkit-appearance:none; appearance:none }
+.defl-inp:focus  { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.02) }
+.defl-inp.fo     { border-color:rgba(232,146,124,.25) }
+.defl-inp.fo:focus { border-color:rgba(232,146,124,.55); background:rgba(232,146,124,.025) }
+.defl-inp.has-val     { color:var(--text) }
+.defl-inp.fo.has-val  { border-color:rgba(232,146,124,.45) }
+.defl-inp.fa.has-val  { border-color:rgba(126,200,227,.35) }
+.defl-inp.out-of-range { animation:shake .35s ease; }
+@keyframes shake { 20%,60% { transform:translateX(-2px) } 40%,80% { transform:translateX(2px) } }
+.defl-result.oor  { color:#f08080 !important; font-style:italic }
+
+/* Result kgf/N display in cells */
+.defl-result     { font-size:.68rem; color:var(--text3); margin-top:.12rem; line-height:1; min-height:.85rem }
+.defl-result.fo  { color:rgba(232,146,124,.7) }
+.defl-result.fa  { color:rgba(126,200,227,.6) }
+
+/* Radar chart */
+.radar-canvas    { display:block; margin:0 auto; max-width:100% }
+.radar-legend    { display:flex; gap:1.2rem; justify-content:center; margin-top:.75rem; flex-wrap:wrap }
+.radar-leg-item  { display:flex; align-items:center; gap:.38rem; font-size:.68rem; color:var(--text2); font-family:'DM Sans',sans-serif }
+.radar-leg-dot   { width:10px; height:10px; border-radius:50%; flex-shrink:0 }
+
+/* Stats row */
+.tm-stats        { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; margin-top:1rem }
+.tm-stat         { background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); padding:.75rem 1rem }
+.tm-stat-label   { font-size:.58rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; margin-bottom:.4rem }
+.tm-stat-label.fo { color:var(--warm) }
+.tm-stat-label.fa { color:var(--accent) }
+.tm-stat-row     { display:flex; justify-content:space-between; font-size:.72rem; color:var(--text2); margin-bottom:.18rem }
+.tm-stat-row strong { font-family:'DM Mono',monospace; font-weight:400; color:var(--text); font-size:.75rem }
+
+/* Hint */
+.tm-hint         { font-size:.63rem; color:var(--text3); font-style:italic; text-align:center; margin-top:.6rem; line-height:1.5 }
+.tm-hint code, .tm-code { font-family:'DM Mono',monospace; color:var(--accent); font-style:normal }
+
+/* ── Highlight outliers ──────────────────────────────────────────────────── */
+.tm-outlier-bar   { margin-top:1.3rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); padding:.75rem 1.2rem; display:flex; align-items:center; gap:.7rem }
+.tm-outlier-label { font-size:.58rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--text3); white-space:nowrap }
+.tm-cv-select     { width:4.2rem; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); color:var(--accent); font-family:'DM Mono',monospace; font-size:.75rem; font-weight:400; padding:.28rem .4rem; padding-right:1.4rem; cursor:pointer; transition:border-color .2s; appearance:none; -webkit-appearance:none; background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22 fill=%22none%22 stroke=%22%23596778%22 stroke-width=%221.5%22><path d=%22M1 1l5 5 5-5%22/></svg>'); background-repeat:no-repeat; background-position:right .35rem center; background-size:7px }
+.tm-cv-select:focus { outline:none; border-color:rgba(126,200,227,.4) }
+.tm-cv-select option { background:#161b27 }
+.tm-hl-btn        { padding:.35rem 1rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.7rem; font-weight:500; cursor:pointer; transition:all .22s; letter-spacing:.08em; text-transform:uppercase }
+.tm-hl-btn:hover  { border-color:var(--warm2); color:var(--warm2) }
+.tm-hl-btn.active { border-color:rgba(232,146,124,.65); color:var(--warm2); background:rgba(232,146,124,.08); box-shadow:0 0 0 1px rgba(232,146,124,.15) }
+.tm-hl-group      { margin-left:auto; display:flex; align-items:center; gap:.5rem; white-space:nowrap }
+.tm-hl-count      { font-family:'DM Mono',monospace; font-size:.64rem; color:var(--text3); transition:color .2s }
+.tm-hl-count.has  { color:var(--warm) }
+
+.defl-inp.outlier-fo { border-color:rgba(232,146,124,.75) !important; background:rgba(232,146,124,.06) !important; box-shadow:0 0 0 2px rgba(232,146,124,.18), 0 0 8px rgba(232,146,124,.15) !important }
+.defl-inp.outlier-fa { border-color:rgba(126,200,227,.7)  !important; background:rgba(126,200,227,.05) !important; box-shadow:0 0 0 2px rgba(126,200,227,.15), 0 0 8px rgba(126,200,227,.12) !important }
+.defl-result.outlier-fo { color:var(--warm)   !important; font-weight:500 }
+.defl-result.outlier-fa { color:var(--accent) !important; font-weight:500 }
+
 /* ── Save ──────────────────────────────────────────────────────────────────── */
 .save-wrap       { display:none; animation:fu .5s cubic-bezier(.22,1,.36,1) }
 .save-wrap.show  { display:block }
@@ -269,7 +364,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cfg-load:hover { border-color:var(--accent); color:var(--accent) }
 .cfg-del        { background:transparent; border:none; color:var(--text3); font-size:.95rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
 .cfg-del:hover  { color:#f08080 }
-.cfg-empty      { font-size:.72rem; color:var(--text3); font-style:italic; text-align:center; padding:.8rem 0 }
 
 /* ── Loaded config name ────────────────────────────────────────────────────── */
 .cfg-loaded-name {
@@ -298,6 +392,27 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0 }
 input[type=number] { -moz-appearance:textfield }
+
+/* ── Module nav icon ──────────────────────────────────────────────────── */
+.nav-icon      { width:13px; height:13px; flex-shrink:0 }
+.spoke-icon    { width:18px; height:8px; flex-shrink:0 }
+
+/* ── Tension module: custom select ────────────────────────────────────── */
+.tm-select     { width:100%; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text); font-family:'DM Sans',sans-serif; font-size:.85rem; padding:.6rem .9rem; cursor:pointer; appearance:none; -webkit-appearance:none; background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22 fill=%22none%22 stroke=%22%23596778%22 stroke-width=%221.5%22><path d=%22M1 1l5 5 5-5%22/></svg>'); background-repeat:no-repeat; background-position:right .8rem center; background-size:10px; transition:border-color .2s }
+.tm-select-mono { font-family:'DM Mono',monospace; font-weight:300; height:2.35rem; padding:.55rem .9rem }
+
+/* ── Tension module: wheel toggle buttons ─────────────────────────────── */
+.tm-wheel-btn  { flex:1; height:2.35rem; background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500; cursor:pointer; transition:all .2s }
+.tm-wheel-btn.on { background:var(--bg2); border-color:var(--border-s); color:var(--accent); text-shadow:0 0 10px rgba(126,200,227,.4) }
+.tm-wheel-btn.locked, .tm-select.locked { opacity:.45; pointer-events:none; cursor:not-allowed }
+
+/* ── Tension module: unit badge ───────────────────────────────────────── */
+.tm-unit-badge { margin-left:auto; font-family:'DM Mono',monospace; font-size:.62rem; color:var(--text3); background:var(--card-alt); border:1px solid var(--border); border-radius:10px; padding:.12rem .6rem }
+
+/* ── Tension module: table header reset button ────────────────────────── */
+.tm-th-reset   { background:none; border:none; cursor:pointer; padding:.1rem .3rem; border-radius:4px; opacity:.45; font-size:.7rem; color:inherit; line-height:1; transition:opacity .15s }
+.tm-th-reset:hover { opacity:.9 }
+
 </style>
 </head>
 <body>
@@ -344,6 +459,21 @@ input[type=number] { -moz-appearance:textfield }
   <button id="lang-btn" onclick="toggleLang()" class="lang-btn">EN</button>
 </header>
 
+<!-- ── Module nav ── -->
+<div class="wrap" style="padding-bottom:0">
+<nav class="module-nav">
+  <button class="module-nav-btn active" id="nav-calc" onclick="switchModule('calc')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="1.5" width="13" height="13" rx="2"/><line x1="5" y1="5" x2="11" y2="5"/><line x1="5" y1="8" x2="11" y2="8"/><line x1="5" y1="11" x2="8" y2="11"/></svg>
+    <span data-i18n="tmCalc">Calculateur</span>
+  </button>
+  <button class="module-nav-btn" id="nav-tension" onclick="switchModule('tension')">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6.5"/><circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/><line x1="8" y1="1.5" x2="8" y2="4.5"/><line x1="13.1" y1="4.4" x2="10.9" y2="5.7"/><line x1="13.1" y1="11.6" x2="10.9" y2="10.3"/><line x1="8" y1="14.5" x2="8" y2="11.5"/><line x1="2.9" y1="11.6" x2="5.1" y2="10.3"/><line x1="2.9" y1="4.4" x2="5.1" y2="5.7"/></svg>
+    <span data-i18n="tmTitle">Module Tension</span>
+  </button>
+</nav>
+</div>
+
+<div id="calc-module">
 <div class="wrap">
 
   <!-- ── Wheel type ── -->
@@ -394,7 +524,7 @@ input[type=number] { -moz-appearance:textfield }
       <div class="clabel" data-i18n="hub">Moyeu</div>
       <div style="margin-left:auto;display:flex;gap:.3rem">
         <button class="pill pill-icon active" id="btn-hub-jbend" onclick="setHubType('jbend')">
-          <svg viewBox="0 0 24 10" fill="none" stroke="currentColor" stroke-width="1.2" style="width:18px;height:8px;flex-shrink:0">
+          <svg class="spoke-icon" viewBox="0 0 24 10" fill="none" stroke="currentColor" stroke-width="1.2">
             <line x1="3" y1="8" x2="3" y2="4"/>
             <path d="M3 4 Q3 1.5 5.5 1.5" stroke-linecap="round"/>
             <line x1="5.5" y1="1.5" x2="20" y2="1.5"/>
@@ -403,7 +533,7 @@ input[type=number] { -moz-appearance:textfield }
           J-bend
         </button>
         <button class="pill pill-icon" id="btn-hub-sp" onclick="setHubType('straightpull')">
-          <svg viewBox="0 0 24 10" fill="none" stroke="currentColor" stroke-width="1.2" style="width:18px;height:8px;flex-shrink:0">
+          <svg class="spoke-icon" viewBox="0 0 24 10" fill="none" stroke="currentColor" stroke-width="1.2">
             <line x1="2"  y1="5" x2="19" y2="5"/>
             <line x1="2"  y1="4.2" x2="2" y2="5.8"/>
             <line x1="18" y1="4.5" x2="21" y2="4.5"/>  <line x1="18" y1="5" x2="21" y2="5"/>  <line x1="18" y1="5.5" x2="21" y2="5.5"/>
@@ -563,7 +693,7 @@ input[type=number] { -moz-appearance:textfield }
       <div class="f" id="tension-forte-field">
         <label>
           <span class="tension-dot"></span>
-          <span><span data-i18n="driveSide">Côté Droit</span><br><span data-i18n="driveSideAbbr">(DS)</span></span>
+          <span class="tension-label" data-i18n="driveSide">Côté Droit (DS)</span>
         </label>
         <select id="tension-forte" onchange="onTension();checkTensionComplete()">
           <option value="" disabled selected>—</option>
@@ -575,7 +705,7 @@ input[type=number] { -moz-appearance:textfield }
       <div class="f" id="tension-faible-field" style="opacity:.35">
         <label>
           <span class="tension-dot"></span>
-          <span><span data-i18n="nonDriveSide">Côté Gauche</span><br><span data-i18n="nonDriveSideAbbr">(NDS)</span></span>
+          <span class="tension-label" data-i18n="nonDriveSide">Côté Gauche (NDS)</span>
         </label>
         <div class="faible-display" id="tension-faible-display"></div>
       </div>
@@ -710,7 +840,171 @@ input[type=number] { -moz-appearance:textfield }
     </div>
   </div>
 
-</div>
+</div><!-- /.wrap -->
+</div><!-- /#calc-module -->
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- MODULE TENSION                                                            -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="tension-module">
+<div class="wrap" style="max-width:580px">
+
+  <!-- ── Tensiomètre + rayon ── -->
+  <div class="card">
+    <div class="ch">
+      <svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+        <circle cx="12" cy="12" r="9.5"/>
+        <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+        <line x1="12" y1="2.5" x2="12" y2="6.2"/>
+        <line x1="19.5" y1="6.9" x2="16.9" y2="8.4"/>
+        <line x1="19.5" y1="17.1" x2="16.9" y2="15.6"/>
+        <line x1="12" y1="21.5" x2="12" y2="17.8"/>
+        <line x1="4.5" y1="17.1" x2="7.1" y2="15.6"/>
+        <line x1="4.5" y1="6.9" x2="7.1" y2="8.4"/>
+        <line x1="12" y1="12" x2="9.2" y2="6.8" stroke="var(--warm)" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <div class="clabel" data-i18n="tmTensioLabel">Tensiomètre</div>
+      <div class="cfg-loaded-name" id="tm-cfg-loaded-name" style="margin-left:auto">
+        <svg class="cfg-loaded-icon" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1.5 4.5 Q1.5 3 3 3 L5 3 L6 4.5 L10.5 4.5 Q12 4.5 12 6 L12 10 Q12 11.5 10.5 11.5 L3 11.5 Q1.5 11.5 1.5 10 Z"/>
+        </svg>
+        <span class="cfg-loaded-text" id="tm-cfg-loaded-text"></span>
+      </div>
+    </div>
+
+    <!-- Sélecteur tensiomètre : 3 boutons segment -->
+    <div class="tm-seg" style="margin-bottom:1rem" id="tm-seg-tensio">
+      <button class="tm-btn active" id="tm-btn-wf"  onclick="setTM('wf')">Wheel Fanatyk</button>
+      <button class="tm-btn"        id="tm-btn-pt"  onclick="setTM('pt')">Park Tool TM-1</button>
+      <button class="tm-btn"        id="tm-btn-dt"  onclick="setTM('dt')">DT Swiss</button>
+    </div>
+
+    <!-- Sous-type DT Swiss (visible uniquement quand dt actif) -->
+    <div id="tm-dt-subtype" style="display:none;margin-bottom:1rem">
+      <div class="tm-seg">
+        <button class="tm-btn active" id="tm-btn-dt-std"  onclick="setDTSub('standard')">Tensio Standard</button>
+        <button class="tm-btn"        id="tm-btn-dt-ael2" onclick="setDTSub('aerolite2')">Tensio Aerolite II</button>
+      </div>
+    </div>
+
+    <!-- Sélecteur de rayon -->
+    <div class="f" style="margin-bottom:1rem">
+      <label data-i18n="tmSpokeLabel">Rayon</label>
+      <select id="tm-spoke-select" class="tm-select" onchange="tmOnSpokeChange()">
+        <option value="">— Choisir un rayon —</option>
+      </select>
+    </div>
+
+    <!-- Nb rayons + badge roue -->
+    <div class="g2" style="margin-top:.2rem">
+      <div class="f">
+        <label data-i18n="totalSpokes">Nb total de rayons</label>
+        <select id="tm-nb-select" class="tm-select tm-select-mono" onchange="tmOnNbChange()">
+          <option value="" disabled selected hidden>—</option>
+          <option>16</option><option>20</option><option>24</option>
+          <option>28</option><option>32</option><option>36</option>
+        </select>
+      </div>
+      <div class="f">
+        <label data-i18n="wheelType">Type de roue</label>
+        <div style="display:flex;gap:.35rem;height:2.35rem">
+          <button id="tm-btn-avant"   class="tm-wheel-btn" onclick="tmSetWheel('avant')"   data-i18n="frontWheel">Avant</button>
+          <button id="tm-btn-arriere" class="tm-wheel-btn" onclick="tmSetWheel('arriere')" data-i18n="rearWheel">Arrière</button>
+        </div>
+      </div>
+    </div>
+    <p class="tm-hint" id="tm-hint-section" style="margin-top:.5rem"></p>
+  </div>
+
+  <!-- ── Grille de saisie ── -->
+  <div class="card" id="tm-input-card">
+    <div class="ch">
+      <svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+        <rect x="3" y="4" width="18" height="16" rx="2"/>
+        <line x1="3" y1="9" x2="21" y2="9"/>
+        <line x1="12" y1="9" x2="12" y2="20"/>
+      </svg>
+      <div class="clabel" data-i18n="tmDeflLabel">Déflections mesurées</div>
+      <span id="tm-unit-badge" class="tm-unit-badge">WF</span>
+    </div>
+
+    <div class="tm-grid-wrap">
+      <table class="tm-table" id="tm-table">
+        <thead>
+          <tr>
+            <th class="th-rayon">#</th>
+            <th id="tm-th-nds" class="th-fa">
+              <div class="tm-th-row">
+                <span id="tm-th-nds-label">NDS</span>
+                <button class="tm-th-reset" onclick="tmResetSide('nds')" title="Effacer NDS">✕</button>
+              </div>
+              <div class="tm-th-sub" id="tm-th-nds-sub">lecture · kgf</div>
+            </th>
+            <th id="tm-th-ds" class="th-fo">
+              <div class="tm-th-row">
+                <span id="tm-th-ds-label">DS</span>
+                <button class="tm-th-reset" onclick="tmResetSide('ds')" title="Effacer DS">✕</button>
+              </div>
+              <div class="tm-th-sub" id="tm-th-ds-sub">lecture · kgf</div>
+            </th>
+          </tr>
+        </thead>
+        <tbody id="tm-tbody"></tbody>
+      </table>
+    </div>
+
+    <p class="tm-hint" id="tm-entry-hint" style="margin-top:.9rem;line-height:1.6"></p>
+  </div>
+
+  <!-- ── Radar + stats ── -->
+  <div class="card" id="tm-result-card" style="display:none">
+    <div class="ch">
+      <svg class="cicon cicon-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+        <polygon points="12,2.5 20,8 20,16 12,21.5 4,16 4,8"/>
+        <polygon points="12,7 16.5,10 16.5,14 12,17 7.5,14 7.5,10"/>
+      </svg>
+      <div class="clabel clabel-success" data-i18n="tmRadarTitle">Diagramme de tension</div>
+    </div>
+
+    <canvas class="radar-canvas" id="tm-radar" width="440" height="440" style="display:block;margin:0 auto;max-width:100%"></canvas>
+
+    <div class="radar-legend">
+      <div class="radar-leg-item"><span class="radar-leg-dot" style="background:rgba(232,146,124,.9)"></span><span id="radar-leg-fo">Nappe Forte (DS)</span></div>
+      <div class="radar-leg-item"><span class="radar-leg-dot" style="background:rgba(126,200,227,.9)"></span><span id="radar-leg-fa">Nappe Faible (NDS)</span></div>
+    </div>
+
+    <div class="tm-stats" id="tm-stats"></div>
+
+    <!-- ── Contrôle écart-type ── -->
+    <div class="tm-outlier-bar" id="tm-outlier-bar">
+      <span class="tm-outlier-label" data-i18n="tmCVMaxLabel">Tolérance</span>
+      <select class="tm-cv-select" id="tm-cv-select" onchange="tmSetCV(parseInt(this.value))">
+        <option value="0">0 %</option>
+        <option value="1">1 %</option>
+        <option value="2">2 %</option>
+        <option value="3">3 %</option>
+        <option value="4">4 %</option>
+        <option value="5" selected>5 %</option>
+        <option value="6">6 %</option>
+        <option value="7">7 %</option>
+        <option value="8">8 %</option>
+        <option value="9">9 %</option>
+        <option value="10">10 %</option>
+        <option value="11">11 %</option>
+        <option value="12">12 %</option>
+        <option value="13">13 %</option>
+        <option value="14">14 %</option>
+        <option value="15">15 %</option>
+      </select>
+      <div class="tm-hl-group">
+        <button class="tm-hl-btn" id="tm-hl-btn" onclick="tmToggleHighlight()">Highlight</button>
+        <span class="tm-hl-count" id="tm-hl-count"></span>
+      </div>
+    </div><!-- /tm-outlier-bar -->
+  </div><!-- /tm-result-card -->
+
+</div><!-- /.wrap -->
+</div><!-- /#tension-module -->
 
 <script>
 
@@ -727,7 +1021,9 @@ const i18n = {
     soLeft:'SO gauche', soRight:'SO droit',
     erdDirect:'ERD DIRECT', addonTip:"Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.",
     erdCalc:'ERD calculé (mm)', rimAsym:'Asymétrie jante (mm)', spokeSection:'Section de rayon', cross:'Croisement',
-    driveSide:'Côté Droit', driveSideAbbr:'(DS)', nonDriveSide:'Côté Gauche', nonDriveSideAbbr:'(NDS)',
+    driveSide:'Côté Droit (DS)', driveSideAbbr:'(DS)', nonDriveSide:'Côté Gauche (NDS)', nonDriveSideAbbr:'(NDS)',
+    rtagDriveSideFront:'CÔTÉ DROIT (DS)', rtagNonDriveSideFront:'CÔTÉ GAUCHE (NDS)',
+    rtagDriveSideRear:'CÔTÉ DROIT (DS)',  rtagNonDriveSideRear:'CÔTÉ GAUCHE (NDS)',
     tensionHelpRear:'La tension NDS est calculée automatiquement selon le ratio des déports.',
     tensionHelpFront:'La tension DS est calculée automatiquement selon le ratio des déports.',
     calcBtn:'Calculer', perSide:'/côté', configSummary:'Résumé de configuration',
@@ -747,6 +1043,25 @@ const i18n = {
     configsTitle:'Configurations sauvegardées', loadBtn:'Charger',
     saveWarning:'⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.',
     asymWarn:'Moyeu symétrique : Jante asymétrique déconseillée.',
+    tmTitle:'Module Tension', tmCalc:'Calculateur',
+    tmTensioLabel:'Tensiomètre', tmDeflLabel:'Déflections mesurées',
+    tmLeft:'Côté Gauche', tmRight:'Côté Droit',
+    tmSpokeLabel:'Rayon',
+    tmRadarTitle:'Diagramme de tension',
+    tmAvg:'Moyenne', tmStd:'Écart-type', tmCount:'Rayons mesurés',
+    tmCVMaxLabel:'Tolérance',
+    tmHintWF:'WF : lecture décimale — ex\u00a0<code>0.55</code> ou <code>,55</code> ou <code>55</code>. La valeur kgf est interpolée.',
+    tmHintPT:'Park Tool : numéro entier de déflection — ex\u00a0<code>18</code>',
+    tmNoSpokes:'Saisir le nombre de rayons dans le Calculateur.',
+    tmReadingKgf:'lecture · kgf',
+    tmOutOfRange:(n) => `${n} rayon${n > 1 ? 's' : ''} hors seuil`,
+    tmChooseSpoke:'Choisir un rayon ci-dessus',
+    tmSpokeSelectPlaceholder:'— Choisir un rayon —',
+    tmWarnAerolite2:'⚠ Valeurs valables UNIQUEMENT avec le Tensiomètre Aerolite II',
+    tmHintDT:'DT Swiss : valeur exacte en mm (ex\u00a0: <code>1.45</code> ou <code>1,45</code>)',
+    tmWarnAerolite:'⚠ Park Tool TM-1 : pas de données pour Aerolite 0.9×2.3.',
+    tmWarn165:'⚠ Park Tool TM-1 : pas de 1.65 mm. Utilisez Wheel Fanatyk.',
+    tmWarnSection:'⚠ Section non disponible pour Park Tool TM-1.',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -757,7 +1072,9 @@ const i18n = {
     soLeft:'SO left', soRight:'SO right',
     erdDirect:'ERD DIRECT', addonTip:'Depends on nipple used. Select 2 mm for standard 12 mm nipples.',
     erdCalc:'Calculated ERD (mm)', rimAsym:'Rim asymmetry (mm)', spokeSection:'Spoke section', cross:'Lacing',
-    driveSide:'Drive Side', driveSideAbbr:'(DS)', nonDriveSide:'Non-Drive Side', nonDriveSideAbbr:'(NDS)',
+    driveSide:'Right Side (DS)', driveSideAbbr:'(DS)', nonDriveSide:'Left Side (NDS)', nonDriveSideAbbr:'(NDS)',
+    rtagDriveSideFront:'RIGHT SIDE (DS)', rtagNonDriveSideFront:'LEFT SIDE (NDS)',
+    rtagDriveSideRear:'RIGHT SIDE (DS)',  rtagNonDriveSideRear:'LEFT SIDE (NDS)',
     tensionHelpRear:'NDS tension is calculated automatically from the offset ratio.',
     tensionHelpFront:'DS tension is calculated automatically from the offset ratio.',
     calcBtn:'Calculate', perSide:'/side', configSummary:'Configuration summary',
@@ -777,10 +1094,30 @@ const i18n = {
     configsTitle:'Saved configurations', loadBtn:'Load',
     saveWarning:'⚠︎ Locally stored in browser cache. Clearing the cache will erase all data.',
     asymWarn:'Symmetric hub: Asymmetric rim not recommended.',
+    tmTitle:'Tension Module', tmCalc:'Calculator',
+    tmTensioLabel:'Tensiometer', tmDeflLabel:'Measured deflections',
+    tmLeft:'Left Side', tmRight:'Right Side',
+    tmSpokeLabel:'Spoke',
+    tmRadarTitle:'Tension diagram',
+    tmAvg:'Average', tmStd:'Std deviation', tmCount:'Spokes measured',
+    tmCVMaxLabel:'Tolerance',
+    tmHintWF:'WF: decimal reading — e.g.\u00a0<code>0.55</code> or <code>,55</code> or <code>55</code>. kgf value is interpolated.',
+    tmHintPT:'Park Tool: integer deflection number — e.g.\u00a0<code>18</code>',
+    tmNoSpokes:'Enter the spoke count in the Calculator.',
+    tmReadingKgf:'reading · kgf',
+    tmOutOfRange:(n) => `${n} spoke${n > 1 ? 's' : ''} out of range`,
+    tmChooseSpoke:'Choose a spoke above',
+    tmSpokeSelectPlaceholder:'— Choose a spoke —',
+    tmWarnAerolite2:'⚠ Values valid ONLY with the Aerolite II Tensiometer',
+    tmHintDT:'DT Swiss: exact value in mm (e.g.\u00a0<code>1.45</code> or <code>1,45</code>)',
+    tmWarnAerolite:'⚠ Park Tool TM-1: no data for Aerolite 0.9×2.3.',
+    tmWarn165:'⚠ Park Tool TM-1: no 1.65 mm data. Use Wheel Fanatyk.',
+    tmWarnSection:'⚠ Section not available for Park Tool TM-1.',
   }
 };
 
 function t(key) { return (i18n[lang] && i18n[lang][key]) || key; }
+function tf(key, ...args) { const v = i18n[lang] && i18n[lang][key]; return typeof v === 'function' ? v(...args) : key; }
 
 // ── Flash liseret vert sur la card type de roue ──────────────────────────────
 let _flashTimer = null;
@@ -793,14 +1130,17 @@ function flashWheelCard(configName) {
   if (configName) {
     _loadedConfigName[wtype] = configName;
     _configModified[wtype] = false;
-    const badge = $id('cfg-loaded-name'), text = $id('cfg-loaded-text');
-    if (badge && text) {
-      text.textContent = configName;
-      badge.classList.remove('show', 'flash');
-      void badge.offsetWidth;
-      badge.classList.add('show', 'flash');
-    }
   }
+  _refreshLoadedBadges();
+  // Flash animation sur les deux badges
+  ['cfg-loaded-name', 'tm-cfg-loaded-name'].forEach(id => {
+    const b = $id(id);
+    if (b && b.classList.contains('show') && configName) {
+      b.classList.remove('flash');
+      void b.offsetWidth;
+      b.classList.add('flash');
+    }
+  });
   _flashTimer = setTimeout(() => {
     card.style.borderColor = '';
     card.style.boxShadow   = '';
@@ -809,14 +1149,58 @@ function flashWheelCard(configName) {
 }
 
 // ── Loaded config name badge ──────────────────────────────────────────────────
-function markModified() { _configModified[wtype] = true; _loadedConfigName[wtype] = null; clearLoadedConfigName(); }
+// Ne supprime plus le nom — marque juste visuellement "modifié" (badge légèrement atténué)
+function markModified() {
+  _configModified[wtype] = true;
+  _refreshLoadedBadges();
+}
+
+function _refreshLoadedBadges() {
+  const name = _loadedConfigName[wtype];
+  const modified = _configModified[wtype];
+  // Calculateur
+  _setBadge('cfg-loaded-name', 'cfg-loaded-text', name, modified);
+  // Module tension
+  _setBadge('tm-cfg-loaded-name', 'tm-cfg-loaded-text', name, modified);
+}
+
+function _setBadge(badgeId, textId, name, modified) {
+  const badge = $id(badgeId), text = $id(textId);
+  if (!badge || !text) return;
+  if (!name) { badge.classList.remove('show'); return; }
+  text.textContent = modified ? name + ' ●' : name;
+  badge.style.opacity = modified ? '0.55' : '1';
+  badge.classList.add('show');
+}
+
 function clearLoadedConfigName() {
-  const badge = $id('cfg-loaded-name');
-  if (badge) badge.classList.remove('show');
+  _loadedConfigName[wtype] = null;
+  _configModified[wtype] = false;
+  _refreshLoadedBadges();
 }
 
 // ── State ────────────────────────────────────────────────────────────────────
 let wtype = 'avant', erdMode = 'direct', sd = 2.0, sa = null, cross = null, hubType = 'jbend';
+let tmType = 'wf';
+let tmData = { fo: [], fa: [] };
+let tmPrevFo = [], tmPrevFa = [];
+// Multi-slot store: preserves data per tensiometer key (wf, pt, dt_standard, dt_aerolite2)
+const tmStore = {};       // { [storeKey]: { spokeKey, fo, fa, prevFo, prevFa } }
+let tmActiveKey = 'wf';   // key of the tensiometer whose data is currently in tmData
+let tmDTSub = 'standard'; // 'standard' | 'aerolite2'
+let tmSpokeKey = null;    // clé rayon sélectionnée dans la table active
+function tmStoreKey() { return tmType === 'dt' ? 'dt_' + tmDTSub : tmType; }
+function tmSaveToStore() {
+  tmStore[tmActiveKey] = {
+    spokeKey: tmSpokeKey,
+    fo: tmData.fo.slice(),
+    fa: tmData.fa.slice(),
+    prevFo: tmPrevFo.slice(),
+    prevFa: tmPrevFa.slice(),
+  };
+}
+function tmHasData() { return tmData.fo.some(v => v !== null) || tmData.fa.some(v => v !== null); }
+function tmResetData() { tmData = { fo: [], fa: [] }; tmPrevFo = []; tmPrevFa = []; }
 const saved = { avant: null, arriere: null };
 let currentErrKey = null;
 let summaryData = null;
@@ -866,6 +1250,15 @@ function applyLang() {
   const saveNameEl = $id('save-name');
   if (saveNameEl) saveNameEl.placeholder = t('savePlaceholder');
   renderConfigsList();
+  // Refresh tension module dynamic content
+  tmUpdateBadges();
+  tmUpdateHint();
+  if (typeof TM_TABLES !== 'undefined') {
+    tmPopulateSpokeSelect();  // rafraîchit le placeholder du dropdown
+    tmBuildTable();           // rafraîchit les messages dans le tbody
+    tmUpdateOutlierCount();   // rafraîchit le texte "N rayons hors seuil"
+  }
+  if ($id('tm-result-card').style.display !== 'none') tmTryRenderRadar();
 }
 
 function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; applyLang(); }
@@ -908,6 +1301,11 @@ function readState() {
     rtagFaKey: $id('rtag-fa').dataset.i18nKey || '',
     summaryData,
     arbData: (arbData.fo && arbData.fa) ? JSON.parse(JSON.stringify(arbData)) : null,
+    tmType,
+    tmDTSub,
+    tmSpokeKey,
+    tmDataFo: tmData.fo.slice(),
+    tmDataFa: tmData.fa.slice(),
   };
 }
 
@@ -942,8 +1340,12 @@ function applyState(s) {
   if (s.hasResult) {
     $id('r-fo').textContent = s.rFo; $id('r-fa').textContent = s.rFa;
     $id('m-fo').innerHTML   = s.mFo; $id('m-fa').innerHTML   = s.mFa;
-    const foKey = s.rtagFoKey || 'driveSide';
-    const faKey = s.rtagFaKey || 'nonDriveSide';
+    // Compatibilité : anciennes saves utilisent 'driveSide'/'nonDriveSide', nouvelles utilisent 'rtagDriveSide...'
+    const isArriere = (s.wtype || wtype) === 'arriere';
+    const foKey = s.rtagFoKey || (isArriere ? 'rtagDriveSideRear'    : 'rtagNonDriveSideFront');
+    const faKey = s.rtagFaKey || (isArriere ? 'rtagNonDriveSideRear' : 'rtagDriveSideFront');
+    const arbFoKey = isArriere ? 'driveSide'    : 'nonDriveSide';
+    const arbFaKey = isArriere ? 'nonDriveSide' : 'driveSide';
     const rFo = $id('rtag-fo'); rFo.textContent = t(foKey); rFo.dataset.i18nKey = foKey;
     const rFa = $id('rtag-fa'); rFa.textContent = t(faKey); rFa.dataset.i18nKey = faKey;
     const rg = document.querySelector('.rg'), rcFo = document.querySelector('.rc.fo'), rcFa = document.querySelector('.rc.fa');
@@ -954,8 +1356,8 @@ function applyState(s) {
       arbData = s.arbData;
       buildArb('fo', arbData.fo.exactLen, arbData.fo.elongation);
       buildArb('fa', arbData.fa.exactLen, arbData.fa.elongation);
-      const hFo = $id('arb-head-fo'); hFo.textContent = t(foKey); hFo.dataset.i18nKey = foKey;
-      const hFa = $id('arb-head-fa'); hFa.textContent = t(faKey); hFa.dataset.i18nKey = faKey;
+      const hFo = $id('arb-head-fo'); hFo.textContent = t(arbFoKey); hFo.dataset.i18nKey = arbFoKey;
+      const hFa = $id('arb-head-fa'); hFa.textContent = t(arbFaKey); hFa.dataset.i18nKey = arbFaKey;
       const arbCols = $id('arb-cols'), arbColFo = $id('arb-col-fo'), arbColFa = $id('arb-col-fa');
       wtype === 'arriere' ? arbCols.appendChild(arbColFo) : arbCols.insertBefore(arbColFo, arbColFa);
       $id('arb-wrap').classList.remove('show');
@@ -975,6 +1377,54 @@ function applyState(s) {
     $id('results-card-body').style.display = 'block';
     $id('results-card-chevron').style.transform = 'rotate(180deg)';
   }
+
+  // ── Restaurer Module Tension ──
+  if (s.tmType) {
+    // Tensiomètre
+    tmType = s.tmType;
+    ['wf','pt','dt'].forEach(t => {
+      const b = $id('tm-btn-' + t);
+      if (b) b.classList.toggle('active', t === tmType);
+    });
+    $id('tm-dt-subtype') && ($id('tm-dt-subtype').style.display = tmType === 'dt' ? '' : 'none');
+
+    // Sous-type DT
+    tmDTSub = s.tmDTSub || 'standard';
+    const bStd  = $id('tm-btn-dt-std');
+    const bAel2 = $id('tm-btn-dt-ael2');
+    if (bStd)  bStd.classList.toggle('active',  tmDTSub === 'standard');
+    if (bAel2) bAel2.classList.toggle('active', tmDTSub === 'aerolite2');
+
+    // Dropdown rayon
+    tmSpokeKey = s.tmSpokeKey || null;
+    tmPopulateSpokeSelect();   // peuple selon tmType+tmDTSub, sélectionne tmSpokeKey si présent
+
+    // Badge unité
+    tmUpdateUnitBadge();
+
+    // Données saisies
+    tmData.fo = (s.tmDataFo || []).slice();
+    tmData.fa = (s.tmDataFa || []).slice();
+    tmPrevFo  = tmData.fo.slice();
+    tmPrevFa  = tmData.fa.slice();
+    // tmActiveKey calculé APRÈS tmType+tmDTSub restaurés — jamais depuis la sauvegarde
+    tmActiveKey = tmStoreKey();
+    // Clear store on config load — session-only data, not persisted
+    Object.keys(tmStore).forEach(k => delete tmStore[k]);
+
+    // Hint
+    const hintEl = $id('tm-entry-hint');
+    if (hintEl) hintEl.innerHTML = tmGetHintHTML();
+
+    // Reconstruire la table + radar (même si le module est caché — sera correct quand on y navigue)
+    tmBuildTable();
+    if (tmData.fo.some(v => v !== null && v !== '') || tmData.fa.some(v => v !== null && v !== '')) {
+      tmTryRenderRadar();
+    } else {
+      tmHideResult();
+    }
+  }
+
   _applyingState = false;
 }
 
@@ -1011,11 +1461,16 @@ function clearFormSilent() {
   updateAsymField();
   reorderTensionFields(wtype);
   onTension();
+  // Reset tension module
+  tmResetData();
+  Object.keys(tmStore).forEach(k => delete tmStore[k]);
+  tmActiveKey = tmStoreKey();
+  if ($id('tension-module').style.display !== 'none') { tmBuildTable(); tmHideResult(); }
 }
 
 function clearForm() {
   clearFormSilent();
-  markModified();
+  clearLoadedConfigName();   // Reset seul dissocie la roue chargée
   resetScrollFlags();
   setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 120);
 }
@@ -1040,18 +1495,11 @@ function setWheel(wh) {
   closeConfigsCardIfOpen();
   $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
   if (isNew) {
-    const badge = $id('cfg-loaded-name'), text = $id('cfg-loaded-text');
-    const name = _loadedConfigName[wh];
-    if (name && !_configModified[wh]) {
-      text.textContent = name;
-      badge.classList.remove('show');
-      void badge.offsetWidth;
-      badge.classList.add('show');
-    } else {
-      badge.classList.remove('show');
-    }
+    _refreshLoadedBadges();
     scrollToCard(getCards()[1]);
   }
+  // Sync tension module badges if visible
+  if ($id('tension-module').style.display !== 'none') tmUpdateBadges();
 }
 
 function reorderTensionFields(wh) {
@@ -1059,15 +1507,13 @@ function reorderTensionFields(wh) {
   // Avant   : NDS (fort) saisi à gauche, DS (faible) calculé à droite
   const g2 = $id('tension-g2'), fo = $id('tension-forte-field'), fa = $id('tension-faible-field');
   wh === 'arriere' ? g2.appendChild(fo) : g2.insertBefore(fo, fa);
-  // Mettre à jour les labels (structure: span[data-i18n=xSide] + br + span[data-i18n=xSideAbbr])
+  // Labels avec abréviation intégrée
   const fortSide   = wh === 'arriere' ? 'driveSide'    : 'nonDriveSide';
   const faibleSide = wh === 'arriere' ? 'nonDriveSide' : 'driveSide';
   function setLabel(fieldId, sideKey) {
     const field = $id(fieldId);
-    const mainEl = field.querySelector('[data-i18n$="Side"]');
-    const abbrEl = field.querySelector('[data-i18n$="Abbr"]');
-    if (mainEl) { mainEl.textContent = t(sideKey);          mainEl.dataset.i18n = sideKey; }
-    if (abbrEl) { abbrEl.textContent = t(sideKey + 'Abbr'); abbrEl.dataset.i18n = sideKey + 'Abbr'; }
+    const labelEl = field.querySelector('.tension-label');
+    if (labelEl) { labelEl.textContent = t(sideKey); labelEl.dataset.i18n = sideKey; }
   }
   setLabel('tension-forte-field',  fortSide);
   setLabel('tension-faible-field', faibleSide);
@@ -1308,8 +1754,12 @@ function calc() {
   const LfoDisplay = isArriere ? Lfo  : Lfa,  LfaDisplay = isArriere ? Lfa  : Lfo;
   const eFoDisplay = isArriere ? eFo  : eFa,  eFaDisplay = isArriere ? eFa  : eFo;
   const tFoDisplay = isArriere ? tDS  : tNDS, tFaDisplay = isArriere ? tNDS : tDS;
-  const keyFo      = isArriere ? 'driveSide'    : 'nonDriveSide';
-  const keyFa      = isArriere ? 'nonDriveSide' : 'driveSide';
+  // Roue arrière : fo=DS, fa=NDS — Roue avant : fo=NDS, fa=DS
+  const keyFo = isArriere ? 'rtagDriveSideRear'    : 'rtagNonDriveSideFront';
+  const keyFa = isArriere ? 'rtagNonDriveSideRear' : 'rtagDriveSideFront';
+  // Clés courtes pour l'arbitrage (labels compacts)
+  const arbKeyFo = isArriere ? 'driveSide'    : 'nonDriveSide';
+  const arbKeyFa = isArriere ? 'nonDriveSide' : 'driveSide';
 
   $id('r-fo').textContent = LfoDisplay.toFixed(2); $id('r-fa').textContent = LfaDisplay.toFixed(2);
   $id('m-fo').innerHTML = `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFoDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFoDisplay.toFixed(1)} kgf</strong></div>`;
@@ -1318,8 +1768,6 @@ function calc() {
   const sl = sa ? `${sd}×${sa} mm` : `${sd} mm`;
   summaryData = { erd: erd.toFixed(1), wtype, n, h, cross, isSP, sl, asym, ratio };
   renderSummary(); $id('summary-wrap').classList.add('show');
-
-  saved[wtype] = readState(); saved[wtype].wtype = wtype;
 
   // Roue arrière : card fo (orange) à droite | Roue avant : card fo (orange) à gauche
   const rg = document.querySelector('.rg'), rcFo = document.querySelector('.rc.fo'), rcFa = document.querySelector('.rc.fa');
@@ -1331,8 +1779,11 @@ function calc() {
   const rtagFa = $id('rtag-fa'); rtagFa.textContent = t(keyFa); rtagFa.dataset.i18nKey = keyFa;
   $id('results').classList.add('show');
 
-  const arbHFo = $id('arb-head-fo'); arbHFo.textContent = t(keyFo); arbHFo.dataset.i18nKey = keyFo;
-  const arbHFa = $id('arb-head-fa'); arbHFa.textContent = t(keyFa); arbHFa.dataset.i18nKey = keyFa;
+  const arbHFo = $id('arb-head-fo'); arbHFo.textContent = t(arbKeyFo); arbHFo.dataset.i18nKey = arbKeyFo;
+  const arbHFa = $id('arb-head-fa'); arbHFa.textContent = t(arbKeyFa); arbHFa.dataset.i18nKey = arbKeyFa;
+
+  // readState APRÈS l'assignation des rtags pour capturer les bonnes clés
+  saved[wtype] = readState(); saved[wtype].wtype = wtype;
   evenMode.fo = false; evenMode.fa = false;
   $id('arb-even-fo').classList.remove('active'); $id('arb-even-fa').classList.remove('active');
   buildArb('fo', LfoDisplay, eFoDisplay); buildArb('fa', LfaDisplay, eFaDisplay);
@@ -1350,7 +1801,7 @@ function renderSummary() {
   const cl = d.cross === 0 ? t('radial') : d.cross + '×';
   const ratioColor = d.ratio >= 0.7 ? 'var(--success)' : d.ratio >= 0.6 ? '#e8a040' : '#e06060';
   function item(lbl, val, color) {
-    return `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:.38rem 0;border-bottom:1px solid var(--border)"><span style="font-size:.6rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)">${lbl}</span><span style="font-family:DM Mono,monospace;font-size:.8rem;color:${color||'var(--text)'}">${val}</span></div>`;
+    return `<div class="sum-row"><span class="sum-lbl">${lbl}</span><span class="sum-val"${color ? ' style="color:'+color+'"' : ''}>${val}</span></div>`;
   }
   $id('summary').innerHTML =
     item(t('wheelLabel'),   d.wtype === 'avant' ? t('frontLabel') : t('rearLabel')) +
@@ -1420,7 +1871,18 @@ function openArbCard() {
   setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
 }
 function toggleSummaryCard() { toggleCard('sum-card-body',  'sum-card-chevron'); }
-function toggleSaveCard()    { toggleCard('save-card-body', 'save-card-chevron'); }
+function toggleSaveCard() {
+  toggleCard('save-card-body', 'save-card-chevron');
+  // Pré-remplir le nom si une roue est chargée et que le panneau vient de s'ouvrir
+  const body = $id('save-card-body');
+  if (body && body.style.display !== 'none') {
+    const nameEl = $id('save-name');
+    if (nameEl && !nameEl.value.trim()) {
+      const loaded = _loadedConfigName[wtype];
+      if (loaded) { nameEl.value = loaded; nameEl.select(); }
+    }
+  }
+}
 function toggleConfigsCard() { toggleCard('configs-body',   'configs-chevron'); }
 
 function closeConfigsCardIfOpen() {
@@ -1440,13 +1902,17 @@ function saveConfig() {
   if (!name) { fb.textContent = t('saveError'); fb.style.color = '#f08080'; return; }
   const state = readState(); state.wtype = wtype;
   const configs = loadConfigs();
-  configs.unshift({ name, metaKey: wtype === 'avant' ? 'frontLabel' : 'rearLabel', state, ts: Date.now() });
+  // Remplacer si même nom, sinon insérer en tête
+  const existIdx = configs.findIndex(c => c.name === name && (c.state.wtype || 'avant') === wtype);
+  const entry = { name, metaKey: wtype === 'avant' ? 'frontLabel' : 'rearLabel', state, ts: Date.now() };
+  if (existIdx >= 0) configs.splice(existIdx, 1, entry);
+  else configs.unshift(entry);
   persistConfigs(configs);
   nameEl.value = ''; fb.textContent = '';
   renderConfigsList(); showConfigsPanel();
   $id('save-card-body').style.display = 'none'; $id('save-card-chevron').style.transform = '';
   const top = document.querySelector('header').getBoundingClientRect().bottom + window.pageYOffset - 30; window.scrollTo({ top, behavior: 'smooth' });
-  flashWheelCard();
+  flashWheelCard(name);
 }
 
 function deleteConfig(idx) { const configs = loadConfigs(); configs.splice(idx, 1); persistConfigs(configs); renderConfigsList(); }
@@ -1581,6 +2047,12 @@ $id('ecrou-type').addEventListener('change', updateCalcBtn);
 $id('ecrou-type').addEventListener('change', closeConfigsCardIfOpen);
 $id('ecrou-type').addEventListener('change', markModified);
 
+// ── Sync nb rayons calc → module tension ──────────────────────────────────────
+$id('nb-rayons').addEventListener('change', function() {
+  const sel = $id('tm-nb-select');
+  if (sel && sel.value !== this.value) sel.value = this.value;
+});
+
 // ── iOS focus: select field content ──────────────────────────────────────────
 document.querySelectorAll('input[type=number]').forEach(inp => {
   if (inp.readOnly || ['sp-so-left','sp-so-right'].includes(inp.id)) return;
@@ -1623,6 +2095,816 @@ document.querySelectorAll('input[type=number]').forEach(inp => {
     warn.style.animation = '';
   });
 })();
+
+// ── Module switcher ──────────────────────────────────────────────────────────
+function switchModule(mod) {
+  const isCalc = mod === 'calc';
+  if (isCalc && $id('tension-module').style.display !== 'none') {
+    saved[wtype] = readState(); saved[wtype].wtype = wtype;
+  }
+  $id('calc-module').style.display    = isCalc ? '' : 'none';
+  $id('tension-module').style.display = isCalc ? 'none' : 'block';
+  $id('nav-calc').classList.toggle('active', isCalc);
+  $id('nav-tension').classList.toggle('active', !isCalc);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (!isCalc) {
+    try { tmInit(); } catch(e) { console.error('tmInit error:', e); }
+  }
+}
+
+// ── Tension Module ───────────────────────────────────────────────────────────
+
+// ── Tables de tension complètes depuis les fichiers xlsx ─────────────────────
+// Format : tableau de points [déflection, kgf] triés par déflection croissante
+// DT Swiss : déflection en mm (ex: 0.02, 0.15…), kgf en entier
+// Park Tool : déflection = entier (numéro de graduation), kgf en entier
+// Wheel Fanatyk : déflection décimale (0.20…0.95), kgf en entier
+
+var TM_TABLES = {
+  wf: {"0.90mm":[[0.2,null],[0.25,169],[0.3,140],[0.35,120],[0.4,104],[0.45,90],[0.5,79],[0.55,70],[0.6,63],[0.65,57],[0.7,52],[0.75,48],[0.8,45],[0.85,42],[0.9,40],[0.95,37]],"0.95mm":[[0.25,167],[0.3,140],[0.35,118],[0.4,101],[0.45,88],[0.5,77],[0.55,69],[0.6,62],[0.65,56],[0.7,52],[0.75,48],[0.8,44],[0.85,41],[0.9,38],[0.95,36]],"1.0mm":[[0.25,164],[0.3,136],[0.35,114],[0.4,97],[0.45,84],[0.5,74],[0.55,66],[0.6,60],[0.65,55],[0.7,50],[0.75,47],[0.8,43],[0.85,40],[0.9,36],[0.95,33]],"1.2mm":[[0.25,172],[0.3,140],[0.35,118],[0.4,101],[0.45,88],[0.5,78],[0.55,70],[0.6,63],[0.65,57],[0.7,52],[0.75,48],[0.8,44],[0.85,40],[0.9,37],[0.95,35]],"1.5mm":[[0.25,159],[0.3,135],[0.35,115],[0.4,98],[0.45,85],[0.5,74],[0.55,65],[0.6,58],[0.65,52],[0.7,48],[0.75,44],[0.8,40],[0.85,37],[0.9,34],[0.95,31]],"1.65mm":[[0.25,168],[0.3,132],[0.35,109],[0.4,93],[0.45,81],[0.5,71],[0.55,62],[0.6,55],[0.65,49],[0.7,44],[0.75,40],[0.8,37],[0.85,34],[0.9,31],[0.95,27]],"1.7mm":[[0.25,159],[0.3,126],[0.35,103],[0.4,87],[0.45,75],[0.5,65],[0.55,57],[0.6,50],[0.65,45],[0.7,40],[0.75,36],[0.8,33],[0.85,29],[0.9,25],[0.95,21]],"1.8mm":[[0.2,195],[0.25,154],[0.3,123],[0.35,100],[0.4,83],[0.45,71],[0.5,61],[0.55,54],[0.6,48],[0.65,42],[0.7,37],[0.75,32],[0.8,27],[0.85,23],[0.9,20]],"2.0mm":[[0.2,188],[0.25,146],[0.3,115],[0.35,92],[0.4,75],[0.45,63],[0.5,54],[0.55,46],[0.6,40],[0.65,34],[0.7,28],[0.75,24],[0.8,21]],"2.3mm":[[0.2,169],[0.25,125],[0.3,95],[0.35,75],[0.4,61],[0.45,50],[0.5,40],[0.55,32],[0.6,25],[0.65,20]],"2.6mm":[[0.2,149],[0.25,103],[0.3,75],[0.35,57],[0.4,44],[0.45,34],[0.5,24],[0.55,15],[0.6,12]]},
+  pt: {"1.4 mm":[[10,53],[11,57],[12,62],[13,68],[14,74],[15,82],[16,91],[17,101],[18,112],[19,125],[20,139],[21,154],[22,172]],"1.5 mm":[[10,51],[11,56],[12,60],[13,66],[14,72],[15,79],[16,88],[17,97],[18,108],[19,120],[20,134],[21,149],[22,167]],"1.6 mm":[[11,54],[12,58],[13,64],[14,70],[15,76],[16,84],[17,93],[18,103],[19,114],[20,128],[21,143],[22,160]],"1.7 mm":[[12,51],[13,56],[14,61],[15,67],[16,73],[17,81],[18,89],[19,99],[20,110],[21,122],[22,137],[23,154],[24,174]],"1.8 mm":[[14,53],[15,58],[16,64],[17,70],[18,77],[19,85],[20,94],[21,105],[22,117],[23,131],[24,148],[25,167]],"2.0 mm":[[17,53],[18,58],[19,63],[20,70],[21,77],[22,86],[23,96],[24,107],[25,120],[26,135],[27,153],[28,173]],"2.3 mm":[[22,54],[23,59],[24,66],[25,73],[26,82],[27,92],[28,104],[29,117],[30,133],[31,151],[32,172]],"2.5 mm":[[25,53],[26,58],[27,65],[28,72],[29,80],[30,89],[31,99],[32,110],[33,122],[34,135],[35,150]],"2.6 mm":[[25,57],[26,62],[27,69],[28,77],[29,86],[30,96],[31,107],[32,119],[33,133],[34,149],[35,167]],"0.8 x 2.0 mm":[[3,53],[4,62],[5,71],[6,82],[7,94],[8,107],[9,122],[10,138],[11,157],[12,177]],"0.9 x 2.2 mm":[[5,53],[6,57],[7,62],[8,67],[9,73],[10,80],[11,88],[12,97],[13,107],[14,118],[15,131],[16,146],[17,163]],"0.9 x 3.6 mm":[[5,53],[6,58],[7,64],[8,70],[9,78],[10,87],[11,97],[12,109],[13,122],[14,137],[15,155],[16,174]],"1.0 x 2.0-2.2 mm":[[7,52],[8,57],[9,63],[10,70],[11,77],[12,86],[13,96],[14,107],[15,120],[16,134],[17,150],[18,168]],"1.0 x 2.5-2.7 mm":[[8,53],[9,58],[10,64],[11,71],[12,79],[13,88],[14,98],[15,110],[16,123],[17,138],[18,155],[19,174]],"1.0 x 3.2 mm":[[9,52],[10,57],[11,63],[12,70],[13,77],[14,86],[15,97],[16,108],[17,121],[18,136],[19,153],[20,171]],"1.1 x 1.9-2.0 mm":[[9,54],[10,59],[11,65],[12,72],[13,80],[14,89],[15,100],[16,112],[17,125],[18,140],[19,156],[20,174]],"1.1 x 3.0-3.6 mm":[[10,54],[11,59],[12,65],[13,72],[14,80],[15,89],[16,100],[17,112],[18,125],[19,140],[20,156]],"1.2 x 2.6 mm":[[11,53],[12,58],[13,64],[14,71],[15,79],[16,88],[17,98],[18,110],[19,123],[20,138],[21,154],[22,172]],"1.2 x 1.9 mm":[[11,52],[12,57],[13,63],[14,70],[15,78],[16,87],[17,97],[18,109],[19,122],[20,137],[21,154],[22,172]],"1.3 x 2.1 mm":[[12,52],[13,58],[14,64],[15,71],[16,79],[17,88],[18,98],[19,110],[20,123],[21,138],[22,155],[23,174]],"1.3 x 2.2-2.5 mm":[[13,53],[14,58],[15,64],[16,71],[17,79],[18,88],[19,99],[20,111],[21,124],[22,138],[23,154]],"1.3 x 2.7 mm":[[13,52],[14,58],[15,64],[16,71],[17,80],[18,89],[19,100],[20,112],[21,125],[22,140],[23,157]],"1.4 x 2.3 mm":[[14,53],[15,58],[16,65],[17,72],[18,80],[19,90],[20,100],[21,112],[22,126],[23,141],[24,158]],"1.4 x 2.6 mm":[[14,54],[15,60],[16,66],[17,74],[18,82],[19,92],[20,103],[21,115],[22,129],[23,144],[24,161]],"1.4 x 2.9 mm":[[15,52],[16,58],[17,64],[18,72],[19,80],[20,90],[21,101],[22,113],[23,127],[24,142],[25,159]],"1.5 x 2.4-2.6 mm":[[15,53],[16,59],[17,65],[18,73],[19,82],[20,92],[21,103],[22,116],[23,130],[24,145],[25,163]],"1.7 x 2.3 mm":[[17,53],[18,59],[19,66],[20,74],[21,83],[22,93],[23,104],[24,117],[25,131],[26,147],[27,165]]},
+  dt_standard: null,   // sera peuplé depuis DT_TABLES_DATA
+  dt_aerolite2: null
+};
+
+// Tables DT Swiss complètes (depuis xlsx)
+var DT_TABLES_DATA = {
+  standard: {"DT Aerolite \u00d82.0/0.9/2.3":[[0.02,71],[0.09,76],[0.15,82],[0.21,88],[0.27,94],[0.33,101],[0.39,108],[0.45,115],[0.52,122],[0.58,130],[0.64,138],[0.70,146],[0.77,155],[0.83,163],[0.89,172],[0.96,180],[1.02,189],[1.08,197],[1.15,205],[1.21,213],[1.27,221],[1.33,228],[1.39,235]],"DT Aerolite Coated \u00d82.0/0.9/2.3":[[0.08,71],[0.15,76],[0.21,82],[0.27,88],[0.33,94],[0.39,101],[0.45,108],[0.51,115],[0.57,122],[0.63,130],[0.69,138],[0.75,146],[0.81,155],[0.87,163],[0.93,172],[0.99,180],[1.05,189],[1.11,197],[1.17,205],[1.23,213],[1.29,221],[1.35,228],[1.41,235]],"DT Aero Comp \u00d82.0/1.25/2.3":[[0.26,51],[0.35,56],[0.43,61],[0.52,66],[0.60,71],[0.69,76],[0.77,82],[0.86,88],[0.94,94],[1.03,101],[1.11,108],[1.20,115],[1.28,122],[1.37,130],[1.45,138],[1.54,146],[1.62,155],[1.71,163],[1.79,172],[1.88,180],[1.96,189],[2.05,197],[2.13,205],[2.22,213],[2.30,221],[2.39,228],[2.47,235]],"DT Aero Comp Coated \u00d82.0/1.2/2.3":[[0.33,51],[0.42,56],[0.50,61],[0.59,66],[0.67,71],[0.76,76],[0.84,82],[0.93,88],[1.01,94],[1.10,101],[1.18,108],[1.27,115],[1.35,122],[1.44,130],[1.52,138],[1.61,146],[1.69,155],[1.78,163],[1.86,172],[1.95,180],[2.03,189],[2.12,197],[2.20,205],[2.29,213],[2.37,221],[2.46,228],[2.54,235]],"DT Aero Speed \u00d81.8/1.2/2.3":[[0.10,41],[0.32,51],[0.41,56],[0.49,61],[0.58,66],[0.66,71],[0.75,76],[0.83,82],[0.92,88],[1.00,94],[1.09,101],[1.17,108],[1.26,115],[1.34,122],[1.43,130],[1.51,138],[1.60,146],[1.68,155],[1.77,163],[1.85,172],[1.94,180],[2.02,189],[2.11,197],[2.19,205],[2.28,213]],"DT New Aero J-Bend \u00d82.0/1.1/3.2":[[0.14,51],[0.22,56],[0.29,61],[0.37,66],[0.45,71],[0.52,76],[0.60,82],[0.68,88],[0.75,94],[0.83,101],[0.91,108],[0.98,115],[1.06,122],[1.14,130],[1.21,138],[1.29,146],[1.37,155],[1.44,163],[1.52,172],[1.60,180],[1.67,189],[1.75,197],[1.83,205],[1.90,213],[1.98,221],[2.06,228],[2.13,235]],"DT Revolite \u00d82.0/1.3/2.3":[[0.26,51],[0.35,56],[0.43,61],[0.52,66],[0.60,71],[0.69,76],[0.77,82],[0.86,88],[0.94,94],[1.03,101],[1.11,108],[1.20,115],[1.28,122],[1.37,130],[1.45,138],[1.54,146],[1.62,155],[1.71,163],[1.79,172],[1.88,180],[1.96,189],[2.05,197],[2.13,205],[2.22,213]],"DT Complite \u00d82.0/1.5/2.3":[[0.53,51],[0.62,56],[0.71,61],[0.80,66],[0.89,71],[0.98,76],[1.07,82],[1.16,88],[1.25,94],[1.34,101],[1.43,108],[1.52,115],[1.61,122],[1.70,130],[1.79,138],[1.88,146],[1.97,155],[2.06,163],[2.15,172],[2.24,180],[2.33,189],[2.42,197],[2.51,205],[2.60,213]],"DT Revolution \u00d81.8/1.5/1.8":[[0.25,41],[0.48,51],[0.57,56],[0.66,61],[0.75,66],[0.84,71],[0.93,76],[1.02,82],[1.11,88],[1.20,94],[1.29,101],[1.38,108],[1.47,115],[1.56,122],[1.65,130],[1.74,138],[1.83,146],[1.92,155],[2.01,163],[2.10,172],[2.19,180],[2.28,189],[2.37,197],[2.46,205],[2.55,213]],"DT Revolution \u00d82.0/1.5/2.0":[[0.24,41],[0.48,51],[0.58,56],[0.67,61],[0.76,66],[0.85,71],[0.94,76],[1.03,82],[1.12,88],[1.21,94],[1.30,101],[1.39,108],[1.48,115],[1.57,122],[1.66,130],[1.75,138],[1.84,146],[1.93,155],[2.02,163],[2.11,172],[2.20,180],[2.29,189],[2.38,197],[2.47,205],[2.56,213]],"DT Super Comp \u00d82.0/1.7/1.8":[[0.25,31],[0.55,41],[0.78,51],[0.96,56],[1.13,61],[1.30,66],[1.47,71],[1.64,76],[1.81,82],[1.98,88],[2.15,94],[2.32,101],[2.49,108],[2.66,115],[2.83,122],[3.00,130],[3.17,138],[3.34,146],[3.51,155],[3.68,163],[3.85,172],[4.02,180],[4.19,189],[4.36,197],[4.53,205],[4.70,213]],"DT Competition Race \u00d82.0/1.6/2.0":[[0.20,31],[0.49,41],[0.72,51],[0.89,56],[1.06,61],[1.23,66],[1.40,71],[1.57,76],[1.74,82],[1.91,88],[2.08,94],[2.25,101],[2.42,108],[2.59,115],[2.76,122],[2.93,130],[3.10,138],[3.27,146],[3.44,155],[3.61,163],[3.78,172],[3.95,180],[4.12,189],[4.29,197],[4.46,205],[4.63,213],[4.80,221],[4.97,228],[5.14,235]],"DT Competition \u00d81.8/1.6/1.8":[[0.18,31],[0.47,41],[0.70,51],[0.87,56],[1.04,61],[1.21,66],[1.38,71],[1.55,76],[1.72,82],[1.89,88],[2.06,94],[2.23,101],[2.40,108],[2.57,115],[2.74,122],[2.91,130],[3.08,138],[3.25,146],[3.42,155],[3.59,163],[3.76,172],[3.93,180],[4.10,189],[4.27,197],[4.44,205],[4.61,213]],"DT Competition \u00d82.0/1.8/2.0":[[0.58,31],[0.87,41],[1.09,51],[1.27,56],[1.44,61],[1.61,66],[1.78,71],[1.95,76],[2.12,82],[2.29,88],[2.46,94],[2.63,101],[2.80,108],[2.97,115],[3.14,122],[3.31,130],[3.48,138],[3.65,146],[3.82,155],[3.99,163],[4.16,172],[4.33,180],[4.50,189],[4.67,197],[4.84,205],[5.01,213]],"DT Competition Coated \u00d82.0/1.8/2.0":[[0.65,31],[0.94,41],[1.16,51],[1.34,56],[1.51,61],[1.68,66],[1.85,71],[2.02,76],[2.19,82],[2.36,88],[2.53,94],[2.70,101],[2.87,108],[3.04,115],[3.21,122],[3.38,130],[3.55,138],[3.72,146],[3.89,155],[4.06,163],[4.23,172],[4.40,180],[4.57,189],[4.74,197],[4.91,205],[5.08,213]],"DT Champion \u00d81.8":[[0.58,31],[0.86,41],[1.08,51],[1.25,56],[1.42,61],[1.59,66],[1.76,71],[1.93,76],[2.10,82],[2.27,88],[2.44,94],[2.61,101],[2.78,108],[2.95,115],[3.12,122],[3.29,130],[3.46,138],[3.63,146],[3.80,155],[3.97,163],[4.14,172],[4.31,180],[4.48,189],[4.65,197],[4.82,205],[4.99,213]],"DT Champion \u00d82.0":[[1.04,31],[1.31,41],[1.53,51],[1.70,56],[1.87,61],[2.04,66],[2.21,71],[2.38,76],[2.55,82],[2.72,88],[2.89,94],[3.06,101],[3.23,108],[3.40,115],[3.57,122],[3.74,130],[3.91,138],[4.08,146],[4.25,155],[4.42,163],[4.59,172],[4.76,180],[4.93,189],[5.10,197],[5.27,205],[5.44,213],[5.61,221],[5.78,228],[5.95,235]],"DT Champion \u00d82.34":[[1.98,31],[2.23,41],[2.43,51],[2.59,56],[2.74,61],[2.89,66],[3.04,71],[3.19,76],[3.34,82],[3.49,88],[3.64,94],[3.79,101],[3.94,108],[4.09,115],[4.24,122],[4.39,130],[4.54,138],[4.69,146],[4.84,155],[4.99,163],[5.14,172],[5.29,180],[5.44,189],[5.59,197],[5.74,205],[5.89,213],[6.04,221],[6.19,228],[6.34,235]],"DT Alpine \u00d82.34/2.0":[[2.02,31],[2.27,41],[2.46,51],[2.62,56],[2.77,61],[2.92,66],[3.07,71],[3.22,76],[3.37,82],[3.52,88],[3.67,94],[3.82,101],[3.97,108],[4.12,115],[4.27,122],[4.42,130],[4.57,138],[4.72,146],[4.87,155],[5.02,163],[5.17,172],[5.32,180],[5.47,189],[5.62,197],[5.77,205],[5.92,213],[6.07,221],[6.22,228],[6.37,235]],"DT Alpine II \u00d82.34/2.0":[[1.61,51],[1.70,56],[1.78,61],[1.86,66],[1.94,71],[2.02,76],[2.10,82],[2.18,88],[2.26,94],[2.34,101],[2.42,108],[2.50,115],[2.58,122],[2.66,130],[2.74,138],[2.82,146],[2.90,155],[2.98,163],[3.06,172],[3.14,180],[3.22,189],[3.30,197],[3.38,205],[3.46,213]]},
+  aerolite2: {"DT Aerolite \u00d82.0/0.9/2.3 [Tensio AEL II]":[[0.10,31],[0.36,41],[0.56,51],[0.73,56],[0.89,61],[1.05,66],[1.21,71],[1.37,76],[1.53,82],[1.69,88],[1.85,94],[2.01,101],[2.17,108],[2.33,115],[2.49,122],[2.65,130],[2.81,138],[2.97,146],[3.13,155],[3.29,163],[3.45,172],[3.61,180],[3.77,189],[3.93,197],[4.09,205],[4.25,213]],"DT Aero Comp \u00d82.0/1.25/2.3 [Tensio AEL II]":[[0.89,31],[1.12,41],[1.30,51],[1.45,56],[1.59,61],[1.73,66],[1.87,71],[2.01,76],[2.15,82],[2.29,88],[2.43,94],[2.57,101],[2.71,108],[2.85,115],[2.99,122],[3.13,130],[3.27,138],[3.41,146],[3.55,155],[3.69,163],[3.83,172],[3.97,180],[4.11,189],[4.25,197],[4.39,205],[4.53,213]],"DT Aerolite II \u00d82.0/0.7/3.1 [Tensio AEL II]":[[0.03,41],[0.23,51],[0.31,56],[0.39,61],[0.47,66],[0.55,71],[0.63,76],[0.71,82],[0.79,88],[0.87,94],[0.95,101],[1.03,108],[1.11,115],[1.19,122],[1.27,130],[1.35,138]],"DT Aero Comp II \u00d82.0/0.9/3.2 [Tensio AEL II]":[[0.16,31],[0.41,41],[0.61,51],[0.77,56],[0.93,61],[1.09,66],[1.25,71],[1.41,76],[1.57,82],[1.73,88],[1.89,94],[2.05,101],[2.21,108],[2.37,115],[2.53,122],[2.69,130],[2.85,138],[3.01,146],[3.17,155],[3.33,163],[3.49,172],[3.65,180],[3.81,189],[3.97,197],[4.13,205],[4.29,213]],"DT Aero Comp Wide \u00d82.0/1.0/2.8 [Tensio AEL II]":[[0.38,31],[0.62,41],[0.81,51],[0.97,56],[1.12,61],[1.27,66],[1.42,71],[1.57,76],[1.72,82],[1.87,88],[2.02,94],[2.17,101],[2.32,108],[2.47,115],[2.62,122],[2.77,130],[2.92,138],[3.07,146],[3.22,155],[3.37,163],[3.52,172],[3.67,180],[3.82,189],[3.97,197],[4.12,205],[4.27,213]]}
+};
+
+// Injecter DT dans TM_TABLES
+TM_TABLES.dt_standard  = DT_TABLES_DATA.standard;
+TM_TABLES.dt_aerolite2 = DT_TABLES_DATA.aerolite2;
+
+// ── Obtenir la table active (objet {spokeKey: [[defl,kgf]…]}) ─────────────────
+function tmGetActiveTable() {
+  if (tmType === 'wf')          return TM_TABLES.wf;
+  if (tmType === 'pt')          return TM_TABLES.pt;
+  if (tmDTSub === 'aerolite2')  return TM_TABLES.dt_aerolite2;
+  return TM_TABLES.dt_standard;
+}
+
+// ── Obtenir les points [defl,kgf] pour le rayon courant ──────────────────────
+function tmGetPoints() {
+  if (!tmSpokeKey) return null;
+  const tbl = tmGetActiveTable();
+  return tbl[tmSpokeKey] || null;
+}
+
+// ── Interpolation linéaire sur tableau [[defl,kgf]] ──────────────────────────
+function interpolateFromPoints(reading, pts) {
+  if (reading === null || !pts || !pts.length) return null;
+  const validPts = pts.filter(p => p[1] !== null);
+  if (!validPts.length) return null;
+  if (reading < validPts[0][0] || reading > validPts[validPts.length - 1][0]) return null;
+  // Bornes exactes
+  if (reading === validPts[0][0]) return validPts[0][1];
+  if (reading === validPts[validPts.length - 1][0]) return validPts[validPts.length - 1][1];
+  for (let i = 0; i < validPts.length - 1; i++) {
+    const [x0, y0] = validPts[i], [x1, y1] = validPts[i + 1];
+    if (reading >= x0 && reading <= x1) {
+      const ratio = (reading - x0) / (x1 - x0);
+      return Math.round(y0 + ratio * (y1 - y0));
+    }
+  }
+  return null;
+}
+
+// ── toKgf — convertit une lecture brute en kgf ──────────────────────────────
+function toKgf(reading) {
+  if (reading === null) return null;
+  const pts = tmGetPoints();
+  return interpolateFromPoints(reading, pts);
+}
+
+// ── Plage valide pour le rayon courant ──────────────────────────────────────
+function tmGetRange() {
+  const pts = tmGetPoints();
+  if (!pts || !pts.length) return null;
+  const valid = pts.filter(p => p[1] !== null);
+  if (!valid.length) return null;
+  return { min: valid[0][0], max: valid[valid.length - 1][0] };
+}
+
+function tmInRange(reading) {
+  if (reading === null) return false;
+  const range = tmGetRange();
+  if (!range) return false;
+  return reading >= range.min && reading <= range.max;
+}
+
+// ── Parse input selon le tensiomètre ─────────────────────────────────────────
+// WF & DT : décimal (0.55 ou ,55 ou 55 → 0.55)
+// PT      : entier (numéro de graduation)
+function tmParseInput(raw) {
+  if (!raw || raw.trim() === '') return null;
+  let s = raw.trim().replace(',', '.');
+  if (tmType === 'pt') {
+    // Park Tool : entier ou décimal (numéro de graduation)
+    const n = parseFloat(s);
+    return isNaN(n) ? null : n;
+  } else if (tmType === 'wf') {
+    // Wheel Fanatyk : raccourci "55" → 0.55, "32" → 0.32
+    let n = parseFloat(s);
+    if (isNaN(n)) return null;
+    if (Number.isInteger(n) && n >= 10) n = n / 100;
+    return Math.round(n * 10000) / 10000;
+  } else {
+    // DT Swiss : valeur exacte en mm, virgule ou point acceptés, pas de raccourci
+    const n = parseFloat(s);
+    return isNaN(n) ? null : Math.round(n * 10000) / 10000;
+  }
+}
+
+// ── Affichage valeur dans l'input ─────────────────────────────────────────────
+function tmDisplayValue(val) {
+  if (val === null) return '';
+  if (tmType === 'pt') return val % 1 === 0 ? String(val) : val.toFixed(1);
+  return val.toFixed(2);
+}
+
+// ── Hint selon tensiomètre ────────────────────────────────────────────────────
+function tmGetHintHTML() {
+  if (tmType === 'pt') return t('tmHintPT');
+  if (tmType === 'dt') return t('tmHintDT');
+  return t('tmHintWF');
+}
+
+// ── Peuplement du dropdown de rayons ─────────────────────────────────────────
+function tmPopulateSpokeSelect() {
+  const sel = $id('tm-spoke-select');
+  const tbl = tmGetActiveTable();
+  const spokes = Object.keys(tbl);
+  const prev = tmSpokeKey;
+  sel.innerHTML = `<option value="">${t('tmSpokeSelectPlaceholder')}</option>`;
+  spokes.forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k; opt.textContent = k;
+    if (k === prev) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  // Conserver la sélection si possible, sinon null
+  tmSpokeKey = spokes.includes(prev) ? prev : null;
+  if (!tmSpokeKey) sel.value = '';
+  tmUpdateUnitBadge();
+}
+
+// ── Badge unité ───────────────────────────────────────────────────────────────
+function tmUpdateUnitBadge() {
+  const labels = { wf: 'WF', pt: 'PT', dt: 'DT' };
+  $id('tm-unit-badge').textContent = labels[tmType] || tmType.toUpperCase();
+}
+
+// ── setTM (bouton segment tensiomètre) ───────────────────────────────────────
+// ── Sync boutons type de roue dans le module tension ─────────────────────────
+function tmSyncWheelButtons() {
+  const bA = $id('tm-btn-avant'), bR = $id('tm-btn-arriere');
+  if (!bA || !bR) return;
+  const isAvant = wtype === 'avant';
+  const locked = !!_loadedConfigName[wtype];
+  bA.classList.toggle('on', isAvant);
+  bR.classList.toggle('on', !isAvant);
+  bA.classList.toggle('locked', locked);
+  bR.classList.toggle('locked', locked);
+}
+
+// ── Changement nb rayons depuis le module tension ─────────────────────────────
+function tmOnNbChange() {
+  const val = $id('tm-nb-select').value;
+  // Sync vers le calculateur
+  $id('nb-rayons').value = val;
+  // Déclencher l'event du calculateur pour mettre à jour son état
+  $id('nb-rayons').dispatchEvent(new Event('change'));
+  // Réinitialiser la saisie et reconstruire la table
+  tmResetData();
+  tmBuildTable();
+  tmHideResult();
+}
+
+// ── Changement type de roue depuis le module tension ─────────────────────────
+function tmSetWheel(type) {
+  if (wtype === type) return;
+  // Utiliser la fonction existante du calculateur
+  setWheel(type);
+  // setWheel met à jour wtype et les boutons du calculateur — on resync les nôtres
+  tmSyncWheelButtons();
+  tmUpdateBadges();
+  // Réinitialiser la saisie (la polarité DS/NDS change)
+  tmResetData();
+  tmBuildTable();
+  tmHideResult();
+}
+
+// ── Shared: save snapshot, switch key, restore or reset, refresh UI ─────
+function tmSwitchActiveKey(newKey) {
+  // Always save current data to store (even if empty — so we remember the spoke selection)
+  if (tmHasData()) {
+    tmSaveToStore();
+  }
+  tmActiveKey = newKey;
+  // Restore from store if data exists for this tensiometer
+  const stored = tmStore[newKey];
+  if (stored) {
+    tmSpokeKey = stored.spokeKey;
+    tmData   = { fo: stored.fo.slice(), fa: stored.fa.slice() };
+    tmPrevFo = stored.prevFo.slice();
+    tmPrevFa = stored.prevFa.slice();
+  } else {
+    tmSpokeKey = null;
+    tmResetData();
+  }
+  tmPopulateSpokeSelect();
+  tmBuildTable();
+  if (tmSpokeKey && tmHasData()) {
+    tmTryRenderRadar();
+  } else {
+    tmHideResult();
+  }
+}
+
+function setTM(type) {
+  const newKey = type === 'dt' ? 'dt_' + tmDTSub : type;
+  if (newKey === tmActiveKey) return;
+  tmType = type;
+  tmSwitchActiveKey(newKey);
+  ['wf','pt','dt'].forEach(t => {
+    const b = $id('tm-btn-' + t);
+    if (b) b.classList.toggle('active', t === type);
+  });
+  $id('tm-dt-subtype').style.display = type === 'dt' ? '' : 'none';
+  $id('tm-entry-hint').innerHTML = tmGetHintHTML();
+}
+
+function setDTSub(sub) {
+  const newKey = 'dt_' + sub;
+  if (newKey === tmActiveKey) return;
+  tmDTSub = sub;
+  tmSwitchActiveKey(newKey);
+  $id('tm-btn-dt-std').classList.toggle('active',  sub === 'standard');
+  $id('tm-btn-dt-ael2').classList.toggle('active', sub === 'aerolite2');
+}
+
+// ── onchange sur le dropdown de rayons ───────────────────────────────────────
+function tmOnSpokeChange() {
+  const sel = $id('tm-spoke-select');
+  tmSpokeKey = sel.value || null;
+  tmResetData();
+  tmBuildTable();
+  tmHideResult();
+}
+
+// ── tmInit ───────────────────────────────────────────────────────────────────
+function tmInit() {
+  tmUpdateBadges();
+  tmPopulateSpokeSelect();
+  $id('tm-entry-hint').innerHTML = tmGetHintHTML();
+  // Reconstruire la table seulement si on a des données à afficher, ou si la table est vide
+  const hasTbody = $id('tm-tbody').querySelectorAll('tr').length > 0;
+  if (!hasTbody || tmHasData()) {
+    tmBuildTable();
+  }
+  if (tmSpokeKey && tmHasData()) {
+    tmTryRenderRadar();
+  }
+}
+
+// ── tmUpdateBadges ─────────────────────────────────────────────────────────
+// Synchronise les contrôles du module tension depuis l'état global (nb-rayons, wtype)
+function tmUpdateBadges() {
+  // Nb rayons : lire depuis le calculateur
+  const nb = parseInt($id('nb-rayons').value) || 0;
+  const tmSel = $id('tm-nb-select');
+  if (tmSel) {
+    tmSel.value = nb > 0 ? String(nb) : '';
+    tmSel.classList.toggle('locked', !!_loadedConfigName[wtype]);
+  }
+
+  // Type de roue
+  tmSyncWheelButtons();
+
+  // Labels DS/NDS selon roue (cohérent avec le reste de l'appli)
+  // Arrière : DS = côté fort (warm), NDS = côté faible (accent)
+  // Avant   : NDS = côté fort (warm), DS = côté faible (accent)
+  const isFront = wtype === 'avant';
+  // Roue avant : fo (warm) = NDS = Gauche, fa (accent) = DS = Droite
+  // Roue arrière : fo (warm) = DS = Droite, fa (accent) = NDS = Gauche
+  const foKey = isFront ? 'nonDriveSide' : 'driveSide';
+  const faKey = isFront ? 'driveSide'    : 'nonDriveSide';
+  $id('radar-leg-fo').textContent = t(foKey);
+  $id('radar-leg-fa').textContent = t(faKey);
+  // Réordonner la légende : NDS toujours à gauche, DS à droite
+  const legend = document.querySelector('.radar-legend');
+  const legFo = $id('radar-leg-fo').closest('.radar-leg-item');
+  const legFa = $id('radar-leg-fa').closest('.radar-leg-item');
+  if (legend && legFo && legFa) {
+    isFront ? legend.insertBefore(legFo, legFa) : legend.insertBefore(legFa, legFo);
+  }
+
+  // En-têtes colonnes
+  // col gauche (tm-th-nds) = NDS, col droite (tm-th-ds) = DS — labels et couleurs selon wtype
+  // Roue avant : NDS=Gauche (warm/fo), DS=Droite (accent/fa)
+  // Roue arrière : NDS=Gauche (accent/fa), DS=Droite (warm/fo)
+  const thNds = $id('tm-th-nds');
+  const thDs  = $id('tm-th-ds');
+  const ndsLabelEl = $id('tm-th-nds-label');
+  const dsLabelEl  = $id('tm-th-ds-label');
+  if (thNds && thDs) {
+    thNds.className = isFront ? 'th-fo' : 'th-fa';
+    thDs.className  = isFront ? 'th-fa' : 'th-fo';
+  }
+  if (ndsLabelEl) ndsLabelEl.textContent = t('nonDriveSide');
+  if (dsLabelEl)  dsLabelEl.textContent  = t('driveSide');
+  const ndsSub = $id('tm-th-nds-sub'), dsSub = $id('tm-th-ds-sub');
+  const range = tmGetRange();
+  const subText = range
+    ? t('tmReadingKgf') + '  ·  ' + tmDisplayValue(range.min) + ' → ' + tmDisplayValue(range.max)
+    : t('tmReadingKgf');
+  if (ndsSub) ndsSub.textContent = subText;
+  if (dsSub)  dsSub.textContent  = subText;
+  // Badge roue chargée
+  _refreshLoadedBadges();
+}
+
+// ── tmUpdateHint ─────────────────────────────────────────────────────────────
+function tmUpdateHint() {
+  const hint = $id('tm-hint-section');
+  if (tmType === 'dt' && tmDTSub === 'aerolite2') {
+    hint.innerHTML = t('tmWarnAerolite2');
+    hint.style.color = 'var(--warm)';
+  } else {
+    hint.textContent = '';
+    hint.style.color = '';
+  }
+  $id('tm-entry-hint').innerHTML = tmGetHintHTML();
+}
+
+// ── tmBuildTable ─────────────────────────────────────────────────────────────
+function tmBuildTable() {
+  tmUpdateBadges();
+  const nb = parseInt($id('nb-rayons').value) || 0;
+  const tbody = $id('tm-tbody');
+  tbody.innerHTML = '';
+
+  if (nb < 2) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="3" class="tm-empty-msg">${t('tmNoSpokes')}</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
+  if (!tmSpokeKey) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="3" class="tm-empty-msg">${t('tmChooseSpoke')}</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
+  const perSide = Math.floor(nb / 2);
+  while (tmData.fo.length < perSide) tmData.fo.push(null);
+  while (tmData.fa.length < perSide) tmData.fa.push(null);
+  while (tmPrevFo.length < perSide)  tmPrevFo.push(null);
+  while (tmPrevFa.length < perSide)  tmPrevFa.push(null);
+
+  const isFront = wtype === 'avant';
+
+  for (let i = 0; i < perSide; i++) {
+    const tr = document.createElement('tr');
+
+    const foVal  = tmData.fo[i];
+    const faVal  = tmData.fa[i];
+    const foKgf  = toKgf(foVal);
+    const faKgf  = toKgf(faVal);
+
+    // NDS toujours à gauche, DS toujours à droite
+    // NDS = fa (arrière) ou fo (avant)
+    const ndsVal  = isFront ? foVal : faVal;
+    const dsVal   = isFront ? faVal : foVal;
+    const ndsKgf  = isFront ? foKgf : faKgf;
+    const dsKgf   = isFront ? faKgf : foKgf;
+    const ndsSide = isFront ? 'fo' : 'fa';
+    const dsSide  = isFront ? 'fa' : 'fo';
+    // couleurs : côté fort = warm, côté faible = accent
+    // avant : fo=fort(NDS)=warm, fa=faible(DS)=accent
+    // arrière: fo=fort(DS)=warm, fa=faible(NDS)=accent
+    const ndsClass = isFront ? 'fo' : 'fa';
+    const dsClass  = isFront ? 'fa' : 'fo';
+
+    function cellHTML(val, kgf, side, cls) {
+      const dispVal = val !== null ? tmDisplayValue(val) : '';
+      const hasVal  = val !== null ? ' has-val' : '';
+      return `<td class="defl-td">
+        <div class="defl-cell">
+          <input class="defl-inp ${cls}${hasVal}" data-idx="${i}" data-side="${side}" type="text" inputmode="decimal"
+            value="${dispVal}" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="—">
+          <div class="defl-result ${cls}" id="dr-${side}-${i}">${kgf !== null ? kgf + ' kgf' : ''}</div>
+        </div>
+      </td>`;
+    }
+
+    tr.innerHTML = `<td class="td-r">${i + 1}</td>` +
+      cellHTML(ndsVal, ndsKgf, ndsSide, ndsClass) +
+      cellHTML(dsVal,  dsKgf,  dsSide,  dsClass);
+
+    tbody.appendChild(tr);
+
+    tr.querySelectorAll('.defl-inp').forEach(inp => {
+      const idx  = parseInt(inp.dataset.idx);
+      const side = inp.dataset.side;
+
+      inp.addEventListener('focus', function() {
+        const cur = side === 'fo' ? tmData.fo[idx] : tmData.fa[idx];
+        if (side === 'fo') tmPrevFo[idx] = cur; else tmPrevFa[idx] = cur;
+        this.select();
+      });
+
+      inp.addEventListener('blur', function() {
+        const raw = this.value.trim();
+        let parsed = null;
+
+        if (raw !== '') {
+          parsed = tmParseInput(raw);
+        }
+
+        // Hors plage de la table → rejeter comme invalide
+        if (parsed !== null && !tmInRange(parsed)) {
+          const range = tmGetRange();
+          const resEl = $id(`dr-${side}-${idx}`);
+          if (resEl && range) {
+            resEl.textContent = tmDisplayValue(range.min) + ' – ' + tmDisplayValue(range.max);
+            resEl.classList.add('oor');
+            setTimeout(() => { resEl.classList.remove('oor'); tmUpdateCell(idx, side); }, 1800);
+          }
+          this.classList.add('out-of-range');
+          setTimeout(() => this.classList.remove('out-of-range'), 400);
+          parsed = null;
+        }
+
+        if (parsed === null) {
+          // Vide, invalide ou hors plage → restaurer
+          const prev = side === 'fo' ? tmPrevFo[idx] : tmPrevFa[idx];
+          if (prev !== null && prev !== undefined) {
+            this.value = tmDisplayValue(prev);
+            if (side === 'fo') tmData.fo[idx] = prev; else tmData.fa[idx] = prev;
+            this.classList.add('has-val');
+          } else {
+            this.value = '';
+            if (side === 'fo') tmData.fo[idx] = null; else tmData.fa[idx] = null;
+            this.classList.remove('has-val');
+          }
+        } else {
+          if (side === 'fo') tmData.fo[idx] = parsed; else tmData.fa[idx] = parsed;
+          this.value = tmDisplayValue(parsed);
+          this.classList.add('has-val');
+        }
+        tmUpdateCell(idx, side);
+        tmTryRenderRadar();
+      });
+
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          const prev = side === 'fo' ? tmPrevFo[idx] : tmPrevFa[idx];
+          this.value = prev !== null ? tmDisplayValue(prev) : '';
+          this.blur();
+        }
+        if (e.key === 'Enter') {
+          // Valider avant d'avancer : si vide ou valide → passer, sinon rester
+          const raw = this.value.trim();
+          if (raw !== '') {
+            const parsed = tmParseInput(raw);
+            if (parsed === null || !tmInRange(parsed)) {
+              this.blur();
+              return;
+            }
+          }
+          const allInps = [...document.querySelectorAll(`.defl-inp.${inp.className.split(' ').find(c => c === 'fo' || c === 'fa')}`)];
+          const ci = allInps.indexOf(this);
+          if (ci < allInps.length - 1) { this.blur(); allInps[ci + 1].focus(); }
+          else this.blur();
+        }
+      });
+    });
+  }
+}
+
+function tmUpdateCell(idx, side) {
+  const val = side === 'fo' ? tmData.fo[idx] : tmData.fa[idx];
+  const kgf = toKgf(val);
+  const el  = $id(`dr-${side}-${idx}`);
+  if (el) el.textContent = kgf !== null ? kgf + ' kgf' : '';
+}
+
+function tmHideResult() {
+  $id('tm-result-card').style.display = 'none';
+  // Reset highlight silencieux — pas d'appel à tmTryRenderRadar
+  tmHighlightOn = false;
+  const btn = $id('tm-hl-btn');
+  if (btn) btn.classList.remove('active');
+  document.querySelectorAll('.defl-inp, .defl-result').forEach(el => {
+    el.classList.remove('outlier-fo', 'outlier-fa');
+  });
+}
+
+function tmResetSide(col) {
+  // col = 'nds' | 'ds'
+  // nds → arrière=fa, avant=fo  /  ds → arrière=fo, avant=fa
+  const isFront = wtype === 'avant';
+  const side = (col === 'nds')
+    ? (isFront ? 'fo' : 'fa')
+    : (isFront ? 'fa' : 'fo');
+
+  if (side === 'fo') { tmData.fo = tmData.fo.map(() => null); tmPrevFo = tmPrevFo.map(() => null); }
+  else               { tmData.fa = tmData.fa.map(() => null); tmPrevFa = tmPrevFa.map(() => null); }
+
+  // Vider les inputs et résultats de la colonne dans le DOM
+  document.querySelectorAll(`.defl-inp.${side}`).forEach(inp => {
+    inp.value = '';
+    inp.classList.remove('has-val');
+  });
+  document.querySelectorAll(`[id^="dr-${side}-"]`).forEach(el => { el.textContent = ''; });
+
+  tmTryRenderRadar();
+}
+
+// ── État highlight ────────────────────────────────────────────────────────────
+let tmCVThreshold = 5;    // % — seuil écart-type coefficient de variation
+let tmHighlightOn = false;
+let tmOutliers = { fo: new Set(), fa: new Set() }; // indices outliers courants
+
+function tmSetCV(pct) {
+  tmCVThreshold = pct;
+  if (tmHighlightOn) tmApplyHighlight();
+  else tmUpdateOutlierCount();
+  tmTryRenderRadar();
+}
+
+function tmToggleHighlight() {
+  tmHighlightOn = !tmHighlightOn;
+  const btn = $id('tm-hl-btn');
+  btn.classList.toggle('active', tmHighlightOn);
+  if (tmHighlightOn) tmApplyHighlight();
+  else tmClearHighlight();
+}
+
+// Calcule les outliers pour un tableau de kgf et un seuil CV %
+// Retourne un Set d'indices qui s'écartent de la moyenne de plus de threshold% relatif
+function tmComputeOutliers(kgfs, thresholdPct) {
+  const valid = kgfs.map((v, i) => ({ v, i })).filter(x => x.v !== null);
+  if (valid.length < 2) return new Set();
+  const avg = valid.reduce((s, x) => s + x.v, 0) / valid.length;
+  if (avg === 0) return new Set();
+  const limit = avg * (thresholdPct / 100);
+  return new Set(valid.filter(x => Math.abs(x.v - avg) > limit).map(x => x.i));
+}
+
+function tmUpdateOutlierCount() {
+  // Recalcule outliers sans appliquer le visuel
+  const nb = parseInt($id('nb-rayons').value) || 0;
+  const perSide = Math.floor(nb / 2);
+  const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v));
+  const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v));
+  tmOutliers.fo = tmComputeOutliers(foKgfs, tmCVThreshold);
+  tmOutliers.fa = tmComputeOutliers(faKgfs, tmCVThreshold);
+  const total = tmOutliers.fo.size + tmOutliers.fa.size;
+  const countEl = $id('tm-hl-count');
+  if (countEl) {
+    countEl.textContent = total > 0 ? tf('tmOutOfRange', total) : '';
+    countEl.classList.toggle('has', total > 0);
+  }
+}
+
+function tmApplyHighlight() {
+  tmUpdateOutlierCount();
+  // Appliquer classes sur les inputs de la grille
+  // side fo = warm, side fa = accent
+  const isFront = wtype === 'avant';
+  // NDS = avant→fo, arrière→fa / DS = avant→fa, arrière→fo
+  document.querySelectorAll('.defl-inp, .defl-result').forEach(el => {
+    el.classList.remove('outlier-fo', 'outlier-fa');
+  });
+  tmOutliers.fo.forEach(idx => {
+    const inp = document.querySelector(`.defl-inp[data-idx="${idx}"][data-side="fo"]`);
+    const res = $id(`dr-fo-${idx}`);
+    if (inp) inp.classList.add('outlier-fo');
+    if (res) res.classList.add('outlier-fo');
+  });
+  tmOutliers.fa.forEach(idx => {
+    const inp = document.querySelector(`.defl-inp[data-idx="${idx}"][data-side="fa"]`);
+    const res = $id(`dr-fa-${idx}`);
+    if (inp) inp.classList.add('outlier-fa');
+    if (res) res.classList.add('outlier-fa');
+  });
+  // Redessiner le radar avec outliers
+  tmTryRenderRadar();
+}
+
+function tmClearHighlight() {
+  document.querySelectorAll('.defl-inp, .defl-result').forEach(el => {
+    el.classList.remove('outlier-fo', 'outlier-fa');
+  });
+  // Redessiner le radar seulement si la card est visible (sans passer par tmTryRenderRadar)
+  const card = $id('tm-result-card');
+  if (card && card.style.display !== 'none') {
+    const nb = parseInt($id('nb-rayons').value) || 0;
+    const perSide = Math.floor(nb / 2);
+    if (perSide >= 2) {
+      const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v));
+      const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v));
+      tmDrawRadar(foKgfs, faKgfs, null);
+    }
+  }
+  tmUpdateOutlierCount();
+}
+
+function tmTryRenderRadar() {
+  const nb = parseInt($id('nb-rayons').value) || 0;
+  const perSide = Math.floor(nb / 2);
+  if (perSide < 2) return;
+
+  const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v));
+  const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v));
+  if (!foKgfs.some(v => v !== null) && !faKgfs.some(v => v !== null)) { tmHideResult(); return; }
+
+  $id('tm-result-card').style.display = '';
+  // Recalculer outliers pour le radar
+  tmOutliers.fo = tmComputeOutliers(foKgfs, tmCVThreshold);
+  tmOutliers.fa = tmComputeOutliers(faKgfs, tmCVThreshold);
+  tmUpdateOutlierCount();
+  tmDrawRadar(foKgfs, faKgfs, tmHighlightOn ? tmOutliers : null);
+  tmRenderStats(foKgfs, faKgfs);
+}
+
+function tmDrawRadar(foKgfs, faKgfs, outliers) {
+  const canvas = $id('tm-radar');
+  const ctx    = canvas.getContext('2d');
+  const dpr    = window.devicePixelRatio || 1;
+  const size   = Math.min(canvas.parentElement.clientWidth || 440, 440);
+  canvas.style.width  = size + 'px';
+  canvas.style.height = size + 'px';
+  canvas.width  = size * dpr;
+  canvas.height = size * dpr;
+  ctx.scale(dpr, dpr);
+
+  const W = size, H = size;
+  const cx = W / 2, cy = H / 2;
+  const R  = W * 0.38;
+
+  ctx.clearRect(0, 0, W, H);
+
+  const perSide   = foKgfs.length;
+  const N         = perSide * 2;
+  const angleStep = (2 * Math.PI) / N;
+
+  const allVals  = [...foKgfs, ...faKgfs].filter(v => v !== null);
+  if (!allVals.length) return;
+  const maxVal   = Math.max(...allVals);
+  const scaleMax = Math.ceil(maxVal / 20) * 20 || 20;
+
+  // Rings
+  const rings = 5;
+  for (let r = 1; r <= rings; r++) {
+    const rr = (r / rings) * R;
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const a = i * angleStep - Math.PI / 2;
+      i === 0 ? ctx.moveTo(cx + rr * Math.cos(a), cy + rr * Math.sin(a))
+              : ctx.lineTo(cx + rr * Math.cos(a), cy + rr * Math.sin(a));
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Graduation labels (3 rings)
+    if (r === 2 || r === 4 || r === rings) {
+      const kgfLabel = Math.round((r / rings) * scaleMax);
+      ctx.fillStyle  = 'rgba(150,170,190,0.4)';
+      ctx.font       = `${Math.round(W * 0.026)}px 'DM Mono', monospace`;
+      ctx.textAlign  = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(kgfLabel, cx, cy - rr - 3);
+    }
+  }
+
+  // Axes
+  for (let i = 0; i < N; i++) {
+    const a    = i * angleStep - Math.PI / 2;
+    const isFo = (i % 2 === 0);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
+    ctx.strokeStyle = isFo ? 'rgba(232,146,124,0.12)' : 'rgba(126,200,227,0.12)';
+    ctx.lineWidth   = 1;
+    ctx.stroke();
+
+    // Numéro rayon
+    if (perSide <= 16 || i % 2 === 0) {
+      const spokeNum = Math.floor(i / 2) + 1;
+      const labelR   = R + 13;
+      ctx.fillStyle  = isFo ? 'rgba(232,146,124,0.45)' : 'rgba(126,200,227,0.38)';
+      ctx.font       = `${Math.round(W * 0.023)}px 'DM Mono', monospace`;
+      ctx.textAlign  = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(spokeNum, cx + labelR * Math.cos(a), cy + labelR * Math.sin(a));
+    }
+  }
+
+  // Draw polygon helper
+  function drawPoly(vals, angleOffset, strokeColor, fillColor, outlierSet) {
+    const pts = vals.map((v, i) => {
+      const a  = (i * 2 + angleOffset) * angleStep - Math.PI / 2;
+      const rr = v !== null ? (v / scaleMax) * R : 0;
+      return [cx + rr * Math.cos(a), cy + rr * Math.sin(a)];
+    });
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+    ctx.closePath();
+    ctx.fillStyle   = fillColor;
+    ctx.fill();
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth   = 1.8;
+    ctx.stroke();
+    vals.forEach((v, i) => {
+      if (v === null) return;
+      const a     = (i * 2 + angleOffset) * angleStep - Math.PI / 2;
+      const rr    = (v / scaleMax) * R;
+      const isOut = outlierSet && outlierSet.has(i);
+      const r     = isOut ? 6 : 3;
+      const px    = cx + rr * Math.cos(a);
+      const py    = cy + rr * Math.sin(a);
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, 2 * Math.PI);
+      ctx.fillStyle = strokeColor;   // toujours la couleur de la nappe
+      ctx.fill();
+      if (isOut) {
+        // Halo de la couleur de la nappe, plus visible
+        ctx.beginPath();
+        ctx.arc(px, py, r + 4, 0, 2 * Math.PI);
+        ctx.strokeStyle = strokeColor.replace(/[\d.]+\)$/, '0.45)');
+        ctx.lineWidth   = 2;
+        ctx.stroke();
+      }
+    });
+  }
+
+  // fa (faible / accent) en dessous, fo (fort / warm) par-dessus
+  drawPoly(faKgfs, 1, 'rgba(126,200,227,0.8)', 'rgba(126,200,227,0.06)', outliers ? outliers.fa : null);
+  drawPoly(foKgfs, 0, 'rgba(232,146,124,0.8)', 'rgba(232,146,124,0.06)', outliers ? outliers.fo : null);
+
+  // Centre
+  ctx.beginPath();
+  ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
+  ctx.fillStyle = 'rgba(150,170,190,0.35)';
+  ctx.fill();
+}
+
+function tmRenderStats(foKgfs, faKgfs) {
+  function stats(vals) {
+    const v = vals.filter(x => x !== null);
+    if (!v.length) return null;
+    const avg   = v.reduce((a, b) => a + b, 0) / v.length;
+    const min   = Math.min(...v);
+    const max   = Math.max(...v);
+    const delta = max - min;
+    const std   = Math.sqrt(v.reduce((a, b) => a + (b - avg) ** 2, 0) / v.length);
+    const cv    = avg > 0 ? (std / avg * 100) : 0;
+    return { avg: avg.toFixed(1), min, max, delta, std: std.toFixed(1), cv: cv.toFixed(1), cvNum: cv, count: v.length };
+  }
+
+  const fo = stats(foKgfs), fa = stats(faKgfs);
+  const container = $id('tm-stats');
+  container.innerHTML = '';
+
+  const isFront = wtype === 'avant';
+  const foLabel = isFront ? t('tmLeft') + ' (NDS)' : t('tmRight') + ' (DS)';
+  const faLabel = isFront ? t('tmRight') + ' (DS)'  : t('tmLeft') + ' (NDS)';
+
+  function card(s, label, cls) {
+    if (!s) return;
+    const cvOver  = s.cvNum > tmCVThreshold;
+    const cvColor = cvOver ? `color:var(--${cls === 'fo' ? 'warm' : 'accent'})` : '';
+    const div = document.createElement('div');
+    div.className = 'tm-stat';
+    div.innerHTML = `
+      <div class="tm-stat-label ${cls}">${label}</div>
+      <div class="tm-stat-row"><span>${t('tmAvg')}</span><strong>${s.avg} kgf</strong></div>
+      <div class="tm-stat-row"><span>Min → Max</span><strong>${s.min} → ${s.max} kgf</strong></div>
+      <div class="tm-stat-row"><span>Δ max</span><strong>${s.delta} kgf</strong></div>
+      <div class="tm-stat-row"><span>${t('tmStd')}</span><strong>± ${s.std} kgf</strong></div>
+      <div class="tm-stat-row"><span></span><strong style="${cvColor}">${s.cv} %</strong></div>
+      <div class="tm-stat-row" style="margin-top:.3rem;opacity:.5"><span>${t('tmCount')}</span><strong>${s.count}</strong></div>`;
+    container.appendChild(div);
+  }
+  // NDS toujours à gauche, DS toujours à droite
+  // Avant : fo=NDS(gauche), fa=DS(droite) → fo puis fa
+  // Arrière : fa=NDS(gauche), fo=DS(droite) → fa puis fo
+  if (isFront) {
+    card(fo, foLabel, 'fo');
+    card(fa, faLabel, 'fa');
+  } else {
+    card(fa, faLabel, 'fa');
+    card(fo, foLabel, 'fo');
+  }
+}
 
 </script>
 </body>
