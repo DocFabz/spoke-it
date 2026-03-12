@@ -1549,7 +1549,6 @@ function setErdMode(m) {
   $id('btn-erd-nsd').classList.toggle('active', m === 'nsd');
   $id('erd-direct-section').style.display = m === 'direct' ? '' : 'none';
   $id('erd-nsd-section').style.display    = m === 'nsd'    ? '' : 'none';
-  _lastLoadTime = Date.now();
   clearResults(); updateCalcBtn();
 }
 
@@ -1561,14 +1560,10 @@ function setHubType(htype, skipClearSO) {
   $id('field-sp-so-left').style.display  = htype === 'straightpull' ? '' : 'none';
   $id('field-sp-so-right').style.display = htype === 'straightpull' ? '' : 'none';
   if (!skipClearSO) {
-    markModified();
-    // Effacer tous les champs du moyeu lors d'un switch manuel
-    $id('nb-rayons').value = '';
-    $id('diam-trou').value = '2.55';
-    $id('pcd-left').value  = ''; $id('offset-left').value  = '';
-    $id('pcd-right').value = ''; $id('offset-right').value = '';
+    // Réinitialiser uniquement les champs spécifiques au type de moyeu
     const soL = $id('sp-so-left');  soL.value = ''; soL._prevVal = undefined;
     const soR = $id('sp-so-right'); soR.value = ''; soR._prevVal = undefined;
+    $id('diam-trou').value = '2.55';
     // Bloquer le scroll pendant le switch (le blur du champ précédent arrive après le onclick)
     _hubScrolled = false;
     _switchingHub = true;
@@ -2067,11 +2062,10 @@ const ecrouEl = $id('ecrou-type');
 ecrouEl.addEventListener('change', updateCalcBtn);
 ecrouEl.addEventListener('change', closeConfigsCardIfOpen);
 
-// ── Toute modification dans le calculateur ou le module tension efface le badge ──
-['calc-module', 'tension-module'].forEach(id => {
-  const mod = $id(id); if (!mod) return;
-  mod.addEventListener('input',  markModified);
-  mod.addEventListener('change', markModified);
+// ── Toute modification d'un champ (input/select) efface le badge config ──
+document.querySelectorAll('#calc-module input, #calc-module select, #tension-module input, #tension-module select').forEach(el => {
+  el.addEventListener('input',  markModified);
+  el.addEventListener('change', markModified);
 });
 
 // ── Sync nb rayons calc → module tension ──────────────────────────────────────
