@@ -173,10 +173,11 @@ select option             { background:#161b27 }
 .tip-wrap  { position:relative; display:inline-flex; align-items:center; gap:.3rem }
 .tip-icon  { width:13px; height:13px; border-radius:50%; border:1px solid var(--text3); color:var(--text3); font-size:.6rem; font-family:'DM Mono',monospace; display:inline-flex; align-items:center; justify-content:center; cursor:default; flex-shrink:0; line-height:1; user-select:none }
 .tip-icon:hover { border-color:var(--accent); color:var(--accent) }
-.tip-box   { position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); background:#0e1420; border:1px solid var(--border-s); border-radius:6px; padding:.45rem .7rem; font-family:'DM Sans',sans-serif; font-size:.68rem; font-weight:400; color:var(--text2); white-space:normal; max-width:220px; text-align:center; pointer-events:none; opacity:0; transition:opacity .18s; z-index:99; letter-spacing:0; text-transform:none }
-.tip-box::after { content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color:#0e1420 }
-.tip-icon:hover + .tip-box, .tip-wrap:hover .tip-box { opacity:1 }
-.tip-box.visible { opacity:1 }
+.tip-box   { position:fixed; background:#0e1420; border:1px solid var(--border-s); border-radius:6px; padding:.45rem .7rem; font-family:'DM Sans',sans-serif; font-size:.68rem; font-weight:400; color:var(--text2); white-space:normal; width:max-content; max-width:min(220px, calc(100vw - 24px)); text-align:center; pointer-events:none; opacity:0; transition:opacity .18s; z-index:9999; letter-spacing:0; text-transform:none }
+.tip-box::after { content:''; position:absolute; border:5px solid transparent }
+.tip-box[data-pos="top"]::after    { top:100%; left:var(--arrow-left, 50%); transform:translateX(-50%); border-top-color:#0e1420 }
+.tip-box[data-pos="bottom"]::after { bottom:100%; left:var(--arrow-left, 50%); transform:translateX(-50%); border-bottom-color:#0e1420 }
+.tip-box.visible { opacity:1; pointer-events:auto }
 
 /* ── Tension display ───────────────────────────────────────────────────────── */
 .faible-display               { background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); color:var(--text2); font-family:'DM Mono',monospace; font-size:.85rem; font-weight:300; padding:.55rem .9rem; width:100%; height:2.35rem; box-sizing:border-box; display:flex; align-items:center; transition:background .2s, border-color .2s, color .2s }
@@ -2121,21 +2122,105 @@ window.addEventListener('resize', function() {
   if ($id('tm-result-card').style.display !== 'none') tmTryRenderRadar();
 });
 
-// ── Tooltip touch support (iOS) ───────────────────────────────────────────────
+// ── Tooltip dynamic positioning ───────────────────────────────────────────────
 (function() {
   let current = null;
-  function closeAll() { document.querySelectorAll('.tip-box.visible').forEach(b => b.classList.remove('visible')); current = null; }
+  const GAP = 8; // espace entre icône et tooltip
+  const MARGIN = 12; // marge min par rapport aux bords du viewport
+
+  function positionTip(icon, box) {
+    // Rendre visible mais transparent pour mesurer
+    box.style.opacity = '0';
+    box.style.left = '0';
+    box.style.top = '0';
+    box.classList.add('visible');
+
+    const ir = icon.getBoundingClientRect();
+    const br = box.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // Préférer au-dessus, sinon en dessous
+    let top, pos;
+    if (ir.top - GAP - br.height >= MARGIN) {
+      top = ir.top - GAP - br.height;
+      pos = 'top';
+    } else {
+      top = ir.bottom + GAP;
+      pos = 'bottom';
+    }
+
+    // Centrer horizontalement sur l'icône, puis clamper
+    let left = ir.left + ir.width / 2 - br.width / 2;
+    left = Math.max(MARGIN, Math.min(left, vw - br.width - MARGIN));
+
+    // Positionner la flèche sur l'icône
+    const arrowLeft = ir.left + ir.width / 2 - left;
+    const arrowPct = Math.max(10, Math.min(90, (arrowLeft / br.width) * 100));
+
+    box.style.left = left + 'px';
+    box.style.top = top + 'px';
+    box.setAttribute('data-pos', pos);
+    box.style.setProperty('--arrow-left', arrowPct + '%');
+    // Appliquer la position de la flèche
+    box.style.cssText += ''; // force reflow
+    const afterRule = `left:${arrowPct}%`;
+    box.querySelectorAll('.tip-arrow-override').forEach(e => e.remove());
+    // On utilise un style inline sur ::after via une custom property
+    box.style.opacity = '';
+  }
+
+  function closeAll() {
+    document.querySelectorAll('.tip-box.visible').forEach(b => {
+      b.classList.remove('visible');
+      b.style.opacity = '0';
+    });
+    current = null;
+  }
+
+  function showTip(icon) {
+    const box = icon.nextElementSibling;
+    if (!box || !box.classList.contains('tip-box')) return;
+    if (current === box) { closeAll(); return; }
+    closeAll();
+    positionTip(icon, box);
+    box.classList.add('visible');
+    current = box;
+  }
+
+  // Touch (mobile)
   document.addEventListener('touchstart', function(e) {
+    if (!e.target || !e.target.closest) return;
     const icon = e.target.closest('.tip-icon');
     if (icon) {
       e.preventDefault();
-      const box = icon.nextElementSibling;
-      if (box && box.classList.contains('tip-box')) {
-        if (current === box) { closeAll(); return; }
-        closeAll(); box.classList.add('visible'); current = box;
-      }
-    } else if (!e.target.closest('.tip-box')) { closeAll(); }
+      showTip(icon);
+    } else if (!e.target.closest('.tip-box')) {
+      closeAll();
+    }
   }, { passive: false });
+
+  // Hover (desktop) — délégation sur .tip-icon via mouseover/mouseout
+  document.addEventListener('mouseover', function(e) {
+    if (!e.target || !e.target.closest) return;
+    const icon = e.target.closest('.tip-icon');
+    if (icon) showTip(icon);
+  });
+
+  document.addEventListener('mouseout', function(e) {
+    if (!current || !e.target || !e.target.closest) return;
+    const wrap = e.target.closest('.tip-wrap');
+    if (!wrap) return;
+    const related = e.relatedTarget;
+    // Si on reste dans le même .tip-wrap, ne pas fermer
+    if (related && related.closest && related.closest('.tip-wrap') === wrap) return;
+    closeAll();
+  });
+
+  // Fermer au scroll / resize
+  function onMoveClose() { if (current) closeAll(); }
+  window.addEventListener('scroll', onMoveClose, true);
+  window.addEventListener('resize', onMoveClose);
 })();
 
 // ── Init ──────────────────────────────────────────────────────────────────────
