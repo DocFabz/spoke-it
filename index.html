@@ -1339,7 +1339,14 @@ function applyState(s) {
   $id('spoke-select').value   = s.spokeSelect;
   $id('tension-forte').value  = s.tensionForte;
   sd = s.sd; sa = s.sa; cross = s.cross;
-  if (s.hubType) { hubType = s.hubType; setHubType(hubType); }
+  if (s.hubType) {
+    hubType = s.hubType;
+    $id('btn-hub-jbend').classList.toggle('active', hubType === 'jbend');
+    $id('btn-hub-sp').classList.toggle('active', hubType === 'straightpull');
+    $id('field-diam-trou').style.display   = hubType === 'jbend'        ? '' : 'none';
+    $id('field-sp-so-left').style.display  = hubType === 'straightpull' ? '' : 'none';
+    $id('field-sp-so-right').style.display = hubType === 'straightpull' ? '' : 'none';
+  }
   $id('sp-so-left').value  = s.soLeft  || '';
   $id('sp-so-right').value = s.soRight || '';
 
