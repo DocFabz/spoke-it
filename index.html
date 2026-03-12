@@ -2150,6 +2150,12 @@ function switchModule(mod) {
   $id('nav-tension').classList.toggle('active', !isCalc);
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (!isCalc) {
+    // Si plus de config chargée, reset tension proprement
+    if (!_loadedConfigName[wtype]) {
+      tmResetData();
+      Object.keys(tmStore).forEach(k => delete tmStore[k]);
+      tmActiveKey = tmStoreKey();
+    }
     try { tmInit(); } catch(e) { console.error('tmInit error:', e); }
   }
 }
