@@ -49,7 +49,7 @@
 
 /* ── Reset ─────────────────────────────────────────────────────────────────── */
 *    { box-sizing:border-box; margin:0; padding:0 }
-html { scroll-behavior:smooth }
+html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; text-size-adjust:100% }
 
 /* ── Body ──────────────────────────────────────────────────────────────────── */
 body {
@@ -2684,14 +2684,19 @@ function tmToggleHighlight() {
 }
 
 // Calcule les outliers pour un tableau de kgf et un seuil CV %
-// Retourne un Set d'indices qui s'écartent de la moyenne de plus de threshold% relatif
+// Si le CV de la nappe est sous le seuil → aucun outlier (roue OK)
+// Si le CV dépasse le seuil → marque les rayons dont l'écart à la moyenne > 1 écart-type
 function tmComputeOutliers(kgfs, thresholdPct) {
   const valid = kgfs.map((v, i) => ({ v, i })).filter(x => x.v !== null);
   if (valid.length < 2) return new Set();
   const avg = valid.reduce((s, x) => s + x.v, 0) / valid.length;
   if (avg === 0) return new Set();
-  const limit = avg * (thresholdPct / 100);
-  return new Set(valid.filter(x => Math.abs(x.v - avg) > limit).map(x => x.i));
+  const std = Math.sqrt(valid.reduce((s, x) => s + (x.v - avg) ** 2, 0) / valid.length);
+  const cv  = (std / avg) * 100;
+  // Si le CV est sous la tolérance, la nappe est OK → rien à signaler
+  if (cv <= thresholdPct) return new Set();
+  // Sinon, marquer les rayons qui s'écartent de plus de 1 écart-type
+  return new Set(valid.filter(x => Math.abs(x.v - avg) > std).map(x => x.i));
 }
 
 function tmUpdateOutlierCount() {
