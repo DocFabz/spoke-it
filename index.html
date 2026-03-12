@@ -413,6 +413,33 @@ input[type=number] { -moz-appearance:textfield }
 .tm-th-reset   { background:none; border:none; cursor:pointer; padding:.1rem .3rem; border-radius:4px; opacity:.45; font-size:.7rem; color:inherit; line-height:1; transition:opacity .15s }
 .tm-th-reset:hover { opacity:.9 }
 
+/* ── Mobile: radar + stats + outlier bar ─────────────────────────────────── */
+@media (max-width: 520px) {
+  /* Carte résultat radar : réduire le padding pour maximiser le canvas */
+  #tm-result-card { padding: 1.2rem .8rem; }
+
+  /* Stats : empiler en colonne */
+  .tm-stats { grid-template-columns: 1fr; gap: .6rem; }
+  .tm-stat  { padding: .65rem .85rem; }
+  .tm-stat-row      { font-size: .74rem; }
+  .tm-stat-row strong { font-size: .77rem; }
+  .tm-stat-label    { font-size: .6rem; }
+
+  /* Outlier bar : passer en 2 lignes propres */
+  .tm-outlier-bar {
+    flex-wrap: wrap;
+    padding: .6rem .8rem;
+    gap: .5rem .7rem;
+  }
+  .tm-hl-group {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Légende radar : un peu plus compacte */
+  .radar-legend { gap: .7rem; margin-top: .5rem; }
+}
 </style>
 </head>
 <body>
@@ -2803,7 +2830,7 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
     // Numéro rayon
     if (perSide <= 16 || i % 2 === 0) {
       const spokeNum = Math.floor(i / 2) + 1;
-      const labelR   = R + 13;
+      const labelR   = R + Math.max(10, W * 0.032);
       ctx.fillStyle  = isFo ? 'rgba(232,146,124,0.45)' : 'rgba(126,200,227,0.38)';
       ctx.font       = `${Math.round(W * 0.023)}px 'DM Mono', monospace`;
       ctx.textAlign  = 'center';
