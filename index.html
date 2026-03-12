@@ -1173,7 +1173,6 @@ let _lastLoadTime = 0;
 function markModified() {
   if (Date.now() - _lastLoadTime < 500) return;
   _loadedConfigName[wtype] = null;
-  _jbendFields = null;
   _refreshLoadedBadges();
 }
 
@@ -1553,30 +1552,13 @@ function setErdMode(m) {
   clearResults(); updateCalcBtn();
 }
 
-let _jbendFields = null; // sauvegarde des champs J-bend quand on bascule en SP
-
 function setHubType(htype) {
   if (htype === hubType) return;
-  alert('setHubType v2: ' + htype);
-  _lastLoadTime = Date.now();
-
   if (htype === 'straightpull') {
-    // Sauvegarder les champs J-bend puis tout vider
-    _jbendFields = {};
-    ['nb-rayons','diam-trou','pcd-left','pcd-right','offset-left','offset-right'].forEach(id => {
-      _jbendFields[id] = $id(id).value;
-    });
-    ['nb-rayons','pcd-left','pcd-right','offset-left','offset-right'].forEach(id => { $id(id).value = ''; });
-    $id('sp-so-left').value = '';
-    $id('sp-so-right').value = '';
-  } else {
-    // Retour en J-bend : restaurer si on n'a touché à rien en SP
-    if (_jbendFields) {
-      Object.keys(_jbendFields).forEach(id => { $id(id).value = _jbendFields[id]; });
-      _jbendFields = null;
-    }
+    // Nouvelle roue : reset complet
+    clearFormSilent();
+    clearLoadedConfigName();
   }
-
   hubType = htype;
   $id('btn-hub-jbend').classList.toggle('active', htype === 'jbend');
   $id('btn-hub-sp').classList.toggle('active', htype === 'straightpull');
