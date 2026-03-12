@@ -310,7 +310,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .defl-result.fa  { color:rgba(126,200,227,.6) }
 
 /* Radar chart */
-.radar-canvas    { display:block; margin:0 auto; max-width:100%; aspect-ratio:1/1; height:auto }
+.radar-wrap      { width:100%; max-width:440px; margin:0 auto }
+.radar-canvas    { display:block; width:100% }
 .radar-legend    { display:flex; gap:1.2rem; justify-content:center; margin-top:.75rem; flex-wrap:wrap }
 .radar-leg-item  { display:flex; align-items:center; gap:.38rem; font-size:.68rem; color:var(--text2); font-family:'DM Sans',sans-serif }
 .radar-leg-dot   { width:10px; height:10px; border-radius:50%; flex-shrink:0 }
@@ -996,7 +997,9 @@ input[type=number] { -moz-appearance:textfield }
       <div class="clabel clabel-success" data-i18n="tmRadarTitle">Diagramme de tension</div>
     </div>
 
-    <canvas class="radar-canvas" id="tm-radar" width="440" height="440" style="display:block;margin:0 auto"></canvas>
+    <div class="radar-wrap">
+      <canvas class="radar-canvas" id="tm-radar"></canvas>
+    </div>
 
     <div class="radar-legend">
       <div class="radar-leg-item"><span class="radar-leg-dot" style="background:rgba(232,146,124,.9)"></span><span id="radar-leg-fo">Nappe Forte (DS)</span></div>
@@ -2775,22 +2778,16 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
   const ctx    = canvas.getContext('2d');
   const dpr    = window.devicePixelRatio || 1;
 
-  // Reset inline size so CSS can determine the natural layout size
-  canvas.style.width  = '';
-  canvas.style.height = '';
+  // Read the wrapper's laid-out width (the wrapper has max-width:440px + width:100%)
+  const wrapW = canvas.parentElement.clientWidth;
+  const size  = Math.round(wrapW);
 
-  // Read the actual CSS-rendered width (respects max-width, padding, etc.)
-  const rect = canvas.getBoundingClientRect();
-  const size = Math.min(Math.floor(rect.width), 440);
-
-  // Set CSS display size explicitly to a perfect square
-  canvas.style.width  = size + 'px';
-  canvas.style.height = size + 'px';
-
-  // Set buffer size for sharp rendering
+  // Buffer = CSS size × device pixel ratio → sharp on retina
   canvas.width  = size * dpr;
   canvas.height = size * dpr;
-  ctx.scale(dpr, dpr);
+  // CSS display size — force exact square via inline style
+  canvas.style.height = size + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   const W = size, H = size;
   const cx = W / 2, cy = H / 2;
