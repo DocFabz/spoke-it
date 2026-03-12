@@ -49,7 +49,7 @@
 
 /* ── Reset ─────────────────────────────────────────────────────────────────── */
 *    { box-sizing:border-box; margin:0; padding:0 }
-html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; text-size-adjust:100% }
+html { scroll-behavior:smooth; -webkit-text-size-adjust:none; -moz-text-size-adjust:none; text-size-adjust:none }
 
 /* ── Body ──────────────────────────────────────────────────────────────────── */
 body {
@@ -1040,54 +1040,6 @@ input[type=number] { -moz-appearance:textfield }
 </div><!-- /#tension-module -->
 
 <script>
-
-// ── Fix iOS Safari auto-zoom on orientation change ──────────────────────
-(function() {
-  if (!/iPhone|iPad|iPod/.test(navigator.userAgent)) return;
-  
-  // Approach: on orientation change, temporarily inject a style that
-  // forces all text to a large minimum size, triggering Safari to
-  // recalculate layout at scale 1, then remove it.
-  var fixing = false;
-  
-  function resetZoom() {
-    if (fixing) return;
-    fixing = true;
-    
-    // Create a temporary meta that locks zoom
-    var tempMeta = document.createElement('meta');
-    tempMeta.name = 'viewport';
-    tempMeta.content = 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0';
-    
-    var realMeta = document.querySelector('meta[name="viewport"]');
-    realMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0');
-    
-    // Use requestAnimationFrame to ensure layout pass happened
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
-        setTimeout(function() {
-          realMeta.setAttribute('content', 'width=device-width, initial-scale=1.0');
-          fixing = false;
-        }, 300);
-      });
-    });
-  }
-  
-  // Listen to both events for maximum compatibility
-  window.addEventListener('orientationchange', resetZoom);
-  
-  // Also watch visualViewport resize which fires more reliably on iOS
-  if (window.visualViewport) {
-    var lastOrientation = screen.orientation ? screen.orientation.angle : window.orientation;
-    window.visualViewport.addEventListener('resize', function() {
-      var newOrientation = screen.orientation ? screen.orientation.angle : window.orientation;
-      if (newOrientation !== lastOrientation) {
-        lastOrientation = newOrientation;
-        resetZoom();
-      }
-    });
-  }
-})();
 
 // ── i18n ────────────────────────────────────────────────────────────────────
 let lang = 'fr';
