@@ -1172,8 +1172,20 @@ function flashWheelCard(configName) {
 let _lastLoadTime = 0;
 function markModified() {
   if (Date.now() - _lastLoadTime < 500) return;
+  var hadName = !!_loadedConfigName[wtype];
   _loadedConfigName[wtype] = null;
   _refreshLoadedBadges();
+  // Première modification = nouvelle roue : effacer les champs de l'autre mode hub
+  if (hadName) {
+    if (hubType === 'straightpull') {
+      $id('diam-trou').value = '2.55';
+      // Vider aussi les champs communs hérités du J-bend
+      ['nb-rayons','pcd-left','pcd-right','offset-left','offset-right'].forEach(id => { $id(id).value = ''; });
+    } else {
+      $id('sp-so-left').value = '';
+      $id('sp-so-right').value = '';
+    }
+  }
 }
 
 function _refreshLoadedBadges() {
