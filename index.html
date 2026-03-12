@@ -310,7 +310,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .defl-result.fa  { color:rgba(126,200,227,.6) }
 
 /* Radar chart */
-.radar-canvas    { display:block; margin:0 auto; max-width:100% }
+.radar-canvas    { display:block; margin:0 auto; max-width:100%; aspect-ratio:1/1; height:auto }
 .radar-legend    { display:flex; gap:1.2rem; justify-content:center; margin-top:.75rem; flex-wrap:wrap }
 .radar-leg-item  { display:flex; align-items:center; gap:.38rem; font-size:.68rem; color:var(--text2); font-family:'DM Sans',sans-serif }
 .radar-leg-dot   { width:10px; height:10px; border-radius:50%; flex-shrink:0 }
@@ -440,6 +440,9 @@ input[type=number] { -moz-appearance:textfield }
   /* Légende radar : un peu plus compacte */
   .radar-legend { gap: .7rem; margin-top: .5rem; }
 }
+
+/* Masquer le compteur de rayons hors seuil */
+.tm-hl-count { display: none; }
 </style>
 </head>
 <body>
@@ -993,7 +996,7 @@ input[type=number] { -moz-appearance:textfield }
       <div class="clabel clabel-success" data-i18n="tmRadarTitle">Diagramme de tension</div>
     </div>
 
-    <canvas class="radar-canvas" id="tm-radar" width="440" height="440" style="display:block;margin:0 auto;max-width:100%"></canvas>
+    <canvas class="radar-canvas" id="tm-radar" width="440" height="440" style="display:block;margin:0 auto"></canvas>
 
     <div class="radar-legend">
       <div class="radar-leg-item"><span class="radar-leg-dot" style="background:rgba(232,146,124,.9)"></span><span id="radar-leg-fo">Nappe Forte (DS)</span></div>
@@ -2757,6 +2760,8 @@ function tmTryRenderRadar() {
   if (!foKgfs.some(v => v !== null) && !faKgfs.some(v => v !== null)) { tmHideResult(); return; }
 
   $id('tm-result-card').style.display = '';
+  // Force reflow so clientWidth is accurate after display change
+  void $id('tm-result-card').offsetWidth;
   // Recalculer outliers pour le radar
   tmOutliers.fo = tmComputeOutliers(foKgfs, tmCVThreshold);
   tmOutliers.fa = tmComputeOutliers(faKgfs, tmCVThreshold);
