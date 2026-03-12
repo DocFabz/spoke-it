@@ -1607,12 +1607,10 @@ function setHubType(htype) {
     // Retour en J-bend : restaurer le snapshot complet, sinon valeurs par défaut
     if (!_restoreHubSnap('jbend')) _clearHubFields('jbend');
   } else {
-    // Arrivée en Straightpull : toujours vierge (champs communs + SO)
+    // Arrivée en Straightpull : tout vide
     _hubCommonIds.forEach(id => { $id(id).value = ''; });
-    // Restaurer uniquement les SO si on y est déjà passé
-    const snap = _hubSnap.straightpull;
-    $id('sp-so-left').value  = snap ? (snap['sp-so-left'] || '')  : '';
-    $id('sp-so-right').value = snap ? (snap['sp-so-right'] || '') : '';
+    $id('sp-so-left').value = '';
+    $id('sp-so-right').value = '';
   }
   _switchingHub = true;
   setTimeout(() => { _switchingHub = false; }, 100);
