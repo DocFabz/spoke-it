@@ -1546,6 +1546,7 @@ function setErdMode(m) {
   $id('btn-erd-nsd').classList.toggle('active', m === 'nsd');
   $id('erd-direct-section').style.display = m === 'direct' ? '' : 'none';
   $id('erd-nsd-section').style.display    = m === 'nsd'    ? '' : 'none';
+  markModified();
   clearResults(); updateCalcBtn();
 }
 
@@ -2048,8 +2049,8 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
   });
 });
 
-['nb-rayons','pcd-left','pcd-right','offset-left','offset-right',
- 'erd-direct','nsd-val','erd-nsd-result','tension-forte','asym','sp-so-left','sp-so-right'].forEach(id => {
+['nb-rayons','diam-trou','pcd-left','pcd-right','offset-left','offset-right',
+ 'erd-direct','nsd-val','erd-nsd-result','tension-forte','asym','sp-so-left','sp-so-right','spoke-select'].forEach(id => {
   const el = $id(id); if (!el) return;
   ['input','change'].forEach(ev => {
     el.addEventListener(ev, updateCalcBtn);
