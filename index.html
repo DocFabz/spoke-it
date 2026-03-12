@@ -2055,7 +2055,6 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
   ['input','change'].forEach(ev => {
     el.addEventListener(ev, updateCalcBtn);
     el.addEventListener(ev, closeConfigsCardIfOpen);
-    el.addEventListener(ev, markModified);
     if (id === 'offset-left' || id === 'offset-right') {
       el.addEventListener(ev, updateAsymField);
     }
@@ -2064,7 +2063,13 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
 const ecrouEl = $id('ecrou-type');
 ecrouEl.addEventListener('change', updateCalcBtn);
 ecrouEl.addEventListener('change', closeConfigsCardIfOpen);
-ecrouEl.addEventListener('change', markModified);
+
+// ── Toute modification dans le calculateur ou le module tension efface le badge ──
+['calc-module', 'tension-module'].forEach(id => {
+  const mod = $id(id); if (!mod) return;
+  mod.addEventListener('input',  () => { if (!_applyingState) markModified(); });
+  mod.addEventListener('change', () => { if (!_applyingState) markModified(); });
+});
 
 // ── Sync nb rayons calc → module tension ──────────────────────────────────────
 $id('nb-rayons').addEventListener('change', function() {
