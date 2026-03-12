@@ -1149,7 +1149,6 @@ function flashWheelCard(configName) {
   card.style.boxShadow   = '0 0 0 2px rgba(126,207,168,.18)';
   if (configName) {
     _loadedConfigName[wtype] = configName;
-    _configModified[wtype] = false;
   }
   _refreshLoadedBadges();
   // Flash animation sur les deux badges
@@ -1169,35 +1168,27 @@ function flashWheelCard(configName) {
 }
 
 // ── Loaded config name badge ──────────────────────────────────────────────────
-// Ne supprime plus le nom — marque juste visuellement "modifié" (badge légèrement atténué)
 function markModified() {
-  _configModified[wtype] = true;
+  _loadedConfigName[wtype] = null;
   _refreshLoadedBadges();
 }
 
 function _refreshLoadedBadges() {
   const name = _loadedConfigName[wtype];
-  const modified = _configModified[wtype];
-  // Calculateur
-  _setBadge('cfg-loaded-name', 'cfg-loaded-text', name, modified);
-  // Module tension
-  _setBadge('tm-cfg-loaded-name', 'tm-cfg-loaded-text', name, modified);
+  _setBadge('cfg-loaded-name', 'cfg-loaded-text', name);
+  _setBadge('tm-cfg-loaded-name', 'tm-cfg-loaded-text', name);
 }
 
-function _setBadge(badgeId, textId, name, modified) {
+function _setBadge(badgeId, textId, name) {
   const badge = $id(badgeId), text = $id(textId);
   if (!badge || !text) return;
-  if (!name) { badge.classList.remove('show'); return; }
-  text.textContent = modified ? name + ' ●' : name;
-  badge.style.opacity = modified ? '0.55' : '1';
+  if (!name) { badge.classList.remove('show'); badge.style.opacity = ''; return; }
+  text.textContent = name;
+  badge.style.opacity = '1';
   badge.classList.add('show');
 }
 
-function clearLoadedConfigName() {
-  _loadedConfigName[wtype] = null;
-  _configModified[wtype] = false;
-  _refreshLoadedBadges();
-}
+function clearLoadedConfigName() { markModified(); }
 
 // ── State ────────────────────────────────────────────────────────────────────
 let wtype = 'avant', erdMode = 'direct', sd = 2.0, sa = null, cross = null, hubType = 'jbend';
@@ -1229,7 +1220,6 @@ let evenMode = { fo: false, fa: false };
 
 // ── Scroll flags ─────────────────────────────────────────────────────────────
 let _hubScrolled = false, _rimScrolled = false, _tensionScrolled = false;
-const _configModified = { avant: false, arriere: false };
 const _loadedConfigName = { avant: null, arriere: null };
 let _switchingHub = false;
 let _applyingState = false;
