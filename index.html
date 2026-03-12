@@ -199,7 +199,8 @@ select option             { background:#161b27 }
 .btn:active    { transform:translateY(0) }
 .btn.ready     { border-color:rgba(126,207,168,.6); transition:border-color .3s, transform .25s }
 .btn.ready:hover { border-color:rgba(126,207,168,.9); transform:translateY(-1px) }
-.btn-reset     { width:auto; padding:1rem 1.6rem }
+.btn-reset     { width:auto; padding:1rem 1.6rem; border-color:rgba(232,146,124,.35); color:var(--warm2) }
+.btn-reset:hover { border-color:rgba(232,146,124,.65) }
 .btn-row       { display:grid; grid-template-columns:1fr auto; gap:.75rem; align-items:stretch }
 .btn-save      { padding:.55rem 1.1rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:all .22s; white-space:nowrap }
 .btn-save:hover  { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06) }
@@ -230,6 +231,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .rrow     { display:flex; justify-content:space-between; align-items:baseline; font-size:.72rem; color:var(--text2) }
 .rrow strong { font-family:'DM Mono',monospace; font-weight:400; font-size:.77rem; color:var(--text) }
 .ev       { font-family:'DM Mono',monospace; font-weight:500; color:var(--success); font-size:.8rem }
+.rc-tap   { position:absolute; top:.7rem; right:.7rem; width:18px; height:18px; opacity:.2; transition:opacity .2s }
+.rc:hover .rc-tap { opacity:.4 }
 
 /* ── Summary items ────────────────────────────────────────────────────── */
 .sum-row  { display:flex; justify-content:space-between; align-items:baseline; padding:.38rem 0; border-bottom:1px solid var(--border) }
@@ -750,17 +753,19 @@ input[type=number] { -moz-appearance:textfield }
       </div>
       <div id="results-card-body" style="margin-top:1.35rem">
         <div class="rg">
-          <div class="rc fo" onclick="openArbCard()" style="cursor:pointer">
+          <div class="rc fo" onclick="openArbCard()" style="cursor:pointer;position:relative">
             <div class="rtag" id="rtag-fo">Côté Droit (DS)</div>
             <div class="rnum" id="r-fo">—</div>
             <div class="runit">mm</div>
             <div class="rrows" id="m-fo"></div>
+            <svg class="rc-tap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V4.5a1.5 1.5 0 013 0V12"/><path d="M11 11.5V10a1.5 1.5 0 013 0v1.5"/><path d="M14 12v-1a1.5 1.5 0 013 0v4.5a6 6 0 01-6 6h-1a6 6 0 01-6-6V9a1.5 1.5 0 013 0v4"/></svg>
           </div>
-          <div class="rc fa" onclick="openArbCard()" style="cursor:pointer">
+          <div class="rc fa" onclick="openArbCard()" style="cursor:pointer;position:relative">
             <div class="rtag" id="rtag-fa">Côté Gauche (NDS)</div>
             <div class="rnum" id="r-fa">—</div>
             <div class="runit">mm</div>
             <div class="rrows" id="m-fa"></div>
+            <svg class="rc-tap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V4.5a1.5 1.5 0 013 0V12"/><path d="M11 11.5V10a1.5 1.5 0 013 0v1.5"/><path d="M14 12v-1a1.5 1.5 0 013 0v4.5a6 6 0 01-6 6h-1a6 6 0 01-6-6V9a1.5 1.5 0 013 0v4"/></svg>
           </div>
         </div>
       </div>
@@ -1481,7 +1486,22 @@ function clearFormSilent() {
   // Reset tension module
   tmResetData();
   Object.keys(tmStore).forEach(k => delete tmStore[k]);
-  tmActiveKey = tmStoreKey();
+  tmActiveKey = 'wf';
+  tmType = 'wf';
+  $id('tm-btn-wf').classList.add('active');
+  $id('tm-btn-pt').classList.remove('active');
+  $id('tm-btn-dt').classList.remove('active');
+  $id('tm-dt-subtype').style.display = 'none';
+  tmDTSub = 'standard';
+  $id('tm-btn-dt-std').classList.add('active');
+  $id('tm-btn-dt-ael2').classList.remove('active');
+  tmSpokeKey = null;
+  tmPopulateSpokeSelect();
+  $id('tm-nb-select').value = '';
+  tmUpdateUnitBadge();
+  tmUpdateBadges();
+  const hintReset = $id('tm-entry-hint');
+  if (hintReset) hintReset.innerHTML = tmGetHintHTML();
   tmBuildTable();
   tmHideResult();
 }
@@ -2076,9 +2096,9 @@ ecrouEl.addEventListener('change', updateCalcBtn);
 ecrouEl.addEventListener('change', closeConfigsCardIfOpen);
 ecrouEl.addEventListener('change', markModified);
 
-// ── Module tension : toute saisie efface le badge (sauf tolérance) ──
+// ── Module tension : toute saisie efface le badge (sauf tolérance, nb rayons, rayon) ──
 document.querySelectorAll('#tension-module input, #tension-module select').forEach(el => {
-  if (el.id === 'tm-cv-select') return;
+  if (el.id === 'tm-cv-select' || el.id === 'tm-spoke-select' || el.id === 'tm-nb-select') return;
   el.addEventListener('input',  markModified);
   el.addEventListener('change', markModified);
 });
@@ -2423,10 +2443,11 @@ function tmUpdateBadges() {
     tmSel.classList.toggle('locked', !!_loadedConfigName[wtype]);
   }
 
-  // Rayon : verrouiller si config chargée
+  // Rayon : verrouiller si config chargée ET données tension présentes
+  // (si pas de données tension, on laisse l'utilisateur choisir le rayon)
   const tmSpokeSel = $id('tm-spoke-select');
   if (tmSpokeSel) {
-    tmSpokeSel.classList.toggle('locked', !!_loadedConfigName[wtype]);
+    tmSpokeSel.classList.toggle('locked', !!_loadedConfigName[wtype] && tmHasData());
   }
 
   // Type de roue
@@ -2695,25 +2716,22 @@ function tmToggleHighlight() {
   else tmClearHighlight();
 }
 
-// Calcule les outliers via médiane + MAD (robuste aux valeurs extrêmes)
-// Si le CV de la nappe est sous le seuil → aucun outlier (roue OK)
-// Si le CV dépasse → marque les rayons dont l'écart à la médiane > 2× MAD
+// Outliers : CV filtre la nappe, médiane + % tolérance désigne les coupables
 function tmComputeOutliers(kgfs, thresholdPct) {
   const valid = kgfs.map((v, i) => ({ v, i })).filter(x => x.v !== null);
-  if (valid.length < 2) return new Set();
+  if (valid.length < 4) return new Set();
   const avg = valid.reduce((s, x) => s + x.v, 0) / valid.length;
   if (avg === 0) return new Set();
   const std = Math.sqrt(valid.reduce((s, x) => s + (x.v - avg) ** 2, 0) / valid.length);
   const cv  = (std / avg) * 100;
   if (cv <= thresholdPct) return new Set();
+  // Médiane
   const sorted = valid.map(x => x.v).sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-  const absDevs = valid.map(x => Math.abs(x.v - median)).sort((a, b) => a - b);
-  const madMid = Math.floor(absDevs.length / 2);
-  const mad = absDevs.length % 2 ? absDevs[madMid] : (absDevs[madMid - 1] + absDevs[madMid]) / 2;
-  const limit = Math.max(2 * mad, 1);
-  return new Set(valid.filter(x => Math.abs(x.v - median) > limit).map(x => x.i));
+  if (median === 0) return new Set();
+  // Tout rayon dont l'écart à la médiane dépasse le % de tolérance
+  return new Set(valid.filter(x => Math.abs(x.v - median) / median * 100 > thresholdPct).map(x => x.i));
 }
 
 function tmUpdateOutlierCount() {
@@ -2727,10 +2745,6 @@ function tmUpdateOutlierCount() {
 
 function tmApplyHighlight() {
   tmUpdateOutlierCount();
-  // Appliquer classes sur les inputs de la grille
-  // side fo = warm, side fa = accent
-  const isFront = wtype === 'avant';
-  // NDS = avant→fo, arrière→fa / DS = avant→fa, arrière→fo
   document.querySelectorAll('.defl-inp, .defl-result').forEach(el => {
     el.classList.remove('outlier-fo', 'outlier-fa');
   });
@@ -2746,7 +2760,6 @@ function tmApplyHighlight() {
     if (inp) inp.classList.add('outlier-fa');
     if (res) res.classList.add('outlier-fa');
   });
-  // Redessiner le radar avec outliers
   tmTryRenderRadar();
 }
 
@@ -2754,7 +2767,6 @@ function tmClearHighlight() {
   document.querySelectorAll('.defl-inp, .defl-result').forEach(el => {
     el.classList.remove('outlier-fo', 'outlier-fa');
   });
-  // Redessiner le radar seulement si la card est visible (sans passer par tmTryRenderRadar)
   const card = $id('tm-result-card');
   if (card && card.style.display !== 'none') {
     const nb = parseInt($id('nb-rayons').value) || 0;
@@ -2779,7 +2791,6 @@ function tmTryRenderRadar() {
 
   $id('tm-result-card').style.display = '';
   void $id('tm-result-card').offsetWidth;
-  // Recalculer outliers pour le radar
   tmOutliers.fo = tmComputeOutliers(foKgfs, tmCVThreshold);
   tmOutliers.fa = tmComputeOutliers(faKgfs, tmCVThreshold);
   tmUpdateOutlierCount();
