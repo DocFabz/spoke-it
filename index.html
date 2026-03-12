@@ -1163,6 +1163,14 @@ function flashWheelCard(configName) {
 // ── Loaded config name badge ──────────────────────────────────────────────────
 function markModified() {
   if (Date.now() - _lastLoadTime < 500) return;
+  if (_loadedConfigName[wtype]) {
+    // Première modification = nouvelle roue : reset tension
+    tmResetData();
+    Object.keys(tmStore).forEach(k => delete tmStore[k]);
+    tmActiveKey = tmStoreKey();
+    tmBuildTable();
+    tmHideResult();
+  }
   _loadedConfigName[wtype] = null;
   _refreshLoadedBadges();
 }
