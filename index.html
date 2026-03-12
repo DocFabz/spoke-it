@@ -1339,7 +1339,7 @@ function applyState(s) {
   $id('spoke-select').value   = s.spokeSelect;
   $id('tension-forte').value  = s.tensionForte;
   sd = s.sd; sa = s.sa; cross = s.cross;
-  if (s.hubType) { hubType = s.hubType; setHubType(hubType, true); }
+  if (s.hubType) { hubType = s.hubType; setHubType(hubType); }
   $id('sp-so-left').value  = s.soLeft  || '';
   $id('sp-so-right').value = s.soRight || '';
 
@@ -1552,23 +1552,13 @@ function setErdMode(m) {
   clearResults(); updateCalcBtn();
 }
 
-function setHubType(htype, skipClearSO) {
+function setHubType(htype) {
   hubType = htype;
   $id('btn-hub-jbend').classList.toggle('active', htype === 'jbend');
   $id('btn-hub-sp').classList.toggle('active', htype === 'straightpull');
   $id('field-diam-trou').style.display   = htype === 'jbend'        ? '' : 'none';
   $id('field-sp-so-left').style.display  = htype === 'straightpull' ? '' : 'none';
   $id('field-sp-so-right').style.display = htype === 'straightpull' ? '' : 'none';
-  if (!skipClearSO) {
-    // Réinitialiser uniquement les champs spécifiques au type de moyeu
-    const soL = $id('sp-so-left');  soL.value = ''; soL._prevVal = undefined;
-    const soR = $id('sp-so-right'); soR.value = ''; soR._prevVal = undefined;
-    $id('diam-trou').value = '2.55';
-    // Bloquer le scroll pendant le switch (le blur du champ précédent arrive après le onclick)
-    _hubScrolled = false;
-    _switchingHub = true;
-    setTimeout(() => { _switchingHub = false; }, 100);
-  }
   clearResults(); updateCalcBtn();
 }
 
