@@ -2080,6 +2080,11 @@ document.querySelectorAll('input[type=number]').forEach(inp => {
   inp.addEventListener('blur',  function() { if (this.value === '' && this._prevVal !== undefined) this.value = this._prevVal; });
 });
 
+// ── Redessiner le radar au changement de taille (rotation écran) ────────────
+window.addEventListener('resize', function() {
+  if ($id('tm-result-card').style.display !== 'none') tmTryRenderRadar();
+});
+
 // ── Tooltip touch support (iOS) ───────────────────────────────────────────────
 (function() {
   let current = null;
