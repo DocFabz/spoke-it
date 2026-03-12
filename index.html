@@ -1557,6 +1557,7 @@ let _jbendFields = null; // sauvegarde des champs J-bend quand on bascule en SP
 
 function setHubType(htype) {
   if (htype === hubType) return;
+  alert('setHubType v2: ' + htype);
   _lastLoadTime = Date.now();
 
   if (htype === 'straightpull') {
