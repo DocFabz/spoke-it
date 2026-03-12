@@ -1550,7 +1550,6 @@ function setErdMode(m) {
   $id('btn-erd-nsd').classList.toggle('active', m === 'nsd');
   $id('erd-direct-section').style.display = m === 'direct' ? '' : 'none';
   $id('erd-nsd-section').style.display    = m === 'nsd'    ? '' : 'none';
-  markModified();
   clearResults(); updateCalcBtn();
 }
 
