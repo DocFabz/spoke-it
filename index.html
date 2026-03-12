@@ -1475,7 +1475,8 @@ function clearFormSilent() {
   tmResetData();
   Object.keys(tmStore).forEach(k => delete tmStore[k]);
   tmActiveKey = tmStoreKey();
-  if ($id('tension-module').style.display !== 'none') { tmBuildTable(); tmHideResult(); }
+  tmBuildTable();
+  tmHideResult();
 }
 
 function clearForm() {
