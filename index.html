@@ -1149,6 +1149,7 @@ function flashWheelCard(configName) {
   card.style.boxShadow   = '0 0 0 2px rgba(126,207,168,.18)';
   if (configName) {
     _loadedConfigName[wtype] = configName;
+    _lastLoadTime = Date.now();
   }
   _refreshLoadedBadges();
   // Flash animation sur les deux badges
@@ -1168,7 +1169,10 @@ function flashWheelCard(configName) {
 }
 
 // ── Loaded config name badge ──────────────────────────────────────────────────
+let _lastLoadTime = 0;
 function markModified() {
+  // Ignore events fired within 500ms of loading a config (async change events on iOS)
+  if (Date.now() - _lastLoadTime < 500) return;
   _loadedConfigName[wtype] = null;
   _refreshLoadedBadges();
 }
@@ -2067,8 +2071,8 @@ ecrouEl.addEventListener('change', closeConfigsCardIfOpen);
 // ── Toute modification dans le calculateur ou le module tension efface le badge ──
 ['calc-module', 'tension-module'].forEach(id => {
   const mod = $id(id); if (!mod) return;
-  mod.addEventListener('input',  () => { if (!_applyingState) markModified(); });
-  mod.addEventListener('change', () => { if (!_applyingState) markModified(); });
+  mod.addEventListener('input',  markModified);
+  mod.addEventListener('change', markModified);
 });
 
 // ── Sync nb rayons calc → module tension ──────────────────────────────────────
