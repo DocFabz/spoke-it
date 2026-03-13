@@ -918,7 +918,7 @@ input[type=number] { -moz-appearance:textfield }
         <option value="wf">Wheel Fanatyk</option>
         <option value="pt">Park Tool TM-1</option>
         <option value="dt">DT Swiss</option>
-        <option value="pk">PK&amp;LIE</option>
+        <option value="pk">P&amp;KLie</option>
         <option value="un">UNIOR 1752</option>
       </select>
     </div>
@@ -1135,7 +1135,7 @@ const i18n = {
     tmSpokeSelectPlaceholder:'— Choisir un rayon —',
     tmWarnAerolite2:'⚠ Valeurs valables UNIQUEMENT avec le Tensiomètre Aerolite II',
     tmHintDT:'DT Swiss : valeur exacte en mm (ex\u00a0: <code>1.45</code> ou <code>1,45</code>)',
-    tmHintPK:'PK&LIE : valeur exacte en mm (ex\u00a0: <code>2.34</code> ou <code>2,34</code>). Rayons DT Swiss et Sapim.',
+    tmHintPK:'P&KLie : valeur exacte en mm (ex\u00a0: <code>2.34</code> ou <code>2,34</code>). Rayons DT Swiss et Sapim.',
     tmWarnAerolite:'⚠ Park Tool TM-1 : pas de données pour Aerolite 0.9×2.3.',
     tmWarn165:'⚠ Park Tool TM-1 : pas de 1.65 mm. Utilisez Wheel Fanatyk.',
     tmWarnSection:'⚠ Section non disponible pour Park Tool TM-1.',
@@ -1191,7 +1191,7 @@ const i18n = {
     tmSpokeSelectPlaceholder:'— Choose a spoke —',
     tmWarnAerolite2:'⚠ Values valid ONLY with the Aerolite II Tensiometer',
     tmHintDT:'DT Swiss: exact value in mm (e.g.\u00a0<code>1.45</code> or <code>1,45</code>)',
-    tmHintPK:'PK&LIE: exact value in mm (e.g.\u00a0<code>2.34</code> or <code>2,34</code>). DT Swiss and Sapim spokes.',
+    tmHintPK:'P&KLie: exact value in mm (e.g.\u00a0<code>2.34</code> or <code>2,34</code>). DT Swiss and Sapim spokes.',
     tmWarnAerolite:'⚠ Park Tool TM-1: no data for Aerolite 0.9×2.3.',
     tmWarn165:'⚠ Park Tool TM-1: no 1.65 mm data. Use Wheel Fanatyk.',
     tmWarnSection:'⚠ Section not available for Park Tool TM-1.',
@@ -2583,7 +2583,7 @@ function tmOpenConvTable() {
   if (!pts || !pts.length) return;
 
   // Label tensiomètre
-  const tensioNames = { wf:'Wheel Fanatyk', pt:'Park Tool TM-1', dt:'DT Swiss', pk:'PK&LIE', un:'UNIOR 1752' };
+  const tensioNames = { wf:'Wheel Fanatyk', pt:'Park Tool TM-1', dt:'DT Swiss', pk:'P&KLie', un:'UNIOR 1752' };
   let tensioLabel = tensioNames[tmType] || tmType;
   if (tmType === 'dt' && tmDTSub === 'aerolite2') tensioLabel += ' (Tensio Aerolite II)';
 
