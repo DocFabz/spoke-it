@@ -389,8 +389,9 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 /* ── Conversion table modal ────────────────────────────────────────────────── */
 .tm-conv-overlay  { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
 .tm-conv-overlay.show { display:block; opacity:1 }
-.tm-conv-modal    { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:380px; max-height:82vh; display:none; flex-direction:column; animation:fu .3s cubic-bezier(.22,1,.36,1) }
-.tm-conv-modal.show { display:flex }
+.tm-conv-modal    { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:380px; max-height:82vh; display:none; flex-direction:column }
+.tm-conv-modal.show { display:flex; animation:conv-in .2s ease both }
+@keyframes conv-in { from { opacity:0 } to { opacity:1 } }
 .tm-conv-header   { display:flex; align-items:center; gap:.5rem; margin-bottom:1rem }
 .tm-conv-title    { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); flex:1 }
 .tm-conv-spoke    { font-family:'DM Mono',monospace; font-size:.72rem; color:var(--text2); margin-bottom:.8rem; line-height:1.4 }
