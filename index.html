@@ -405,10 +405,11 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-conv-table tr:last-child td { border-bottom:none }
 .tm-conv-table td:first-child { color:var(--text2); font-weight:300 }
 .tm-conv-table td:last-child  { font-weight:400; color:var(--accent2) }
-.tm-conv-btn      { display:inline-flex; align-items:center; gap:.3rem; padding:.3rem .75rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.65rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:all .22s }
+.tm-conv-btn      { display:inline-flex; align-items:center; gap:.3rem; padding:.3rem .75rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.65rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:none }
 .tm-conv-btn:hover { border-color:var(--accent); color:var(--accent) }
 .tm-conv-btn.locked { opacity:.35; pointer-events:none; cursor:not-allowed }
 .tm-conv-btn svg  { width:12px; height:12px; flex-shrink:0 }
+.tm-conv-btn.active { border-color:rgba(126,200,227,.45); color:var(--accent) }
 
 /* ── Scrollbar ─────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar       { width:4px }
@@ -2573,7 +2574,11 @@ function tmOnSpokeChange() {
 // ── Bouton table de conversion : actif/désactivé ────────────────────────────
 function tmUpdateConvBtn() {
   const btn = $id('tm-conv-btn');
-  if (btn) btn.classList.toggle('locked', !tmSpokeKey);
+  if (btn) {
+    const hasSpoke = !!tmSpokeKey;
+    btn.classList.toggle('locked', !hasSpoke);
+    btn.classList.toggle('active', hasSpoke);
+  }
 }
 
 // ── Ouvrir la modale table de conversion ────────────────────────────────────
