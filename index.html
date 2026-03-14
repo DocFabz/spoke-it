@@ -601,11 +601,11 @@ input[type=number] { -moz-appearance:textfield }
       <div class="hub-side">
         <div class="plabel L"><div class="pdot"></div><span data-i18n="left">Gauche</span></div>
         <div class="f">
-          <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTip">Diam utile flasque</span></label>
+          <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTipLeft">Pitch Circle Diameter Gauche</span></label>
           <input type="number" id="pcd-left" step="0.1" inputmode="decimal">
         </div>
         <div class="f">
-          <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTip">Centre vers flasque</span></label>
+          <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTipLeft">Centre-Flasque Gauche</span></label>
           <input type="number" id="offset-left" step="0.1" inputmode="decimal" oninput="onTension()" onkeydown="if(event.key==='-')event.preventDefault()">
         </div>
         <div class="f" id="field-sp-so-left" style="display:none">
@@ -617,11 +617,11 @@ input[type=number] { -moz-appearance:textfield }
       <div class="hub-side">
         <div class="plabel R"><div class="pdot"></div><span data-i18n="right">Droit</span></div>
         <div class="f">
-          <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTip">Diam utile flasque</span></label>
+          <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTipRight">Pitch Circle Diameter Droit</span></label>
           <input type="number" id="pcd-right" step="0.1" inputmode="decimal">
         </div>
         <div class="f">
-          <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTip">Centre vers flasque</span></label>
+          <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTipRight">Centre-Flasque Droite</span></label>
           <input type="number" id="offset-right" step="0.1" inputmode="decimal" oninput="onTension()" onkeydown="if(event.key==='-')event.preventDefault()">
         </div>
         <div class="f" id="field-sp-so-right" style="display:none">
@@ -1095,7 +1095,7 @@ const i18n = {
     frontWheel:'Roue Avant', rearWheel:'Roue Arrière',
     totalSpokes:'Nb total de rayons', holeDiam:'Ø trous de bride (mm)',
     left:'Gauche', right:'Droit',
-    pcdTip:'Diam utile flasque', offset:'Déport', offsetTip:'Centre vers flasque',
+    pcdTipLeft:'Pitch Circle Diameter Gauche', pcdTipRight:'Pitch Circle Diameter Droit', offset:'Déport', offsetTipLeft:'Centre-Flasque Gauche', offsetTipRight:'Centre-Flasque Droite',
     soLeft:'SO gauche', soRight:'SO droit',
     erdDirect:'ERD DIRECT', addonTip:"Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.",
     erdCalc:'ERD calculé (mm)', rimAsym:'Asymétrie jante (mm)', spokeSection:'Section de rayon', cross:'Croisement',
@@ -1151,7 +1151,7 @@ const i18n = {
     frontWheel:'Front Wheel', rearWheel:'Rear Wheel',
     totalSpokes:'Total spoke count', holeDiam:'Flange hole Ø (mm)',
     left:'Left', right:'Right',
-    pcdTip:'Flange pitch circle', offset:'Offset', offsetTip:'Center to flange',
+    pcdTipLeft:'Left Pitch Circle Diameter', pcdTipRight:'Right Pitch Circle Diameter', offset:'Offset', offsetTipLeft:'Left Flange to Center', offsetTipRight:'Right Flange to Center',
     soLeft:'SO left', soRight:'SO right',
     erdDirect:'ERD DIRECT', addonTip:'Depends on nipple used. Select 2 mm for standard 12 mm nipples.',
     erdCalc:'Calculated ERD (mm)', rimAsym:'Rim asymmetry (mm)', spokeSection:'Spoke section', cross:'Lacing',
