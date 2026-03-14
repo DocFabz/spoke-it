@@ -3213,6 +3213,8 @@ function tmRenderStats(foKgfs, faKgfs) {
     if ($id('tm-conv-modal').classList.contains('show')) return;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
+    // Ignorer les swipes partant du bord gauche/droit (zone back/forward du navigateur)
+    if (startX < 35 || startX > window.innerWidth - 35) return;
     tracking = true;
     settled = false;
   }, { passive: true });
