@@ -3186,6 +3186,27 @@ function tmRenderStats(foKgfs, faKgfs) {
     card(fo, foLabel, 'fo');
   }
 }
+
+// ── Swipe entre modules ─────────────────────────────────────────────────────
+(function() {
+  let startX = 0, startY = 0;
+  const MIN_DX = 60;       // distance horizontale minimum
+  const RATIO  = 2.2;      // dx doit être RATIO× plus grand que dy
+
+  document.addEventListener('touchstart', function(e) {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) < MIN_DX || Math.abs(dx) < Math.abs(dy) * RATIO) return;
+    const isCalc = $id('calc-module').style.display !== 'none';
+    if (dx < 0 && isCalc)  switchModule('tension');  // swipe gauche → tension
+    if (dx > 0 && !isCalc) switchModule('calc');      // swipe droite → calculateur
+  }, { passive: true });
+})();
 </script>
 </body>
 </html>
