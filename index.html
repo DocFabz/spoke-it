@@ -925,11 +925,19 @@ input[type=number] { -moz-appearance:textfield }
     </div>
 
     <!-- Sous-type DT Swiss (visible uniquement quand dt actif) -->
-    <div id="tm-dt-subtype" style="display:none;margin-bottom:1rem">
-      <div class="tm-seg">
-        <button class="tm-btn active" id="tm-btn-dt-std"  onclick="setDTSub('standard')">Tensio Standard</button>
-        <button class="tm-btn"        id="tm-btn-dt-ael2" onclick="setDTSub('aerolite2')">Tensio Aerolite II</button>
-      </div>
+    <div id="tm-dt-subtype" style="display:none;margin-bottom:1rem;justify-content:flex-end;gap:.4rem">
+      <button class="tm-conv-btn active" id="tm-btn-dt-std"  onclick="setDTSub('standard')">Tensio Standard</button>
+      <button class="tm-conv-btn"        id="tm-btn-dt-ael2" onclick="setDTSub('aerolite2')">Tensio Aerolite II</button>
+    </div>
+
+    <!-- Sous-type WF (visible uniquement quand wf actif) -->
+    <div id="tm-wf-subtype" style="margin-bottom:1rem;display:flex;justify-content:flex-end;gap:.4rem;align-items:center">
+      <span class="tip-wrap">
+        <span class="tip-icon">?</span>
+        <span class="tip-box" data-i18n="tmWFChartTip">New Chart = Nouvelles Tables de Conversions Wheel Fanatyk</span>
+      </span>
+      <button class="tm-conv-btn"        id="tm-btn-wf-old" onclick="setWFSub('old')">Old Chart</button>
+      <button class="tm-conv-btn active" id="tm-btn-wf-new" onclick="setWFSub('new')">New Chart</button>
     </div>
 
     <!-- Sélecteur de rayon -->
@@ -941,7 +949,11 @@ input[type=number] { -moz-appearance:textfield }
     </div>
 
     <!-- Bouton table de conversion -->
-    <div style="margin-bottom:1rem;display:flex;justify-content:flex-end">
+    <div style="margin-bottom:1rem;display:flex;justify-content:flex-end;align-items:center;gap:.4rem">
+      <span class="tip-wrap">
+        <span class="tip-icon">?</span>
+        <span class="tip-box" data-i18n="tmConvTip">Vérifiez la Tension Chart</span>
+      </span>
       <button class="tm-conv-btn locked" id="tm-conv-btn" onclick="tmOpenConvTable()">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="2" width="13" height="12" rx="1.5"/><line x1="1.5" y1="5.5" x2="14.5" y2="5.5"/><line x1="1.5" y1="9" x2="14.5" y2="9"/><line x1="6" y1="5.5" x2="6" y2="14"/><line x1="11" y1="5.5" x2="11" y2="14"/></svg>
         <span data-i18n="tmConvBtn">Table de conversion</span>
@@ -1145,6 +1157,8 @@ const i18n = {
     tmConvReading:'Lecture',
     tmConvTensio:'Tensiomètre',
     tmHintUN:'UNIOR 1752 : valeur entière lue sur le tensiomètre — ex\u00a0<code>45</code>. Rayons ronds et plats (blade).',
+    tmWFChartTip:'New Chart = Nouvelles Tables de Conversions Wheel Fanatyk',
+    tmConvTip:'Vérifiez la Tension Chart',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -1201,6 +1215,8 @@ const i18n = {
     tmConvReading:'Reading',
     tmConvTensio:'Tensiometer',
     tmHintUN:'UNIOR 1752: integer value from the tensiometer — e.g.\u00a0<code>45</code>. Round and blade spokes.',
+    tmWFChartTip:'New Chart = Updated Wheel Fanatyk Conversion Tables',
+    tmConvTip:'Check the Tension Chart',
   }
 };
 
@@ -1280,10 +1296,15 @@ let tmData = { fo: [], fa: [] };
 let tmPrevFo = [], tmPrevFa = [];
 // Multi-slot store: preserves data per tensiometer key (wf, pt, dt_standard, dt_aerolite2)
 const tmStore = {};       // { [storeKey]: { spokeKey, fo, fa, prevFo, prevFa } }
-let tmActiveKey = 'wf';   // key of the tensiometer whose data is currently in tmData
+let tmActiveKey = 'wf_new';   // key of the tensiometer whose data is currently in tmData
 let tmDTSub = 'standard'; // 'standard' | 'aerolite2'
+let tmWFSub = 'new';     // 'old' | 'new'
 let tmSpokeKey = null;    // clé rayon sélectionnée dans la table active
-function tmStoreKey() { return tmType === 'dt' ? 'dt_' + tmDTSub : tmType; }
+function tmStoreKey() {
+  if (tmType === 'dt') return 'dt_' + tmDTSub;
+  if (tmType === 'wf') return 'wf_' + tmWFSub;
+  return tmType;
+}
 function tmSaveToStore() {
   tmStore[tmActiveKey] = {
     spokeKey: tmSpokeKey,
@@ -1396,6 +1417,7 @@ function readState() {
     arbData: (arbData.fo && arbData.fa) ? JSON.parse(JSON.stringify(arbData)) : null,
     tmType,
     tmDTSub,
+    tmWFSub,
     tmSpokeKey,
     tmDataFo: tmData.fo.slice(),
     tmDataFa: tmData.fa.slice(),
@@ -1477,7 +1499,8 @@ function applyState(s) {
     tmType = s.tmType;
     const tmTensioSel = $id('tm-tensio-select');
     if (tmTensioSel) tmTensioSel.value = tmType;
-    $id('tm-dt-subtype') && ($id('tm-dt-subtype').style.display = tmType === 'dt' ? '' : 'none');
+    $id('tm-dt-subtype') && ($id('tm-dt-subtype').style.display = tmType === 'dt' ? 'flex' : 'none');
+    $id('tm-wf-subtype') && ($id('tm-wf-subtype').style.display = tmType === 'wf' ? 'flex' : 'none');
 
     // Sous-type DT
     tmDTSub = s.tmDTSub || 'standard';
@@ -1485,6 +1508,13 @@ function applyState(s) {
     const bAel2 = $id('tm-btn-dt-ael2');
     if (bStd)  bStd.classList.toggle('active',  tmDTSub === 'standard');
     if (bAel2) bAel2.classList.toggle('active', tmDTSub === 'aerolite2');
+
+    // Sous-type WF
+    tmWFSub = s.tmWFSub || 'new';
+    const bOld = $id('tm-btn-wf-old');
+    const bNew = $id('tm-btn-wf-new');
+    if (bOld) bOld.classList.toggle('active', tmWFSub === 'old');
+    if (bNew) bNew.classList.toggle('active', tmWFSub === 'new');
 
     // Dropdown rayon
     tmSpokeKey = s.tmSpokeKey || null;
@@ -1556,14 +1586,18 @@ function clearFormSilent() {
   // Reset tension module
   tmResetData();
   Object.keys(tmStore).forEach(k => delete tmStore[k]);
-  tmActiveKey = 'wf';
+  tmActiveKey = 'wf_new';
   tmType = 'wf';
   const tmTensioSelReset = $id('tm-tensio-select');
   if (tmTensioSelReset) tmTensioSelReset.value = 'wf';
   $id('tm-dt-subtype').style.display = 'none';
+  $id('tm-wf-subtype').style.display = 'flex';
   tmDTSub = 'standard';
+  tmWFSub = 'new';
   $id('tm-btn-dt-std').classList.add('active');
   $id('tm-btn-dt-ael2').classList.remove('active');
+  $id('tm-btn-wf-old').classList.remove('active');
+  $id('tm-btn-wf-new').classList.add('active');
   tmSpokeKey = null;
   tmPopulateSpokeSelect();
   $id('tm-nb-select').value = '';
@@ -2334,7 +2368,8 @@ function switchModule(mod) {
 // Wheel Fanatyk : déflection décimale (0.20…0.95), kgf en entier
 
 var TM_TABLES = {
-  wf: {"0.90mm":[[0.2,null],[0.25,169],[0.3,140],[0.35,120],[0.4,104],[0.45,90],[0.5,79],[0.55,70],[0.6,63],[0.65,57],[0.7,52],[0.75,48],[0.8,45],[0.85,42],[0.9,40],[0.95,37]],"0.95mm":[[0.25,167],[0.3,140],[0.35,118],[0.4,101],[0.45,88],[0.5,77],[0.55,69],[0.6,62],[0.65,56],[0.7,52],[0.75,48],[0.8,44],[0.85,41],[0.9,38],[0.95,36]],"1.0mm":[[0.25,164],[0.3,136],[0.35,114],[0.4,97],[0.45,84],[0.5,74],[0.55,66],[0.6,60],[0.65,55],[0.7,50],[0.75,47],[0.8,43],[0.85,40],[0.9,36],[0.95,33]],"1.2mm":[[0.25,172],[0.3,140],[0.35,118],[0.4,101],[0.45,88],[0.5,78],[0.55,70],[0.6,63],[0.65,57],[0.7,52],[0.75,48],[0.8,44],[0.85,40],[0.9,37],[0.95,35]],"1.5mm":[[0.25,159],[0.3,135],[0.35,115],[0.4,98],[0.45,85],[0.5,74],[0.55,65],[0.6,58],[0.65,52],[0.7,48],[0.75,44],[0.8,40],[0.85,37],[0.9,34],[0.95,31]],"1.65mm":[[0.25,168],[0.3,132],[0.35,109],[0.4,93],[0.45,81],[0.5,71],[0.55,62],[0.6,55],[0.65,49],[0.7,44],[0.75,40],[0.8,37],[0.85,34],[0.9,31],[0.95,27]],"1.7mm":[[0.25,159],[0.3,126],[0.35,103],[0.4,87],[0.45,75],[0.5,65],[0.55,57],[0.6,50],[0.65,45],[0.7,40],[0.75,36],[0.8,33],[0.85,29],[0.9,25],[0.95,21]],"1.8mm":[[0.2,195],[0.25,154],[0.3,123],[0.35,100],[0.4,83],[0.45,71],[0.5,61],[0.55,54],[0.6,48],[0.65,42],[0.7,37],[0.75,32],[0.8,27],[0.85,23],[0.9,20]],"2.0mm":[[0.2,188],[0.25,146],[0.3,115],[0.35,92],[0.4,75],[0.45,63],[0.5,54],[0.55,46],[0.6,40],[0.65,34],[0.7,28]],"2.3mm":[[0.2,169],[0.25,125],[0.3,95],[0.35,75],[0.4,61],[0.45,50],[0.5,40],[0.55,32],[0.6,25],[0.65,20]],"2.6mm":[[0.2,149],[0.25,103],[0.3,75],[0.35,57],[0.4,44],[0.45,34],[0.5,24],[0.55,15],[0.6,12]]},
+  wf_old: {"0.90mm":[[0.25,169],[0.3,140],[0.35,120],[0.4,104],[0.45,90],[0.5,79],[0.55,70],[0.6,63],[0.65,57],[0.7,52],[0.75,48],[0.8,45],[0.85,42],[0.9,40],[0.95,37]],"0.95mm":[[0.25,167],[0.3,140],[0.35,118],[0.4,101],[0.45,88],[0.5,77],[0.55,69],[0.6,62],[0.65,56],[0.7,52],[0.75,48],[0.8,44],[0.85,41],[0.9,38],[0.95,36]],"1.0mm":[[0.25,164],[0.3,136],[0.35,114],[0.4,97],[0.45,84],[0.5,74],[0.55,66],[0.6,60],[0.65,55],[0.7,50],[0.75,47],[0.8,43],[0.85,40],[0.9,36],[0.95,33]],"1.2mm":[[0.25,172],[0.3,140],[0.35,118],[0.4,101],[0.45,88],[0.5,78],[0.55,70],[0.6,63],[0.65,57],[0.7,52],[0.75,48],[0.8,44],[0.85,40],[0.9,37],[0.95,35]],"1.5mm":[[0.25,159],[0.3,135],[0.35,115],[0.4,98],[0.45,85],[0.5,74],[0.55,65],[0.6,58],[0.65,52],[0.7,48],[0.75,44],[0.8,40],[0.85,37],[0.9,34],[0.95,31]],"1.65mm":[[0.25,168],[0.3,132],[0.35,109],[0.4,93],[0.45,81],[0.5,71],[0.55,62],[0.6,55],[0.65,49],[0.7,44],[0.75,40],[0.8,37],[0.85,34],[0.9,31],[0.95,27]],"1.7mm":[[0.25,159],[0.3,126],[0.35,103],[0.4,87],[0.45,75],[0.5,65],[0.55,57],[0.6,50],[0.65,45],[0.7,40],[0.75,36],[0.8,33],[0.85,29],[0.9,25],[0.95,21]],"1.8mm":[[0.2,195],[0.25,154],[0.3,123],[0.35,100],[0.4,83],[0.45,71],[0.5,61],[0.55,54],[0.6,48],[0.65,42],[0.7,37],[0.75,32],[0.8,27],[0.85,23],[0.9,20]],"2.0mm":[[0.2,188],[0.25,146],[0.3,115],[0.35,92],[0.4,75],[0.45,63],[0.5,54],[0.55,46],[0.6,40],[0.65,34],[0.7,28]],"2.3mm":[[0.2,169],[0.25,125],[0.3,95],[0.35,75],[0.4,61],[0.45,50],[0.5,40],[0.55,32],[0.6,25],[0.65,20]],"2.6mm":[[0.2,149],[0.25,103],[0.3,75],[0.35,57],[0.4,44],[0.45,34],[0.5,24],[0.55,15],[0.6,12]]},
+  wf_new: {"0.90mm":[[0.2,207],[0.25,166],[0.3,138],[0.35,118],[0.4,102],[0.45,90],[0.5,80],[0.55,72],[0.6,65],[0.65,59],[0.7,54],[0.75,50],[0.8,46],[0.85,42],[0.9,39],[0.95,36]],"0.95mm":[[0.2,215],[0.25,169],[0.3,139],[0.35,117],[0.4,101],[0.45,88],[0.5,78],[0.55,70],[0.6,63],[0.65,57],[0.7,52],[0.75,48],[0.8,44],[0.85,41],[0.9,38],[0.95,35]],"1.0mm":[[0.2,212],[0.25,166],[0.3,135],[0.35,114],[0.4,97],[0.45,85],[0.5,75],[0.55,67],[0.6,60],[0.65,54],[0.7,49],[0.75,45],[0.8,41],[0.85,38],[0.9,35],[0.95,33]],"1.2mm":[[0.2,220],[0.25,172],[0.3,140],[0.35,118],[0.4,101],[0.45,88],[0.5,78],[0.55,70],[0.6,63],[0.65,57],[0.7,52],[0.75,47],[0.8,43],[0.85,40],[0.9,37],[0.95,34]],"1.5mm":[[0.2,218],[0.25,169],[0.3,137],[0.35,115],[0.4,98],[0.45,85],[0.5,74],[0.55,66],[0.6,59],[0.65,53],[0.7,48],[0.75,44],[0.8,40],[0.85,36],[0.9,34],[0.95,31]],"1.65mm":[[0.2,215],[0.25,165],[0.3,133],[0.35,110],[0.4,93],[0.45,80],[0.5,70],[0.55,61],[0.6,54],[0.65,49],[0.7,44],[0.75,40],[0.8,36],[0.85,33],[0.9,30],[0.95,27]],"1.7mm":[[0.2,209],[0.25,159],[0.3,126],[0.35,104],[0.4,87],[0.45,74],[0.5,65],[0.55,57],[0.6,50],[0.65,45],[0.7,40],[0.75,36],[0.8,32],[0.85,29],[0.9,27],[0.95,24]],"1.8mm":[[0.2,202],[0.25,154],[0.3,122],[0.35,100],[0.4,84],[0.45,71],[0.5,61],[0.55,53],[0.6,47],[0.65,41],[0.7,36],[0.75,32],[0.8,29],[0.85,26],[0.9,23],[0.95,21]],"2.0mm":[[0.2,194],[0.25,146],[0.3,114],[0.35,92],[0.4,76],[0.45,63],[0.5,53],[0.55,45],[0.6,39],[0.65,33],[0.7,29],[0.75,24],[0.8,21],[0.85,18],[0.9,15],[0.95,13]],"2.3mm":[[0.2,170],[0.25,125],[0.3,95],[0.35,75],[0.4,60],[0.45,49],[0.5,40],[0.55,33],[0.6,27],[0.65,22],[0.7,18],[0.75,15],[0.8,12],[0.85,9],[0.9,7],[0.95,4]],"2.6mm":[[0.2,149],[0.25,104],[0.3,76],[0.35,57],[0.4,43],[0.45,33],[0.5,25],[0.55,18],[0.6,13],[0.65,9],[0.7,6],[0.75,3]],"Berd":[[0.2,236],[0.25,183],[0.3,149],[0.35,125],[0.4,107],[0.45,94],[0.5,83],[0.55,75],[0.6,68],[0.65,62],[0.7,57],[0.75,52],[0.8,49],[0.85,45],[0.9,43],[0.95,40]]},
   pt: {"1.4 mm":[[8, 54], [9, 58], [10, 63], [11, 69], [12, 75], [13, 83], [14, 91], [15, 100], [16, 111], [17, 123], [18, 137], [19, 154], [20, 172]],"1.5 mm":[[9, 52], [10, 56], [11, 61], [12, 66], [13, 73], [14, 80], [15, 88], [16, 97], [17, 107], [18, 119], [19, 133], [20, 148], [21, 166]],"1.6 mm":[[11, 54], [12, 58], [13, 64], [14, 70], [15, 76], [16, 84], [17, 93], [18, 103], [19, 114], [20, 128], [21, 143], [22, 160]],"1.7 mm":[[12, 51], [13, 56], [14, 61], [15, 67], [16, 73], [17, 81], [18, 89], [19, 99], [20, 110], [21, 122], [22, 137], [23, 154], [24, 174]],"1.8 mm":[[14, 53], [15, 58], [16, 64], [17, 70], [18, 77], [19, 85], [20, 94], [21, 105], [22, 117], [23, 131], [24, 148], [25, 167]],"2.0 mm":[[17, 53], [18, 58], [19, 63], [20, 70], [21, 77], [22, 86], [23, 96], [24, 107], [25, 120], [26, 135], [27, 153], [28, 173]],"2.3 mm":[[22, 54], [23, 59], [24, 66], [25, 73], [26, 82], [27, 92], [28, 104], [29, 117], [30, 133], [31, 151], [32, 172]],"2.5 mm":[[25, 53], [26, 59], [27, 66], [28, 73], [29, 83], [30, 93], [31, 106], [32, 120], [33, 137], [34, 157]],"2.6 mm":[[27, 55], [28, 62], [29, 69], [30, 78], [31, 88], [32, 100], [33, 114], [34, 130], [35, 150], [36, 172]],"0.8 x 2.0 mm":[[3, 53], [4, 57], [5, 62], [6, 67], [7, 73], [8, 80], [9, 88], [10, 96], [11, 106], [12, 117], [13, 130], [14, 145], [15, 161]],"0.9 x 2.2 mm":[[5, 53], [6, 57], [7, 62], [8, 67], [9, 73], [10, 80], [11, 88], [12, 97], [13, 107], [14, 118], [15, 131], [16, 146], [17, 163]],"0.9 x 3.6 mm":[[5, 52], [6, 56], [7, 60], [8, 65], [9, 71], [10, 78], [11, 85], [12, 93], [13, 103], [14, 114], [15, 126], [16, 141], [17, 157], [18, 176]],"1.0 x 2.0-2.2 mm":[[6, 53], [7, 57], [8, 62], [9, 68], [10, 74], [11, 81], [12, 89], [13, 98], [14, 108], [15, 119], [16, 133], [17, 148], [18, 165]],"1.0 x 2.5-2.7 mm":[[6, 50], [7, 54], [8, 59], [9, 64], [10, 69], [11, 76], [12, 83], [13, 91], [14, 100], [15, 111], [16, 123], [17, 137], [18, 153], [19, 171]],"1.0 x 3.2 mm":[[7, 53], [8, 57], [9, 62], [10, 67], [11, 73], [12, 80], [13, 88], [14, 97], [15, 107], [16, 119], [17, 132], [18, 148], [19, 165]],"1.1 x 1.9-2.0 mm":[[7, 51], [8, 56], [9, 60], [10, 65], [11, 71], [12, 78], [13, 86], [14, 94], [15, 104], [16, 115], [17, 128], [18, 143], [19, 160], [20, 180]],"1.1 x 3.0-3.6 mm":[[8, 51], [9, 55], [10, 59], [11, 65], [12, 71], [13, 77], [14, 85], [15, 94], [16, 103], [17, 115], [18, 128], [19, 142], [20, 160], [21, 179]],"1.2 x 2.6 mm":[[9, 51], [10, 55], [11, 59], [12, 65], [13, 71], [14, 77], [15, 85], [16, 94], [17, 104], [18, 116], [19, 129], [20, 144], [21, 161]],"1.2 x 1.9 mm":[[8, 53], [9, 58], [10, 63], [11, 68], [12, 74], [13, 82], [14, 90], [15, 99], [16, 110], [17, 122], [18, 136], [19, 152], [20, 170]],"1.3 x 2.1 mm":[[9, 51], [10, 55], [11, 60], [12, 66], [13, 72], [14, 79], [15, 86], [16, 95], [17, 106], [18, 117], [19, 131], [20, 146], [21, 164]],"1.3 x 2.2-2.5 mm":[[11, 53], [12, 57], [13, 62], [14, 68], [15, 74], [16, 82], [17, 90], [18, 100], [19, 111], [20, 124], [21, 138], [22, 155], [23, 175]],"1.3 x 2.7 mm":[[12, 51], [13, 56], [14, 61], [15, 66], [16, 73], [17, 80], [18, 89], [19, 98], [20, 109], [21, 122], [22, 137], [23, 153], [24, 173]],"1.4 x 2.3 mm":[[11, 50], [12, 54], [13, 59], [14, 65], [15, 71], [16, 78], [17, 86], [18, 95], [19, 105], [20, 117], [21, 131], [22, 146], [23, 165]],"1.4 x 2.6 mm":[[13, 53], [14, 58], [15, 63], [16, 69], [17, 76], [18, 84], [19, 93], [20, 103], [21, 115], [22, 129], [23, 144], [24, 163]],"1.4 x 2.9 mm":[[12, 53], [13, 58], [14, 63], [15, 69], [16, 76], [17, 83], [18, 92], [19, 102], [20, 114], [21, 127], [22, 142], [23, 160]],"1.5 x 2.4-2.6 mm":[[14, 54], [15, 59], [16, 65], [17, 71], [18, 78], [19, 87], [20, 96], [21, 107], [22, 120], [23, 134], [24, 151], [25, 170]],"1.7 x 2.3 mm":[[16, 54], [17, 59], [18, 65], [19, 72], [20, 79], [21, 88], [22, 98], [23, 109], [24, 123], [25, 138], [26, 156], [27, 176]]},
   dt_standard: null,
   dt_aerolite2: null
@@ -2353,7 +2388,7 @@ TM_TABLES.un = {"Round 1.8/1.4/1.8":[[33,50],[34,55],[35,60],[36,65],[37,70],[38
 
 // ── Obtenir la table active (objet {spokeKey: [[defl,kgf]…]}) ─────────────────
 function tmGetActiveTable() {
-  if (tmType === 'wf')          return TM_TABLES.wf;
+  if (tmType === 'wf')          return tmWFSub === 'new' ? TM_TABLES.wf_new : TM_TABLES.wf_old;
   if (tmType === 'pt')          return TM_TABLES.pt;
   if (tmType === 'pk')          return TM_TABLES.pk;
   if (tmType === 'un')          return TM_TABLES.un;
@@ -2542,13 +2577,14 @@ function tmSwitchActiveKey(newKey) {
 }
 
 function setTM(type) {
-  const newKey = type === 'dt' ? 'dt_' + tmDTSub : type;
+  const newKey = type === 'dt' ? 'dt_' + tmDTSub : type === 'wf' ? 'wf_' + tmWFSub : type;
   if (newKey === tmActiveKey) return;
   tmType = type;
   tmSwitchActiveKey(newKey);
   const tmTensioSel = $id('tm-tensio-select');
   if (tmTensioSel && tmTensioSel.value !== type) tmTensioSel.value = type;
-  $id('tm-dt-subtype').style.display = type === 'dt' ? '' : 'none';
+  $id('tm-dt-subtype').style.display = type === 'dt' ? 'flex' : 'none';
+  $id('tm-wf-subtype').style.display = type === 'wf' ? 'flex' : 'none';
   $id('tm-entry-hint').innerHTML = tmGetHintHTML();
 }
 
@@ -2559,6 +2595,15 @@ function setDTSub(sub) {
   tmSwitchActiveKey(newKey);
   $id('tm-btn-dt-std').classList.toggle('active',  sub === 'standard');
   $id('tm-btn-dt-ael2').classList.toggle('active', sub === 'aerolite2');
+}
+
+function setWFSub(sub) {
+  const newKey = 'wf_' + sub;
+  if (newKey === tmActiveKey) return;
+  tmWFSub = sub;
+  tmSwitchActiveKey(newKey);
+  $id('tm-btn-wf-old').classList.toggle('active', sub === 'old');
+  $id('tm-btn-wf-new').classList.toggle('active', sub === 'new');
 }
 
 // ── onchange sur le dropdown de rayons ───────────────────────────────────────
@@ -2591,6 +2636,7 @@ function tmOpenConvTable() {
   const tensioNames = { wf:'Wheel Fanatyk', pt:'Park Tool TM-1', dt:'DT Swiss', pk:'P&KLie', un:'UNIOR 1752' };
   let tensioLabel = tensioNames[tmType] || tmType;
   if (tmType === 'dt' && tmDTSub === 'aerolite2') tensioLabel += ' (Tensio Aerolite II)';
+  if (tmType === 'wf') tensioLabel += tmWFSub === 'new' ? ' (New Chart)' : ' (Old Chart)';
 
   // Label rayon
   $id('tm-conv-spoke-label').innerHTML = `${t('tmConvTensio')}\u00a0: <strong style="color:var(--accent)">${tensioLabel}</strong><br>${t('tmSpokeLabel')}\u00a0: <strong style="color:var(--text)">${tmSpokeKey}</strong>`;
