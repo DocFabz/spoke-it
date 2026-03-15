@@ -440,12 +440,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cc-save-btn:disabled { opacity:.35; pointer-events:none }
 .cc-feedback { font-size:.66rem; color:#f08080; min-height:.9rem; font-style:italic; line-height:1.3; margin-top:.4rem }
 
-/* ── Custom chart: add button ─────────────────────────────────────────────── */
-.cc-add-btn { height:2.35rem; width:2.35rem; display:flex; align-items:center; justify-content:center; background:transparent; border:1px solid rgba(126,200,227,.4); border-radius:var(--rs); color:var(--accent); cursor:pointer; transition:all .22s; flex-shrink:0 }
-.cc-add-btn:hover { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06) }
-.cc-add-btn:active { transform:scale(.93) }
-.cc-add-btn.full { opacity:.3; pointer-events:none }
-
 /* ── Custom chart: point items in recap ──────────────────────────────────── */
 .cc-point { display:flex; align-items:center; justify-content:center; gap:.5rem; padding:.3rem 0; font-family:'DM Mono',monospace; font-size:.85rem; color:var(--text); animation:fu .2s ease }
 .cc-point-num { font-size:.7rem; color:var(--text3); min-width:1.4rem; text-align:right; flex-shrink:0 }
@@ -1197,7 +1191,10 @@ input[type=number] { -moz-appearance:textfield }
       <div style="display:flex;gap:.6rem">
         <div class="f" style="flex:1">
           <label data-i18n="ccStepName">Nom du rayon</label>
-          <input type="text" id="cc-name" class="cc-input" placeholder="Ex : Mon Rayon Custom 2.0" maxlength="60" autocomplete="off">
+          <div style="display:flex;gap:.35rem">
+            <input type="text" id="cc-name" class="cc-input" placeholder="Ex : Mon Rayon Custom 2.0" maxlength="60" autocomplete="off" oninput="ccToggleNameClear()">
+            <button class="tm-clear-tensio" id="cc-clear-name" onclick="ccClearName()" style="display:none" title="Reset">✕</button>
+          </div>
         </div>
         <div class="f" style="width:5.5rem;flex-shrink:0">
           <label data-i18n="ccStepNbPoints">Points</label>
@@ -1220,19 +1217,14 @@ input[type=number] { -moz-appearance:textfield }
 
     <!-- Étape 3 : Saisie pas-à-pas -->
     <div class="cc-step" style="flex:1;display:flex;flex-direction:column;min-height:0">
-      <div class="cc-step-label"><span data-i18n="ccStepValues">Table de correspondance</span> — <span id="cc-counter" style="color:var(--accent)">0/10</span></div>
+      <div class="cc-step-label"><span id="cc-counter" style="color:var(--accent)">0/10</span></div>
       <div id="cc-entry" style="display:flex;gap:.6rem;align-items:flex-end;margin-bottom:.6rem">
         <div class="f" style="flex:1">
-          <label>kgf</label>
           <input type="text" id="cc-inp-kgf" class="cc-input" inputmode="decimal" placeholder="kgf" autocomplete="off" autocorrect="off" spellcheck="false" style="font-family:'DM Mono',monospace;text-align:center">
         </div>
         <div class="f" style="flex:1">
-          <label id="cc-reading-label">Lecture</label>
-          <input type="text" id="cc-inp-reading" class="cc-input" inputmode="decimal" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false" style="font-family:'DM Mono',monospace;text-align:center">
+          <input type="text" id="cc-inp-reading" class="cc-input" inputmode="decimal" placeholder="Lecture" autocomplete="off" autocorrect="off" spellcheck="false" style="font-family:'DM Mono',monospace;text-align:center">
         </div>
-        <button class="cc-add-btn" id="cc-add-btn" onclick="ccAddPoint()">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>
-        </button>
       </div>
       <!-- Récap des points saisis -->
       <div class="cc-scroll" id="cc-scroll" style="min-height:60px;max-height:260px">
@@ -1317,7 +1309,7 @@ const i18n = {
     ccStepName:'Nom du rayon',
     ccNamePlaceholder:'Ex : Mon Rayon Custom 2.0',
     ccStepNbPoints:'Points',
-    ccStepValues:'Table de correspondance',
+    ccReadingPlaceholder:'Lecture',
     ccSaveBtn:'Enregistrer la charte',
     ccErrName:'Veuillez saisir un nom pour la charte.',
     ccErrValues:'Remplissez toutes les lignes (kgf et lecture).',
@@ -1394,7 +1386,7 @@ const i18n = {
     ccStepName:'Spoke name',
     ccNamePlaceholder:'Ex: My Custom Spoke 2.0',
     ccStepNbPoints:'Points',
-    ccStepValues:'Correspondence table',
+    ccReadingPlaceholder:'Reading',
     ccSaveBtn:'Save chart',
     ccErrName:'Please enter a name for the chart.',
     ccErrValues:'Fill in all rows (kgf and reading).',
@@ -2995,6 +2987,7 @@ function ccOpen() {
   }
   $id('cc-name').value = '';
   $id('cc-name').placeholder = t('ccNamePlaceholder');
+  ccToggleNameClear();
   $id('cc-feedback').textContent = '';
   ccPoints = [];
   ccUpdateReadingLabel();
@@ -3007,6 +3000,7 @@ function ccOpen() {
       $id('cc-tensio').value = match.tensioKey;
       ccUpdateReadingLabel();
       $id('cc-name').value = match.name;
+      ccToggleNameClear();
       const nbPoints = Math.max(match.points.length, 5);
       $id('cc-nb-points').value = String(Math.min(Math.max(nbPoints, 5), 15));
       ccPoints = match.points.map(p => ({ kgf: p[1], reading: p[0] }));
@@ -3035,6 +3029,17 @@ function ccClose() {
 }
 
 // ── Adapter le header de lecture selon le tensiomètre choisi ─────────────────
+function ccToggleNameClear() {
+  const inp = $id('cc-name');
+  const btn = $id('cc-clear-name');
+  if (btn) btn.style.display = inp && inp.value.trim() ? '' : 'none';
+}
+function ccClearName() {
+  const inp = $id('cc-name');
+  if (inp) { inp.value = ''; inp.focus(); }
+  ccToggleNameClear();
+}
+
 function ccOnTensioChange() {
   ccUpdateReadingLabel();
   ccRenderExisting();
@@ -3042,10 +3047,8 @@ function ccOnTensioChange() {
 
 // ── Mettre à jour le label de lecture selon le tensiomètre ──────────────────
 function ccUpdateReadingLabel() {
-  const tensioKey = $id('cc-tensio').value;
-  const units = { wf_new:'WF', wf_old:'WF', pt:'#', dt_standard:'mm', dt_aerolite2:'mm', pk:'mm', un:'#' };
-  const lbl = $id('cc-reading-label');
-  if (lbl) lbl.textContent = t('tmConvReading') + ' (' + (units[tensioKey] || '') + ')';
+  const inp = $id('cc-inp-reading');
+  if (inp) inp.placeholder = t('ccReadingPlaceholder');
 }
 
 // ── Rafraîchir le compteur, la liste, et le bouton + ────────────────────────
@@ -3057,9 +3060,9 @@ function ccRefreshUI() {
   const counter = $id('cc-counter');
   counter.textContent = cur + '/' + max;
   counter.style.color = isFull ? 'var(--accent)' : 'var(--text3)';
-  // Bouton + : désactiver si plein
-  const addBtn = $id('cc-add-btn');
-  addBtn.classList.toggle('full', isFull);
+  // Désactiver les inputs si plein
+  $id('cc-inp-kgf').disabled = isFull;
+  $id('cc-inp-reading').disabled = isFull;
   // Bouton Enregistrer : désactiver si incomplet
   const saveBtn = $id('cc-save-btn');
   saveBtn.disabled = !isFull;
@@ -3245,8 +3248,7 @@ function ccLoadChart(idx) {
 
   // Remplir le nom
   $id('cc-name').value = cc.name;
-
-  // Remplir les points
+  ccToggleNameClear();
   const nbPoints = Math.max(cc.points.length, 5);
   const nbSel = $id('cc-nb-points');
   // Ajuster le select au nombre de points (clamp 5-15)
@@ -3286,6 +3288,7 @@ function ccDeleteDirect(idx, itemEl) {
     // Vider les champs de la modale
     ccPoints = [];
     $id('cc-name').value = '';
+    ccToggleNameClear();
     $id('cc-inp-kgf').value = '';
     $id('cc-inp-reading').value = '';
     $id('cc-feedback').textContent = '';
