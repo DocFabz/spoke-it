@@ -3098,8 +3098,8 @@ function ccBuildGrid() {
 
     tr.innerHTML =
       `<td>${i + 1}</td>` +
-      `<td><input class="cc-grid-inp cc-kgf${kgfHas}" data-row="${i}" type="text" inputmode="decimal" value="${kgfVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
-      `<td><input class="cc-grid-inp cc-read${readHas}" data-row="${i}" type="text" inputmode="decimal" value="${readVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>`;
+      `<td><input class="cc-grid-inp cc-kgf${kgfHas}" data-row="${i}" type="text" inputmode="decimal" enterkeyhint="next" value="${kgfVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
+      `<td><input class="cc-grid-inp cc-read${readHas}" data-row="${i}" type="text" inputmode="decimal" enterkeyhint="next" value="${readVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>`;
 
     tbody.appendChild(tr);
 
@@ -3140,13 +3140,16 @@ function ccBuildGrid() {
           e.preventDefault();
           const allInps = ccGetOrderedInputs(tbody);
           const ci = allInps.indexOf(this);
-          if (ci < allInps.length - 1) { this.blur(); allInps[ci + 1].focus(); }
-          else this.blur();
-          // Synchro + validation déférée (hors du call stack blur→focus)
+          // Pas de blur explicite — le focus direct déclenche le blur implicitement
+          // (contourne le bug iOS position:fixed + blur/focus)
+          if (ci < allInps.length - 1) {
+            allInps[ci + 1].focus();
+          } else {
+            this.blur();
+          }
           setTimeout(function() {
             ccSyncPoints();
             if ($id('cc-feedback').textContent !== '') {
-              // Erreur détectée → trouver l'input marqué cc-err et y aller
               const errInp = tbody.querySelector('.cc-err');
               if (errInp) { errInp.focus(); errInp.select(); }
             }
