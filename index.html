@@ -3147,18 +3147,21 @@ function ccBuildGrid() {
       inp.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
-          this.blur();
-          // Si une erreur a été détectée au blur → focus+select sur l'input fautif
-          if (ccFaultyInp) {
-            ccFaultyInp.focus();
-            ccFaultyInp.select();
-            return;
-          }
-          // Construire l'ordre de navigation selon ccInputOrder
+          // Déterminer le prochain champ AVANT tout blur
           const orderedInps = ccGetOrderedInputs(tbody);
           const ci = orderedInps.indexOf(this);
-          if (ci < orderedInps.length - 1) {
-            orderedInps[ci + 1].focus();
+          const nextInp = ci < orderedInps.length - 1 ? orderedInps[ci + 1] : null;
+          // Focus direct sans blur explicite — le blur se déclenche naturellement
+          // et le ccSyncPoints/ccValidateGrid s'exécute APRÈS que le focus est établi
+          if (nextInp) {
+            nextInp.focus();
+          } else {
+            this.blur();
+          }
+          // Vérifier si une erreur a été détectée par le blur → revenir sur l'input fautif
+          if (ccFaultyInp && ccFaultyInp !== document.activeElement) {
+            ccFaultyInp.focus();
+            ccFaultyInp.select();
           }
         }
       });
