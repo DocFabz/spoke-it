@@ -418,9 +418,9 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-custom-btn svg { width:12px; height:12px; flex-shrink:0 }
 
 /* ── Custom chart modal ──────────────────────────────────────────────────── */
-.cc-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
-.cc-overlay.show { display:block; opacity:1 }
-.cc-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:440px; max-height:88vh; display:none; flex-direction:column }
+.cc-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none; overflow-y:auto; padding:2rem 0 }
+.cc-overlay.show { display:flex; opacity:1; justify-content:center; align-items:flex-start }
+.cc-modal { position:relative; z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:440px; display:none; flex-direction:column; margin:auto }
 .cc-modal.show { display:flex; animation:conv-in .2s ease both }
 .cc-header { display:flex; align-items:center; gap:.5rem; margin-bottom:1rem }
 .cc-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); flex:1 }
@@ -1170,7 +1170,7 @@ input[type=number] { -moz-appearance:textfield }
   </div>
 
   <!-- ── Modal créer charte personnalisée ── -->
-  <div class="cc-overlay" id="cc-overlay" onclick="ccClose()"></div>
+  <div class="cc-overlay" id="cc-overlay" onclick="ccClose()">
   <div class="cc-modal" id="cc-modal" onclick="event.stopPropagation()">
     <div class="cc-header">
       <div class="cc-title" data-i18n="ccTitle">Custom Chart</div>
@@ -1243,7 +1243,8 @@ input[type=number] { -moz-appearance:textfield }
     </div>
 
     <button class="cc-save-btn" id="cc-save-btn" onclick="ccSave()" data-i18n="ccSaveBtn" style="flex-shrink:0">Enregistrer la charte</button>
-  </div>
+  </div><!-- /.cc-modal -->
+  </div><!-- /.cc-overlay -->
 
 </div><!-- /.wrap -->
 </div><!-- /#tension-module -->
