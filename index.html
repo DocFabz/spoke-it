@@ -3042,7 +3042,7 @@ function ccClose() {
   if (sel) { sel.disabled = false; sel.style.opacity = ''; }
 }
 
-// ── Adapter le header de lecture selon le tensiomètre choisi ─────────────────
+// ── Helpers du modal : boutons clear, tensiomètre, label lecture ─────────────
 function ccToggleNameClear() {
   const inp = $id('cc-name');
   const btn = $id('cc-clear-name');
@@ -3053,7 +3053,6 @@ function ccClearName() {
   if (inp) { inp.value = ''; inp.focus(); }
   ccToggleNameClear();
 }
-
 function ccToggleTensioClear() {
   const sel = $id('cc-tensio');
   const btn = $id('cc-clear-tensio');
@@ -3061,19 +3060,16 @@ function ccToggleTensioClear() {
 }
 function ccClearTensio() {
   const sel = $id('cc-tensio');
-  if (sel) { sel.value = ''; }
+  if (sel) sel.value = '';
   ccToggleTensioClear();
   ccUpdateReadingLabel();
   ccRenderExisting();
 }
-
 function ccOnTensioChange() {
   ccToggleTensioClear();
   ccUpdateReadingLabel();
   ccRenderExisting();
 }
-
-// ── Mettre à jour le label de lecture selon le tensiomètre ──────────────────
 function ccUpdateReadingLabel() {
   const th = $id('cc-th-reading');
   if (th) th.textContent = t('ccReadingPlaceholder') || 'Lecture';
@@ -3118,9 +3114,13 @@ function ccBuildGrid() {
             this.classList.add('has-val');
           }
         }
+        if (ccReturning) return;
         ccSyncPoints();
-        if (!ccReturning && $id('cc-feedback').textContent !== '') {
+        if ($id('cc-feedback').textContent !== '') {
           ccReturning = true;
+          // Nettoyer toutes les erreurs et ne marquer que cette case
+          tbody.querySelectorAll('.cc-grid-inp').forEach(el => el.classList.remove('cc-err'));
+          this.classList.add('cc-err');
           const self = this;
           setTimeout(function() { self.focus(); self.select(); ccReturning = false; }, 0);
         }
@@ -3144,10 +3144,11 @@ function ccBuildGrid() {
       inp.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
+          this.blur();
+          if (ccReturning) return;
           const allInps = ccGetOrderedInputs(tbody);
           const ci = allInps.indexOf(this);
-          if (ci < allInps.length - 1) { this.blur(); allInps[ci + 1].focus(); }
-          else this.blur();
+          if (ci < allInps.length - 1) allInps[ci + 1].focus();
         }
       });
     });
@@ -3321,32 +3322,20 @@ function ccLoadChart(idx) {
   const customs = ccLoadAll();
   const cc = customs[idx];
   if (!cc) return;
-
-  // Remplir le tensiomètre
   $id('cc-tensio').value = cc.tensioKey;
   ccToggleTensioClear();
   ccUpdateReadingLabel();
-
-  // Remplir le nom
   $id('cc-name').value = cc.name;
   ccToggleNameClear();
-  const nbPoints = Math.max(cc.points.length, 5);
-  const nbSel = $id('cc-nb-points');
-  // Ajuster le select au nombre de points (clamp 5-15)
-  nbSel.value = String(Math.min(Math.max(nbPoints, 5), 15));
-
-  ccPoints = cc.points.map(p => ({ kgf: p[1], reading: p[0] }));
-  // Trier par kgf pour cohérence avec la validation monotone
-  ccPoints.sort((a, b) => a.kgf - b.kgf);
+  $id('cc-nb-points').value = String(Math.min(Math.max(cc.points.length, 5), 15));
+  ccPoints = cc.points.map(p => ({ kgf: p[1], reading: p[0] })).sort((a, b) => a.kgf - b.kgf);
   ccRefreshUI();
   ccRenderExisting();
-
   $id('cc-feedback').textContent = '';
 }
 
-// ── Supprimer une charte (sans confirm, avec animation) ─────────────────────
+// ── Supprimer une charte ─────────────────────────────────────────────────────
 function ccDeleteDirect(idx, itemEl) {
-  // Animation de suppression
   if (itemEl) {
     itemEl.style.transition = 'opacity .25s, transform .25s';
     itemEl.style.opacity = '0';
@@ -3358,7 +3347,6 @@ function ccDeleteDirect(idx, itemEl) {
     customs.splice(idx, 1);
     ccPersist(customs);
     ccInjectAll();
-    // Si le rayon sélectionné était cette charte, désélectionner
     if (removed && tmSpokeKey === CC_PREFIX + removed.name) {
       tmSpokeKey = null;
       tmResetData();
@@ -3366,7 +3354,6 @@ function ccDeleteDirect(idx, itemEl) {
     }
     tmPopulateSpokeSelect();
     tmBuildTable();
-    // Vider les champs de la modale
     ccPoints = [];
     $id('cc-name').value = '';
     ccToggleNameClear();
