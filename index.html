@@ -418,10 +418,10 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-custom-btn svg { width:12px; height:12px; flex-shrink:0 }
 
 /* ── Custom chart modal ──────────────────────────────────────────────────── */
-.cc-overlay { position:absolute; top:0; left:0; right:0; min-height:100%; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
-.cc-overlay.show { display:block; opacity:1 }
-.cc-modal { position:relative; z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:440px; margin:2rem auto; display:none; flex-direction:column }
-.cc-modal.show { display:flex; animation:conv-in .2s ease both }
+.cc-overlay { position:absolute; top:0; left:0; right:0; min-height:100%; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; visibility:hidden; pointer-events:none }
+.cc-overlay.show { visibility:visible; opacity:1; pointer-events:auto }
+.cc-modal { position:relative; z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:440px; margin:2rem auto; opacity:0; visibility:hidden; pointer-events:none; flex-direction:column; display:flex }
+.cc-modal.show { visibility:visible; opacity:1; pointer-events:auto; animation:conv-in .2s ease both }
 .cc-header { display:flex; align-items:center; gap:.5rem; margin-bottom:1rem }
 .cc-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); flex:1 }
 .cc-close { background:none; border:none; color:var(--text3); font-size:1.1rem; cursor:pointer; padding:.2rem .4rem; line-height:1; transition:color .2s; flex-shrink:0 }
@@ -1226,7 +1226,6 @@ input[type=number] { -moz-appearance:textfield }
     <!-- Étape 3 : Grille de saisie -->
     <div class="cc-step">
       <div class="cc-step-label"><span id="cc-counter" style="color:var(--accent)">0/10</span></div>
-      <form id="cc-grid-form" onsubmit="return false" action="javascript:void(0)">
       <table class="cc-grid-table" id="cc-grid-table">
         <thead>
           <tr>
@@ -1237,7 +1236,6 @@ input[type=number] { -moz-appearance:textfield }
         </thead>
         <tbody id="cc-grid-tbody"></tbody>
       </table>
-      </form>
       <div class="cc-feedback" id="cc-feedback"></div>
     </div>
 
@@ -3116,7 +3114,6 @@ function ccBuildGrid() {
         const self = this;
         setTimeout(function() {
           ccSyncPoints();
-          // Erreur → revenir sur cette case
           if ($id('cc-feedback').textContent !== '') {
             ccReturning = true;
             tbody.querySelectorAll('.cc-grid-inp').forEach(el => el.classList.remove('cc-err'));
@@ -3124,16 +3121,8 @@ function ccBuildGrid() {
             self.focus();
             self.select();
             ccReturning = false;
-            return;
           }
-          // ✓ iOS : si aucun input n'a le focus → avancer au suivant
-          const active = document.activeElement;
-          if (!active || !active.classList.contains('cc-grid-inp')) {
-            const allInps = ccGetOrderedInputs(tbody);
-            const ci = allInps.indexOf(self);
-            if (ci >= 0 && ci < allInps.length - 1) allInps[ci + 1].focus();
-          }
-        }, 10);
+        }, 0);
       });
 
       inp.addEventListener('input', function() {
