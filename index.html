@@ -349,34 +349,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .defl-result.outlier-fo { color:var(--warm)   !important; font-weight:500 }
 .defl-result.outlier-fa { color:var(--accent) !important; font-weight:500 }
 
-/* ── Voice input ──────────────────────────────────────────────────────────── */
-.voice-bar        { display:flex; align-items:center; gap:.6rem; margin-bottom:1rem; padding:.55rem .9rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); animation:fu .3s cubic-bezier(.22,1,.36,1) }
-.voice-bar.hidden { display:none }
-.voice-mic-btn    { width:36px; height:36px; border-radius:50%; border:1.5px solid var(--border-s); background:transparent; color:var(--text3); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .22s; flex-shrink:0; position:relative }
-.voice-mic-btn:hover { border-color:var(--accent); color:var(--accent) }
-.voice-mic-btn.recording { border-color:rgba(232,100,80,.7); color:#e86450; background:rgba(232,100,80,.08); animation:mic-pulse 1.2s ease-in-out infinite }
-.voice-mic-btn.recording::after { content:''; position:absolute; inset:-4px; border-radius:50%; border:2px solid rgba(232,100,80,.25); animation:mic-ring 1.2s ease-in-out infinite }
-@keyframes mic-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(232,100,80,.2)} 50%{box-shadow:0 0 0 8px rgba(232,100,80,0)} }
-@keyframes mic-ring  { 0%,100%{transform:scale(1);opacity:.6} 50%{transform:scale(1.15);opacity:0} }
-.voice-mic-btn svg { width:16px; height:16px }
-.voice-info       { flex:1; display:flex; flex-direction:column; gap:.12rem; min-width:0 }
-.voice-status     { font-size:.68rem; font-weight:500; color:var(--text2); letter-spacing:.05em }
-.voice-status .v-side   { color:var(--accent); font-weight:600 }
-.voice-status .v-side.w { color:var(--warm) }
-.voice-progress   { font-family:'DM Mono',monospace; font-size:.62rem; color:var(--text3) }
-.voice-last       { font-family:'DM Mono',monospace; font-size:.7rem; color:var(--success); min-height:.85rem; transition:opacity .15s }
-.voice-last.flash { animation:v-flash .35s ease }
-@keyframes v-flash { 0%{opacity:0;transform:translateY(2px)} 100%{opacity:1;transform:translateY(0)} }
-.voice-stop-btn   { padding:.3rem .7rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.62rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .2s; flex-shrink:0 }
-.voice-stop-btn:hover { border-color:#f08080; color:#f08080 }
-.voice-highlight  { border-color:rgba(126,207,168,.5) !important; background:rgba(126,207,168,.04) !important; box-shadow:0 0 0 2px rgba(126,207,168,.15) !important; transition:all .15s }
-.voice-header-btn { display:inline-flex; align-items:center; gap:.3rem; padding:.22rem .65rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.6rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .2s; margin-left:auto }
-.voice-header-btn:hover { border-color:var(--accent); color:var(--accent) }
-.voice-header-btn.active { border-color:rgba(232,100,80,.5); color:#e86450; background:rgba(232,100,80,.06) }
-.voice-header-btn.unsupported { opacity:.3; pointer-events:none; cursor:not-allowed }
-.voice-header-btn svg { width:12px; height:12px; flex-shrink:0 }
-.voice-mic-btn.unsupported { opacity:.35; pointer-events:none; cursor:not-allowed }
-
 /* ── Save ──────────────────────────────────────────────────────────────────── */
 .save-wrap       { display:none; animation:fu .5s cubic-bezier(.22,1,.36,1) }
 .save-wrap.show  { display:block }
@@ -977,7 +949,9 @@ input[type=number] { -moz-appearance:textfield }
 </div><!-- /.wrap -->
 </div><!-- /#calc-module -->
 
-<!-- ── MODULE TENSION ────────────────────────────────────────────────────── -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- MODULE TENSION                                                            -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
 <div id="tension-module">
 <div class="wrap" style="max-width:580px">
 
@@ -1113,23 +1087,6 @@ input[type=number] { -moz-appearance:textfield }
       </svg>
       <div class="clabel" data-i18n="tmDeflLabel">Déflections mesurées</div>
       <span id="tm-unit-badge" class="tm-unit-badge">WF</span>
-      <button class="voice-header-btn" id="voice-toggle-btn" onclick="voiceToggle()" title="Saisie vocale">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
-        <span data-i18n="voiceBtn" id="voice-btn-label">Micro</span>
-      </button>
-    </div>
-
-    <!-- Voice control bar -->
-    <div class="voice-bar hidden" id="voice-bar">
-      <button class="voice-mic-btn" id="voice-mic-btn" onclick="voiceMicClick()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
-      </button>
-      <div class="voice-info">
-        <div class="voice-status" id="voice-status">—</div>
-        <div class="voice-progress" id="voice-progress"></div>
-        <div class="voice-last" id="voice-last"></div>
-      </div>
-      <button class="voice-stop-btn" id="voice-stop-btn" onclick="voiceStop()">Stop</button>
     </div>
 
     <div class="tm-grid-wrap">
@@ -1394,25 +1351,6 @@ const i18n = {
     ccSaved:'Charte enregistrée !',
     ccCustomLabel:'★ PERSO',
     ccManageTitle:'Chartes personnalisées',
-    voiceBtn:'Micro',
-    voiceStart:'Appuyer pour commencer',
-    voiceListening:'Parlez…',
-    voiceRecognized:'Reconnu :',
-    voiceNext:'Suivant →',
-    voiceDone:'Terminé !',
-    voiceSideNDS:'NDS',
-    voiceSideDS:'DS',
-    voiceSpoke:'Rayon',
-    voiceOf:'sur',
-    voiceNoSupport:'Navigateur non compatible',
-    voiceChooseSide:'Choisir le côté',
-    voiceSwitchDS:'Passer au DS',
-    voiceColDone:'Colonne terminée',
-    voiceAllDone:'Toutes les valeurs sont saisies !',
-    voiceReady:'Prêt — appuyez sur le micro',
-    voicePaused:'Pause — appuyez pour reprendre',
-    voiceOOR:'Hors plage',
-    voiceOffline:'Connexion requise pour la saisie vocale',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -1494,25 +1432,6 @@ const i18n = {
     ccSaved:'Chart saved!',
     ccCustomLabel:'★ CUSTOM',
     ccManageTitle:'Custom charts',
-    voiceBtn:'Voice',
-    voiceStart:'Tap to start',
-    voiceListening:'Listening…',
-    voiceRecognized:'Got:',
-    voiceNext:'Next →',
-    voiceDone:'Done!',
-    voiceSideNDS:'NDS',
-    voiceSideDS:'DS',
-    voiceSpoke:'Spoke',
-    voiceOf:'of',
-    voiceNoSupport:'Browser not supported',
-    voiceChooseSide:'Choose side',
-    voiceSwitchDS:'Switch to DS',
-    voiceColDone:'Column done',
-    voiceAllDone:'All values entered!',
-    voiceReady:'Ready — tap the mic',
-    voicePaused:'Paused — tap to resume',
-    voiceOOR:'Out of range',
-    voiceOffline:'Connection required for voice input',
   }
 };
 
@@ -2687,7 +2606,9 @@ TM_TABLES.pk = {"DT Champ 1.8":[[1.65,40],[1.86,50],[2.03,60],[2.19,70],[2.34,80
 
 TM_TABLES.un = {"Round 1.8/1.4/1.8":[[33,50],[34,55],[35,60],[36,65],[37,70],[38,75],[39,80],[40,90],[41,95],[42,100],[43,110],[44,115],[45,120],[46,130],[47,140],[48,150],[49,165],[50,185],[51,200]],"Round 2.0/1.5/2.0":[[36,50],[37,55],[38,60],[39,65],[40,70],[41,75],[42,80],[43,90],[44,95],[45,100],[46,110],[47,120],[48,130],[49,140],[50,150],[51,165],[52,185],[53,200]],"Round 2.0/1.65/2.0":[[40,50],[41,55],[42,60],[43,65],[44,70],[45,75],[46,80],[47,90],[48,95],[49,100],[50,110],[51,120],[52,130],[53,140],[54,155],[55,175],[56,195]],"Round 2.0/1.7/2.0":[[42,50],[43,55],[44,60],[45,65],[46,70],[47,80],[48,90],[49,95],[50,100],[51,110],[52,120],[53,130],[54,140],[55,155],[56,175],[57,195]],"Round 2.2/1.8/2.0":[[44,50],[45,55],[46,60],[47,65],[48,70],[49,75],[50,85],[51,100],[52,110],[53,120],[54,130],[55,145],[56,160],[57,170],[58,190],[59,195]],"Round 2.0/1.8/2.0":[[43,50],[44,55],[45,60],[46,65],[47,70],[48,75],[49,80],[50,85],[51,90],[52,100],[53,110],[54,120],[55,135],[56,155],[57,170],[58,180]],"Round 2.0/2.0/2.0":[[50,50],[51,55],[52,60],[53,70],[54,80],[55,90],[56,100],[57,110],[58,120],[59,130],[60,145],[61,165],[62,190]],"Round 2.3/2.0/2.0":[[51,50],[52,55],[53,60],[54,70],[55,80],[56,90],[57,100],[58,110],[59,120],[60,130],[61,145],[62,165],[63,185],[64,200]],"Round 2.3/2.3/2.3":[[57,50],[58,60],[59,70],[60,80],[61,90],[62,100],[63,110],[64,120],[65,130],[66,145],[67,170],[68,195]],"Blade 0.9\u00d71.8":[[24,50],[25,55],[26,60],[27,65],[28,70],[29,80],[30,90],[31,100],[32,110],[33,120],[34,135],[35,155],[36,175],[37,195]],"Blade 0.9\u00d72.2":[[25,50],[26,55],[27,60],[28,65],[29,70],[30,75],[31,80],[32,85],[33,90],[34,100],[35,105],[36,110],[37,120],[38,130],[39,140],[40,155],[41,175],[42,195]],"Blade 0.9\u00d73.5":[[27,50],[28,55],[29,60],[30,65],[31,70],[32,75],[33,80],[34,85],[35,90],[36,100],[37,110],[38,120],[39,130],[40,140],[41,150],[42,160],[43,175],[44,195]],"Blade 1.2\u00d72.6":[[30,50],[31,55],[32,60],[33,65],[34,70],[35,75],[36,80],[37,85],[38,90],[39,100],[40,110],[41,120],[42,130],[43,140],[44,150],[45,165],[46,180],[47,195]],"Blade 1.2\u00d72.2":[[31,50],[32,55],[33,60],[34,65],[35,70],[36,75],[37,80],[38,90],[39,95],[40,100],[41,110],[42,120],[43,130],[44,140],[45,155],[46,175],[47,190],[48,200]],"Blade 1.3\u00d72.3":[[35,50],[36,55],[37,60],[38,65],[39,70],[40,80],[41,90],[42,95],[43,100],[44,110],[45,120],[46,130],[47,140],[48,150],[49,160],[50,175],[51,195]],"Blade 1.3\u00d72.8":[[35,50],[36,55],[37,60],[38,65],[39,70],[40,80],[41,85],[42,90],[43,100],[44,110],[45,120],[46,130],[47,145],[48,165],[49,180],[50,195]]};
 
-// ── CHARTES PERSONNALISÉES — constantes & fonctions de base ─────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// CHARTES PERSONNALISÉES — constantes & fonctions de base
+// ══════════════════════════════════════════════════════════════════════════════
 
 const CC_LS_KEY = 'spokeit_custom_charts';
 const CC_PREFIX = '★ ';
@@ -4152,409 +4073,6 @@ function tmRenderStats(foKgfs, faKgfs) {
     card(fo, foLabel, 'fo');
   }
 }
-
-// ── ── MODULE VOICE INPUT (Web Speech API) ────────────────────────────────────── ─
-const VoiceInput = (() => {
-  // ── State ──────────────────────────────────────────────────────────────────
-  let recognition  = null;
-  let active       = false;   // panel ouvert
-  let recording    = false;   // micro actif
-  let currentSide  = 'nds';   // 'nds' | 'ds'
-  let currentIdx   = 0;       // index rayon courant (0-based)
-  let supported    = false;
-
-  // ── Init (appelé au chargement) ────────────────────────────────────────────
-  function init() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    supported = !!SpeechRecognition;
-    const btn = $id('voice-toggle-btn');
-    if (!supported && btn) btn.classList.add('unsupported');
-    if (!supported) return;
-    recognition = new SpeechRecognition();
-    recognition.continuous  = true;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 3;
-    recognition.addEventListener('result', onResult);
-    recognition.addEventListener('end', onEnd);
-    recognition.addEventListener('error', onError);
-
-    // ── Online / Offline detection ──
-    updateOnlineState();
-    window.addEventListener('online',  updateOnlineState);
-    window.addEventListener('offline', updateOnlineState);
-  }
-
-  function updateOnlineState() {
-    const btn     = $id('voice-toggle-btn');
-    const micBtn  = $id('voice-mic-btn');
-    const isOn    = navigator.onLine;
-    if (!btn) return;
-
-    if (!isOn && supported) {
-      btn.classList.add('unsupported');
-      btn.title = t('voiceOffline');
-      if (recording) stopRecording();
-      if (micBtn) { micBtn.classList.add('unsupported'); micBtn.title = t('voiceOffline'); }
-      // Mettre à jour le statut si la barre est ouverte
-      const statusEl = $id('voice-status');
-      if (active && statusEl) statusEl.innerHTML = `<span style="color:var(--warm)">⚡</span> ${t('voiceOffline')}`;
-    } else if (isOn && supported) {
-      btn.classList.remove('unsupported');
-      btn.title = t('voiceBtn');
-      if (micBtn) { micBtn.classList.remove('unsupported'); micBtn.title = ''; }
-      if (active) updateStatus();
-    }
-  }
-
-  // ── Helpers : mapping côté logique ↔ côté data ────────────────────────────
-  function sideToData(side) {
-    const isFront = wtype === 'avant';
-    if (side === 'nds') return isFront ? 'fo' : 'fa';
-    return isFront ? 'fa' : 'fo';
-  }
-
-  function perSide() {
-    const nb = parseInt($id('nb-rayons').value) || 0;
-    return Math.floor(nb / 2);
-  }
-
-  // ── UI updates ─────────────────────────────────────────────────────────────
-  function updateStatus() {
-    const statusEl   = $id('voice-status');
-    const progressEl = $id('voice-progress');
-    if (!statusEl) return;
-
-    const ps = perSide();
-    const sideLabel = currentSide === 'nds' ? t('voiceSideNDS') : t('voiceSideDS');
-    // Couleur raccord avec la colonne du tableau :
-    // NDS = toujours à gauche (accent/bleu pour arrière, warm/orange pour avant)
-    // DS  = toujours à droite (warm/orange pour arrière, accent/bleu pour avant)
-    const dataS = sideToData(currentSide);
-    const sideClass = dataS === 'fo' ? ' w' : '';
-
-    if (recording) {
-      statusEl.innerHTML = `<span class="v-side${sideClass}">${sideLabel}</span> — ${t('voiceListening')}`;
-    } else if (active) {
-      statusEl.innerHTML = `<span class="v-side${sideClass}">${sideLabel}</span> — ${t('voicePaused')}`;
-    }
-    progressEl.textContent = `${t('voiceSpoke')} ${currentIdx + 1} ${t('voiceOf')} ${ps}`;
-    highlightCurrent();
-  }
-
-  function highlightCurrent() {
-    // Retirer tous les highlights
-    document.querySelectorAll('.defl-inp.voice-highlight').forEach(el => el.classList.remove('voice-highlight'));
-    // Ajouter au champ courant
-    const dataS = sideToData(currentSide);
-    const inp = document.querySelector(`.defl-inp.${dataS}[data-idx="${currentIdx}"]`);
-    if (inp) {
-      inp.classList.add('voice-highlight');
-      inp.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  }
-
-  function showLast(text) {
-    const el = $id('voice-last');
-    if (!el) return;
-    el.textContent = text;
-    el.classList.remove('flash');
-    void el.offsetWidth; // force reflow
-    el.classList.add('flash');
-  }
-
-  // ── Speech recognition callbacks ──────────────────────────────────────────
-  let lastProcessed = 0; // index du dernier résultat traité (continuous accumule)
-
-  function onResult(e) {
-    const ps = perSide();
-
-    // En mode continuous, e.results accumule tous les résultats.
-    // On ne traite que les nouveaux résultats finaux.
-    for (let r = lastProcessed; r < e.results.length; r++) {
-      if (!e.results[r].isFinal) continue;
-      lastProcessed = r + 1;
-
-      if (currentIdx >= ps) break;
-
-      // Essayer chaque alternative
-      let parsed = null;
-      for (let i = 0; i < e.results[r].length; i++) {
-        const raw = e.results[r][i].transcript.trim();
-        const num = speechToNumber(raw);
-        if (num !== null) {
-          parsed = tmParseInput(String(num));
-          if (parsed !== null && tmInRange(parsed)) break;
-          parsed = null;
-        }
-      }
-
-      const dataS = sideToData(currentSide);
-
-      if (parsed !== null && tmInRange(parsed)) {
-        // Stocker la valeur
-        if (dataS === 'fo') { tmPrevFo[currentIdx] = tmData.fo[currentIdx]; tmData.fo[currentIdx] = parsed; }
-        else                { tmPrevFa[currentIdx] = tmData.fa[currentIdx]; tmData.fa[currentIdx] = parsed; }
-
-        // Mettre à jour l'input dans le DOM
-        const inp = document.querySelector(`.defl-inp.${dataS}[data-idx="${currentIdx}"]`);
-        if (inp) {
-          inp.value = tmDisplayValue(parsed);
-          inp.classList.add('has-val');
-        }
-        tmUpdateCell(currentIdx, dataS);
-        tmTryRenderRadar();
-
-        const kgf = toKgf(parsed);
-        showLast(`#${currentIdx + 1} → ${tmDisplayValue(parsed)}${kgf !== null ? ' (' + kgf + ' kgf)' : ''}`);
-
-        // Avancer
-        currentIdx++;
-        if (currentIdx >= ps) {
-          if (currentSide === 'nds') {
-            showLast(t('voiceColDone') + ' NDS — ' + t('voiceSwitchDS'));
-            currentSide = 'ds';
-            currentIdx = 0;
-            updateStatus();
-            continue;
-          } else {
-            showLast(t('voiceAllDone'));
-            stopRecording();
-            updateStatus();
-            return;
-          }
-        }
-        updateStatus();
-      } else {
-        // Valeur non reconnue ou hors plage
-        const raw0 = e.results[r][0].transcript.trim();
-        const num0 = speechToNumber(raw0);
-        if (num0 !== null && !tmInRange(tmParseInput(String(num0)))) {
-          showLast(`"${raw0}" → ${t('voiceOOR')}`);
-        } else {
-          showLast(`"${raw0}" → ?`);
-        }
-      }
-    }
-  }
-
-  function onEnd() {
-    // En mode continuous, le navigateur peut couper la session après un long silence.
-    // Si on est toujours en mode recording, relancer proprement.
-    if (recording) {
-      lastProcessed = 0;
-      restartRecognition();
-    }
-  }
-
-  function onError(e) {
-    if (e.error === 'no-speech' || e.error === 'aborted') {
-      if (recording) { lastProcessed = 0; restartRecognition(); }
-      return;
-    }
-    console.warn('Voice error:', e.error);
-    if (recording) {
-      setTimeout(() => { if (recording) { lastProcessed = 0; restartRecognition(); } }, 500);
-    }
-  }
-
-  function restartRecognition() {
-    if (!recognition || !recording) return;
-    try {
-      recognition.lang = lang === 'fr' ? 'fr-FR' : 'en-US';
-      recognition.start();
-    } catch (e) {
-      setTimeout(() => { if (recording) restartRecognition(); }, 300);
-    }
-  }
-
-  // ── Number parsing from speech ────────────────────────────────────────────
-  function speechToNumber(text) {
-    if (!text) return null;
-    let s = text.toLowerCase().trim();
-
-    // Supprimer les mots parasites courants
-    s = s.replace(/^(euh|hum|le|la|les|c'est|et|de|du)\s+/gi, '');
-
-    // Si c'est déjà un nombre (avec virgule ou point)
-    let directNum = s.replace(',', '.');
-    // Gérer "0.55" ou "55" ou "1.45" etc.
-    if (/^-?\d+(\.\d+)?$/.test(directNum)) {
-      return parseFloat(directNum);
-    }
-
-    // Gérer "zéro virgule cinquante-cinq" → 0.55
-    // Gérer "un virgule quarante-cinq" → 1.45
-    const virguleMatch = s.match(/(.+?)\s*(?:virgule|point)\s*(.+)/);
-    if (virguleMatch) {
-      const intPart  = frenchToNum(virguleMatch[1].trim());
-      const decStr   = virguleMatch[2].trim();
-      const decPart  = frenchToNum(decStr);
-      if (intPart !== null && decPart !== null) {
-        // Déterminer le nombre de chiffres décimaux
-        const decDigits = decPart < 10 ? 1 : decPart < 100 ? 2 : 3;
-        return intPart + decPart / Math.pow(10, decDigits);
-      }
-    }
-
-    // Nombre simple en français
-    const n = frenchToNum(s);
-    return n;
-  }
-
-  function frenchToNum(s) {
-    if (!s) return null;
-    s = s.toLowerCase().trim()
-      .replace(/[- ]+/g, ' ')
-      .replace(/vingt s\b/g, 'vingts')
-      .replace(/cent s\b/g, 'cents');
-
-    // Nombre direct
-    const direct = parseFloat(s.replace(',', '.'));
-    if (!isNaN(direct)) return direct;
-
-    const units = {
-      'zéro':0,'zero':0,'un':1,'une':1,'deux':2,'trois':3,'quatre':4,'cinq':5,
-      'six':6,'sept':7,'huit':8,'neuf':9,'dix':10,'onze':11,'douze':12,
-      'treize':13,'quatorze':14,'quinze':15,'seize':16,'dix sept':17,
-      'dix huit':18,'dix neuf':19,'vingt':20,'vingts':20,'trente':30,
-      'quarante':40,'cinquante':50,'soixante':60,'soixante dix':70,
-      'soixante et onze':71,'soixante douze':72,'soixante treize':73,
-      'soixante quatorze':74,'soixante quinze':75,'soixante seize':76,
-      'soixante dix sept':77,'soixante dix huit':78,'soixante dix neuf':79,
-      'quatre vingt':80,'quatre vingts':80,'quatre vingt un':81,
-      'quatre vingt deux':82,'quatre vingt trois':83,'quatre vingt quatre':84,
-      'quatre vingt cinq':85,'quatre vingt six':86,'quatre vingt sept':87,
-      'quatre vingt huit':88,'quatre vingt neuf':89,'quatre vingt dix':90,
-      'quatre vingt onze':91,'quatre vingt douze':92,'quatre vingt treize':93,
-      'quatre vingt quatorze':94,'quatre vingt quinze':95,'quatre vingt seize':96,
-      'quatre vingt dix sept':97,'quatre vingt dix huit':98,'quatre vingt dix neuf':99,
-      'cent':100,'cents':100
-    };
-
-    // Essai direct
-    if (units[s] !== undefined) return units[s];
-
-    // Composer : "vingt trois" → 23, "cent vingt" → 120
-    // Tenter "cent X"
-    const centMatch = s.match(/^cents?\s+(.+)$/);
-    if (centMatch) {
-      const rest = frenchToNum(centMatch[1]);
-      if (rest !== null) return 100 + rest;
-    }
-
-    // Tenter "X cent Y"  (ex: deux cent trente)
-    const multiCentMatch = s.match(/^(.+?)\s+cents?\s*(.*)$/);
-    if (multiCentMatch) {
-      const mult = frenchToNum(multiCentMatch[1]);
-      const rest = multiCentMatch[2] ? frenchToNum(multiCentMatch[2]) : 0;
-      if (mult !== null && rest !== null) return mult * 100 + rest;
-    }
-
-    // Dizaines composées : "trente cinq" → 35
-    const parts = s.split(/\s+et\s+|\s+/);
-    if (parts.length === 2) {
-      const a = units[parts[0]], b = units[parts[1]];
-      if (a !== undefined && b !== undefined && a >= 20 && b < 10) return a + b;
-    }
-
-    // English fallback
-    const enUnits = {
-      'zero':0,'one':1,'two':2,'three':3,'four':4,'five':5,'six':6,'seven':7,
-      'eight':8,'nine':9,'ten':10,'eleven':11,'twelve':12,'thirteen':13,
-      'fourteen':14,'fifteen':15,'sixteen':16,'seventeen':17,'eighteen':18,
-      'nineteen':19,'twenty':20,'thirty':30,'forty':40,'fifty':50,'sixty':60,
-      'seventy':70,'eighty':80,'ninety':90,'hundred':100
-    };
-    if (enUnits[s] !== undefined) return enUnits[s];
-    // "twenty three" etc.
-    if (parts.length === 2 && enUnits[parts[0]] !== undefined && enUnits[parts[1]] !== undefined) {
-      const a = enUnits[parts[0]], b = enUnits[parts[1]];
-      if (a >= 20 && b < 10) return a + b;
-    }
-
-    return null;
-  }
-
-  // ── Controls ──────────────────────────────────────────────────────────────
-  function startRecording() {
-    if (!recognition) return;
-    recording = true;
-    lastProcessed = 0;
-    $id('voice-mic-btn').classList.add('recording');
-    recognition.lang = lang === 'fr' ? 'fr-FR' : 'en-US';
-    try { recognition.start(); } catch(e) {}
-    updateStatus();
-  }
-
-  function stopRecording() {
-    recording = false;
-    const btn = $id('voice-mic-btn');
-    if (btn) btn.classList.remove('recording');
-    try { recognition.abort(); } catch(e) {}
-    const statusEl = $id('voice-status');
-    if (statusEl && active) statusEl.innerHTML = t('voicePaused');
-  }
-
-  // ── Public API ────────────────────────────────────────────────────────────
-  function toggle() {
-    if (!supported || !navigator.onLine) return;
-    active = !active;
-    const bar = $id('voice-bar');
-    const btn = $id('voice-toggle-btn');
-    if (active) {
-      bar.classList.remove('hidden');
-      btn.classList.add('active');
-      currentSide = 'nds';
-      currentIdx  = findFirstEmpty('nds');
-      updateStatus();
-      showLast('');
-      $id('voice-status').innerHTML = t('voiceReady');
-    } else {
-      stopRecording();
-      bar.classList.add('hidden');
-      btn.classList.remove('active');
-      document.querySelectorAll('.defl-inp.voice-highlight').forEach(el => el.classList.remove('voice-highlight'));
-    }
-  }
-
-  function micClick() {
-    if (!supported || !navigator.onLine) return;
-    if (recording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
-  }
-
-  function stop() {
-    stopRecording();
-    active = false;
-    $id('voice-bar').classList.add('hidden');
-    $id('voice-toggle-btn').classList.remove('active');
-    document.querySelectorAll('.defl-inp.voice-highlight').forEach(el => el.classList.remove('voice-highlight'));
-  }
-
-  function findFirstEmpty(side) {
-    const dataS = sideToData(side);
-    const arr = dataS === 'fo' ? tmData.fo : tmData.fa;
-    const ps = perSide();
-    for (let i = 0; i < ps; i++) {
-      if (arr[i] === null || arr[i] === undefined) return i;
-    }
-    return 0; // si tout est rempli, recommencer à 0
-  }
-
-  // ── Expose ────────────────────────────────────────────────────────────────
-  return { init, toggle, micClick, stop };
-})();
-
-// Raccourcis globaux pour onclick
-function voiceToggle()  { VoiceInput.toggle(); }
-function voiceMicClick(){ VoiceInput.micClick(); }
-function voiceStop()    { VoiceInput.stop(); }
-
-// Init au chargement
-document.addEventListener('DOMContentLoaded', () => { VoiceInput.init(); });
 </script>
 </body>
 </html>
