@@ -407,9 +407,68 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-conv-table td:last-child  { font-weight:400; color:var(--accent2) }
 .tm-conv-btn      { display:inline-flex; align-items:center; gap:.3rem; padding:.3rem .75rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.65rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:none }
 .tm-conv-btn:hover { border-color:var(--accent); color:var(--accent) }
-.tm-conv-btn.locked { opacity:.55; pointer-events:none; cursor:not-allowed }
+.tm-conv-btn.locked { pointer-events:none; cursor:not-allowed }
 .tm-conv-btn svg  { width:12px; height:12px; flex-shrink:0 }
 .tm-conv-btn.active { border-color:rgba(126,200,227,.45); color:var(--accent) }
+
+/* ── Custom chart button ──────────────────────────────────────────────────── */
+.tm-custom-btn { display:inline-flex; align-items:center; gap:.3rem; padding:.3rem .75rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.65rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:none }
+.tm-custom-btn:hover { border-color:var(--accent); color:var(--accent) }
+.tm-custom-btn.locked { pointer-events:none; opacity:.35 }
+.tm-custom-btn svg { width:12px; height:12px; flex-shrink:0 }
+
+/* ── Custom chart modal ──────────────────────────────────────────────────── */
+.cc-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
+.cc-overlay.show { display:block; opacity:1 }
+.cc-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:440px; max-height:88vh; display:none; flex-direction:column }
+.cc-modal.show { display:flex; animation:conv-in .2s ease both }
+.cc-header { display:flex; align-items:center; gap:.5rem; margin-bottom:1rem }
+.cc-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); flex:1 }
+.cc-close { background:none; border:none; color:var(--text3); font-size:1.1rem; cursor:pointer; padding:.2rem .4rem; line-height:1; transition:color .2s; flex-shrink:0 }
+.cc-close:hover { color:var(--text) }
+.cc-step { margin-bottom:1rem }
+.cc-step-label { font-size:.58rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--text3); margin-bottom:.4rem }
+.cc-input { width:100%; background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:400; padding:.55rem .9rem; transition:border-color .2s; box-sizing:border-box }
+.cc-input:focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
+.cc-input::placeholder { color:var(--text3) }
+.cc-select { width:100%; background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text); font-family:'DM Sans',sans-serif; font-size:.85rem; padding:.55rem .9rem; cursor:pointer; appearance:none; -webkit-appearance:none; background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22 fill=%22none%22 stroke=%22%23596778%22 stroke-width=%221.5%22><path d=%22M1 1l5 5 5-5%22/></svg>'); background-repeat:no-repeat; background-position:right .8rem center; background-size:10px; transition:border-color .2s }
+.cc-scroll { overflow-y:auto; flex:1; border-radius:var(--rs); border:1px solid var(--border); padding:.4rem }
+/* ── Custom chart: save button ────────────────────────────────────────────── */
+.cc-save-btn { width:100%; padding:.7rem 1rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.8rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .25s }
+.cc-save-btn:hover { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06); transform:translateY(-1px) }
+.cc-save-btn:active { transform:translateY(0) }
+.cc-save-btn:disabled { opacity:.35; pointer-events:none }
+.cc-feedback { font-size:.66rem; color:#f08080; min-height:.9rem; font-style:italic; line-height:1.3; margin-top:.4rem }
+
+/* ── Custom chart: add button ─────────────────────────────────────────────── */
+.cc-add-btn { height:2.35rem; width:2.35rem; display:flex; align-items:center; justify-content:center; background:transparent; border:1px solid rgba(126,200,227,.4); border-radius:var(--rs); color:var(--accent); cursor:pointer; transition:all .22s; flex-shrink:0 }
+.cc-add-btn:hover { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06) }
+.cc-add-btn:active { transform:scale(.93) }
+.cc-add-btn.full { opacity:.3; pointer-events:none }
+
+/* ── Custom chart: point items in recap ──────────────────────────────────── */
+.cc-point { display:flex; align-items:center; justify-content:center; gap:.5rem; padding:.3rem 0; font-family:'DM Mono',monospace; font-size:.85rem; color:var(--text); animation:fu .2s ease }
+.cc-point-num { font-size:.7rem; color:var(--text3); min-width:1.4rem; text-align:right; flex-shrink:0 }
+.cc-point-kgf { color:var(--accent); font-weight:500 }
+.cc-point-unit { color:var(--text3); font-size:.65rem; margin-left:-.2rem }
+.cc-point-arrow { color:var(--text3); font-size:.75rem }
+.cc-point-reading { color:var(--accent2) }
+.cc-point-del { background:none; border:none; color:var(--text3); font-size:1rem; cursor:pointer; padding:.1rem .3rem; line-height:1; transition:color .2s; flex-shrink:0; margin-left:.3rem }
+.cc-point-del:hover { color:#f08080 }
+
+/* ── Custom charts in dropdown ───────────────────────────────────────────── */
+.tm-spoke-custom { color:var(--accent) !important; font-weight:500 }
+
+/* ── Custom chart management ─────────────────────────────────────────────── */
+.cc-list { display:flex; flex-direction:column; gap:.35rem; margin-top:.6rem }
+.cc-item { display:flex; align-items:center; gap:.5rem; padding:.5rem .9rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); font-size:.75rem; color:var(--text); transition:border-color .2s }
+.cc-item:hover { border-color:var(--border-s) }
+.cc-item-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'DM Mono',monospace; font-size:.72rem; color:var(--accent2) }
+.cc-item-tensio { font-size:.58rem; color:var(--text3); letter-spacing:.08em; text-transform:uppercase }
+.cc-item-load { background:transparent; border:1px solid var(--border); border-radius:20px; color:var(--text2); font-family:'DM Mono',monospace; font-size:.6rem; letter-spacing:.1em; padding:.2rem .6rem; cursor:pointer; transition:all .2s; text-transform:uppercase }
+.cc-item-load:hover { border-color:var(--accent); color:var(--accent) }
+.cc-item-del { background:none; border:none; color:var(--text3); font-size:.9rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
+.cc-item-del:hover { color:#f08080 }
 
 /* ── Scrollbar ─────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar       { width:4px }
@@ -433,6 +492,8 @@ input[type=number] { -moz-appearance:textfield }
 .tm-wheel-btn  { flex:1; height:2.35rem; background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500; cursor:pointer; transition:all .2s }
 .tm-wheel-btn.on { background:var(--bg2); border-color:var(--border-s); color:var(--accent); text-shadow:0 0 10px rgba(126,200,227,.4) }
 .tm-wheel-btn.locked, .tm-select.locked { opacity:.45; pointer-events:none; cursor:not-allowed }
+.tm-clear-tensio { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.7rem; cursor:pointer; padding:.4rem .55rem; line-height:1; transition:all .2s; flex-shrink:0 }
+.tm-clear-tensio:hover { border-color:var(--warm); color:var(--warm) }
 
 /* ── Tension module: unit badge ───────────────────────────────────────── */
 .tm-unit-badge { margin-left:auto; font-family:'DM Mono',monospace; font-size:.62rem; color:var(--text3); background:var(--card-alt); border:1px solid var(--border); border-radius:10px; padding:.12rem .6rem }
@@ -915,48 +976,63 @@ input[type=number] { -moz-appearance:textfield }
 
     <!-- Sélecteur tensiomètre -->
     <div class="f" style="margin-bottom:1rem">
-      <select id="tm-tensio-select" class="tm-select" onchange="setTM(this.value)">
-        <option value="wf">Wheel Fanatyk</option>
-        <option value="pt">Park Tool TM-1</option>
-        <option value="dt">DT Swiss</option>
-        <option value="pk">P&amp;KLie</option>
-        <option value="un">UNIOR 1752</option>
-      </select>
+      <div style="display:flex;gap:.4rem;align-items:center">
+        <select id="tm-tensio-select" class="tm-select" style="flex:1" onchange="setTM(this.value)">
+          <option value="" disabled selected hidden>— Choisir tensio —</option>
+          <option value="wf">Wheel Fanatyk</option>
+          <option value="pt">Park Tool TM-1</option>
+          <option value="dt">DT Swiss</option>
+          <option value="pk">P&amp;KLie</option>
+          <option value="un">UNIOR 1752</option>
+        </select>
+        <button class="tm-clear-tensio" id="tm-clear-tensio" onclick="tmClearTensio()" style="display:none" title="Reset">✕</button>
+      </div>
     </div>
 
     <!-- Sous-type DT Swiss (visible uniquement quand dt actif) -->
-    <div id="tm-dt-subtype" style="display:none;margin-bottom:1rem;justify-content:flex-end;gap:.4rem">
+    <div id="tm-dt-subtype" style="display:none;margin-bottom:1rem;justify-content:space-between;gap:.4rem">
       <button class="tm-conv-btn active" id="tm-btn-dt-std"  onclick="setDTSub('standard')">Tensio Standard</button>
       <button class="tm-conv-btn"        id="tm-btn-dt-ael2" onclick="setDTSub('aerolite2')">Tensio Aerolite II</button>
     </div>
 
     <!-- Sous-type WF (visible uniquement quand wf actif) -->
-    <div id="tm-wf-subtype" style="margin-bottom:1rem;display:flex;justify-content:flex-end;gap:.4rem;align-items:center">
-      <span class="tip-wrap">
-        <span class="tip-icon">?</span>
-        <span class="tip-box" data-i18n="tmWFChartTip">New Chart = Nouvelles Tables de Conversions Wheel Fanatyk</span>
-      </span>
-      <button class="tm-conv-btn"        id="tm-btn-wf-old" onclick="setWFSub('old')">Old Chart</button>
+    <div id="tm-wf-subtype" style="margin-bottom:1rem;display:none;justify-content:space-between;gap:.4rem;align-items:center">
+      <div style="display:flex;align-items:center;gap:.4rem">
+        <span class="tip-wrap">
+          <span class="tip-icon">?</span>
+          <span class="tip-box" data-i18n="tmWFChartTip">New Chart = Nouvelles Tables de Conversions Wheel Fanatyk</span>
+        </span>
+        <button class="tm-conv-btn"        id="tm-btn-wf-old" onclick="setWFSub('old')">Old Chart</button>
+      </div>
       <button class="tm-conv-btn active" id="tm-btn-wf-new" onclick="setWFSub('new')">New Chart</button>
     </div>
 
     <!-- Sélecteur de rayon -->
     <div class="f" style="margin-bottom:1rem">
       <label data-i18n="tmSpokeLabel">Rayon</label>
-      <select id="tm-spoke-select" class="tm-select" onchange="tmOnSpokeChange()">
-        <option value="">— Choisir un rayon —</option>
-      </select>
+      <div style="display:flex;gap:.4rem;align-items:center">
+        <select id="tm-spoke-select" class="tm-select" style="flex:1" onchange="tmOnSpokeChange()">
+          <option value="">— Choisir un rayon —</option>
+        </select>
+        <button class="tm-clear-tensio" id="tm-clear-spoke" onclick="tmClearSpoke()" style="display:none" title="Reset">✕</button>
+      </div>
     </div>
 
-    <!-- Bouton table de conversion -->
-    <div style="margin-bottom:1rem;display:flex;justify-content:flex-end;align-items:center;gap:.4rem">
-      <span class="tip-wrap">
-        <span class="tip-icon">?</span>
-        <span class="tip-box" data-i18n="tmConvTip">Vérifiez la Tension Chart</span>
-      </span>
-      <button class="tm-conv-btn locked" id="tm-conv-btn" onclick="tmOpenConvTable()">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="2" width="13" height="12" rx="1.5"/><line x1="1.5" y1="5.5" x2="14.5" y2="5.5"/><line x1="1.5" y1="9" x2="14.5" y2="9"/><line x1="6" y1="5.5" x2="6" y2="14"/><line x1="11" y1="5.5" x2="11" y2="14"/></svg>
-        <span data-i18n="tmConvBtn">Table de conversion</span>
+    <!-- Boutons table de conversion + custom chart -->
+    <div style="margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;gap:.4rem;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:.4rem">
+        <span class="tip-wrap">
+          <span class="tip-icon">?</span>
+          <span class="tip-box" data-i18n="tmConvTip">Vérifiez la Tension Chart</span>
+        </span>
+        <button class="tm-conv-btn locked" id="tm-conv-btn" onclick="tmOpenConvTable()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="2" width="13" height="12" rx="1.5"/><line x1="1.5" y1="5.5" x2="14.5" y2="5.5"/><line x1="1.5" y1="9" x2="14.5" y2="9"/><line x1="6" y1="5.5" x2="6" y2="14"/><line x1="11" y1="5.5" x2="11" y2="14"/></svg>
+          <span data-i18n="tmConvBtn">Table de conversion</span>
+        </button>
+      </div>
+      <button class="tm-custom-btn" id="cc-open-btn" onclick="ccOpen()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><line x1="8" y1="5" x2="8" y2="11"/><line x1="5" y1="8" x2="11" y2="8"/></svg>
+        <span data-i18n="ccCreateBtn">Custom Chart</span>
       </button>
     </div>
 
@@ -1093,6 +1169,81 @@ input[type=number] { -moz-appearance:textfield }
     </div>
   </div>
 
+  <!-- ── Modal créer charte personnalisée ── -->
+  <div class="cc-overlay" id="cc-overlay" onclick="ccClose()"></div>
+  <div class="cc-modal" id="cc-modal" onclick="event.stopPropagation()">
+    <div class="cc-header">
+      <div class="cc-title" data-i18n="ccTitle">Custom Chart</div>
+      <button class="cc-close" onclick="ccClose()">✕</button>
+    </div>
+
+    <!-- Étape 1 : Tensiomètre -->
+    <div class="cc-step">
+      <div class="cc-step-label" data-i18n="ccStepTensio">Tensiomètre</div>
+      <select id="cc-tensio" class="cc-select" onchange="ccOnTensioChange()">
+        <option value="" disabled selected hidden>— Choisir tensio —</option>
+        <option value="wf_new">Wheel Fanatyk (New Chart)</option>
+        <option value="wf_old">Wheel Fanatyk (Old Chart)</option>
+        <option value="pt">Park Tool TM-1</option>
+        <option value="dt_standard">DT Swiss (Standard)</option>
+        <option value="dt_aerolite2">DT Swiss (Aerolite II)</option>
+        <option value="pk">P&amp;KLie</option>
+        <option value="un">UNIOR 1752</option>
+      </select>
+    </div>
+
+    <!-- Étape 2 : Nom + Points sur la même ligne -->
+    <div class="cc-step">
+      <div style="display:flex;gap:.6rem">
+        <div class="f" style="flex:1">
+          <label data-i18n="ccStepName">Nom du rayon</label>
+          <input type="text" id="cc-name" class="cc-input" placeholder="Ex : Mon Rayon Custom 2.0" maxlength="60" autocomplete="off">
+        </div>
+        <div class="f" style="width:5.5rem;flex-shrink:0">
+          <label data-i18n="ccStepNbPoints">Points</label>
+          <select id="cc-nb-points" class="cc-select" style="padding-left:.5rem;padding-right:1.6rem" onchange="ccOnNbChange()">
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10" selected>10</option>
+            <option value="11">11</option>
+            <option value="12">12</option>
+            <option value="13">13</option>
+            <option value="14">14</option>
+            <option value="15">15</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Étape 3 : Saisie pas-à-pas -->
+    <div class="cc-step" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <div class="cc-step-label"><span data-i18n="ccStepValues">Table de correspondance</span> — <span id="cc-counter" style="color:var(--accent)">0/10</span></div>
+      <div id="cc-entry" style="display:flex;gap:.6rem;align-items:flex-end;margin-bottom:.6rem">
+        <div class="f" style="flex:1">
+          <label>kgf</label>
+          <input type="text" id="cc-inp-kgf" class="cc-input" inputmode="decimal" placeholder="kgf" autocomplete="off" autocorrect="off" spellcheck="false" style="font-family:'DM Mono',monospace;text-align:center">
+        </div>
+        <div class="f" style="flex:1">
+          <label id="cc-reading-label">Lecture</label>
+          <input type="text" id="cc-inp-reading" class="cc-input" inputmode="decimal" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false" style="font-family:'DM Mono',monospace;text-align:center">
+        </div>
+        <button class="cc-add-btn" id="cc-add-btn" onclick="ccAddPoint()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>
+        </button>
+      </div>
+      <!-- Récap des points saisis -->
+      <div class="cc-scroll" id="cc-scroll" style="min-height:60px;max-height:260px">
+        <div id="cc-points-list" class="cc-list" style="gap:.45rem"></div>
+      </div>
+      <div class="cc-feedback" id="cc-feedback"></div>
+    </div>
+
+    <button class="cc-save-btn" id="cc-save-btn" onclick="ccSave()" data-i18n="ccSaveBtn" style="flex-shrink:0">Enregistrer la charte</button>
+  </div>
+
 </div><!-- /.wrap -->
 </div><!-- /#tension-module -->
 
@@ -1111,7 +1262,7 @@ const i18n = {
     soLeft:'SO gauche', soRight:'SO droit',
     erdDirect:'ERD DIRECT', addonTip:"Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.",
     erdCalc:'ERD calculé (mm)', rimAsym:'Asymétrie jante (mm)', spokeSection:'Section de rayon', cross:'Croisement',
-    driveSide:'Côté Droit (DS)', driveSideAbbr:'(DS)', nonDriveSide:'Côté Gauche (NDS)', nonDriveSideAbbr:'(NDS)',
+    driveSide:'Côté Droit (DS)', nonDriveSide:'Côté Gauche (NDS)',
     rtagDriveSideFront:'CÔTÉ DROIT (DS)', rtagNonDriveSideFront:'CÔTÉ GAUCHE (NDS)',
     rtagDriveSideRear:'CÔTÉ DROIT (DS)',  rtagNonDriveSideRear:'CÔTÉ GAUCHE (NDS)',
     tensionHelpRear:'La tension NDS est calculée automatiquement selon le ratio des déports.',
@@ -1146,6 +1297,7 @@ const i18n = {
     tmReadingKgf:'lecture · kgf',
     tmChooseSpoke:'Choisir un rayon ci-dessus',
     tmSpokeSelectPlaceholder:'— Choisir un rayon —',
+    tmTensioPlaceholder:'— Choisir tensio —',
     tmWarnAerolite2:'⚠ Valeurs valables UNIQUEMENT avec le Tensiomètre Aerolite II',
     tmHintDT:'DT Swiss : valeur exacte en mm (ex\u00a0: <code>1.45</code> ou <code>1,45</code>)',
     tmHintPK:'P&KLie : valeur exacte en mm (ex\u00a0: <code>2.34</code> ou <code>2,34</code>). Rayons DT Swiss et Sapim.',
@@ -1159,6 +1311,24 @@ const i18n = {
     tmHintUN:'UNIOR 1752 : valeur entière lue sur le tensiomètre — ex\u00a0<code>45</code>. Rayons ronds et plats (blade).',
     tmWFChartTip:'New Chart = Nouvelles Tables de Conversions Wheel Fanatyk',
     tmConvTip:'Vérifiez la Tension Chart',
+    ccCreateBtn:'Custom Chart',
+    ccTitle:'Custom Chart',
+    ccStepTensio:'Tensiomètre',
+    ccStepName:'Nom du rayon',
+    ccNamePlaceholder:'Ex : Mon Rayon Custom 2.0',
+    ccStepNbPoints:'Points',
+    ccStepValues:'Table de correspondance',
+    ccSaveBtn:'Enregistrer la charte',
+    ccErrName:'Veuillez saisir un nom pour la charte.',
+    ccErrValues:'Remplissez toutes les lignes (kgf et lecture).',
+    ccErrIncomplete:'{n}/{max} points saisis. Complétez avant d\'enregistrer.',
+    ccErrDuplicate2:'Deux valeurs de lecture identiques — chaque lecture doit être unique.',
+    ccErrDupKgf:'Cette valeur kgf existe déjà.',
+    ccErrMonotone:'Incohérence : les lectures doivent être soit toutes croissantes, soit toutes décroissantes par rapport aux kgf.',
+    ccErrKgfInvalid:'Toutes les valeurs doivent être des nombres valides (kgf > 0).',
+    ccSaved:'Charte enregistrée !',
+    ccCustomLabel:'★ PERSO',
+    ccManageTitle:'Chartes personnalisées',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -1169,7 +1339,7 @@ const i18n = {
     soLeft:'SO left', soRight:'SO right',
     erdDirect:'ERD DIRECT', addonTip:'Depends on nipple used. Select 2 mm for standard 12 mm nipples.',
     erdCalc:'Calculated ERD (mm)', rimAsym:'Rim asymmetry (mm)', spokeSection:'Spoke section', cross:'Lacing',
-    driveSide:'Right Side (DS)', driveSideAbbr:'(DS)', nonDriveSide:'Left Side (NDS)', nonDriveSideAbbr:'(NDS)',
+    driveSide:'Right Side (DS)', nonDriveSide:'Left Side (NDS)',
     rtagDriveSideFront:'RIGHT SIDE (DS)', rtagNonDriveSideFront:'LEFT SIDE (NDS)',
     rtagDriveSideRear:'RIGHT SIDE (DS)',  rtagNonDriveSideRear:'LEFT SIDE (NDS)',
     tensionHelpRear:'NDS tension is calculated automatically from the offset ratio.',
@@ -1204,6 +1374,7 @@ const i18n = {
     tmReadingKgf:'reading · kgf',
     tmChooseSpoke:'Choose a spoke above',
     tmSpokeSelectPlaceholder:'— Choose a spoke —',
+    tmTensioPlaceholder:'— Choose tensiometer —',
     tmWarnAerolite2:'⚠ Values valid ONLY with the Aerolite II Tensiometer',
     tmHintDT:'DT Swiss: exact value in mm (e.g.\u00a0<code>1.45</code> or <code>1,45</code>)',
     tmHintPK:'P&KLie: exact value in mm (e.g.\u00a0<code>2.34</code> or <code>2,34</code>). DT Swiss and Sapim spokes.',
@@ -1217,6 +1388,24 @@ const i18n = {
     tmHintUN:'UNIOR 1752: integer value from the tensiometer — e.g.\u00a0<code>45</code>. Round and blade spokes.',
     tmWFChartTip:'New Chart = Updated Wheel Fanatyk Conversion Tables',
     tmConvTip:'Check the Tension Chart',
+    ccCreateBtn:'Custom Chart',
+    ccTitle:'Custom Chart',
+    ccStepTensio:'Tensiometer',
+    ccStepName:'Spoke name',
+    ccNamePlaceholder:'Ex: My Custom Spoke 2.0',
+    ccStepNbPoints:'Points',
+    ccStepValues:'Correspondence table',
+    ccSaveBtn:'Save chart',
+    ccErrName:'Please enter a name for the chart.',
+    ccErrValues:'Fill in all rows (kgf and reading).',
+    ccErrIncomplete:'{n}/{max} points entered. Complete before saving.',
+    ccErrDuplicate2:'Two identical reading values — each reading must be unique.',
+    ccErrDupKgf:'This kgf value already exists.',
+    ccErrMonotone:'Inconsistency: readings must be either all increasing or all decreasing relative to kgf.',
+    ccErrKgfInvalid:'All values must be valid numbers (kgf > 0).',
+    ccSaved:'Chart saved!',
+    ccCustomLabel:'★ CUSTOM',
+    ccManageTitle:'Custom charts',
   }
 };
 
@@ -1291,16 +1480,17 @@ function clearLoadedConfigName() {
 
 // ── State ────────────────────────────────────────────────────────────────────
 let wtype = 'avant', erdMode = 'direct', sd = 2.0, sa = null, cross = null, hubType = 'jbend';
-let tmType = 'wf';
+let tmType = null;
 let tmData = { fo: [], fa: [] };
 let tmPrevFo = [], tmPrevFa = [];
 // Multi-slot store: preserves data per tensiometer key (wf, pt, dt_standard, dt_aerolite2)
 const tmStore = {};       // { [storeKey]: { spokeKey, fo, fa, prevFo, prevFa } }
-let tmActiveKey = 'wf_new';   // key of the tensiometer whose data is currently in tmData
+let tmActiveKey = null;   // key of the tensiometer whose data is currently in tmData
 let tmDTSub = 'standard'; // 'standard' | 'aerolite2'
 let tmWFSub = 'new';     // 'old' | 'new'
 let tmSpokeKey = null;    // clé rayon sélectionnée dans la table active
 function tmStoreKey() {
+  if (!tmType) return null;
   if (tmType === 'dt') return 'dt_' + tmDTSub;
   if (tmType === 'wf') return 'wf_' + tmWFSub;
   return tmType;
@@ -1363,6 +1553,11 @@ function applyLang() {
   if (errEl.classList.contains('show') && currentErrKey) errEl.textContent = t(currentErrKey);
   const saveNameEl = $id('save-name');
   if (saveNameEl) saveNameEl.placeholder = t('savePlaceholder');
+  // Update tensio select placeholders
+  ['tm-tensio-select', 'cc-tensio'].forEach(id => {
+    const sel = $id(id);
+    if (sel) sel.querySelector('option[value=""]').textContent = t('tmTensioPlaceholder');
+  });
   renderConfigsList();
   // Refresh tension module dynamic content
   tmUpdateBadges();
@@ -1499,6 +1694,8 @@ function applyState(s) {
     tmType = s.tmType;
     const tmTensioSel = $id('tm-tensio-select');
     if (tmTensioSel) tmTensioSel.value = tmType;
+    const clearBtn = $id('tm-clear-tensio');
+    if (clearBtn) clearBtn.style.display = tmType ? '' : 'none';
     $id('tm-dt-subtype') && ($id('tm-dt-subtype').style.display = tmType === 'dt' ? 'flex' : 'none');
     $id('tm-wf-subtype') && ($id('tm-wf-subtype').style.display = tmType === 'wf' ? 'flex' : 'none');
 
@@ -1584,29 +1781,9 @@ function clearFormSilent() {
   reorderTensionFields(wtype);
   onTension();
   // Reset tension module
-  tmResetData();
   Object.keys(tmStore).forEach(k => delete tmStore[k]);
-  tmActiveKey = 'wf_new';
-  tmType = 'wf';
-  const tmTensioSelReset = $id('tm-tensio-select');
-  if (tmTensioSelReset) tmTensioSelReset.value = 'wf';
-  $id('tm-dt-subtype').style.display = 'none';
-  $id('tm-wf-subtype').style.display = 'flex';
-  tmDTSub = 'standard';
-  tmWFSub = 'new';
-  $id('tm-btn-dt-std').classList.add('active');
-  $id('tm-btn-dt-ael2').classList.remove('active');
-  $id('tm-btn-wf-old').classList.remove('active');
-  $id('tm-btn-wf-new').classList.add('active');
-  tmSpokeKey = null;
-  tmPopulateSpokeSelect();
+  tmClearTensio();
   $id('tm-nb-select').value = '';
-  tmUpdateUnitBadge();
-  tmUpdateBadges();
-  const hintReset = $id('tm-entry-hint');
-  if (hintReset) hintReset.innerHTML = tmGetHintHTML();
-  tmBuildTable();
-  tmHideResult();
 }
 
 function clearForm() {
@@ -2386,8 +2563,43 @@ TM_TABLES.pk = {"DT Champ 1.8":[[1.65,40],[1.86,50],[2.03,60],[2.19,70],[2.34,80
 
 TM_TABLES.un = {"Round 1.8/1.4/1.8":[[33,50],[34,55],[35,60],[36,65],[37,70],[38,75],[39,80],[40,90],[41,95],[42,100],[43,110],[44,115],[45,120],[46,130],[47,140],[48,150],[49,165],[50,185],[51,200]],"Round 2.0/1.5/2.0":[[36,50],[37,55],[38,60],[39,65],[40,70],[41,75],[42,80],[43,90],[44,95],[45,100],[46,110],[47,120],[48,130],[49,140],[50,150],[51,165],[52,185],[53,200]],"Round 2.0/1.65/2.0":[[40,50],[41,55],[42,60],[43,65],[44,70],[45,75],[46,80],[47,90],[48,95],[49,100],[50,110],[51,120],[52,130],[53,140],[54,155],[55,175],[56,195]],"Round 2.0/1.7/2.0":[[42,50],[43,55],[44,60],[45,65],[46,70],[47,80],[48,90],[49,95],[50,100],[51,110],[52,120],[53,130],[54,140],[55,155],[56,175],[57,195]],"Round 2.2/1.8/2.0":[[44,50],[45,55],[46,60],[47,65],[48,70],[49,75],[50,85],[51,100],[52,110],[53,120],[54,130],[55,145],[56,160],[57,170],[58,190],[59,195]],"Round 2.0/1.8/2.0":[[43,50],[44,55],[45,60],[46,65],[47,70],[48,75],[49,80],[50,85],[51,90],[52,100],[53,110],[54,120],[55,135],[56,155],[57,170],[58,180]],"Round 2.0/2.0/2.0":[[50,50],[51,55],[52,60],[53,70],[54,80],[55,90],[56,100],[57,110],[58,120],[59,130],[60,145],[61,165],[62,190]],"Round 2.3/2.0/2.0":[[51,50],[52,55],[53,60],[54,70],[55,80],[56,90],[57,100],[58,110],[59,120],[60,130],[61,145],[62,165],[63,185],[64,200]],"Round 2.3/2.3/2.3":[[57,50],[58,60],[59,70],[60,80],[61,90],[62,100],[63,110],[64,120],[65,130],[66,145],[67,170],[68,195]],"Blade 0.9\u00d71.8":[[24,50],[25,55],[26,60],[27,65],[28,70],[29,80],[30,90],[31,100],[32,110],[33,120],[34,135],[35,155],[36,175],[37,195]],"Blade 0.9\u00d72.2":[[25,50],[26,55],[27,60],[28,65],[29,70],[30,75],[31,80],[32,85],[33,90],[34,100],[35,105],[36,110],[37,120],[38,130],[39,140],[40,155],[41,175],[42,195]],"Blade 0.9\u00d73.5":[[27,50],[28,55],[29,60],[30,65],[31,70],[32,75],[33,80],[34,85],[35,90],[36,100],[37,110],[38,120],[39,130],[40,140],[41,150],[42,160],[43,175],[44,195]],"Blade 1.2\u00d72.6":[[30,50],[31,55],[32,60],[33,65],[34,70],[35,75],[36,80],[37,85],[38,90],[39,100],[40,110],[41,120],[42,130],[43,140],[44,150],[45,165],[46,180],[47,195]],"Blade 1.2\u00d72.2":[[31,50],[32,55],[33,60],[34,65],[35,70],[36,75],[37,80],[38,90],[39,95],[40,100],[41,110],[42,120],[43,130],[44,140],[45,155],[46,175],[47,190],[48,200]],"Blade 1.3\u00d72.3":[[35,50],[36,55],[37,60],[38,65],[39,70],[40,80],[41,90],[42,95],[43,100],[44,110],[45,120],[46,130],[47,140],[48,150],[49,160],[50,175],[51,195]],"Blade 1.3\u00d72.8":[[35,50],[36,55],[37,60],[38,65],[39,70],[40,80],[41,85],[42,90],[43,100],[44,110],[45,120],[46,130],[47,145],[48,165],[49,180],[50,195]]};
 
+// ══════════════════════════════════════════════════════════════════════════════
+// CHARTES PERSONNALISÉES — constantes & fonctions de base
+// ══════════════════════════════════════════════════════════════════════════════
+
+const CC_LS_KEY = 'spokeit_custom_charts';
+const CC_PREFIX = '★ ';
+
+// ── localStorage ────────────────────────────────────────────────────────────
+function ccLoadAll()     { try { return JSON.parse(localStorage.getItem(CC_LS_KEY)) || []; } catch(e) { return []; } }
+function ccPersist(arr)  { localStorage.setItem(CC_LS_KEY, JSON.stringify(arr)); }
+
+// ── Injecter les chartes custom dans TM_TABLES ──────────────────────────────
+function ccInjectAll() {
+  // D'abord, retirer toutes les anciennes custom de chaque table
+  Object.keys(TM_TABLES).forEach(tKey => {
+    const tbl = TM_TABLES[tKey];
+    if (!tbl) return;
+    Object.keys(tbl).forEach(spokeKey => {
+      if (spokeKey.startsWith(CC_PREFIX)) delete tbl[spokeKey];
+    });
+  });
+  // Injecter les chartes sauvegardées
+  const customs = ccLoadAll();
+  customs.forEach(cc => {
+    const tbl = TM_TABLES[cc.tensioKey];
+    if (!tbl) return;
+    const key = CC_PREFIX + cc.name;
+    tbl[key] = cc.points; // [[reading, kgf], ...]
+  });
+}
+
+// ── Injecter les chartes personnalisées dès que toutes les tables sont prêtes ──
+ccInjectAll();
+
 // ── Obtenir la table active (objet {spokeKey: [[defl,kgf]…]}) ─────────────────
 function tmGetActiveTable() {
+  if (!tmType) return null;
   if (tmType === 'wf')          return tmWFSub === 'new' ? TM_TABLES.wf_new : TM_TABLES.wf_old;
   if (tmType === 'pt')          return TM_TABLES.pt;
   if (tmType === 'pk')          return TM_TABLES.pk;
@@ -2400,6 +2612,7 @@ function tmGetActiveTable() {
 function tmGetPoints() {
   if (!tmSpokeKey) return null;
   const tbl = tmGetActiveTable();
+  if (!tbl) return null;
   return tbl[tmSpokeKey] || null;
 }
 
@@ -2477,6 +2690,7 @@ function tmDisplayValue(val) {
 
 // ── Hint selon tensiomètre ────────────────────────────────────────────────────
 function tmGetHintHTML() {
+  if (!tmType) return '';
   if (tmType === 'pt') return t('tmHintPT');
   if (tmType === 'dt') return t('tmHintDT');
   if (tmType === 'pk') return t('tmHintPK');
@@ -2488,26 +2702,53 @@ function tmGetHintHTML() {
 function tmPopulateSpokeSelect() {
   const sel = $id('tm-spoke-select');
   const tbl = tmGetActiveTable();
+  if (!tbl) { sel.innerHTML = `<option value="">${t('tmSpokeSelectPlaceholder')}</option>`; tmSpokeKey = null; return; }
   const spokes = Object.keys(tbl);
   const prev = tmSpokeKey;
   sel.innerHTML = `<option value="">${t('tmSpokeSelectPlaceholder')}</option>`;
-  spokes.forEach(k => {
+
+  // Séparer standard et custom
+  const standardSpokes = spokes.filter(k => !k.startsWith(CC_PREFIX));
+  const customSpokes   = spokes.filter(k => k.startsWith(CC_PREFIX));
+
+  // D'abord les rayons standard
+  standardSpokes.forEach(k => {
     const opt = document.createElement('option');
     opt.value = k; opt.textContent = k;
     if (k === prev) opt.selected = true;
     sel.appendChild(opt);
   });
+
+  // Puis les chartes perso avec un séparateur visuel
+  if (customSpokes.length > 0) {
+    const sep = document.createElement('option');
+    sep.disabled = true;
+    sep.textContent = '── ' + t('ccCustomLabel') + ' ──';
+    sel.appendChild(sep);
+
+    customSpokes.forEach(k => {
+      const opt = document.createElement('option');
+      opt.value = k; opt.textContent = k;
+      opt.className = 'tm-spoke-custom';
+      opt.style.color = '#7ec8e3';
+      if (k === prev) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
   // Conserver la sélection si possible, sinon null
   tmSpokeKey = spokes.includes(prev) ? prev : null;
   if (!tmSpokeKey) sel.value = '';
   tmUpdateUnitBadge();
   tmUpdateConvBtn();
+  const clearSpoke = $id('tm-clear-spoke');
+  if (clearSpoke) clearSpoke.style.display = tmSpokeKey ? '' : 'none';
 }
 
 // ── Badge unité ───────────────────────────────────────────────────────────────
 function tmUpdateUnitBadge() {
   const labels = { wf: 'WF', pt: 'PT', dt: 'DT', pk: 'PK', un: 'UN' };
-  $id('tm-unit-badge').textContent = labels[tmType] || tmType.toUpperCase();
+  $id('tm-unit-badge').textContent = tmType ? (labels[tmType] || tmType.toUpperCase()) : '—';
 }
 
 // ── Sync boutons type de roue dans le module tension ─────────────────────────
@@ -2586,6 +2827,35 @@ function setTM(type) {
   $id('tm-dt-subtype').style.display = type === 'dt' ? 'flex' : 'none';
   $id('tm-wf-subtype').style.display = type === 'wf' ? 'flex' : 'none';
   $id('tm-entry-hint').innerHTML = tmGetHintHTML();
+  const clearBtn = $id('tm-clear-tensio');
+  if (clearBtn) clearBtn.style.display = type ? '' : 'none';
+}
+
+function tmClearTensio() {
+  tmResetData();
+  tmActiveKey = null;
+  tmType = null;
+  const sel = $id('tm-tensio-select');
+  if (sel) sel.value = '';
+  $id('tm-dt-subtype').style.display = 'none';
+  $id('tm-wf-subtype').style.display = 'none';
+  tmDTSub = 'standard';
+  tmWFSub = 'new';
+  $id('tm-btn-dt-std').classList.add('active');
+  $id('tm-btn-dt-ael2').classList.remove('active');
+  $id('tm-btn-wf-old').classList.remove('active');
+  $id('tm-btn-wf-new').classList.add('active');
+  tmSpokeKey = null;
+  tmPopulateSpokeSelect();
+  tmUpdateUnitBadge();
+  tmUpdateBadges();
+  tmUpdateConvBtn();
+  const hint = $id('tm-entry-hint');
+  if (hint) hint.innerHTML = tmGetHintHTML();
+  tmBuildTable();
+  tmHideResult();
+  const clearBtn = $id('tm-clear-tensio');
+  if (clearBtn) clearBtn.style.display = 'none';
 }
 
 function setDTSub(sub) {
@@ -2614,6 +2884,14 @@ function tmOnSpokeChange() {
   tmBuildTable();
   tmHideResult();
   tmUpdateConvBtn();
+  const clearSpoke = $id('tm-clear-spoke');
+  if (clearSpoke) clearSpoke.style.display = tmSpokeKey ? '' : 'none';
+}
+
+function tmClearSpoke() {
+  const sel = $id('tm-spoke-select');
+  if (sel) sel.value = '';
+  tmOnSpokeChange();
 }
 
 // ── Bouton table de conversion : actif/désactivé ────────────────────────────
@@ -2623,6 +2901,12 @@ function tmUpdateConvBtn() {
     const hasSpoke = !!tmSpokeKey;
     btn.classList.toggle('locked', !hasSpoke);
     btn.classList.toggle('active', hasSpoke);
+  }
+  // Custom Chart : verrouillé si un rayon standard est sélectionné
+  const ccBtn = $id('cc-open-btn');
+  if (ccBtn) {
+    const isStandardSpoke = tmSpokeKey && !tmSpokeKey.startsWith(CC_PREFIX);
+    ccBtn.classList.toggle('locked', isStandardSpoke);
   }
 }
 
@@ -2673,7 +2957,384 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && $id('tm-conv-modal').classList.contains('show')) {
     tmCloseConvTable();
   }
+  if (e.key === 'Escape' && $id('cc-modal').classList.contains('show')) {
+    ccClose();
+  }
 });
+
+
+// ── État de la saisie pas-à-pas ──────────────────────────────────────────────
+let ccPoints = []; // [{kgf, reading}]
+
+// ── Ouvrir la modale ────────────────────────────────────────────────────────
+function ccOpen() {
+  // Pré-sélectionner le tensiomètre actif
+  const sel = $id('cc-tensio');
+  const activeKey = tmStoreKey();
+  const hasTensio = !!activeKey;
+  if (sel) {
+    const opts = Array.from(sel.options).map(o => o.value).filter(v => v);
+    sel.value = opts.includes(activeKey) ? activeKey : '';
+    sel.disabled = hasTensio;
+    sel.style.opacity = hasTensio ? '.7' : '';
+  }
+  $id('cc-name').value = '';
+  $id('cc-name').placeholder = t('ccNamePlaceholder');
+  $id('cc-feedback').textContent = '';
+  ccPoints = [];
+  ccUpdateReadingLabel();
+
+  // Si un rayon custom est sélectionné, charger ses valeurs directement
+  if (tmSpokeKey && tmSpokeKey.startsWith(CC_PREFIX)) {
+    const customs = ccLoadAll();
+    const match = customs.find(cc => cc.tensioKey === activeKey && CC_PREFIX + cc.name === tmSpokeKey);
+    if (match) {
+      $id('cc-tensio').value = match.tensioKey;
+      ccUpdateReadingLabel();
+      $id('cc-name').value = match.name;
+      const nbPoints = Math.max(match.points.length, 5);
+      $id('cc-nb-points').value = String(Math.min(Math.max(nbPoints, 5), 15));
+      ccPoints = match.points.map(p => ({ kgf: p[1], reading: p[0] }));
+      ccPoints.sort((a, b) => a.kgf - b.kgf);
+    }
+  }
+
+  ccRefreshUI();
+  ccRenderExisting();
+  $id('cc-overlay').classList.add('show');
+  $id('cc-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  if (ccPoints.length === 0) {
+    setTimeout(() => $id('cc-inp-kgf').focus(), 200);
+  }
+}
+
+// ── Fermer la modale ────────────────────────────────────────────────────────
+function ccClose() {
+  $id('cc-overlay').classList.remove('show');
+  $id('cc-modal').classList.remove('show');
+  document.body.style.overflow = '';
+  // Déverrouiller le select tensiomètre
+  const sel = $id('cc-tensio');
+  if (sel) { sel.disabled = false; sel.style.opacity = ''; }
+}
+
+// ── Adapter le header de lecture selon le tensiomètre choisi ─────────────────
+function ccOnTensioChange() {
+  ccUpdateReadingLabel();
+  ccRenderExisting();
+}
+
+// ── Mettre à jour le label de lecture selon le tensiomètre ──────────────────
+function ccUpdateReadingLabel() {
+  const tensioKey = $id('cc-tensio').value;
+  const units = { wf_new:'WF', wf_old:'WF', pt:'#', dt_standard:'mm', dt_aerolite2:'mm', pk:'mm', un:'#' };
+  const lbl = $id('cc-reading-label');
+  if (lbl) lbl.textContent = t('tmConvReading') + ' (' + (units[tensioKey] || '') + ')';
+}
+
+// ── Rafraîchir le compteur, la liste, et le bouton + ────────────────────────
+function ccRefreshUI() {
+  const max = parseInt($id('cc-nb-points').value) || 10;
+  const cur = ccPoints.length;
+  const isFull = cur >= max;
+  // Compteur : affiche cur/max, couleur accent si complet, text3 sinon
+  const counter = $id('cc-counter');
+  counter.textContent = cur + '/' + max;
+  counter.style.color = isFull ? 'var(--accent)' : 'var(--text3)';
+  // Bouton + : désactiver si plein
+  const addBtn = $id('cc-add-btn');
+  addBtn.classList.toggle('full', isFull);
+  // Bouton Enregistrer : désactiver si incomplet
+  const saveBtn = $id('cc-save-btn');
+  saveBtn.disabled = !isFull;
+  // Vider les inputs
+  $id('cc-inp-kgf').value = '';
+  $id('cc-inp-reading').value = '';
+  // Feedback : effacer si on change les données
+  $id('cc-feedback').textContent = '';
+  // Rendre la liste
+  const list = $id('cc-points-list');
+  if (cur === 0) {
+    list.innerHTML = '';
+    return;
+  }
+  list.innerHTML = ccPoints.map((p, i) =>
+    `<div class="cc-point" id="cc-pt-${i}">
+      <span class="cc-point-num">${i + 1}</span>
+      <span class="cc-point-kgf">${p.kgf}</span><span class="cc-point-unit">kgf</span>
+      <span class="cc-point-arrow">→</span>
+      <span class="cc-point-reading">${p.reading}</span>
+      <button class="cc-point-del" data-ptidx="${i}">×</button>
+    </div>`
+  ).join('');
+  // Auto-scroll vers le dernier point ajouté
+  const scroll = $id('cc-scroll');
+  if (scroll) scroll.scrollTop = scroll.scrollHeight;
+  // Attacher les suppressions
+  list.querySelectorAll('.cc-point-del').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const idx = parseInt(this.dataset.ptidx);
+      ccRemovePoint(idx, this.closest('.cc-point'));
+    });
+  });
+}
+
+// ── Ajouter un point ────────────────────────────────────────────────────────
+function ccShowErr(msg) {
+  const fb = $id('cc-feedback');
+  fb.style.color = '#f08080';
+  fb.textContent = msg;
+  // Vider seulement la lecture, garder le kgf
+  $id('cc-inp-reading').value = '';
+  $id('cc-inp-reading').focus();
+}
+
+function ccAddPoint() {
+  const max = parseInt($id('cc-nb-points').value) || 10;
+  if (ccPoints.length >= max) return;
+  $id('cc-feedback').textContent = '';
+  const kgfRaw = $id('cc-inp-kgf').value.trim().replace(',', '.');
+  const readRaw = $id('cc-inp-reading').value.trim().replace(',', '.');
+  if (kgfRaw === '' || readRaw === '') { ccShowErr(t('ccErrValues')); return; }
+  const kgf = parseFloat(kgfRaw);
+  const reading = parseFloat(readRaw);
+  if (isNaN(kgf) || isNaN(reading) || kgf <= 0) { ccShowErr(t('ccErrKgfInvalid')); return; }
+
+  // Doublon kgf
+  if (ccPoints.some(p => p.kgf === kgf)) { ccShowErr(t('ccErrDupKgf')); return; }
+  // Doublon lecture
+  if (ccPoints.some(p => p.reading === reading)) { ccShowErr(t('ccErrDuplicate2')); return; }
+
+  // Détection du sens après 2+ points et vérification de cohérence monotone
+  if (ccPoints.length >= 1) {
+    const allSorted = [...ccPoints, { kgf, reading }].sort((a, b) => a.kgf - b.kgf);
+    if (allSorted.length >= 2) {
+      const first = allSorted[0], last = allSorted[allSorted.length - 1];
+      const globalDir = last.reading > first.reading ? 1 : -1;
+      for (let i = 1; i < allSorted.length; i++) {
+        const diff = allSorted[i].reading - allSorted[i - 1].reading;
+        if (diff === 0 || (diff > 0 && globalDir < 0) || (diff < 0 && globalDir > 0)) {
+          ccShowErr(t('ccErrMonotone')); return;
+        }
+      }
+    }
+  }
+
+  ccPoints.push({ kgf, reading });
+  ccPoints.sort((a, b) => a.kgf - b.kgf);
+  ccRefreshUI();
+  if (ccPoints.length < max) { $id('cc-inp-kgf').focus(); }
+}
+
+// ── Supprimer un point ──────────────────────────────────────────────────────
+function ccRemovePoint(idx, el) {
+  if (el) {
+    el.style.transition = 'opacity .2s, transform .2s';
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(16px)';
+  }
+  setTimeout(() => {
+    ccPoints.splice(idx, 1);
+    ccRefreshUI();
+  }, el ? 200 : 0);
+}
+
+// ── Changement du nombre de points → tronquer si nécessaire ─────────────────
+function ccOnNbChange() {
+  const max = parseInt($id('cc-nb-points').value) || 10;
+  if (ccPoints.length > max) ccPoints.length = max;
+  ccRefreshUI();
+}
+
+// ── Enter dans les inputs kgf/lecture → ajouter le point ────────────────────
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  if (!$id('cc-modal').classList.contains('show')) return;
+  const active = document.activeElement;
+  if (active && active.id === 'cc-inp-kgf') {
+    e.preventDefault();
+    $id('cc-inp-reading').focus();
+  } else if (active && active.id === 'cc-inp-reading') {
+    e.preventDefault();
+    ccAddPoint();
+  }
+});
+
+// ── Focus sur lecture → effacer le message d'erreur ──────────────────────────
+(function() {
+  const el = $id('cc-inp-reading');
+  if (!el) return;
+  el.addEventListener('input', function() {
+    $id('cc-feedback').textContent = '';
+  });
+})();
+
+// ── Afficher les chartes existantes pour le tensiomètre sélectionné ─────────
+function ccRenderExisting() {
+  const tensioKey = $id('cc-tensio').value;
+  const customs = ccLoadAll().filter(cc => cc.tensioKey === tensioKey);
+
+  // Trouver ou créer le conteneur
+  let listWrap = $id('cc-existing-list');
+  if (!listWrap) {
+    listWrap = document.createElement('div');
+    listWrap.id = 'cc-existing-list';
+    const fbEl = $id('cc-feedback');
+    fbEl.parentNode.insertBefore(listWrap, fbEl.nextSibling);
+  }
+
+  if (customs.length === 0) {
+    listWrap.innerHTML = '';
+    return;
+  }
+
+  let html = `<div style="margin-top:.8rem;margin-bottom:.6rem"><span class="cc-step-label">${t('ccManageTitle')}</span></div><div class="cc-list">`;
+  const allCustoms = ccLoadAll();
+  customs.forEach(cc => {
+    const globalIdx = allCustoms.findIndex(c => c.name === cc.name && c.tensioKey === cc.tensioKey);
+    html += `<div class="cc-item" id="cc-item-${globalIdx}">
+      <span class="cc-item-name">${escHtml(cc.name)}</span>
+      <button class="cc-item-load" data-ccidx="${globalIdx}">${t('loadBtn')}</button>
+      <button class="cc-item-del" data-ccidx="${globalIdx}" title="Supprimer">×</button>
+    </div>`;
+  });
+  html += '</div>';
+  listWrap.innerHTML = html;
+
+  // Attacher les événements
+  listWrap.querySelectorAll('.cc-item-load').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      ccLoadChart(parseInt(this.dataset.ccidx));
+    });
+  });
+  listWrap.querySelectorAll('.cc-item-del').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      ccDeleteDirect(parseInt(this.dataset.ccidx), this.closest('.cc-item'));
+    });
+  });
+}
+
+// ── Charger une charte existante dans le formulaire ─────────────────────────
+function ccLoadChart(idx) {
+  const customs = ccLoadAll();
+  const cc = customs[idx];
+  if (!cc) return;
+
+  // Remplir le tensiomètre
+  $id('cc-tensio').value = cc.tensioKey;
+  ccUpdateReadingLabel();
+
+  // Remplir le nom
+  $id('cc-name').value = cc.name;
+
+  // Remplir les points
+  const nbPoints = Math.max(cc.points.length, 5);
+  const nbSel = $id('cc-nb-points');
+  // Ajuster le select au nombre de points (clamp 5-15)
+  nbSel.value = String(Math.min(Math.max(nbPoints, 5), 15));
+
+  ccPoints = cc.points.map(p => ({ kgf: p[1], reading: p[0] }));
+  // Trier par kgf pour cohérence avec la validation monotone
+  ccPoints.sort((a, b) => a.kgf - b.kgf);
+  ccRefreshUI();
+  ccRenderExisting();
+
+  $id('cc-feedback').textContent = '';
+}
+
+// ── Supprimer une charte (sans confirm, avec animation) ─────────────────────
+function ccDeleteDirect(idx, itemEl) {
+  // Animation de suppression
+  if (itemEl) {
+    itemEl.style.transition = 'opacity .25s, transform .25s';
+    itemEl.style.opacity = '0';
+    itemEl.style.transform = 'translateX(20px)';
+  }
+  setTimeout(() => {
+    const customs = ccLoadAll();
+    const removed = customs[idx];
+    customs.splice(idx, 1);
+    ccPersist(customs);
+    ccInjectAll();
+    // Si le rayon sélectionné était cette charte, désélectionner
+    if (removed && tmSpokeKey === CC_PREFIX + removed.name) {
+      tmSpokeKey = null;
+      tmResetData();
+      tmHideResult();
+    }
+    tmPopulateSpokeSelect();
+    tmBuildTable();
+    // Vider les champs de la modale
+    ccPoints = [];
+    $id('cc-name').value = '';
+    $id('cc-inp-kgf').value = '';
+    $id('cc-inp-reading').value = '';
+    $id('cc-feedback').textContent = '';
+    ccRefreshUI();
+    ccRenderExisting();
+  }, itemEl ? 250 : 0);
+}
+
+// ── Sauvegarder la charte ───────────────────────────────────────────────────
+function ccSave() {
+  const fb = $id('cc-feedback');
+  fb.style.color = '#f08080';
+
+  // Validation nom
+  const name = $id('cc-name').value.trim();
+  if (!name) { fb.textContent = t('ccErrName'); return; }
+
+  const tensioKey = $id('cc-tensio').value;
+
+  // Vérifier qu'on a assez de points
+  const requiredNb = parseInt($id('cc-nb-points').value) || 6;
+  if (ccPoints.length < 3) { fb.textContent = t('ccErrValues'); return; }
+  if (ccPoints.length < requiredNb) {
+    fb.textContent = t('ccErrIncomplete').replace('{n}', ccPoints.length).replace('{max}', requiredNb);
+    return;
+  }
+
+  // Construire les points [[reading, kgf], ...]
+  const points = ccPoints.map(p => [p.reading, p.kgf]);
+
+  // Trier par lecture croissante (nécessaire pour l'interpolation)
+  points.sort((a, b) => a[0] - b[0]);
+
+  // Vérifier qu'il n'y a pas de doublons de lecture
+  for (let i = 1; i < points.length; i++) {
+    if (points[i][0] === points[i - 1][0]) {
+      fb.textContent = t('ccErrDuplicate2'); return;
+    }
+  }
+
+  // Sauvegarder (remplacer si même nom, sinon ajouter)
+  const existing = ccLoadAll();
+  const existIdx = existing.findIndex(cc => cc.name === name && cc.tensioKey === tensioKey);
+  const entry = { name, tensioKey, points };
+  if (existIdx >= 0) existing.splice(existIdx, 1, entry);
+  else existing.push(entry);
+  ccPersist(existing);
+  ccInjectAll();
+  tmPopulateSpokeSelect();
+
+  // Sélectionner automatiquement la nouvelle charte si on est sur le bon tensiomètre
+  if (tmStoreKey() === tensioKey) {
+    tmSpokeKey = CC_PREFIX + name;
+    const sel = $id('tm-spoke-select');
+    if (sel) sel.value = tmSpokeKey;
+    tmResetData();
+    tmBuildTable();
+    tmHideResult();
+    tmUpdateConvBtn();
+  }
+
+  // Fermer la modale
+  ccClose();
+}
 
 // ── tmInit ───────────────────────────────────────────────────────────────────
 function tmInit() {
