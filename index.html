@@ -440,15 +440,23 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cc-save-btn:disabled { opacity:.35; pointer-events:none }
 .cc-feedback { font-size:.66rem; color:#f08080; min-height:.9rem; font-style:italic; line-height:1.3; margin-top:.4rem }
 
-/* ── Custom chart: point items in recap ──────────────────────────────────── */
-.cc-point { display:flex; align-items:center; justify-content:center; gap:.5rem; padding:.3rem 0; font-family:'DM Mono',monospace; font-size:.85rem; color:var(--text); animation:fu .2s ease }
-.cc-point-num { font-size:.7rem; color:var(--text3); min-width:1.4rem; text-align:right; flex-shrink:0 }
-.cc-point-kgf { color:var(--accent); font-weight:500 }
-.cc-point-unit { color:var(--text3); font-size:.65rem; margin-left:-.2rem }
-.cc-point-arrow { color:var(--text3); font-size:.75rem }
-.cc-point-reading { color:var(--accent2) }
-.cc-point-del { background:none; border:none; color:var(--text3); font-size:1rem; cursor:pointer; padding:.1rem .3rem; line-height:1; transition:color .2s; flex-shrink:0; margin-left:.3rem }
-.cc-point-del:hover { color:#f08080 }
+/* ── Custom chart: grid table (même pattern que tm-table) ────────────────── */
+.cc-grid-table     { width:100%; border-collapse:collapse; table-layout:fixed; font-family:'DM Mono',monospace; font-size:.82rem }
+.cc-grid-table th  { padding:.45rem .4rem; font-family:'DM Sans',sans-serif; font-size:.58rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; text-align:center; border-bottom:1px solid var(--border); color:var(--text3) }
+.cc-th-num         { width:2.2rem }
+.cc-th-kgf         { width:50%; color:var(--accent) !important }
+.cc-th-reading     { width:50%; color:var(--warm) !important }
+.cc-grid-table td  { padding:.22rem .3rem; text-align:center; border-bottom:1px solid rgba(255,255,255,.035) }
+.cc-grid-table td:first-child { font-size:.72rem; color:var(--text3); width:2.2rem }
+.cc-grid-table tr:last-child td { border-bottom:none }
+.cc-grid-table tr:nth-child(even) { background:rgba(0,0,0,.07) }
+.cc-grid-inp       { width:100%; max-width:90px; background:var(--inp); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'DM Mono',monospace; font-size:.8rem; font-weight:300; padding:.3rem .4rem; text-align:center; transition:border-color .18s, background .18s; -webkit-appearance:none; appearance:none; box-sizing:border-box }
+.cc-grid-inp:focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.02) }
+.cc-grid-inp.has-val { color:var(--text); border-color:rgba(126,200,227,.35) }
+.cc-grid-inp.cc-read { border-color:rgba(232,146,124,.25) }
+.cc-grid-inp.cc-read:focus { border-color:rgba(232,146,124,.55); background:rgba(232,146,124,.025) }
+.cc-grid-inp.cc-read.has-val { border-color:rgba(232,146,124,.45) }
+.cc-grid-inp.cc-err  { border-color:rgba(240,128,128,.6); animation:shake .35s ease }
 
 /* ── Custom charts in dropdown ───────────────────────────────────────────── */
 .tm-spoke-custom { color:var(--accent) !important; font-weight:500 }
@@ -1218,20 +1226,20 @@ input[type=number] { -moz-appearance:textfield }
       </div>
     </div>
 
-    <!-- Étape 3 : Saisie pas-à-pas -->
+    <!-- Étape 3 : Grille de saisie (comme la grille tension) -->
     <div class="cc-step" style="flex:1;display:flex;flex-direction:column;min-height:0">
       <div class="cc-step-label"><span id="cc-counter" style="color:var(--accent)">0/10</span></div>
-      <div id="cc-entry" style="display:flex;gap:.6rem;align-items:flex-end;margin-bottom:.6rem">
-        <div class="f" style="flex:1">
-          <input type="text" id="cc-inp-kgf" class="cc-input" inputmode="decimal" placeholder="kgf" autocomplete="off" autocorrect="off" spellcheck="false" style="font-family:'DM Mono',monospace;text-align:center">
-        </div>
-        <div class="f" style="flex:1">
-          <input type="text" id="cc-inp-reading" class="cc-input" inputmode="decimal" placeholder="Lecture" autocomplete="off" autocorrect="off" spellcheck="false" style="font-family:'DM Mono',monospace;text-align:center">
-        </div>
-      </div>
-      <!-- Récap des points saisis -->
-      <div class="cc-scroll" id="cc-scroll" style="min-height:60px;max-height:260px">
-        <div id="cc-points-list" class="cc-list" style="gap:.45rem"></div>
+      <div class="cc-scroll" id="cc-scroll" style="min-height:60px;max-height:320px">
+        <table class="cc-grid-table" id="cc-grid-table">
+          <thead>
+            <tr>
+              <th class="cc-th-num">#</th>
+              <th class="cc-th-kgf">kgf</th>
+              <th class="cc-th-reading" id="cc-th-reading">Lecture</th>
+            </tr>
+          </thead>
+          <tbody id="cc-grid-tbody"></tbody>
+        </table>
       </div>
       <div class="cc-feedback" id="cc-feedback"></div>
     </div>
@@ -2973,8 +2981,12 @@ document.addEventListener('keydown', function(e) {
 });
 
 
-// ── État de la saisie pas-à-pas ──────────────────────────────────────────────
-let ccPoints = []; // [{kgf, reading}]
+// ── État Custom Chart ────────────────────────────────────────────────────────
+let ccPoints = [];            // [{kgf, reading}]
+let ccInputOrder = null;      // null | 'kgf-first' | 'read-first'
+let ccFaultyInp = null;       // dernier input fautif détecté
+let ccLastEditedRow = -1;     // numéro de ligne de la dernière modification
+let ccLastEditedField = 'read'; // 'kgf' | 'read' — dernier type de champ modifié
 
 // ── Ouvrir la modale ────────────────────────────────────────────────────────
 function ccOpen() {
@@ -2994,7 +3006,6 @@ function ccOpen() {
   ccToggleTensioClear();
   $id('cc-feedback').textContent = '';
   ccPoints = [];
-  ccEntryOrder = null;
   ccUpdateReadingLabel();
 
   // Si un rayon custom est sélectionné, charger ses valeurs directement
@@ -3019,8 +3030,10 @@ function ccOpen() {
   $id('cc-overlay').classList.add('show');
   $id('cc-modal').classList.add('show');
   document.body.style.overflow = 'hidden';
+  // Focus sur le premier input vide de la grille
   if (ccPoints.length === 0) {
-    setTimeout(() => $id('cc-inp-kgf').focus(), 200);
+    const firstInp = $id('cc-grid-tbody').querySelector('.cc-grid-inp');
+    if (firstInp) setTimeout(() => firstInp.focus(), 200);
   }
 }
 
@@ -3065,184 +3078,263 @@ function ccOnTensioChange() {
   ccRenderExisting();
 }
 
-// ── Mettre à jour le placeholder de lecture selon le tensiomètre ─────────────
+// ── Mettre à jour le label de lecture selon le tensiomètre ──────────────────
 function ccUpdateReadingLabel() {
-  const inp = $id('cc-inp-reading');
-  if (inp) inp.placeholder = t('ccReadingPlaceholder');
+  const th = $id('cc-th-reading');
+  if (th) th.textContent = t('ccReadingPlaceholder') || 'Lecture';
 }
 
-// ── Rafraîchir le compteur et la liste ───────────────────────────────────────
-// ── Mettre à jour compteur, état inputs, vider champs (léger, pas de rebuild DOM) ──
-function ccResetInputs() {
+// ── Construire la grille de N lignes ─────────────────────────────────────────
+
+function ccBuildGrid() {
   const max = parseInt($id('cc-nb-points').value) || 10;
-  const cur = ccPoints.length;
-  const isFull = cur >= max;
-  const counter = $id('cc-counter');
-  counter.textContent = cur + '/' + max;
-  counter.style.color = isFull ? 'var(--accent)' : 'var(--text3)';
-  $id('cc-inp-kgf').disabled = isFull;
-  $id('cc-inp-reading').disabled = isFull;
-  $id('cc-save-btn').disabled = !isFull;
-  $id('cc-inp-kgf').value = '';
-  $id('cc-inp-reading').value = '';
-  $id('cc-feedback').textContent = '';
-  return isFull;
-}
+  const tbody = $id('cc-grid-tbody');
+  tbody.innerHTML = '';
+  ccInputOrder = null;
 
-function ccRefreshUI() {
-  ccResetInputs();
-  ccRefreshList();
-}
+  for (let i = 0; i < max; i++) {
+    const tr = document.createElement('tr');
+    const existing = ccPoints[i] || null;
+    const kgfVal  = existing ? existing.kgf : '';
+    const readVal = existing ? existing.reading : '';
+    const kgfHas  = existing ? ' has-val' : '';
+    const readHas = existing ? ' has-val' : '';
 
-// ── Rebuild de la liste des points (séparé pour ne pas casser le focus iOS) ──
-function ccRefreshList() {
-  const list = $id('cc-points-list');
-  const cur = ccPoints.length;
-  if (cur === 0) {
-    list.innerHTML = '';
-    return;
-  }
-  list.innerHTML = ccPoints.map((p, i) =>
-    `<div class="cc-point" id="cc-pt-${i}">
-      <span class="cc-point-num">${i + 1}</span>
-      <span class="cc-point-kgf">${p.kgf}</span><span class="cc-point-unit">kgf</span>
-      <span class="cc-point-arrow">→</span>
-      <span class="cc-point-reading">${p.reading}</span>
-      <button class="cc-point-del" data-ptidx="${i}">×</button>
-    </div>`
-  ).join('');
-  const scroll = $id('cc-scroll');
-  if (scroll) scroll.scrollTop = scroll.scrollHeight;
-  list.querySelectorAll('.cc-point-del').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      const idx = parseInt(this.dataset.ptidx);
-      ccRemovePoint(idx, this.closest('.cc-point'));
-    });
-  });
-}
+    tr.innerHTML =
+      `<td>${i + 1}</td>` +
+      `<td><input class="cc-grid-inp cc-kgf${kgfHas}" data-row="${i}" type="text" inputmode="decimal" value="${kgfVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
+      `<td><input class="cc-grid-inp cc-read${readHas}" data-row="${i}" type="text" inputmode="decimal" value="${readVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>`;
 
-// ── Ajouter un point ────────────────────────────────────────────────────────
-function ccShowErr(msg, faultyId) {
-  const fb = $id('cc-feedback');
-  fb.style.color = '#f08080';
-  fb.textContent = msg;
-  // Présélectionner la valeur fautive pour remplacement immédiat
-  if (faultyId) {
-    const inp = $id(faultyId);
-    if (inp) { inp.focus(); inp.select(); }
-  }
-}
+    tbody.appendChild(tr);
 
-function ccAddPoint() {
-  const max = parseInt($id('cc-nb-points').value) || 10;
-  if (ccPoints.length >= max) return;
-  $id('cc-feedback').textContent = '';
-  const kgfRaw = $id('cc-inp-kgf').value.trim().replace(',', '.');
-  const readRaw = $id('cc-inp-reading').value.trim().replace(',', '.');
-  if (kgfRaw === '' || readRaw === '') { ccShowErr(t('ccErrValues')); return; }
-  const kgf = parseFloat(kgfRaw);
-  const reading = parseFloat(readRaw);
-  if (isNaN(kgf) || kgf <= 0) { ccShowErr(t('ccErrKgfInvalid'), 'cc-inp-kgf'); return; }
-  if (isNaN(reading)) { ccShowErr(t('ccErrKgfInvalid'), 'cc-inp-reading'); return; }
+    // Attacher les événements (même pattern que defl-inp)
+    tr.querySelectorAll('.cc-grid-inp').forEach(inp => {
+      const row    = parseInt(inp.dataset.row);
+      const isKgf  = inp.classList.contains('cc-kgf');
 
-  // Doublon kgf
-  if (ccPoints.some(p => p.kgf === kgf)) { ccShowErr(t('ccErrDupKgf'), 'cc-inp-kgf'); return; }
-  // Doublon lecture
-  if (ccPoints.some(p => p.reading === reading)) { ccShowErr(t('ccErrDuplicate2'), 'cc-inp-reading'); return; }
+      inp.addEventListener('focus', function() { this.select(); });
 
-  // Détection du sens après 2+ points et vérification de cohérence monotone
-  if (ccPoints.length >= 1) {
-    const allSorted = [...ccPoints, { kgf, reading }].sort((a, b) => a.kgf - b.kgf);
-    if (allSorted.length >= 2) {
-      const first = allSorted[0], last = allSorted[allSorted.length - 1];
-      const globalDir = last.reading > first.reading ? 1 : -1;
-      for (let i = 1; i < allSorted.length; i++) {
-        const diff = allSorted[i].reading - allSorted[i - 1].reading;
-        if (diff === 0 || (diff > 0 && globalDir < 0) || (diff < 0 && globalDir > 0)) {
-          // L'erreur vient du dernier champ saisi (le champ actif)
-          const faultyField = document.activeElement && document.activeElement.id === 'cc-inp-kgf' ? 'cc-inp-kgf' : 'cc-inp-reading';
-          ccShowErr(t('ccErrMonotone'), faultyField); return;
+      inp.addEventListener('blur', function() {
+        const raw = this.value.trim().replace(',', '.');
+        if (raw === '') {
+          this.classList.remove('has-val');
+        } else {
+          const val = parseFloat(raw);
+          if (!isNaN(val) && (isKgf ? val > 0 : true)) {
+            this.value = raw;
+            this.classList.add('has-val');
+          }
         }
+        ccLastEditedRow = row;
+        ccLastEditedField = isKgf ? 'kgf' : 'read';
+        ccSyncPoints();
+      });
+
+      inp.addEventListener('input', function() {
+        $id('cc-feedback').textContent = '';
+        // Détecter/mettre à jour l'ordre de saisie :
+        // si l'utilisateur tape dans un champ alors que l'autre champ de la même ligne est vide,
+        // c'est qu'il commence par ce type de champ
+        if (this.value.trim() !== '') {
+          const tr = this.closest('tr');
+          const otherInp = tr.querySelector(isKgf ? '.cc-read' : '.cc-kgf');
+          if (otherInp && otherInp.value.trim() === '') {
+            ccInputOrder = isKgf ? 'kgf-first' : 'read-first';
+          }
+        }
+      });
+
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.blur();
+          // Si une erreur a été détectée au blur → focus+select sur l'input fautif
+          if (ccFaultyInp) {
+            ccFaultyInp.focus();
+            ccFaultyInp.select();
+            return;
+          }
+          // Construire l'ordre de navigation selon ccInputOrder
+          const orderedInps = ccGetOrderedInputs(tbody);
+          const ci = orderedInps.indexOf(this);
+          if (ci < orderedInps.length - 1) {
+            orderedInps[ci + 1].focus();
+          }
+        }
+      });
+    });
+  }
+  ccSyncPoints();
+}
+
+// ── Ordre de navigation des inputs selon l'ordre de saisie détecté ──────────
+function ccGetOrderedInputs(tbody) {
+  const rows = [...tbody.querySelectorAll('tr')];
+  const ordered = [];
+  if (ccInputOrder === 'read-first') {
+    // Lecture d'abord, puis kgf, ligne par ligne
+    rows.forEach(tr => {
+      const read = tr.querySelector('.cc-read');
+      const kgf  = tr.querySelector('.cc-kgf');
+      if (read) ordered.push(read);
+      if (kgf)  ordered.push(kgf);
+    });
+  } else {
+    // kgf d'abord (par défaut), puis lecture, ligne par ligne
+    rows.forEach(tr => {
+      const kgf  = tr.querySelector('.cc-kgf');
+      const read = tr.querySelector('.cc-read');
+      if (kgf)  ordered.push(kgf);
+      if (read) ordered.push(read);
+    });
+  }
+  return ordered;
+}
+
+// ── Lire les points depuis la grille → ccPoints ─────────────────────────────
+
+function ccSyncPoints() {
+  const tbody = $id('cc-grid-tbody');
+  const rows  = tbody.querySelectorAll('tr');
+  ccPoints = [];
+
+  rows.forEach(tr => {
+    const kgfInp  = tr.querySelector('.cc-kgf');
+    const readInp = tr.querySelector('.cc-read');
+    const kgfRaw  = kgfInp.value.trim().replace(',', '.');
+    const readRaw = readInp.value.trim().replace(',', '.');
+    if (kgfRaw !== '' && readRaw !== '') {
+      const kgf     = parseFloat(kgfRaw);
+      const reading = parseFloat(readRaw);
+      if (!isNaN(kgf) && kgf > 0 && !isNaN(reading)) {
+        ccPoints.push({ kgf, reading });
       }
     }
-  }
+  });
 
-  ccPoints.push({ kgf, reading });
   ccPoints.sort((a, b) => a.kgf - b.kgf);
-
-  const max2 = parseInt($id('cc-nb-points').value) || 10;
-  const isFull = ccPoints.length >= max2;
-
-  // 1) Focus IMMÉDIAT — tout premier appel DOM après le keydown (crucial iOS)
-  if (!isFull) {
-    const firstField = ccEntryOrder === 'reading' ? $id('cc-inp-reading') : $id('cc-inp-kgf');
-    firstField.focus();
-  }
-
-  // 2) Reset inputs + rebuild liste APRÈS le focus
-  ccResetInputs();
-  ccRefreshList();
+  ccUpdateCounter();
+  ccValidateGrid();
 }
 
-// ── Supprimer un point ──────────────────────────────────────────────────────
-function ccRemovePoint(idx, el) {
-  if (el) {
-    el.style.transition = 'opacity .2s, transform .2s';
-    el.style.opacity = '0';
-    el.style.transform = 'translateX(16px)';
-  }
-  setTimeout(() => {
-    ccPoints.splice(idx, 1);
-    ccRefreshUI();
-  }, el ? 200 : 0);
-}
+// ── Validation en temps réel : doublons + monotonie ─────────────────────────
+function ccValidateGrid() {
+  const tbody = $id('cc-grid-tbody');
+  const fb    = $id('cc-feedback');
 
-// ── Changement du nombre de points → tronquer si nécessaire ─────────────────
-function ccOnNbChange() {
-  const max = parseInt($id('cc-nb-points').value) || 10;
-  if (ccPoints.length > max) ccPoints.length = max;
-  ccRefreshUI();
-}
+  // Nettoyer les erreurs précédentes
+  tbody.querySelectorAll('.cc-grid-inp').forEach(inp => inp.classList.remove('cc-err'));
+  fb.textContent = '';
+  ccFaultyInp = null;
 
-// ── Ordre de saisie : mémorise quel champ est rempli en premier ─────────────
-let ccEntryOrder = null; // 'kgf' ou 'reading' — déterminé au premier couple saisi
+  // Collecter toutes les lignes remplies avec leurs inputs
+  const filled = [];
+  tbody.querySelectorAll('tr').forEach((tr, idx) => {
+    const kgfInp  = tr.querySelector('.cc-kgf');
+    const readInp = tr.querySelector('.cc-read');
+    const kgfRaw  = kgfInp.value.trim().replace(',', '.');
+    const readRaw = readInp.value.trim().replace(',', '.');
+    if (kgfRaw === '' && readRaw === '') return;
 
-// ── Inputs kgf/lecture : Enter → navigation, Input → clear feedback ──────────
-(function() {
-  const kgfInp  = $id('cc-inp-kgf');
-  const readInp = $id('cc-inp-reading');
-  if (!kgfInp || !readInp) return;
+    const kgf     = parseFloat(kgfRaw);
+    const reading = parseFloat(readRaw);
 
-  // Enter : navigation intelligente (attaché directement comme defl-inp)
-  function ccHandleEnter(e, isKgf) {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-
-    const other = isKgf ? readInp : kgfInp;
-
-    // Si l'autre champ est vide → y aller
-    if (other.value.trim() === '') {
-      other.focus();
+    // Valeur invalide
+    if (kgfRaw !== '' && (isNaN(kgf) || kgf <= 0)) {
+      kgfInp.classList.add('cc-err');
+      fb.style.color = '#f08080';
+      fb.textContent = t('ccErrKgfInvalid');
+      ccFaultyInp = kgfInp;
+      return;
+    }
+    if (readRaw !== '' && isNaN(reading)) {
+      readInp.classList.add('cc-err');
+      fb.style.color = '#f08080';
+      fb.textContent = t('ccErrKgfInvalid');
+      ccFaultyInp = readInp;
       return;
     }
 
-    // Les deux champs sont remplis → déterminer l'ordre si pas encore fait
-    if (!ccEntryOrder) {
-      ccEntryOrder = isKgf ? 'reading' : 'kgf';
+    if (kgfRaw !== '' && readRaw !== '' && !isNaN(kgf) && !isNaN(reading)) {
+      filled.push({ kgf, reading, kgfInp, readInp, row: idx });
     }
+  });
 
-    // Valider le point
-    ccAddPoint();
+  if (ccFaultyInp || filled.length < 2) return;
+
+  // Helper : retourne l'input à marquer sur une ligne fautive (kgf ou read selon le dernier champ édité)
+  function faultyInput(p) {
+    return ccLastEditedField === 'kgf' ? p.kgfInp : p.readInp;
   }
 
-  kgfInp.addEventListener('keydown', function(e) { ccHandleEnter.call(this, e, true); });
-  readInp.addEventListener('keydown', function(e) { ccHandleEnter.call(this, e, false); });
+  // Doublons kgf — marquer celui de la dernière ligne éditée
+  const seenKgf = new Map();
+  for (const p of filled) {
+    if (seenKgf.has(p.kgf)) {
+      const other = seenKgf.get(p.kgf);
+      const faulty = (p.row === ccLastEditedRow) ? p : other;
+      const inp = faulty.kgfInp; // doublon kgf → toujours le champ kgf
+      inp.classList.add('cc-err');
+      fb.style.color = '#f08080';
+      fb.textContent = t('ccErrDupKgf');
+      ccFaultyInp = inp;
+      return;
+    }
+    seenKgf.set(p.kgf, p);
+  }
 
-  // Effacer le message d'erreur dès qu'on tape
-  kgfInp.addEventListener('input',  function() { $id('cc-feedback').textContent = ''; });
-  readInp.addEventListener('input', function() { $id('cc-feedback').textContent = ''; });
-})();
+  // Doublons lecture — marquer celui de la dernière ligne éditée
+  const seenRead = new Map();
+  for (const p of filled) {
+    if (seenRead.has(p.reading)) {
+      const other = seenRead.get(p.reading);
+      const faulty = (p.row === ccLastEditedRow) ? p : other;
+      const inp = faulty.readInp; // doublon lecture → toujours le champ lecture
+      inp.classList.add('cc-err');
+      fb.style.color = '#f08080';
+      fb.textContent = t('ccErrDuplicate2');
+      ccFaultyInp = inp;
+      return;
+    }
+    seenRead.set(p.reading, p);
+  }
+
+  // Monotonie — marquer le dernier champ édité sur la ligne fautive
+  const sorted = [...filled].sort((a, b) => a.kgf - b.kgf);
+  if (sorted.length >= 3) {
+    const first = sorted[0], last = sorted[sorted.length - 1];
+    const globalDir = last.reading > first.reading ? 1 : -1;
+    for (let i = 1; i < sorted.length; i++) {
+      const diff = sorted[i].reading - sorted[i - 1].reading;
+      if (diff === 0 || (diff > 0 && globalDir < 0) || (diff < 0 && globalDir > 0)) {
+        // Parmi les deux points impliqués, marquer celui de la dernière ligne éditée
+        const faulty = (sorted[i].row === ccLastEditedRow) ? sorted[i] :
+                       (sorted[i - 1].row === ccLastEditedRow) ? sorted[i - 1] :
+                       sorted[i]; // fallback
+        const inp = faultyInput(faulty);
+        inp.classList.add('cc-err');
+        fb.style.color = '#f08080';
+        fb.textContent = t('ccErrMonotone');
+        ccFaultyInp = inp;
+        return;
+      }
+    }
+  }
+}
+
+// ── Mettre à jour le compteur + bouton save ─────────────────────────────────
+function ccUpdateCounter() {
+  const max = parseInt($id('cc-nb-points').value) || 10;
+  const cur = ccPoints.length;
+  const counter = $id('cc-counter');
+  counter.textContent = cur + '/' + max;
+  counter.style.color = cur >= max ? 'var(--accent)' : 'var(--text3)';
+  $id('cc-save-btn').disabled = cur < max;
+}
+
+// ── Reconstruire la grille (appelé par ccOpen, ccLoadExisting, ccDeleteDirect, ccOnNbChange) ──
+function ccRefreshUI() { ccBuildGrid(); }
+function ccOnNbChange() { ccBuildGrid(); }
 
 // ── Afficher les chartes existantes pour le tensiomètre sélectionné ─────────
 function ccRenderExisting() {
@@ -3343,11 +3435,8 @@ function ccDeleteDirect(idx, itemEl) {
     tmBuildTable();
     // Vider les champs de la modale
     ccPoints = [];
-    ccEntryOrder = null;
     $id('cc-name').value = '';
     ccToggleNameClear();
-    $id('cc-inp-kgf').value = '';
-    $id('cc-inp-reading').value = '';
     $id('cc-feedback').textContent = '';
     ccRefreshUI();
     ccRenderExisting();
@@ -3356,8 +3445,13 @@ function ccDeleteDirect(idx, itemEl) {
 
 // ── Sauvegarder la charte ───────────────────────────────────────────────────
 function ccSave() {
+  // Synchroniser les points depuis la grille (au cas où le dernier champ n'a pas blur)
+  ccSyncPoints();
   const fb = $id('cc-feedback');
   fb.style.color = '#f08080';
+
+  // Si la grille a des erreurs (doublons, monotonie), bloquer
+  if (fb.textContent !== '') return;
 
   // Validation nom
   const name = $id('cc-name').value.trim();
