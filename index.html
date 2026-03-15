@@ -2994,6 +2994,7 @@ function ccOpen() {
   ccToggleTensioClear();
   $id('cc-feedback').textContent = '';
   ccPoints = [];
+  ccEntryOrder = null;
   ccUpdateReadingLabel();
 
   // Si un rayon custom est sélectionné, charger ses valeurs directement
@@ -3119,13 +3120,15 @@ function ccRefreshUI() {
 }
 
 // ── Ajouter un point ────────────────────────────────────────────────────────
-function ccShowErr(msg) {
+function ccShowErr(msg, faultyId) {
   const fb = $id('cc-feedback');
   fb.style.color = '#f08080';
   fb.textContent = msg;
-  // Vider seulement la lecture, garder le kgf
-  $id('cc-inp-reading').value = '';
-  $id('cc-inp-reading').focus();
+  // Présélectionner la valeur fautive pour remplacement immédiat
+  if (faultyId) {
+    const inp = $id(faultyId);
+    if (inp) { inp.focus(); inp.select(); }
+  }
 }
 
 function ccAddPoint() {
@@ -3137,12 +3140,13 @@ function ccAddPoint() {
   if (kgfRaw === '' || readRaw === '') { ccShowErr(t('ccErrValues')); return; }
   const kgf = parseFloat(kgfRaw);
   const reading = parseFloat(readRaw);
-  if (isNaN(kgf) || isNaN(reading) || kgf <= 0) { ccShowErr(t('ccErrKgfInvalid')); return; }
+  if (isNaN(kgf) || kgf <= 0) { ccShowErr(t('ccErrKgfInvalid'), 'cc-inp-kgf'); return; }
+  if (isNaN(reading)) { ccShowErr(t('ccErrKgfInvalid'), 'cc-inp-reading'); return; }
 
   // Doublon kgf
-  if (ccPoints.some(p => p.kgf === kgf)) { ccShowErr(t('ccErrDupKgf')); return; }
+  if (ccPoints.some(p => p.kgf === kgf)) { ccShowErr(t('ccErrDupKgf'), 'cc-inp-kgf'); return; }
   // Doublon lecture
-  if (ccPoints.some(p => p.reading === reading)) { ccShowErr(t('ccErrDuplicate2')); return; }
+  if (ccPoints.some(p => p.reading === reading)) { ccShowErr(t('ccErrDuplicate2'), 'cc-inp-reading'); return; }
 
   // Détection du sens après 2+ points et vérification de cohérence monotone
   if (ccPoints.length >= 1) {
@@ -3153,7 +3157,9 @@ function ccAddPoint() {
       for (let i = 1; i < allSorted.length; i++) {
         const diff = allSorted[i].reading - allSorted[i - 1].reading;
         if (diff === 0 || (diff > 0 && globalDir < 0) || (diff < 0 && globalDir > 0)) {
-          ccShowErr(t('ccErrMonotone')); return;
+          // L'erreur vient du dernier champ saisi (le champ actif)
+          const faultyField = document.activeElement && document.activeElement.id === 'cc-inp-kgf' ? 'cc-inp-kgf' : 'cc-inp-reading';
+          ccShowErr(t('ccErrMonotone'), faultyField); return;
         }
       }
     }
@@ -3162,7 +3168,11 @@ function ccAddPoint() {
   ccPoints.push({ kgf, reading });
   ccPoints.sort((a, b) => a.kgf - b.kgf);
   ccRefreshUI();
-  if (ccPoints.length < max) { $id('cc-inp-kgf').focus(); }
+  if (ccPoints.length < max) {
+    // Focus sur le premier champ selon l'ordre mémorisé
+    const firstField = ccEntryOrder === 'reading' ? 'cc-inp-reading' : 'cc-inp-kgf';
+    $id(firstField).focus();
+  }
 }
 
 // ── Supprimer un point ──────────────────────────────────────────────────────
@@ -3185,23 +3195,51 @@ function ccOnNbChange() {
   ccRefreshUI();
 }
 
-// ── Enter dans les inputs kgf/lecture → ajouter le point ────────────────────
+// ── Ordre de saisie : mémorise quel champ est rempli en premier ─────────────
+let ccEntryOrder = null; // 'kgf' ou 'reading' — déterminé au premier couple saisi
+
+// ── Enter dans les inputs kgf/lecture → navigation intelligente ─────────────
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Enter') return;
   if (!$id('cc-modal').classList.contains('show')) return;
   const active = document.activeElement;
-  if (active && active.id === 'cc-inp-kgf') {
-    e.preventDefault();
-    $id('cc-inp-reading').focus();
-  } else if (active && active.id === 'cc-inp-reading') {
-    e.preventDefault();
-    ccAddPoint();
+  if (!active) return;
+
+  const isKgf     = active.id === 'cc-inp-kgf';
+  const isReading = active.id === 'cc-inp-reading';
+  if (!isKgf && !isReading) return;
+  e.preventDefault();
+
+  const kgfInp  = $id('cc-inp-kgf');
+  const readInp = $id('cc-inp-reading');
+  const other   = isKgf ? readInp : kgfInp;
+
+  // Si l'autre champ est vide → y aller
+  if (other.value.trim() === '') {
+    other.focus();
+    return;
   }
+
+  // Les deux champs sont remplis → déterminer l'ordre si pas encore fait
+  if (!ccEntryOrder) {
+    ccEntryOrder = isKgf ? 'reading' : 'kgf'; // le champ actuel est le 2e → le 1er est l'autre
+  }
+
+  // Valider le point
+  ccAddPoint();
 });
 
 // ── Focus sur lecture → effacer le message d'erreur ──────────────────────────
 (function() {
   const el = $id('cc-inp-reading');
+  if (!el) return;
+  el.addEventListener('input', function() {
+    $id('cc-feedback').textContent = '';
+  });
+})();
+// Idem pour kgf
+(function() {
+  const el = $id('cc-inp-kgf');
   if (!el) return;
   el.addEventListener('input', function() {
     $id('cc-feedback').textContent = '';
@@ -3307,6 +3345,7 @@ function ccDeleteDirect(idx, itemEl) {
     tmBuildTable();
     // Vider les champs de la modale
     ccPoints = [];
+    ccEntryOrder = null;
     $id('cc-name').value = '';
     ccToggleNameClear();
     $id('cc-inp-kgf').value = '';
