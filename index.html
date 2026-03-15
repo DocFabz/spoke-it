@@ -3113,21 +3113,31 @@ function ccBuildGrid() {
             this.classList.add('has-val');
           }
         }
-        // Validation déférée pour ne jamais bloquer le transfert de focus (iOS ✓)
-        if (!ccReturning) {
-          const self = this;
-          setTimeout(function() {
-            ccSyncPoints();
-            if ($id('cc-feedback').textContent !== '') {
-              ccReturning = true;
-              tbody.querySelectorAll('.cc-grid-inp').forEach(el => el.classList.remove('cc-err'));
-              self.classList.add('cc-err');
-              self.focus();
-              self.select();
-              ccReturning = false;
+        if (ccReturning) return;
+        const self = this;
+        setTimeout(function() {
+          ccSyncPoints();
+          // Si erreur → revenir sur cette case
+          if ($id('cc-feedback').textContent !== '') {
+            ccReturning = true;
+            tbody.querySelectorAll('.cc-grid-inp').forEach(el => el.classList.remove('cc-err'));
+            self.classList.add('cc-err');
+            self.focus();
+            self.select();
+            ccReturning = false;
+            return;
+          }
+          // Si aucun input de la grille n'a le focus (✓ iOS = blur sans focus suivant)
+          // → naviguer automatiquement au champ suivant
+          const active = document.activeElement;
+          if (!active || !active.classList.contains('cc-grid-inp')) {
+            const allInps = ccGetOrderedInputs(tbody);
+            const ci = allInps.indexOf(self);
+            if (ci >= 0 && ci < allInps.length - 1) {
+              allInps[ci + 1].focus();
             }
-          }, 0);
-        }
+          }
+        }, 0);
       });
 
       inp.addEventListener('input', function() {
@@ -3145,6 +3155,7 @@ function ccBuildGrid() {
         }
       });
 
+      // Enter (desktop) : avancer au suivant
       inp.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
