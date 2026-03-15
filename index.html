@@ -646,7 +646,7 @@ input[type=number] { -moz-appearance:textfield }
       <div class="f">
         <label data-i18n="totalSpokes">Nb total de rayons</label>
         <select id="nb-rayons">
-          <option value="" disabled selected hidden></option>
+          <option value="" disabled selected hidden>—</option>
           <option>16</option><option>20</option><option>24</option>
           <option>28</option><option>32</option><option>36</option>
         </select>
@@ -662,15 +662,15 @@ input[type=number] { -moz-appearance:textfield }
         <div class="plabel L"><div class="pdot"></div><span data-i18n="left">Gauche</span></div>
         <div class="f">
           <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTipLeft">Pitch Circle Diameter Gauche</span></label>
-          <input type="number" id="pcd-left" step="0.1" inputmode="decimal">
+          <input type="number" id="pcd-left" step="0.1" inputmode="decimal" placeholder="—">
         </div>
         <div class="f">
           <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTipLeft">Centre-Flasque Gauche</span></label>
-          <input type="number" id="offset-left" step="0.1" inputmode="decimal" oninput="onTension()" onkeydown="if(event.key==='-')event.preventDefault()">
+          <input type="number" id="offset-left" step="0.1" inputmode="decimal" placeholder="—" oninput="onTension()" onkeydown="if(event.key==='-')event.preventDefault()">
         </div>
         <div class="f" id="field-sp-so-left" style="display:none">
           <label class="tip-wrap"><span data-i18n="soLeft">SO gauche</span> (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
-          <input type="number" id="sp-so-left" step="0.1" min="0" max="5" inputmode="decimal">
+          <input type="number" id="sp-so-left" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—">
         </div>
       </div>
       <div class="hub-divider"></div>
@@ -678,15 +678,15 @@ input[type=number] { -moz-appearance:textfield }
         <div class="plabel R"><div class="pdot"></div><span data-i18n="right">Droit</span></div>
         <div class="f">
           <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTipRight">Pitch Circle Diameter Droit</span></label>
-          <input type="number" id="pcd-right" step="0.1" inputmode="decimal">
+          <input type="number" id="pcd-right" step="0.1" inputmode="decimal" placeholder="—">
         </div>
         <div class="f">
           <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTipRight">Centre-Flasque Droite</span></label>
-          <input type="number" id="offset-right" step="0.1" inputmode="decimal" oninput="onTension()" onkeydown="if(event.key==='-')event.preventDefault()">
+          <input type="number" id="offset-right" step="0.1" inputmode="decimal" placeholder="—" oninput="onTension()" onkeydown="if(event.key==='-')event.preventDefault()">
         </div>
         <div class="f" id="field-sp-so-right" style="display:none">
           <label class="tip-wrap"><span data-i18n="soRight">SO droit</span> (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
-          <input type="number" id="sp-so-right" step="0.1" min="0" max="5" inputmode="decimal">
+          <input type="number" id="sp-so-right" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—">
         </div>
       </div>
     </div>
@@ -709,7 +709,7 @@ input[type=number] { -moz-appearance:textfield }
     <div id="erd-direct-section">
       <div class="f" style="max-width:185px">
         <label>ERD (mm)</label>
-        <input type="number" id="erd-direct" step="0.1" inputmode="decimal">
+        <input type="number" id="erd-direct" step="0.1" inputmode="decimal" placeholder="—">
       </div>
     </div>
 
@@ -717,12 +717,12 @@ input[type=number] { -moz-appearance:textfield }
       <div class="g2" style="max-width:400px">
         <div class="f">
           <label>NSD (mm)</label>
-          <input type="number" id="nsd-val" step="0.1" inputmode="decimal" oninput="calcNsd()">
+          <input type="number" id="nsd-val" step="0.1" inputmode="decimal" placeholder="—" oninput="calcNsd()">
         </div>
         <div class="f">
           <label class="tip-wrap">ADDON (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="addonTip">Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.</span></label>
           <select id="ecrou-type" onchange="calcNsd()">
-            <option value="" disabled selected>— mm —</option>
+            <option value="" disabled selected hidden>—</option>
             <option value="1.8">1.8</option><option value="1.9">1.9</option>
             <option value="2.0">2.0</option><option value="2.1">2.1</option>
             <option value="2.2">2.2</option><option value="2.3">2.3</option>
@@ -795,7 +795,7 @@ input[type=number] { -moz-appearance:textfield }
           <span class="tension-label" data-i18n="driveSide">Côté Droit (DS)</span>
         </label>
         <select id="tension-forte" onchange="onTension();checkTensionComplete()">
-          <option value="" disabled selected>—</option>
+          <option value="" disabled selected hidden>—</option>
           <option>80</option><option>85</option><option>90</option><option>95</option>
           <option>100</option><option>105</option><option>110</option><option>115</option>
           <option>120</option><option>125</option><option>130</option>
@@ -977,7 +977,7 @@ input[type=number] { -moz-appearance:textfield }
     <div class="f" style="margin-bottom:1rem">
       <div style="display:flex;gap:.4rem;align-items:center">
         <select id="tm-tensio-select" class="tm-select" style="flex:1" onchange="setTM(this.value)">
-          <option value="" disabled selected hidden>— Choisir tensio —</option>
+          <option value="" disabled selected hidden>—</option>
           <option value="wf">Wheel Fanatyk</option>
           <option value="pt">Park Tool TM-1</option>
           <option value="dt">DT Swiss</option>
@@ -1011,7 +1011,7 @@ input[type=number] { -moz-appearance:textfield }
       <label data-i18n="tmSpokeLabel">Rayon</label>
       <div style="display:flex;gap:.4rem;align-items:center">
         <select id="tm-spoke-select" class="tm-select" style="flex:1" onchange="tmOnSpokeChange()">
-          <option value="">— Choisir un rayon —</option>
+          <option value="">—</option>
         </select>
         <button class="tm-clear-tensio" id="tm-clear-spoke" onclick="tmClearSpoke()" style="display:none" title="Reset">✕</button>
       </div>
@@ -1181,7 +1181,7 @@ input[type=number] { -moz-appearance:textfield }
       <div class="cc-step-label" data-i18n="ccStepTensio">Tensiomètre</div>
       <div style="display:flex;gap:.35rem">
         <select id="cc-tensio" class="cc-select" onchange="ccOnTensioChange()">
-          <option value="" disabled selected hidden>— Choisir tensio —</option>
+          <option value="" disabled selected hidden>—</option>
           <option value="wf_new">Wheel Fanatyk (New Chart)</option>
           <option value="wf_old">Wheel Fanatyk (Old Chart)</option>
           <option value="pt">Park Tool TM-1</option>
@@ -1294,8 +1294,8 @@ const i18n = {
     tmNoSpokes:'Saisir le nombre de rayons dans le Calculateur.',
     tmReadingKgf:'lecture · kgf',
     tmChooseSpoke:'Choisir un rayon ci-dessus',
-    tmSpokeSelectPlaceholder:'— Choisir un rayon —',
-    tmTensioPlaceholder:'— Choisir tensio —',
+    tmSpokeSelectPlaceholder:'—',
+    tmTensioPlaceholder:'—',
     tmWarnAerolite2:'⚠ Valeurs valables UNIQUEMENT avec le Tensiomètre Aerolite II',
     tmHintDT:'DT Swiss : valeur exacte en mm (ex\u00a0: <code>1.45</code> ou <code>1,45</code>)',
     tmHintPK:'P&KLie : valeur exacte en mm (ex\u00a0: <code>2.34</code> ou <code>2,34</code>). Rayons DT Swiss et Sapim.',
@@ -1371,8 +1371,8 @@ const i18n = {
     tmNoSpokes:'Enter the spoke count in the Calculator.',
     tmReadingKgf:'reading · kgf',
     tmChooseSpoke:'Choose a spoke above',
-    tmSpokeSelectPlaceholder:'— Choose a spoke —',
-    tmTensioPlaceholder:'— Choose tensiometer —',
+    tmSpokeSelectPlaceholder:'—',
+    tmTensioPlaceholder:'—',
     tmWarnAerolite2:'⚠ Values valid ONLY with the Aerolite II Tensiometer',
     tmHintDT:'DT Swiss: exact value in mm (e.g.\u00a0<code>1.45</code> or <code>1,45</code>)',
     tmHintPK:'P&KLie: exact value in mm (e.g.\u00a0<code>2.34</code> or <code>2,34</code>). DT Swiss and Sapim spokes.',
