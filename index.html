@@ -1174,16 +1174,19 @@ input[type=number] { -moz-appearance:textfield }
     <!-- Étape 1 : Tensiomètre -->
     <div class="cc-step">
       <div class="cc-step-label" data-i18n="ccStepTensio">Tensiomètre</div>
-      <select id="cc-tensio" class="cc-select" onchange="ccOnTensioChange()">
-        <option value="" disabled selected hidden>— Choisir tensio —</option>
-        <option value="wf_new">Wheel Fanatyk (New Chart)</option>
-        <option value="wf_old">Wheel Fanatyk (Old Chart)</option>
-        <option value="pt">Park Tool TM-1</option>
-        <option value="dt_standard">DT Swiss (Standard)</option>
-        <option value="dt_aerolite2">DT Swiss (Aerolite II)</option>
-        <option value="pk">P&amp;KLie</option>
-        <option value="un">UNIOR 1752</option>
-      </select>
+      <div style="display:flex;gap:.35rem">
+        <select id="cc-tensio" class="cc-select" onchange="ccOnTensioChange()">
+          <option value="" disabled selected hidden>— Choisir tensio —</option>
+          <option value="wf_new">Wheel Fanatyk (New Chart)</option>
+          <option value="wf_old">Wheel Fanatyk (Old Chart)</option>
+          <option value="pt">Park Tool TM-1</option>
+          <option value="dt_standard">DT Swiss (Standard)</option>
+          <option value="dt_aerolite2">DT Swiss (Aerolite II)</option>
+          <option value="pk">P&amp;KLie</option>
+          <option value="un">UNIOR 1752</option>
+        </select>
+        <button class="tm-clear-tensio" id="cc-clear-tensio" onclick="ccClearTensio()" style="display:none" title="Reset">✕</button>
+      </div>
     </div>
 
     <!-- Étape 2 : Nom + Points sur la même ligne -->
@@ -2988,6 +2991,7 @@ function ccOpen() {
   $id('cc-name').value = '';
   $id('cc-name').placeholder = t('ccNamePlaceholder');
   ccToggleNameClear();
+  ccToggleTensioClear();
   $id('cc-feedback').textContent = '';
   ccPoints = [];
   ccUpdateReadingLabel();
@@ -2998,6 +3002,7 @@ function ccOpen() {
     const match = customs.find(cc => cc.tensioKey === activeKey && CC_PREFIX + cc.name === tmSpokeKey);
     if (match) {
       $id('cc-tensio').value = match.tensioKey;
+      ccToggleTensioClear();
       ccUpdateReadingLabel();
       $id('cc-name').value = match.name;
       ccToggleNameClear();
@@ -3040,18 +3045,32 @@ function ccClearName() {
   ccToggleNameClear();
 }
 
-function ccOnTensioChange() {
+function ccToggleTensioClear() {
+  const sel = $id('cc-tensio');
+  const btn = $id('cc-clear-tensio');
+  if (btn) btn.style.display = sel && sel.value ? '' : 'none';
+}
+function ccClearTensio() {
+  const sel = $id('cc-tensio');
+  if (sel) { sel.value = ''; }
+  ccToggleTensioClear();
   ccUpdateReadingLabel();
   ccRenderExisting();
 }
 
-// ── Mettre à jour le label de lecture selon le tensiomètre ──────────────────
+function ccOnTensioChange() {
+  ccToggleTensioClear();
+  ccUpdateReadingLabel();
+  ccRenderExisting();
+}
+
+// ── Mettre à jour le placeholder de lecture selon le tensiomètre ─────────────
 function ccUpdateReadingLabel() {
   const inp = $id('cc-inp-reading');
   if (inp) inp.placeholder = t('ccReadingPlaceholder');
 }
 
-// ── Rafraîchir le compteur, la liste, et le bouton + ────────────────────────
+// ── Rafraîchir le compteur et la liste ───────────────────────────────────────
 function ccRefreshUI() {
   const max = parseInt($id('cc-nb-points').value) || 10;
   const cur = ccPoints.length;
@@ -3244,6 +3263,7 @@ function ccLoadChart(idx) {
 
   // Remplir le tensiomètre
   $id('cc-tensio').value = cc.tensioKey;
+  ccToggleTensioClear();
   ccUpdateReadingLabel();
 
   // Remplir le nom
