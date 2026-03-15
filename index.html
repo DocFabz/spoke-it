@@ -452,11 +452,9 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cc-grid-table tr:nth-child(even) { background:rgba(0,0,0,.07) }
 .cc-grid-inp       { width:100%; max-width:90px; background:var(--inp); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'DM Mono',monospace; font-size:.8rem; font-weight:300; padding:.3rem .4rem; text-align:center; transition:border-color .18s, background .18s; -webkit-appearance:none; appearance:none; box-sizing:border-box }
 .cc-grid-inp:focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.02) }
-.cc-grid-inp.has-val { color:var(--text); border-color:rgba(126,200,227,.35) }
-.cc-grid-inp.cc-read { border-color:rgba(232,146,124,.25) }
 .cc-grid-inp.cc-read:focus { border-color:rgba(232,146,124,.55); background:rgba(232,146,124,.025) }
-.cc-grid-inp.cc-read.has-val { border-color:rgba(232,146,124,.45) }
-.cc-grid-inp.cc-err  { border-color:rgba(240,128,128,.6); animation:shake .35s ease }
+.cc-grid-inp.has-val { color:var(--text) }
+.cc-grid-inp.cc-err  { border-color:rgba(240,128,128,.6) }
 
 /* ── Custom charts in dropdown ───────────────────────────────────────────── */
 .tm-spoke-custom { color:var(--accent) !important; font-weight:500 }
@@ -3085,6 +3083,7 @@ function ccUpdateReadingLabel() {
 function ccBuildGrid() {
   const max = parseInt($id('cc-nb-points').value) || 10;
   const tbody = $id('cc-grid-tbody');
+  let ccReturning = false;
   tbody.innerHTML = '';
   ccInputOrder = null;
 
@@ -3108,7 +3107,6 @@ function ccBuildGrid() {
 
       inp.addEventListener('focus', function() { this.select(); });
 
-      // Blur ultra-léger : ne touche que this (comme defl-inp dans la grille tension)
       inp.addEventListener('blur', function() {
         const raw = this.value.trim().replace(',', '.');
         if (raw === '') {
@@ -3120,6 +3118,12 @@ function ccBuildGrid() {
             this.classList.add('has-val');
           }
         }
+        ccSyncPoints();
+        if (!ccReturning && $id('cc-feedback').textContent !== '') {
+          ccReturning = true;
+          const self = this;
+          setTimeout(function() { self.focus(); self.select(); ccReturning = false; }, 0);
+        }
       });
 
       inp.addEventListener('input', function() {
@@ -3128,37 +3132,36 @@ function ccBuildGrid() {
         if (this.value.trim() !== '') {
           const other = this.closest('tr').querySelector(isKgf ? '.cc-read' : '.cc-kgf');
           if (other && other.value.trim() === '') {
-            ccInputOrder = isKgf ? 'kgf-first' : 'read-first';
+            const newOrder = isKgf ? 'kgf-first' : 'read-first';
+            if (ccInputOrder !== newOrder) {
+              ccInputOrder = newOrder;
+              ccUpdateTabOrder();
+            }
           }
         }
       });
 
-      // Enter : identique à defl-inp — this.blur() puis next.focus()
-      // Synchro + validation APRÈS le transfert de focus
+      // Enter (desktop) : focus sur le suivant selon l'ordre
       inp.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
           const allInps = ccGetOrderedInputs(tbody);
           const ci = allInps.indexOf(this);
-          // Pas de blur explicite — le focus direct déclenche le blur implicitement
-          // (contourne le bug iOS position:fixed + blur/focus)
-          if (ci < allInps.length - 1) {
-            allInps[ci + 1].focus();
-          } else {
-            this.blur();
-          }
-          setTimeout(function() {
-            ccSyncPoints();
-            if ($id('cc-feedback').textContent !== '') {
-              const errInp = tbody.querySelector('.cc-err');
-              if (errInp) { errInp.focus(); errInp.select(); }
-            }
-          }, 0);
+          if (ci < allInps.length - 1) allInps[ci + 1].focus();
+          else this.blur();
         }
       });
     });
   }
+  ccUpdateTabOrder();
   ccSyncPoints();
+}
+
+// ── Mettre à jour les tabindex selon l'ordre de saisie (crucial pour iOS ∧∨) ─
+function ccUpdateTabOrder() {
+  const tbody = $id('cc-grid-tbody');
+  const ordered = ccGetOrderedInputs(tbody);
+  ordered.forEach((inp, i) => { inp.tabIndex = i + 1; });
 }
 
 // ── Ordre de navigation selon le sens de saisie détecté ─────────────────────
