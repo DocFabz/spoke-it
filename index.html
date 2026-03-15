@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Spoke It</title>
 
 <!-- Favicon & App Icons -->
@@ -1021,14 +1021,14 @@ input[type=number] { -moz-appearance:textfield }
     <!-- Boutons table de conversion + custom chart -->
     <div style="margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;gap:.4rem;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:.4rem">
-        <span class="tip-wrap">
-          <span class="tip-icon">?</span>
-          <span class="tip-box" data-i18n="tmConvTip">Vérifiez la Tension Chart</span>
-        </span>
         <button class="tm-conv-btn locked" id="tm-conv-btn" onclick="tmOpenConvTable()">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="2" width="13" height="12" rx="1.5"/><line x1="1.5" y1="5.5" x2="14.5" y2="5.5"/><line x1="1.5" y1="9" x2="14.5" y2="9"/><line x1="6" y1="5.5" x2="6" y2="14"/><line x1="11" y1="5.5" x2="11" y2="14"/></svg>
           <span data-i18n="tmConvBtn">Table de conversion</span>
         </button>
+        <span class="tip-wrap">
+          <span class="tip-icon">?</span>
+          <span class="tip-box" data-i18n="tmConvTip">Vérifiez la Tension Chart</span>
+        </span>
       </div>
       <button class="tm-custom-btn" id="cc-open-btn" onclick="ccOpen()">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><line x1="8" y1="5" x2="8" y2="11"/><line x1="5" y1="8" x2="11" y2="8"/></svg>
@@ -2400,6 +2400,21 @@ document.querySelectorAll('input[type=number]').forEach(inp => {
 window.addEventListener('resize', function() {
   if ($id('tm-result-card').style.display !== 'none') tmTryRenderRadar();
 });
+
+// ── Prevent iOS auto-zoom on orientation change ─────────────────────────────
+(function() {
+  var iosFix = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  if (!iosFix) return;
+  window.addEventListener('orientationchange', function() {
+    // Brief lock then restore to force iOS to reset zoom
+    var vp = document.querySelector('meta[name="viewport"]');
+    if (!vp) return;
+    vp.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    setTimeout(function() {
+      vp.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    }, 200);
+  });
+})();
 
 // ── Tooltip dynamic positioning ───────────────────────────────────────────────
 (function() {
