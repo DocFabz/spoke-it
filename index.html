@@ -418,10 +418,10 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-custom-btn svg { width:12px; height:12px; flex-shrink:0 }
 
 /* ── Custom chart modal ──────────────────────────────────────────────────── */
-.cc-overlay { position:absolute; top:0; left:0; right:0; min-height:100%; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; visibility:hidden; pointer-events:none }
-.cc-overlay.show { visibility:visible; opacity:1; pointer-events:auto }
-.cc-modal { position:relative; z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:440px; margin:2rem auto; opacity:0; visibility:hidden; pointer-events:none; flex-direction:column; display:flex }
-.cc-modal.show { visibility:visible; opacity:1; pointer-events:auto; animation:conv-in .2s ease both }
+.cc-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
+.cc-overlay.show { display:block; opacity:1 }
+.cc-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:440px; max-height:88vh; overflow-y:auto; display:none; flex-direction:column }
+.cc-modal.show { display:flex; animation:conv-in .2s ease both }
 .cc-header { display:flex; align-items:center; gap:.5rem; margin-bottom:1rem }
 .cc-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); flex:1 }
 .cc-close { background:none; border:none; color:var(--text3); font-size:1.1rem; cursor:pointer; padding:.2rem .4rem; line-height:1; transition:color .2s; flex-shrink:0 }
@@ -3020,12 +3020,10 @@ function ccOpen() {
   ccRenderExisting();
   $id('cc-overlay').classList.add('show');
   $id('cc-modal').classList.add('show');
-  // Scroller vers le modal (il est dans le flux de la page, pas fixed)
-  $id('cc-modal').scrollIntoView({ behavior:'smooth', block:'start' });
-  // Focus sur le premier input vide de la grille
+  document.body.style.overflow = 'hidden';
   if (ccPoints.length === 0) {
     const firstInp = $id('cc-grid-tbody').querySelector('.cc-grid-inp');
-    if (firstInp) setTimeout(() => firstInp.focus(), 300);
+    if (firstInp) setTimeout(() => firstInp.focus(), 200);
   }
 }
 
@@ -3033,6 +3031,7 @@ function ccOpen() {
 function ccClose() {
   $id('cc-overlay').classList.remove('show');
   $id('cc-modal').classList.remove('show');
+  document.body.style.overflow = '';
   // Déverrouiller le select tensiomètre
   const sel = $id('cc-tensio');
   if (sel) { sel.disabled = false; sel.style.opacity = ''; }
