@@ -3180,8 +3180,8 @@ function ccBuildGrid() {
 
     tr.innerHTML =
       `<td>${i + 1}</td>` +
-      `<td><input class="cc-grid-inp cc-kgf${kgfHas}" type="text" inputmode="decimal" value="${kgfVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
-      `<td><input class="cc-grid-inp cc-read${readHas}" type="text" inputmode="decimal" value="${readVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>`;
+      `<td><input class="cc-grid-inp cc-kgf${kgfHas}" type="text" value="${kgfVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
+      `<td><input class="cc-grid-inp cc-read${readHas}" type="text" value="${readVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>`;
 
     tbody.appendChild(tr);
 
@@ -3664,7 +3664,7 @@ function tmBuildTable() {
       const hasVal  = val !== null ? ' has-val' : '';
       return `<td class="defl-td">
         <div class="defl-cell">
-          <input class="defl-inp ${cls}${hasVal}" data-idx="${i}" data-side="${side}" type="text" inputmode="decimal"
+          <input class="defl-inp ${cls}${hasVal}" data-idx="${i}" data-side="${side}" type="text"
             value="${dispVal}" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="—">
           <div class="defl-result ${cls}" id="dr-${side}-${i}">${kgf !== null ? kgf + ' kgf' : ''}</div>
         </div>
