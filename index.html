@@ -3116,6 +3116,7 @@ function ccBuildGrid() {
         const self = this;
         setTimeout(function() {
           ccSyncPoints();
+          // Erreur → revenir sur cette case
           if ($id('cc-feedback').textContent !== '') {
             ccReturning = true;
             tbody.querySelectorAll('.cc-grid-inp').forEach(el => el.classList.remove('cc-err'));
@@ -3123,8 +3124,16 @@ function ccBuildGrid() {
             self.focus();
             self.select();
             ccReturning = false;
+            return;
           }
-        }, 0);
+          // ✓ iOS : si aucun input n'a le focus → avancer au suivant
+          const active = document.activeElement;
+          if (!active || !active.classList.contains('cc-grid-inp')) {
+            const allInps = ccGetOrderedInputs(tbody);
+            const ci = allInps.indexOf(self);
+            if (ci >= 0 && ci < allInps.length - 1) allInps[ci + 1].focus();
+          }
+        }, 10);
       });
 
       inp.addEventListener('input', function() {
