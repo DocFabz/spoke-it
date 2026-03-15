@@ -409,7 +409,12 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-conv-btn:hover { border-color:var(--accent); color:var(--accent) }
 .tm-conv-btn.locked { pointer-events:none; cursor:not-allowed }
 .tm-conv-btn svg  { width:12px; height:12px; flex-shrink:0 }
-.tm-conv-btn.active { border-color:rgba(126,200,227,.45); color:var(--accent) }
+
+/* ── Sub-toggle (DT Standard/Aerolite, WF Old/New) ───────────────────────── */
+.wf-toggle   { display:inline-flex; background:var(--inp); border:1px solid var(--border); border-radius:20px; padding:2px; gap:2px }
+.wf-pill      { padding:.2rem .7rem; border:none; border-radius:18px; background:transparent; color:var(--text3); font-family:'DM Mono',monospace; font-size:.62rem; font-weight:400; letter-spacing:.08em; cursor:pointer; transition:all .2s; text-transform:uppercase; line-height:1.4 }
+.wf-pill:hover { color:var(--text2) }
+.wf-pill.active { background:var(--bg2); color:var(--accent); box-shadow:0 1px 6px rgba(0,0,0,.3) }
 
 /* ── Custom chart button ──────────────────────────────────────────────────── */
 .tm-custom-btn { display:inline-flex; align-items:center; gap:.3rem; padding:.3rem .75rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.65rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:none }
@@ -989,21 +994,31 @@ input[type=number] { -moz-appearance:textfield }
     </div>
 
     <!-- Sous-type DT Swiss (visible uniquement quand dt actif) -->
-    <div id="tm-dt-subtype" style="display:none;margin-bottom:1rem;justify-content:space-between;gap:.4rem">
-      <button class="tm-conv-btn active" id="tm-btn-dt-std"  onclick="setDTSub('standard')">Tensio Standard</button>
-      <button class="tm-conv-btn"        id="tm-btn-dt-ael2" onclick="setDTSub('aerolite2')">Tensio Aerolite II</button>
+    <div id="tm-dt-subtype" style="display:none;margin-bottom:1rem">
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <div class="wf-toggle">
+          <button class="wf-pill active" id="tm-btn-dt-std" onclick="setDTSub('standard')">Standard</button>
+          <button class="wf-pill" id="tm-btn-dt-ael2" onclick="setDTSub('aerolite2')">Aerolite II</button>
+        </div>
+        <span class="tip-wrap">
+          <span class="tip-icon">i</span>
+          <span class="tip-box" id="tm-dt-tip" data-i18n="tmDTTipStd">Tensiomètre DT Swiss standard</span>
+        </span>
+      </div>
     </div>
 
     <!-- Sous-type WF (visible uniquement quand wf actif) -->
-    <div id="tm-wf-subtype" style="margin-bottom:1rem;display:none;justify-content:space-between;gap:.4rem;align-items:center">
-      <div style="display:flex;align-items:center;gap:.4rem">
+    <div id="tm-wf-subtype" style="margin-bottom:1rem;display:none">
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <div class="wf-toggle">
+          <button class="wf-pill active" id="tm-btn-wf-new" onclick="setWFSub('new')">New</button>
+          <button class="wf-pill" id="tm-btn-wf-old" onclick="setWFSub('old')">Old</button>
+        </div>
         <span class="tip-wrap">
-          <span class="tip-icon">?</span>
-          <span class="tip-box" data-i18n="tmWFChartTip">New Chart = Nouvelles Tables de Conversions Wheel Fanatyk</span>
+          <span class="tip-icon">i</span>
+          <span class="tip-box" id="tm-wf-tip" data-i18n="tmWFTipNew">Dernières mises à jour des Tension Charts par WF</span>
         </span>
-        <button class="tm-conv-btn"        id="tm-btn-wf-old" onclick="setWFSub('old')">Old Chart</button>
       </div>
-      <button class="tm-conv-btn active" id="tm-btn-wf-new" onclick="setWFSub('new')">New Chart</button>
     </div>
 
     <!-- Sélecteur de rayon -->
@@ -1182,8 +1197,7 @@ input[type=number] { -moz-appearance:textfield }
       <div style="display:flex;gap:.35rem">
         <select id="cc-tensio" class="cc-select" onchange="ccOnTensioChange()">
           <option value="" disabled selected hidden>—</option>
-          <option value="wf_new">Wheel Fanatyk (New Chart)</option>
-          <option value="wf_old">Wheel Fanatyk (Old Chart)</option>
+          <option value="wf">Wheel Fanatyk</option>
           <option value="pt">Park Tool TM-1</option>
           <option value="dt_standard">DT Swiss (Standard)</option>
           <option value="dt_aerolite2">DT Swiss (Aerolite II)</option>
@@ -1307,7 +1321,10 @@ const i18n = {
     tmConvReading:'Lecture',
     tmConvTensio:'Tensiomètre',
     tmHintUN:'UNIOR 1752 : valeur entière lue sur le tensiomètre — ex\u00a0<code>45</code>. Rayons ronds et plats (blade).',
-    tmWFChartTip:'New Chart = Nouvelles Tables de Conversions Wheel Fanatyk',
+    tmWFTipNew:'Dernières mises à jour des Tension Charts par WF',
+    tmWFTipOld:'Version précédente des Tension Charts par WF',
+    tmDTTipStd:'Tensiomètre DT Swiss standard',
+    tmDTTipAel2:'Tables spécifiques au Tensiomètre Aerolite II',
     tmConvTip:'Vérifiez la Tension Chart',
     ccCreateBtn:'Custom Chart',
     ccTitle:'Custom Chart',
@@ -1384,7 +1401,10 @@ const i18n = {
     tmConvReading:'Reading',
     tmConvTensio:'Tensiometer',
     tmHintUN:'UNIOR 1752: integer value from the tensiometer — e.g.\u00a0<code>45</code>. Round and blade spokes.',
-    tmWFChartTip:'New Chart = Updated Wheel Fanatyk Conversion Tables',
+    tmWFTipNew:'Latest Tension Charts update by WF',
+    tmWFTipOld:'Previous version of WF Tension Charts',
+    tmDTTipStd:'Standard DT Swiss tensiometer',
+    tmDTTipAel2:'Tables specific to the Aerolite II Tensiometer',
     tmConvTip:'Check the Tension Chart',
     ccCreateBtn:'Custom Chart',
     ccTitle:'Custom Chart',
@@ -1703,6 +1723,7 @@ function applyState(s) {
     const bAel2 = $id('tm-btn-dt-ael2');
     if (bStd)  bStd.classList.toggle('active',  tmDTSub === 'standard');
     if (bAel2) bAel2.classList.toggle('active', tmDTSub === 'aerolite2');
+    updateDTTip();
 
     // Sous-type WF
     tmWFSub = s.tmWFSub || 'new';
@@ -1710,6 +1731,7 @@ function applyState(s) {
     const bNew = $id('tm-btn-wf-new');
     if (bOld) bOld.classList.toggle('active', tmWFSub === 'old');
     if (bNew) bNew.classList.toggle('active', tmWFSub === 'new');
+    updateWFTip();
 
     // Dropdown rayon
     tmSpokeKey = s.tmSpokeKey || null;
@@ -2600,12 +2622,47 @@ function ccInjectAll() {
   // Injecter les chartes sauvegardées
   const customs = ccLoadAll();
   customs.forEach(cc => {
+    const key = CC_PREFIX + cc.name;
+    // Wheel Fanatyk : injecter dans les deux tables (old + new)
+    if (cc.tensioKey === 'wf') {
+      if (TM_TABLES.wf_old) TM_TABLES.wf_old[key] = cc.points;
+      if (TM_TABLES.wf_new) TM_TABLES.wf_new[key] = cc.points;
+      return;
+    }
+    // Migration : anciens customs wf_old/wf_new → injecter dans les deux tables aussi
+    if (cc.tensioKey === 'wf_old' || cc.tensioKey === 'wf_new') {
+      if (TM_TABLES.wf_old) TM_TABLES.wf_old[key] = cc.points;
+      if (TM_TABLES.wf_new) TM_TABLES.wf_new[key] = cc.points;
+      return;
+    }
     const tbl = TM_TABLES[cc.tensioKey];
     if (!tbl) return;
-    const key = CC_PREFIX + cc.name;
     tbl[key] = cc.points; // [[reading, kgf], ...]
   });
 }
+
+// ── Migration : unifier wf_old / wf_new → wf dans les customs sauvegardés ───
+(function ccMigrateWF() {
+  const customs = ccLoadAll();
+  let changed = false;
+  const seen = new Map(); // name → index in result
+  const result = [];
+  customs.forEach(cc => {
+    if (cc.tensioKey === 'wf_old' || cc.tensioKey === 'wf_new') {
+      cc.tensioKey = 'wf';
+      changed = true;
+    }
+    // Dédupliquer par nom+tensioKey (garder le dernier)
+    const k = cc.tensioKey + '||' + cc.name;
+    if (seen.has(k)) {
+      result[seen.get(k)] = cc;
+    } else {
+      seen.set(k, result.length);
+      result.push(cc);
+    }
+  });
+  if (changed) ccPersist(result);
+})();
 
 // ── Injecter les chartes personnalisées dès que toutes les tables sont prêtes ──
 ccInjectAll();
@@ -2878,6 +2935,15 @@ function setDTSub(sub) {
   tmSwitchActiveKey(newKey);
   $id('tm-btn-dt-std').classList.toggle('active',  sub === 'standard');
   $id('tm-btn-dt-ael2').classList.toggle('active', sub === 'aerolite2');
+  updateDTTip();
+}
+
+function updateDTTip() {
+  const tip = $id('tm-dt-tip');
+  if (!tip) return;
+  const key = tmDTSub === 'aerolite2' ? 'tmDTTipAel2' : 'tmDTTipStd';
+  tip.setAttribute('data-i18n', key);
+  tip.textContent = t(key);
 }
 
 function setWFSub(sub) {
@@ -2887,6 +2953,15 @@ function setWFSub(sub) {
   tmSwitchActiveKey(newKey);
   $id('tm-btn-wf-old').classList.toggle('active', sub === 'old');
   $id('tm-btn-wf-new').classList.toggle('active', sub === 'new');
+  updateWFTip();
+}
+
+function updateWFTip() {
+  const tip = $id('tm-wf-tip');
+  if (!tip) return;
+  const key = tmWFSub === 'old' ? 'tmWFTipOld' : 'tmWFTipNew';
+  tip.setAttribute('data-i18n', key);
+  tip.textContent = t(key);
 }
 
 // ── onchange sur le dropdown de rayons ───────────────────────────────────────
@@ -2985,9 +3060,11 @@ function ccOpen() {
   const sel = $id('cc-tensio');
   const activeKey = tmStoreKey();
   const hasTensio = !!activeKey;
+  // Mapper wf_old/wf_new → wf pour le select du modal
+  const ccTensioVal = (activeKey === 'wf_old' || activeKey === 'wf_new') ? 'wf' : activeKey;
   if (sel) {
     const opts = Array.from(sel.options).map(o => o.value).filter(v => v);
-    sel.value = opts.includes(activeKey) ? activeKey : '';
+    sel.value = opts.includes(ccTensioVal) ? ccTensioVal : '';
     sel.disabled = hasTensio;
     sel.style.opacity = hasTensio ? '.7' : '';
   }
@@ -3002,9 +3079,16 @@ function ccOpen() {
   // Si un rayon custom est sélectionné, charger ses valeurs directement
   if (tmSpokeKey && tmSpokeKey.startsWith(CC_PREFIX)) {
     const customs = ccLoadAll();
-    const match = customs.find(cc => cc.tensioKey === activeKey && CC_PREFIX + cc.name === tmSpokeKey);
+    const match = customs.find(cc => {
+      if (CC_PREFIX + cc.name !== tmSpokeKey) return false;
+      // Match compatible pour WF (wf, wf_old, wf_new sont unifiés)
+      const isActiveWF = activeKey === 'wf_old' || activeKey === 'wf_new';
+      const isCcWF = cc.tensioKey === 'wf' || cc.tensioKey === 'wf_old' || cc.tensioKey === 'wf_new';
+      if (isActiveWF && isCcWF) return true;
+      return cc.tensioKey === activeKey;
+    });
     if (match) {
-      $id('cc-tensio').value = match.tensioKey;
+      $id('cc-tensio').value = (match.tensioKey === 'wf' || match.tensioKey === 'wf_old' || match.tensioKey === 'wf_new') ? 'wf' : match.tensioKey;
       ccToggleTensioClear();
       ccUpdateReadingLabel();
       $id('cc-name').value = match.name;
@@ -3270,7 +3354,11 @@ function ccOnNbChange() { ccBuildGrid(); }
 // ── Afficher les chartes existantes pour le tensiomètre sélectionné ─────────
 function ccRenderExisting() {
   const tensioKey = $id('cc-tensio').value;
-  const customs = ccLoadAll().filter(cc => cc.tensioKey === tensioKey);
+  const isWF = tensioKey === 'wf';
+  const customs = ccLoadAll().filter(cc => {
+    if (isWF) return cc.tensioKey === 'wf' || cc.tensioKey === 'wf_old' || cc.tensioKey === 'wf_new';
+    return cc.tensioKey === tensioKey;
+  });
 
   // Trouver ou créer le conteneur
   let listWrap = $id('cc-existing-list');
@@ -3319,7 +3407,9 @@ function ccLoadChart(idx) {
   const customs = ccLoadAll();
   const cc = customs[idx];
   if (!cc) return;
-  $id('cc-tensio').value = cc.tensioKey;
+  // Mapper wf_old/wf_new → wf pour le select du modal
+  const selectVal = (cc.tensioKey === 'wf' || cc.tensioKey === 'wf_old' || cc.tensioKey === 'wf_new') ? 'wf' : cc.tensioKey;
+  $id('cc-tensio').value = selectVal;
   ccToggleTensioClear();
   ccUpdateReadingLabel();
   $id('cc-name').value = cc.name;
@@ -3389,8 +3479,12 @@ function ccSave() {
 
   // Sauvegarder (remplacer si même nom, sinon ajouter)
   const existing = ccLoadAll();
-  const existIdx = existing.findIndex(cc => cc.name === name && cc.tensioKey === tensioKey);
-  const entry = { name, tensioKey, points };
+  // Chercher par nom ET tensioKey compatible (wf, wf_old, wf_new sont unifiés)
+  const isWF = tensioKey === 'wf' || tensioKey === 'wf_old' || tensioKey === 'wf_new';
+  const existIdx = existing.findIndex(cc => cc.name === name && (
+    isWF ? (cc.tensioKey === 'wf' || cc.tensioKey === 'wf_old' || cc.tensioKey === 'wf_new') : cc.tensioKey === tensioKey
+  ));
+  const entry = { name, tensioKey: isWF ? 'wf' : tensioKey, points };
   if (existIdx >= 0) existing.splice(existIdx, 1, entry);
   else existing.push(entry);
   ccPersist(existing);
@@ -3398,7 +3492,9 @@ function ccSave() {
   tmPopulateSpokeSelect();
 
   // Sélectionner automatiquement la nouvelle charte si on est sur le bon tensiomètre
-  if (tmStoreKey() === tensioKey) {
+  const activeKey = tmStoreKey();
+  const tensioMatch = isWF ? (activeKey === 'wf_old' || activeKey === 'wf_new') : (activeKey === tensioKey);
+  if (tensioMatch) {
     tmSpokeKey = CC_PREFIX + name;
     const sel = $id('tm-spoke-select');
     if (sel) sel.value = tmSpokeKey;
