@@ -1226,6 +1226,7 @@ input[type=number] { -moz-appearance:textfield }
     <!-- Étape 3 : Grille de saisie -->
     <div class="cc-step">
       <div class="cc-step-label"><span id="cc-counter" style="color:var(--accent)">0/10</span></div>
+      <form id="cc-grid-form" onsubmit="return false" action="javascript:void(0)">
       <table class="cc-grid-table" id="cc-grid-table">
         <thead>
           <tr>
@@ -1236,6 +1237,7 @@ input[type=number] { -moz-appearance:textfield }
         </thead>
         <tbody id="cc-grid-tbody"></tbody>
       </table>
+      </form>
       <div class="cc-feedback" id="cc-feedback"></div>
     </div>
 
