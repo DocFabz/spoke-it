@@ -3200,13 +3200,13 @@ function ccOnNbChange() {
 // ── Ordre de saisie : mémorise quel champ est rempli en premier ─────────────
 let ccEntryOrder = null; // 'kgf' ou 'reading' — déterminé au premier couple saisi
 
-// ── Enter dans les inputs kgf/lecture → navigation intelligente ─────────────
-// Attaché directement sur chaque input (comme pour defl-inp dans la grille tension)
+// ── Inputs kgf/lecture : Enter → navigation, Input → clear feedback ──────────
 (function() {
   const kgfInp  = $id('cc-inp-kgf');
   const readInp = $id('cc-inp-reading');
   if (!kgfInp || !readInp) return;
 
+  // Enter : navigation intelligente (attaché directement comme defl-inp)
   function ccHandleEnter(e, isKgf) {
     if (e.key !== 'Enter') return;
     e.preventDefault();
@@ -3231,23 +3231,10 @@ let ccEntryOrder = null; // 'kgf' ou 'reading' — déterminé au premier couple
 
   kgfInp.addEventListener('keydown', function(e) { ccHandleEnter.call(this, e, true); });
   readInp.addEventListener('keydown', function(e) { ccHandleEnter.call(this, e, false); });
-})();
 
-// ── Focus sur lecture → effacer le message d'erreur ──────────────────────────
-(function() {
-  const el = $id('cc-inp-reading');
-  if (!el) return;
-  el.addEventListener('input', function() {
-    $id('cc-feedback').textContent = '';
-  });
-})();
-// Idem pour kgf
-(function() {
-  const el = $id('cc-inp-kgf');
-  if (!el) return;
-  el.addEventListener('input', function() {
-    $id('cc-feedback').textContent = '';
-  });
+  // Effacer le message d'erreur dès qu'on tape
+  kgfInp.addEventListener('input',  function() { $id('cc-feedback').textContent = ''; });
+  readInp.addEventListener('input', function() { $id('cc-feedback').textContent = ''; });
 })();
 
 // ── Afficher les chartes existantes pour le tensiomètre sélectionné ─────────
