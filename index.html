@@ -375,6 +375,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .voice-header-btn.active { border-color:rgba(232,100,80,.5); color:#e86450; background:rgba(232,100,80,.06) }
 .voice-header-btn.unsupported { opacity:.3; pointer-events:none; cursor:not-allowed }
 .voice-header-btn svg { width:12px; height:12px; flex-shrink:0 }
+.voice-mic-btn.unsupported { opacity:.35; pointer-events:none; cursor:not-allowed }
 
 /* ── Save ──────────────────────────────────────────────────────────────────── */
 .save-wrap       { display:none; animation:fu .5s cubic-bezier(.22,1,.36,1) }
@@ -1413,6 +1414,7 @@ const i18n = {
     voiceReady:'Prêt — appuyez sur le micro',
     voicePaused:'Pause — appuyez pour reprendre',
     voiceOOR:'Hors plage',
+    voiceOffline:'Connexion requise pour la saisie vocale',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -1512,6 +1514,7 @@ const i18n = {
     voiceReady:'Ready — tap the mic',
     voicePaused:'Paused — tap to resume',
     voiceOOR:'Out of range',
+    voiceOffline:'Connection required for voice input',
   }
 };
 
@@ -4180,6 +4183,33 @@ const VoiceInput = (() => {
     recognition.addEventListener('result', onResult);
     recognition.addEventListener('end', onEnd);
     recognition.addEventListener('error', onError);
+
+    // ── Online / Offline detection ──
+    updateOnlineState();
+    window.addEventListener('online',  updateOnlineState);
+    window.addEventListener('offline', updateOnlineState);
+  }
+
+  function updateOnlineState() {
+    const btn     = $id('voice-toggle-btn');
+    const micBtn  = $id('voice-mic-btn');
+    const isOn    = navigator.onLine;
+    if (!btn) return;
+
+    if (!isOn && supported) {
+      btn.classList.add('unsupported');
+      btn.title = t('voiceOffline');
+      if (recording) stopRecording();
+      if (micBtn) { micBtn.classList.add('unsupported'); micBtn.title = t('voiceOffline'); }
+      // Mettre à jour le statut si la barre est ouverte
+      const statusEl = $id('voice-status');
+      if (active && statusEl) statusEl.innerHTML = `<span style="color:var(--warm)">⚡</span> ${t('voiceOffline')}`;
+    } else if (isOn && supported) {
+      btn.classList.remove('unsupported');
+      btn.title = t('voiceBtn');
+      if (micBtn) { micBtn.classList.remove('unsupported'); micBtn.title = ''; }
+      if (active) updateStatus();
+    }
   }
 
   // ── Helpers : mapping côté logique ↔ côté data ────────────────────────────
@@ -4466,7 +4496,7 @@ const VoiceInput = (() => {
 
   // ── Public API ────────────────────────────────────────────────────────────
   function toggle() {
-    if (!supported) return;
+    if (!supported || !navigator.onLine) return;
     active = !active;
     const bar = $id('voice-bar');
     const btn = $id('voice-toggle-btn');
@@ -4487,7 +4517,7 @@ const VoiceInput = (() => {
   }
 
   function micClick() {
-    if (!supported) return;
+    if (!supported || !navigator.onLine) return;
     if (recording) {
       stopRecording();
     } else {
