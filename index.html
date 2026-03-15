@@ -3085,7 +3085,6 @@ function ccUpdateReadingLabel() {
 }
 
 // ── Construire la grille de N lignes ─────────────────────────────────────────
-
 function ccBuildGrid() {
   const max = parseInt($id('cc-nb-points').value) || 10;
   const tbody = $id('cc-grid-tbody');
@@ -3127,14 +3126,12 @@ function ccBuildGrid() {
         }
         ccLastEditedRow = row;
         ccLastEditedField = isKgf ? 'kgf' : 'read';
-        ccSyncPoints();
+        setTimeout(ccSyncPoints, 0); // déféré pour ne pas bloquer le focus (iOS)
       });
 
       inp.addEventListener('input', function() {
         $id('cc-feedback').textContent = '';
-        // Détecter/mettre à jour l'ordre de saisie :
-        // si l'utilisateur tape dans un champ alors que l'autre champ de la même ligne est vide,
-        // c'est qu'il commence par ce type de champ
+        // Détecter l'ordre de saisie quand l'autre champ de la ligne est vide
         if (this.value.trim() !== '') {
           const tr = this.closest('tr');
           const otherInp = tr.querySelector(isKgf ? '.cc-read' : '.cc-kgf');
@@ -3147,21 +3144,12 @@ function ccBuildGrid() {
       inp.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
-          // Déterminer le prochain champ AVANT tout blur
           const orderedInps = ccGetOrderedInputs(tbody);
           const ci = orderedInps.indexOf(this);
-          const nextInp = ci < orderedInps.length - 1 ? orderedInps[ci + 1] : null;
-          // Focus direct sans blur explicite — le blur se déclenche naturellement
-          // et le ccSyncPoints/ccValidateGrid s'exécute APRÈS que le focus est établi
-          if (nextInp) {
-            nextInp.focus();
+          if (ci < orderedInps.length - 1) {
+            orderedInps[ci + 1].focus(); // focus direct, pas de blur explicite (iOS)
           } else {
             this.blur();
-          }
-          // Vérifier si une erreur a été détectée par le blur → revenir sur l'input fautif
-          if (ccFaultyInp && ccFaultyInp !== document.activeElement) {
-            ccFaultyInp.focus();
-            ccFaultyInp.select();
           }
         }
       });
@@ -3172,30 +3160,18 @@ function ccBuildGrid() {
 
 // ── Ordre de navigation des inputs selon l'ordre de saisie détecté ──────────
 function ccGetOrderedInputs(tbody) {
-  const rows = [...tbody.querySelectorAll('tr')];
+  const first  = ccInputOrder === 'read-first' ? '.cc-read' : '.cc-kgf';
+  const second = ccInputOrder === 'read-first' ? '.cc-kgf'  : '.cc-read';
   const ordered = [];
-  if (ccInputOrder === 'read-first') {
-    // Lecture d'abord, puis kgf, ligne par ligne
-    rows.forEach(tr => {
-      const read = tr.querySelector('.cc-read');
-      const kgf  = tr.querySelector('.cc-kgf');
-      if (read) ordered.push(read);
-      if (kgf)  ordered.push(kgf);
-    });
-  } else {
-    // kgf d'abord (par défaut), puis lecture, ligne par ligne
-    rows.forEach(tr => {
-      const kgf  = tr.querySelector('.cc-kgf');
-      const read = tr.querySelector('.cc-read');
-      if (kgf)  ordered.push(kgf);
-      if (read) ordered.push(read);
-    });
-  }
+  tbody.querySelectorAll('tr').forEach(tr => {
+    const a = tr.querySelector(first), b = tr.querySelector(second);
+    if (a) ordered.push(a);
+    if (b) ordered.push(b);
+  });
   return ordered;
 }
 
 // ── Lire les points depuis la grille → ccPoints ─────────────────────────────
-
 function ccSyncPoints() {
   const tbody = $id('cc-grid-tbody');
   const rows  = tbody.querySelectorAll('tr');
@@ -3230,6 +3206,16 @@ function ccValidateGrid() {
   fb.textContent = '';
   ccFaultyInp = null;
 
+  // Helper : marque un input comme fautif, affiche le message, focus+select dessus
+  function markFaulty(inp, msg) {
+    inp.classList.add('cc-err');
+    fb.style.color = '#f08080';
+    fb.textContent = msg;
+    ccFaultyInp = inp;
+    inp.focus();
+    inp.select();
+  }
+
   // Collecter toutes les lignes remplies avec leurs inputs
   const filled = [];
   tbody.querySelectorAll('tr').forEach((tr, idx) => {
@@ -3242,19 +3228,12 @@ function ccValidateGrid() {
     const kgf     = parseFloat(kgfRaw);
     const reading = parseFloat(readRaw);
 
-    // Valeur invalide
     if (kgfRaw !== '' && (isNaN(kgf) || kgf <= 0)) {
-      kgfInp.classList.add('cc-err');
-      fb.style.color = '#f08080';
-      fb.textContent = t('ccErrKgfInvalid');
-      ccFaultyInp = kgfInp;
+      markFaulty(kgfInp, t('ccErrKgfInvalid'));
       return;
     }
     if (readRaw !== '' && isNaN(reading)) {
-      readInp.classList.add('cc-err');
-      fb.style.color = '#f08080';
-      fb.textContent = t('ccErrKgfInvalid');
-      ccFaultyInp = readInp;
+      markFaulty(readInp, t('ccErrKgfInvalid'));
       return;
     }
 
@@ -3265,44 +3244,36 @@ function ccValidateGrid() {
 
   if (ccFaultyInp || filled.length < 2) return;
 
-  // Helper : retourne l'input à marquer sur une ligne fautive (kgf ou read selon le dernier champ édité)
+  // Helper : retourne l'input à marquer selon le dernier champ édité
   function faultyInput(p) {
     return ccLastEditedField === 'kgf' ? p.kgfInp : p.readInp;
   }
 
-  // Doublons kgf — marquer celui de la dernière ligne éditée
+  // Doublons kgf
   const seenKgf = new Map();
   for (const p of filled) {
     if (seenKgf.has(p.kgf)) {
       const other = seenKgf.get(p.kgf);
       const faulty = (p.row === ccLastEditedRow) ? p : other;
-      const inp = faulty.kgfInp; // doublon kgf → toujours le champ kgf
-      inp.classList.add('cc-err');
-      fb.style.color = '#f08080';
-      fb.textContent = t('ccErrDupKgf');
-      ccFaultyInp = inp;
+      markFaulty(faulty.kgfInp, t('ccErrDupKgf'));
       return;
     }
     seenKgf.set(p.kgf, p);
   }
 
-  // Doublons lecture — marquer celui de la dernière ligne éditée
+  // Doublons lecture
   const seenRead = new Map();
   for (const p of filled) {
     if (seenRead.has(p.reading)) {
       const other = seenRead.get(p.reading);
       const faulty = (p.row === ccLastEditedRow) ? p : other;
-      const inp = faulty.readInp; // doublon lecture → toujours le champ lecture
-      inp.classList.add('cc-err');
-      fb.style.color = '#f08080';
-      fb.textContent = t('ccErrDuplicate2');
-      ccFaultyInp = inp;
+      markFaulty(faulty.readInp, t('ccErrDuplicate2'));
       return;
     }
     seenRead.set(p.reading, p);
   }
 
-  // Monotonie — marquer le dernier champ édité sur la ligne fautive
+  // Monotonie
   const sorted = [...filled].sort((a, b) => a.kgf - b.kgf);
   if (sorted.length >= 3) {
     const first = sorted[0], last = sorted[sorted.length - 1];
@@ -3310,15 +3281,10 @@ function ccValidateGrid() {
     for (let i = 1; i < sorted.length; i++) {
       const diff = sorted[i].reading - sorted[i - 1].reading;
       if (diff === 0 || (diff > 0 && globalDir < 0) || (diff < 0 && globalDir > 0)) {
-        // Parmi les deux points impliqués, marquer celui de la dernière ligne éditée
         const faulty = (sorted[i].row === ccLastEditedRow) ? sorted[i] :
                        (sorted[i - 1].row === ccLastEditedRow) ? sorted[i - 1] :
-                       sorted[i]; // fallback
-        const inp = faultyInput(faulty);
-        inp.classList.add('cc-err');
-        fb.style.color = '#f08080';
-        fb.textContent = t('ccErrMonotone');
-        ccFaultyInp = inp;
+                       sorted[i];
+        markFaulty(faultyInput(faulty), t('ccErrMonotone'));
         return;
       }
     }
