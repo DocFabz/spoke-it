@@ -3072,27 +3072,32 @@ function ccUpdateReadingLabel() {
 }
 
 // ── Rafraîchir le compteur et la liste ───────────────────────────────────────
-function ccRefreshUI() {
+// ── Mettre à jour compteur, état inputs, vider champs (léger, pas de rebuild DOM) ──
+function ccResetInputs() {
   const max = parseInt($id('cc-nb-points').value) || 10;
   const cur = ccPoints.length;
   const isFull = cur >= max;
-  // Compteur : affiche cur/max, couleur accent si complet, text3 sinon
   const counter = $id('cc-counter');
   counter.textContent = cur + '/' + max;
   counter.style.color = isFull ? 'var(--accent)' : 'var(--text3)';
-  // Désactiver les inputs si plein
   $id('cc-inp-kgf').disabled = isFull;
   $id('cc-inp-reading').disabled = isFull;
-  // Bouton Enregistrer : désactiver si incomplet
-  const saveBtn = $id('cc-save-btn');
-  saveBtn.disabled = !isFull;
-  // Vider les inputs
+  $id('cc-save-btn').disabled = !isFull;
   $id('cc-inp-kgf').value = '';
   $id('cc-inp-reading').value = '';
-  // Feedback : effacer si on change les données
   $id('cc-feedback').textContent = '';
-  // Rendre la liste
+  return isFull;
+}
+
+function ccRefreshUI() {
+  ccResetInputs();
+  ccRefreshList();
+}
+
+// ── Rebuild de la liste des points (séparé pour ne pas casser le focus iOS) ──
+function ccRefreshList() {
   const list = $id('cc-points-list');
+  const cur = ccPoints.length;
   if (cur === 0) {
     list.innerHTML = '';
     return;
@@ -3106,10 +3111,8 @@ function ccRefreshUI() {
       <button class="cc-point-del" data-ptidx="${i}">×</button>
     </div>`
   ).join('');
-  // Auto-scroll vers le dernier point ajouté
   const scroll = $id('cc-scroll');
   if (scroll) scroll.scrollTop = scroll.scrollHeight;
-  // Attacher les suppressions
   list.querySelectorAll('.cc-point-del').forEach(btn => {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -3167,14 +3170,18 @@ function ccAddPoint() {
 
   ccPoints.push({ kgf, reading });
   ccPoints.sort((a, b) => a.kgf - b.kgf);
-  ccRefreshUI();
-  if (ccPoints.length < max) {
-    // Focus sur le premier champ selon l'ordre mémorisé (blur→focus comme defl-inp)
-    const firstField = ccEntryOrder === 'reading' ? 'cc-inp-reading' : 'cc-inp-kgf';
-    const secondField = ccEntryOrder === 'reading' ? 'cc-inp-kgf' : 'cc-inp-reading';
-    $id(secondField).blur();
-    $id(firstField).focus();
+
+  // 1) Reset inputs (léger, pas de rebuild DOM)
+  const isFull = ccResetInputs();
+
+  // 2) Focus SYNCHRONE — dans le call stack du user-gesture (crucial pour iOS)
+  if (!isFull) {
+    const firstField = ccEntryOrder === 'reading' ? $id('cc-inp-reading') : $id('cc-inp-kgf');
+    firstField.focus();
   }
+
+  // 3) Rebuild de la liste APRÈS le focus
+  ccRefreshList();
 }
 
 // ── Supprimer un point ──────────────────────────────────────────────────────
