@@ -3113,15 +3113,20 @@ function ccBuildGrid() {
             this.classList.add('has-val');
           }
         }
-        if (ccReturning) return;
-        ccSyncPoints();
-        if ($id('cc-feedback').textContent !== '') {
-          ccReturning = true;
-          // Nettoyer toutes les erreurs et ne marquer que cette case
-          tbody.querySelectorAll('.cc-grid-inp').forEach(el => el.classList.remove('cc-err'));
-          this.classList.add('cc-err');
+        // Validation déférée pour ne jamais bloquer le transfert de focus (iOS ✓)
+        if (!ccReturning) {
           const self = this;
-          setTimeout(function() { self.focus(); self.select(); ccReturning = false; }, 0);
+          setTimeout(function() {
+            ccSyncPoints();
+            if ($id('cc-feedback').textContent !== '') {
+              ccReturning = true;
+              tbody.querySelectorAll('.cc-grid-inp').forEach(el => el.classList.remove('cc-err'));
+              self.classList.add('cc-err');
+              self.focus();
+              self.select();
+              ccReturning = false;
+            }
+          }, 0);
         }
       });
 
@@ -3143,11 +3148,10 @@ function ccBuildGrid() {
       inp.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
-          this.blur();
-          if (ccReturning) return;
           const allInps = ccGetOrderedInputs(tbody);
           const ci = allInps.indexOf(this);
           if (ci < allInps.length - 1) allInps[ci + 1].focus();
+          else this.blur();
         }
       });
     });
