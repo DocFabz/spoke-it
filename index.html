@@ -3171,16 +3171,17 @@ function ccAddPoint() {
   ccPoints.push({ kgf, reading });
   ccPoints.sort((a, b) => a.kgf - b.kgf);
 
-  // 1) Reset inputs (léger, pas de rebuild DOM)
-  const isFull = ccResetInputs();
+  const max2 = parseInt($id('cc-nb-points').value) || 10;
+  const isFull = ccPoints.length >= max2;
 
-  // 2) Focus SYNCHRONE — dans le call stack du user-gesture (crucial pour iOS)
+  // 1) Focus IMMÉDIAT — tout premier appel DOM après le keydown (crucial iOS)
   if (!isFull) {
     const firstField = ccEntryOrder === 'reading' ? $id('cc-inp-reading') : $id('cc-inp-kgf');
     firstField.focus();
   }
 
-  // 3) Rebuild de la liste APRÈS le focus
+  // 2) Reset inputs + rebuild liste APRÈS le focus
+  ccResetInputs();
   ccRefreshList();
 }
 
@@ -3222,7 +3223,6 @@ let ccEntryOrder = null; // 'kgf' ou 'reading' — déterminé au premier couple
 
     // Si l'autre champ est vide → y aller
     if (other.value.trim() === '') {
-      this.blur();
       other.focus();
       return;
     }
