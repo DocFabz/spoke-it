@@ -2978,7 +2978,6 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-
 // ── État Custom Chart ────────────────────────────────────────────────────────
 let ccPoints = [];            // [{kgf, reading}]
 let ccInputOrder = null;      // null | 'kgf-first' | 'read-first'
@@ -3093,8 +3092,8 @@ function ccBuildGrid() {
 
     tr.innerHTML =
       `<td>${i + 1}</td>` +
-      `<td><input class="cc-grid-inp cc-kgf${kgfHas}" data-row="${i}" type="text" inputmode="decimal" value="${kgfVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
-      `<td><input class="cc-grid-inp cc-read${readHas}" data-row="${i}" type="text" inputmode="decimal" value="${readVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>`;
+      `<td><input class="cc-grid-inp cc-kgf${kgfHas}" type="text" inputmode="decimal" value="${kgfVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
+      `<td><input class="cc-grid-inp cc-read${readHas}" type="text" inputmode="decimal" value="${readVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>`;
 
     tbody.appendChild(tr);
 
