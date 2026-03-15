@@ -3097,8 +3097,8 @@ function ccBuildGrid() {
 
     tr.innerHTML =
       `<td>${i + 1}</td>` +
-      `<td><input class="cc-grid-inp cc-kgf${kgfHas}" data-row="${i}" type="text" inputmode="decimal" enterkeyhint="next" value="${kgfVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
-      `<td><input class="cc-grid-inp cc-read${readHas}" data-row="${i}" type="text" inputmode="decimal" enterkeyhint="next" value="${readVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>`;
+      `<td><input class="cc-grid-inp cc-kgf${kgfHas}" data-row="${i}" type="text" inputmode="decimal" value="${kgfVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
+      `<td><input class="cc-grid-inp cc-read${readHas}" data-row="${i}" type="text" inputmode="decimal" value="${readVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>`;
 
     tbody.appendChild(tr);
 
@@ -3141,13 +3141,12 @@ function ccBuildGrid() {
         }
       });
 
-      // Enter (desktop) : focus sur le suivant selon l'ordre
       inp.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
           const allInps = ccGetOrderedInputs(tbody);
           const ci = allInps.indexOf(this);
-          if (ci < allInps.length - 1) allInps[ci + 1].focus();
+          if (ci < allInps.length - 1) { this.blur(); allInps[ci + 1].focus(); }
           else this.blur();
         }
       });
