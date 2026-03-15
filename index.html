@@ -3169,8 +3169,10 @@ function ccAddPoint() {
   ccPoints.sort((a, b) => a.kgf - b.kgf);
   ccRefreshUI();
   if (ccPoints.length < max) {
-    // Focus sur le premier champ selon l'ordre mémorisé
+    // Focus sur le premier champ selon l'ordre mémorisé (blur→focus comme defl-inp)
     const firstField = ccEntryOrder === 'reading' ? 'cc-inp-reading' : 'cc-inp-kgf';
+    const secondField = ccEntryOrder === 'reading' ? 'cc-inp-kgf' : 'cc-inp-reading';
+    $id(secondField).blur();
     $id(firstField).focus();
   }
 }
@@ -3199,35 +3201,37 @@ function ccOnNbChange() {
 let ccEntryOrder = null; // 'kgf' ou 'reading' — déterminé au premier couple saisi
 
 // ── Enter dans les inputs kgf/lecture → navigation intelligente ─────────────
-document.addEventListener('keydown', function(e) {
-  if (e.key !== 'Enter') return;
-  if (!$id('cc-modal').classList.contains('show')) return;
-  const active = document.activeElement;
-  if (!active) return;
-
-  const isKgf     = active.id === 'cc-inp-kgf';
-  const isReading = active.id === 'cc-inp-reading';
-  if (!isKgf && !isReading) return;
-  e.preventDefault();
-
+// Attaché directement sur chaque input (comme pour defl-inp dans la grille tension)
+(function() {
   const kgfInp  = $id('cc-inp-kgf');
   const readInp = $id('cc-inp-reading');
-  const other   = isKgf ? readInp : kgfInp;
+  if (!kgfInp || !readInp) return;
 
-  // Si l'autre champ est vide → y aller
-  if (other.value.trim() === '') {
-    other.focus();
-    return;
+  function ccHandleEnter(e, isKgf) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+
+    const other = isKgf ? readInp : kgfInp;
+
+    // Si l'autre champ est vide → y aller
+    if (other.value.trim() === '') {
+      this.blur();
+      other.focus();
+      return;
+    }
+
+    // Les deux champs sont remplis → déterminer l'ordre si pas encore fait
+    if (!ccEntryOrder) {
+      ccEntryOrder = isKgf ? 'reading' : 'kgf';
+    }
+
+    // Valider le point
+    ccAddPoint();
   }
 
-  // Les deux champs sont remplis → déterminer l'ordre si pas encore fait
-  if (!ccEntryOrder) {
-    ccEntryOrder = isKgf ? 'reading' : 'kgf'; // le champ actuel est le 2e → le 1er est l'autre
-  }
-
-  // Valider le point
-  ccAddPoint();
-});
+  kgfInp.addEventListener('keydown', function(e) { ccHandleEnter.call(this, e, true); });
+  readInp.addEventListener('keydown', function(e) { ccHandleEnter.call(this, e, false); });
+})();
 
 // ── Focus sur lecture → effacer le message d'erreur ──────────────────────────
 (function() {
