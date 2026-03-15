@@ -3108,6 +3108,7 @@ function ccBuildGrid() {
 
       inp.addEventListener('focus', function() { this.select(); });
 
+      // Blur ultra-léger : ne touche que this (comme defl-inp dans la grille tension)
       inp.addEventListener('blur', function() {
         const raw = this.value.trim().replace(',', '.');
         if (raw === '') {
@@ -3119,7 +3120,6 @@ function ccBuildGrid() {
             this.classList.add('has-val');
           }
         }
-        ccSyncPoints();
       });
 
       inp.addEventListener('input', function() {
@@ -3133,18 +3133,24 @@ function ccBuildGrid() {
         }
       });
 
+      // Enter : identique à defl-inp — this.blur() puis next.focus()
+      // Synchro + validation APRÈS le transfert de focus
       inp.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
           e.preventDefault();
           const allInps = ccGetOrderedInputs(tbody);
           const ci = allInps.indexOf(this);
-          this.blur();
-          if ($id('cc-feedback').textContent !== '') {
-            this.focus();
-            this.select();
-            return;
-          }
-          if (ci < allInps.length - 1) allInps[ci + 1].focus();
+          if (ci < allInps.length - 1) { this.blur(); allInps[ci + 1].focus(); }
+          else this.blur();
+          // Synchro + validation déférée (hors du call stack blur→focus)
+          setTimeout(function() {
+            ccSyncPoints();
+            if ($id('cc-feedback').textContent !== '') {
+              // Erreur détectée → trouver l'input marqué cc-err et y aller
+              const errInp = tbody.querySelector('.cc-err');
+              if (errInp) { errInp.focus(); errInp.select(); }
+            }
+          }, 0);
         }
       });
     });
