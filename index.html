@@ -415,13 +415,13 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .wf-pill:hover { color:var(--text2) }
 .wf-pill.active { background:var(--bg2); color:var(--accent); box-shadow:0 1px 6px rgba(0,0,0,.3) }
 
-/* ── Custom chart button ──────────────────────────────────────────────────── */
+/* ── Charte personnalisée button ──────────────────────────────────────────────────── */
 .tm-custom-btn { display:inline-flex; align-items:center; gap:.3rem; padding:.3rem .75rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.65rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:none }
 .tm-custom-btn:hover { border-color:var(--accent); color:var(--accent) }
 .tm-custom-btn.locked { pointer-events:none; opacity:.35 }
 .tm-custom-btn svg { width:12px; height:12px; flex-shrink:0 }
 
-/* ── Custom chart modal ──────────────────────────────────────────────────── */
+/* ── Charte personnalisée modal ──────────────────────────────────────────────────── */
 .cc-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
 .cc-overlay.show { display:block; opacity:1 }
 .cc-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:440px; max-height:88vh; overflow-y:auto; display:none; flex-direction:column }
@@ -436,14 +436,14 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cc-input:focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
 .cc-input::placeholder { color:var(--text3) }
 .cc-select { width:100%; background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text); font-family:'DM Sans',sans-serif; font-size:.85rem; padding:.55rem .9rem; cursor:pointer; appearance:none; -webkit-appearance:none; background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22 fill=%22none%22 stroke=%22%23596778%22 stroke-width=%221.5%22><path d=%22M1 1l5 5 5-5%22/></svg>'); background-repeat:no-repeat; background-position:right .8rem center; background-size:10px; transition:border-color .2s }
-/* ── Custom chart: save button ────────────────────────────────────────────── */
+/* ── Charte personnalisée: save button ────────────────────────────────────────────── */
 .cc-save-btn { width:100%; padding:.7rem 1rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.8rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .25s }
 .cc-save-btn:hover { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06); transform:translateY(-1px) }
 .cc-save-btn:active { transform:translateY(0) }
 .cc-save-btn:disabled { opacity:.35; pointer-events:none }
 .cc-feedback { font-size:.66rem; color:#f08080; min-height:.9rem; font-style:italic; line-height:1.3; margin-top:.4rem }
 
-/* ── Custom chart: grid table (même pattern que tm-table) ────────────────── */
+/* ── Charte personnalisée: grid table (même pattern que tm-table) ────────────────── */
 .cc-grid-table     { width:100%; border-collapse:collapse; table-layout:fixed; font-family:'DM Mono',monospace; font-size:.82rem }
 .cc-grid-table th  { padding:.45rem .4rem; font-family:'DM Sans',sans-serif; font-size:.58rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; text-align:center; border-bottom:1px solid var(--border); color:var(--text3) }
 .cc-th-num         { width:2.2rem }
@@ -459,16 +459,16 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cc-grid-inp.has-val { color:var(--text) }
 .cc-grid-inp.cc-err  { border-color:rgba(240,128,128,.6) }
 
-/* ── Custom chart: delete row button ─────────────────────────────────────── */
+/* ── Charte personnalisée: delete row button ─────────────────────────────────────── */
 .cc-th-del      { width:1.6rem }
 .cc-del-btn     { background:none; border:none; color:var(--text3); font-size:.8rem; cursor:pointer; padding:.1rem .25rem; line-height:1; transition:color .18s, opacity .18s; opacity:.35; display:flex; align-items:center; justify-content:center; width:100% }
 .cc-del-btn:hover { color:#f08080; opacity:1 }
 .cc-del-btn:active { transform:scale(.88) }
 
-/* ── Custom charts in dropdown ───────────────────────────────────────────── */
+/* ── Chartes personnalisées in dropdown ───────────────────────────────────────────── */
 .tm-spoke-custom { color:var(--accent) !important; font-weight:500 }
 
-/* ── Custom chart management ─────────────────────────────────────────────── */
+/* ── Charte personnalisée management ─────────────────────────────────────────────── */
 .cc-list { display:flex; flex-direction:column; gap:.35rem; margin-top:.6rem }
 .cc-item { display:flex; align-items:center; gap:.5rem; padding:.5rem .9rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); font-size:.75rem; color:var(--text); transition:border-color .2s }
 .cc-item:hover { border-color:var(--border-s) }
@@ -1036,12 +1036,12 @@ input[type=number] { -moz-appearance:textfield }
       </div>
     </div>
 
-    <!-- Boutons table de conversion + custom chart -->
+    <!-- Boutons charte de conversion + charte personnalisée -->
     <div style="margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;gap:.4rem;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:.4rem">
         <button class="tm-conv-btn locked" id="tm-conv-btn" onclick="tmOpenConvTable()">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="2" width="13" height="12" rx="1.5"/><line x1="1.5" y1="5.5" x2="14.5" y2="5.5"/><line x1="1.5" y1="9" x2="14.5" y2="9"/><line x1="6" y1="5.5" x2="6" y2="14"/><line x1="11" y1="5.5" x2="11" y2="14"/></svg>
-          <span data-i18n="tmConvBtn">Table de conversion</span>
+          <span data-i18n="tmConvBtn">Charte de conversion</span>
         </button>
         <span class="tip-wrap">
           <span class="tip-icon">?</span>
@@ -1051,7 +1051,7 @@ input[type=number] { -moz-appearance:textfield }
       <div style="display:flex;align-items:center;gap:.4rem">
         <button class="tm-custom-btn" id="cc-open-btn" onclick="ccOpen()">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><line x1="8" y1="5" x2="8" y2="11"/><line x1="5" y1="8" x2="11" y2="8"/></svg>
-          <span data-i18n="ccCreateBtn">Custom Chart</span>
+          <span data-i18n="ccCreateBtn">Charte personnalisée</span>
         </button>
         <span class="tip-wrap">
           <span class="tip-icon">?</span>
@@ -1172,11 +1172,11 @@ input[type=number] { -moz-appearance:textfield }
     </div><!-- /tm-outlier-bar -->
   </div><!-- /tm-result-card -->
 
-  <!-- ── Modal table de conversion ── -->
+  <!-- ── Modal charte de conversion ── -->
   <div class="tm-conv-overlay" id="tm-conv-overlay" onclick="tmCloseConvTable()"></div>
   <div class="tm-conv-modal" id="tm-conv-modal">
     <div class="tm-conv-header">
-      <div class="tm-conv-title" data-i18n="tmConvTitle">Table de conversion</div>
+      <div class="tm-conv-title" data-i18n="tmConvTitle">Charte de conversion</div>
       <button class="tm-conv-close" onclick="tmCloseConvTable()">✕</button>
     </div>
     <div class="tm-conv-spoke" id="tm-conv-spoke-label"></div>
@@ -1197,7 +1197,7 @@ input[type=number] { -moz-appearance:textfield }
   <div class="cc-overlay" id="cc-overlay" onclick="ccClose()"></div>
   <div class="cc-modal" id="cc-modal" onclick="event.stopPropagation()">
     <div class="cc-header">
-      <div class="cc-title" data-i18n="ccTitle">Custom Chart</div>
+      <div class="cc-title" data-i18n="ccTitle">Charte personnalisée</div>
       <button class="cc-close" onclick="ccClose()">✕</button>
     </div>
 
@@ -1315,8 +1315,8 @@ const i18n = {
     tmWarnAerolite:'⚠ Park Tool TM-1 : pas de données pour Aerolite 0.9×2.3.',
     tmWarn165:'⚠ Park Tool TM-1 : pas de 1.65 mm. Utilisez Wheel Fanatyk.',
     tmWarnSection:'⚠ Section non disponible pour Park Tool TM-1.',
-    tmConvBtn:'Table de conversion',
-    tmConvTitle:'Table de conversion',
+    tmConvBtn:'Charte de conversion',
+    tmConvTitle:'Charte de conversion',
     tmConvReading:'Lecture',
     tmConvTensio:'Tensiomètre',
     tmHintUN:'UNIOR 1752 : valeur entière lue sur le tensiomètre — ex\u00a0<code>45</code>. Rayons ronds et plats (blade).',
@@ -1325,9 +1325,9 @@ const i18n = {
     tmDTTipStd:'Tensiomètre DT Swiss standard',
     tmDTTipAel2:'Tables spécifiques au Tensiomètre Aerolite II',
     tmConvTip:'Charte de Tension Appliquée',
-    ccCreateBtn:'Custom Chart',
+    ccCreateBtn:'Charte personnalisée',
     ccTip:'Créer une charte personnalisée',
-    ccTitle:'Custom Chart',
+    ccTitle:'Charte personnalisée',
     ccStepTensio:'Tensiomètre',
     ccStepName:'Nom du rayon',
     ccNamePlaceholder:'Ex : Mon Rayon Custom 2.0',
@@ -1396,8 +1396,8 @@ const i18n = {
     tmWarnAerolite:'⚠ Park Tool TM-1: no data for Aerolite 0.9×2.3.',
     tmWarn165:'⚠ Park Tool TM-1: no 1.65 mm data. Use Wheel Fanatyk.',
     tmWarnSection:'⚠ Section not available for Park Tool TM-1.',
-    tmConvBtn:'Conversion table',
-    tmConvTitle:'Conversion table',
+    tmConvBtn:'Conversion chart',
+    tmConvTitle:'Conversion chart',
     tmConvReading:'Reading',
     tmConvTensio:'Tensiometer',
     tmHintUN:'UNIOR 1752: integer value from the tensiometer — e.g.\u00a0<code>45</code>. Round and blade spokes.',
@@ -1406,9 +1406,9 @@ const i18n = {
     tmDTTipStd:'Standard DT Swiss tensiometer',
     tmDTTipAel2:'Tables specific to the Aerolite II Tensiometer',
     tmConvTip:'Applied Tension Chart',
-    ccCreateBtn:'Custom Chart',
+    ccCreateBtn:'Custom chart',
     ccTip:'Create a custom chart',
-    ccTitle:'Custom Chart',
+    ccTitle:'Custom chart',
     ccStepTensio:'Tensiometer',
     ccStepName:'Spoke name',
     ccNamePlaceholder:'Ex: My Custom Spoke 2.0',
@@ -2983,7 +2983,7 @@ function tmClearSpoke() {
   tmOnSpokeChange();
 }
 
-// ── Bouton table de conversion : actif/désactivé ────────────────────────────
+// ── Bouton charte de conversion : actif/désactivé ────────────────────────────
 function tmUpdateConvBtn() {
   const btn = $id('tm-conv-btn');
   if (btn) {
@@ -2991,12 +2991,12 @@ function tmUpdateConvBtn() {
     btn.classList.toggle('locked', !hasSpoke);
     btn.classList.toggle('active', hasSpoke);
   }
-  // Custom Chart : toujours actif (rayons standard ou custom, ou vide)
+  // Charte personnalisée : toujours actif (rayons standard ou custom, ou vide)
   const ccBtn = $id('cc-open-btn');
   if (ccBtn) ccBtn.classList.remove('locked');
 }
 
-// ── Ouvrir la modale table de conversion ────────────────────────────────────
+// ── Ouvrir la modale charte de conversion ────────────────────────────────────
 function tmOpenConvTable() {
   if (!tmSpokeKey) return;
   const pts = tmGetPoints();
@@ -3048,7 +3048,7 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-// ── État Custom Chart ────────────────────────────────────────────────────────
+// ── État Charte personnalisée ────────────────────────────────────────────────────────
 let ccPoints = [];            // [{kgf, reading}]
 let ccInputOrder = null;      // null | 'kgf-first' | 'read-first'
 
