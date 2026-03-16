@@ -106,8 +106,6 @@ header        { text-align:center; padding:3.5rem 1rem 2rem }
 .seg         { display:flex; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); padding:3px; gap:3px }
 .sb          { flex:1; padding:.6rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500; cursor:pointer; transition:all .22s }
 .sb.active   { background:var(--bg2); color:var(--text); box-shadow:0 2px 12px rgba(0,0,0,.4) }
-.sb.active.c { color:var(--accent); text-shadow:0 0 12px rgba(126,200,227,.5) }
-.sb.active.w { color:var(--warm);   text-shadow:0 0 12px rgba(232,146,124,.5) }
 
 /* ── Grid ──────────────────────────────────────────────────────────────────── */
 .g2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem }
@@ -278,7 +276,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 
 /* Sélecteur sous-type DT Swiss */
 .tm-btn          { flex:1; padding:.55rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.84rem; font-weight:500; cursor:pointer; transition:all .22s }
-.tm-btn.active   { background:var(--bg2); color:var(--accent); box-shadow:0 2px 12px rgba(0,0,0,.4); text-shadow:0 0 12px rgba(126,200,227,.4) }
+.tm-btn.active   { background:var(--bg2); color:var(--text); box-shadow:0 2px 12px rgba(0,0,0,.4) }
 
 /* Grille de saisie des déflections */
 .tm-grid-wrap    { overflow-x:auto; border-radius:var(--rs); border:1px solid var(--border) }
@@ -428,8 +426,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cc-modal.show { display:flex; animation:conv-in .2s ease both }
 .cc-header { display:flex; align-items:center; gap:.5rem; margin-bottom:1rem }
 .cc-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); flex:1 }
-.cc-close { background:none; border:none; color:var(--text3); font-size:1.1rem; cursor:pointer; padding:.2rem .4rem; line-height:1; transition:color .2s; flex-shrink:0 }
-.cc-close:hover { color:var(--text) }
+.cc-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.85rem; cursor:pointer; padding:.3rem .55rem; line-height:1; transition:all .2s; flex-shrink:0 }
+.cc-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
 .cc-step { margin-bottom:1rem }
 .cc-step-label { font-size:.58rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--text3); margin-bottom:.4rem }
 .cc-input { width:100%; background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:400; padding:.55rem .9rem; transition:border-color .2s; box-sizing:border-box }
@@ -493,15 +491,15 @@ input[type=number] { -moz-appearance:textfield }
 .spoke-icon    { width:18px; height:8px; flex-shrink:0 }
 
 /* ── Tension module: custom select ────────────────────────────────────── */
-.tm-select     { width:100%; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text); font-family:'DM Sans',sans-serif; font-size:.85rem; padding:.6rem .9rem; cursor:pointer; appearance:none; -webkit-appearance:none; background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22 fill=%22none%22 stroke=%22%23596778%22 stroke-width=%221.5%22><path d=%22M1 1l5 5 5-5%22/></svg>'); background-repeat:no-repeat; background-position:right .8rem center; background-size:10px; transition:border-color .2s }
+.tm-select     { width:100%; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text); font-family:'DM Sans',sans-serif; font-size:.85rem; padding:.55rem .9rem; cursor:pointer; appearance:none; -webkit-appearance:none; background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22 fill=%22none%22 stroke=%22%23596778%22 stroke-width=%221.5%22><path d=%22M1 1l5 5 5-5%22/></svg>'); background-repeat:no-repeat; background-position:right .8rem center; background-size:10px; transition:border-color .2s }
 .tm-select-mono { font-family:'DM Mono',monospace; font-weight:300; height:2.35rem; padding:.55rem .9rem }
 
 /* ── Tension module: wheel toggle buttons ─────────────────────────────── */
 .tm-wheel-btn  { flex:1; height:2.35rem; background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500; cursor:pointer; transition:all .2s }
-.tm-wheel-btn.on { background:var(--bg2); border-color:var(--border-s); color:var(--accent); text-shadow:0 0 10px rgba(126,200,227,.4) }
+.tm-wheel-btn.on { background:var(--bg2); border-color:rgba(255,255,255,.2); color:var(--text) }
 .tm-wheel-btn.locked, .tm-select.locked { opacity:.45; pointer-events:none; cursor:not-allowed }
-.tm-clear-tensio { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.7rem; cursor:pointer; padding:.4rem .55rem; line-height:1; transition:all .2s; flex-shrink:0 }
-.tm-clear-tensio:hover { border-color:var(--warm); color:var(--warm) }
+.tm-clear-tensio { background:none; border:none; color:var(--text3); font-size:.8rem; cursor:pointer; padding:.2rem .4rem; line-height:1; transition:color .2s; flex-shrink:0 }
+.tm-clear-tensio:hover { color:var(--warm) }
 
 /* ── Tension module: unit badge ───────────────────────────────────────── */
 .tm-unit-badge { margin-left:auto; font-family:'DM Mono',monospace; font-size:.62rem; color:var(--text3); background:var(--card-alt); border:1px solid var(--border); border-radius:10px; padding:.12rem .6rem }
@@ -3145,7 +3143,7 @@ function ccClose() {
 function ccToggleNameClear() {
   const inp = $id('cc-name');
   const btn = $id('cc-clear-name');
-  if (btn) btn.style.display = inp && inp.value.trim() ? '' : 'none';
+  if (btn) btn.style.display = inp && inp.value.trim() && !inp.readOnly ? '' : 'none';
 }
 function ccClearName() {
   const inp = $id('cc-name');
@@ -3155,7 +3153,7 @@ function ccClearName() {
 function ccToggleTensioClear() {
   const sel = $id('cc-tensio');
   const btn = $id('cc-clear-tensio');
-  if (btn) btn.style.display = sel && sel.value ? '' : 'none';
+  if (btn) btn.style.display = sel && sel.value && !sel.disabled ? '' : 'none';
 }
 function ccClearTensio() {
   const sel = $id('cc-tensio');
