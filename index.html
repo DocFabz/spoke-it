@@ -459,6 +459,12 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cc-grid-inp.has-val { color:var(--text) }
 .cc-grid-inp.cc-err  { border-color:rgba(240,128,128,.6) }
 
+/* ── Custom chart: delete row button ─────────────────────────────────────── */
+.cc-th-del      { width:1.6rem }
+.cc-del-btn     { background:none; border:none; color:var(--text3); font-size:.8rem; cursor:pointer; padding:.1rem .25rem; line-height:1; transition:color .18s, opacity .18s; opacity:.35; display:flex; align-items:center; justify-content:center; width:100% }
+.cc-del-btn:hover { color:#f08080; opacity:1 }
+.cc-del-btn:active { transform:scale(.88) }
+
 /* ── Custom charts in dropdown ───────────────────────────────────────────── */
 .tm-spoke-custom { color:var(--accent) !important; font-weight:500 }
 
@@ -1224,19 +1230,7 @@ input[type=number] { -moz-appearance:textfield }
         </div>
         <div class="f" style="width:5.5rem;flex-shrink:0">
           <label data-i18n="ccStepNbPoints">Points</label>
-          <select id="cc-nb-points" class="cc-select" style="padding-left:.5rem;padding-right:1.6rem" onchange="ccOnNbChange()">
-            <option value="5">5</option>
-            <option value="6">6</option>
-            <option value="7">7</option>
-            <option value="8">8</option>
-            <option value="9">9</option>
-            <option value="10" selected>10</option>
-            <option value="11">11</option>
-            <option value="12">12</option>
-            <option value="13">13</option>
-            <option value="14">14</option>
-            <option value="15">15</option>
-          </select>
+          <input type="number" id="cc-nb-points" class="cc-input" style="padding-left:.5rem;text-align:center" min="5" max="30" value="10" onchange="ccOnNbChange()">
         </div>
       </div>
     </div>
@@ -1250,6 +1244,7 @@ input[type=number] { -moz-appearance:textfield }
             <th class="cc-th-num">#</th>
             <th class="cc-th-kgf">kgf</th>
             <th class="cc-th-reading" id="cc-th-reading">Lecture</th>
+            <th class="cc-th-del"></th>
           </tr>
         </thead>
         <tbody id="cc-grid-tbody"></tbody>
@@ -2996,12 +2991,9 @@ function tmUpdateConvBtn() {
     btn.classList.toggle('locked', !hasSpoke);
     btn.classList.toggle('active', hasSpoke);
   }
-  // Custom Chart : verrouillé si un rayon standard est sélectionné
+  // Custom Chart : toujours actif (rayons standard ou custom, ou vide)
   const ccBtn = $id('cc-open-btn');
-  if (ccBtn) {
-    const isStandardSpoke = tmSpokeKey && !tmSpokeKey.startsWith(CC_PREFIX);
-    ccBtn.classList.toggle('locked', isStandardSpoke);
-  }
+  if (ccBtn) ccBtn.classList.remove('locked');
 }
 
 // ── Ouvrir la modale table de conversion ────────────────────────────────────
@@ -3076,18 +3068,19 @@ function ccOpen() {
   }
   $id('cc-name').value = '';
   $id('cc-name').placeholder = t('ccNamePlaceholder');
+  $id('cc-name').readOnly = false;
+  $id('cc-name').style.opacity = '';
   ccToggleNameClear();
   ccToggleTensioClear();
   $id('cc-feedback').textContent = '';
   ccPoints = [];
   ccUpdateReadingLabel();
 
-  // Si un rayon custom est sélectionné, charger ses valeurs directement
+  // ── Rayon custom déjà sélectionné → charger ses valeurs ──────────────────
   if (tmSpokeKey && tmSpokeKey.startsWith(CC_PREFIX)) {
     const customs = ccLoadAll();
     const match = customs.find(cc => {
       if (CC_PREFIX + cc.name !== tmSpokeKey) return false;
-      // Match compatible pour WF (wf, wf_old, wf_new sont unifiés)
       const isActiveWF = activeKey === 'wf_old' || activeKey === 'wf_new';
       const isCcWF = cc.tensioKey === 'wf' || cc.tensioKey === 'wf_old' || cc.tensioKey === 'wf_new';
       if (isActiveWF && isCcWF) return true;
@@ -3096,13 +3089,28 @@ function ccOpen() {
     if (match) {
       $id('cc-tensio').value = (match.tensioKey === 'wf' || match.tensioKey === 'wf_old' || match.tensioKey === 'wf_new') ? 'wf' : match.tensioKey;
       ccToggleTensioClear();
-      ccUpdateReadingLabel();
-      $id('cc-name').value = match.name;
+      $id('cc-name').value = CC_PREFIX + match.name;
       ccToggleNameClear();
       const nbPoints = Math.max(match.points.length, 5);
-      $id('cc-nb-points').value = String(Math.min(Math.max(nbPoints, 5), 15));
+      $id('cc-nb-points').value = String(nbPoints);
       ccPoints = match.points.map(p => ({ kgf: p[1], reading: p[0] }));
       ccPoints.sort((a, b) => a.kgf - b.kgf);
+    }
+
+  // ── Rayon standard sélectionné → pré-remplir avec les données de la table ─
+  } else if (tmSpokeKey) {
+    const pts = tmGetPoints(); // [[reading, kgf], ...]
+    if (pts && pts.length) {
+      $id('cc-name').value = CC_PREFIX + tmSpokeKey;
+      $id('cc-name').readOnly = true;
+      $id('cc-name').style.opacity = '.55';
+      ccToggleNameClear();
+      ccPoints = pts
+        .filter(([, kgf]) => kgf !== null)
+        .map(([reading, kgf]) => ({ kgf, reading }));
+      ccPoints.sort((a, b) => a.kgf - b.kgf);
+      const nbPoints = Math.max(ccPoints.length, 5);
+      $id('cc-nb-points').value = String(nbPoints);
     }
   }
 
@@ -3122,6 +3130,9 @@ function ccClose() {
   $id('cc-overlay').classList.remove('show');
   $id('cc-modal').classList.remove('show');
   document.body.style.overflow = '';
+  // Réinitialiser le champ nom
+  const nameInp = $id('cc-name');
+  if (nameInp) { nameInp.readOnly = false; nameInp.style.opacity = ''; }
   // Déverrouiller le select tensiomètre
   const sel = $id('cc-tensio');
   if (sel) { sel.disabled = false; sel.style.opacity = ''; }
@@ -3160,6 +3171,32 @@ function ccUpdateReadingLabel() {
   if (th) th.textContent = t('ccReadingPlaceholder') || 'Lecture';
 }
 
+// ── Renuméroter les lignes de la grille ──────────────────────────────────────
+function ccRenumberRows() {
+  const tbody = $id('cc-grid-tbody');
+  tbody.querySelectorAll('tr').forEach((tr, i) => {
+    const numTd = tr.querySelector('.cc-row-num');
+    if (numTd) numTd.textContent = i + 1;
+  });
+}
+
+// ── Supprimer une ligne de la grille ─────────────────────────────────────────
+function ccDeleteRow(tr) {
+  const tbody = $id('cc-grid-tbody');
+  if (tbody.querySelectorAll('tr').length <= 5) return; // minimum 5 lignes
+  tr.remove();
+  ccRenumberRows();
+  // Synchroniser l'input avec le nombre réel de lignes restantes
+  const rowCount = tbody.querySelectorAll('tr').length;
+  $id('cc-nb-points').value = String(rowCount);
+  // Désactiver les croix si on atteint le minimum
+  tbody.querySelectorAll('tr').forEach(r => {
+    const btn = r.querySelector('.cc-del-btn');
+    if (btn) btn.style.pointerEvents = rowCount <= 5 ? 'none' : '';
+  });
+  ccSyncPoints();
+}
+
 // ── Construire la grille de N lignes ─────────────────────────────────────────
 function ccBuildGrid() {
   const max = parseInt($id('cc-nb-points').value) || 10;
@@ -3177,11 +3214,17 @@ function ccBuildGrid() {
     const readHas = existing ? ' has-val' : '';
 
     tr.innerHTML =
-      `<td>${i + 1}</td>` +
+      `<td class="cc-row-num">${i + 1}</td>` +
       `<td><input class="cc-grid-inp cc-kgf${kgfHas}" type="text" inputmode="decimal" value="${kgfVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
-      `<td><input class="cc-grid-inp cc-read${readHas}" type="text" inputmode="decimal" value="${readVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>`;
+      `<td><input class="cc-grid-inp cc-read${readHas}" type="text" inputmode="decimal" value="${readVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
+      `<td><button class="cc-del-btn" tabindex="-1" title="Supprimer la ligne">✕</button></td>`;
 
     tbody.appendChild(tr);
+
+    tr.querySelector('.cc-del-btn').addEventListener('click', function(e) {
+      e.preventDefault();
+      ccDeleteRow(tr);
+    });
 
     tr.querySelectorAll('.cc-grid-inp').forEach(inp => {
       const isKgf = inp.classList.contains('cc-kgf');
@@ -3355,7 +3398,14 @@ function ccUpdateCounter() {
 
 // ── Reconstruire la grille ──────────────────────────────────────────────────
 function ccRefreshUI() { ccBuildGrid(); }
-function ccOnNbChange() { ccBuildGrid(); }
+function ccOnNbChange() {
+  const inp = $id('cc-nb-points');
+  let val = parseInt(inp.value);
+  if (isNaN(val) || val < 5)  val = 5;
+  if (val > 30) val = 30;
+  inp.value = String(val);
+  ccBuildGrid();
+}
 
 // ── Afficher les chartes existantes pour le tensiomètre sélectionné ─────────
 function ccRenderExisting() {
@@ -3385,7 +3435,7 @@ function ccRenderExisting() {
   customs.forEach(cc => {
     const globalIdx = allCustoms.findIndex(c => c.name === cc.name && c.tensioKey === cc.tensioKey);
     html += `<div class="cc-item" id="cc-item-${globalIdx}">
-      <span class="cc-item-name">${escHtml(cc.name)}</span>
+      <span class="cc-item-name">${escHtml(CC_PREFIX + cc.name)}</span>
       <button class="cc-item-load" data-ccidx="${globalIdx}">${t('loadBtn')}</button>
       <button class="cc-item-del" data-ccidx="${globalIdx}" title="Supprimer">×</button>
     </div>`;
@@ -3418,9 +3468,10 @@ function ccLoadChart(idx) {
   $id('cc-tensio').value = selectVal;
   ccToggleTensioClear();
   ccUpdateReadingLabel();
-  $id('cc-name').value = cc.name;
+  $id('cc-name').value = CC_PREFIX + cc.name;
   ccToggleNameClear();
-  $id('cc-nb-points').value = String(Math.min(Math.max(cc.points.length, 5), 15));
+  const nbPoints = Math.max(cc.points.length, 5);
+  $id('cc-nb-points').value = String(nbPoints);
   ccPoints = cc.points.map(p => ({ kgf: p[1], reading: p[0] })).sort((a, b) => a.kgf - b.kgf);
   ccRefreshUI();
   ccRenderExisting();
@@ -3462,8 +3513,8 @@ function ccSave() {
   const fb = $id('cc-feedback');
   fb.style.color = '#f08080';
 
-  // Validation nom
-  const name = $id('cc-name').value.trim();
+  // Validation nom (retirer le CC_PREFIX affiché dans le champ)
+  const name = $id('cc-name').value.trim().replace(new RegExp('^' + CC_PREFIX.trim() + '\\s*'), '');
   if (!name) { fb.textContent = t('ccErrName'); return; }
 
   const tensioKey = $id('cc-tensio').value;
