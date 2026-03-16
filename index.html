@@ -3112,6 +3112,9 @@ function ccOpen() {
       const nbPoints = Math.max(ccPoints.length, 5);
       $id('cc-nb-points').value = String(nbPoints);
     }
+  } else {
+    // ── Aucun rayon sélectionné → nombre de points par défaut = 10 ───────────
+    $id('cc-nb-points').value = '10';
   }
 
   ccRefreshUI();
