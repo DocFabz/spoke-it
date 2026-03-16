@@ -277,7 +277,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 #calc-module     { display:block }
 
 /* Sélecteur sous-type DT Swiss */
-.tm-seg          { display:flex; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); padding:3px; gap:3px; margin-bottom:1.35rem }
 .tm-btn          { flex:1; padding:.55rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.84rem; font-weight:500; cursor:pointer; transition:all .22s }
 .tm-btn.active   { background:var(--bg2); color:var(--accent); box-shadow:0 2px 12px rgba(0,0,0,.4); text-shadow:0 0 12px rgba(126,200,227,.4) }
 
@@ -332,7 +331,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 
 /* Hint */
 .tm-hint         { font-size:.63rem; color:var(--text3); font-style:italic; text-align:center; margin-top:.6rem; line-height:1.5 }
-.tm-hint code, .tm-code { font-family:'DM Mono',monospace; color:var(--accent); font-style:normal }
+.tm-hint code { font-family:'DM Mono',monospace; color:var(--accent); font-style:normal }
 
 /* ── Highlight outliers ──────────────────────────────────────────────────── */
 .tm-outlier-bar   { margin-top:1.3rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); padding:.75rem 1.2rem; display:flex; align-items:center; gap:.7rem }
@@ -468,7 +467,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cc-item { display:flex; align-items:center; gap:.5rem; padding:.5rem .9rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); font-size:.75rem; color:var(--text); transition:border-color .2s }
 .cc-item:hover { border-color:var(--border-s) }
 .cc-item-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'DM Mono',monospace; font-size:.72rem; color:var(--accent2) }
-.cc-item-tensio { font-size:.58rem; color:var(--text3); letter-spacing:.08em; text-transform:uppercase }
 .cc-item-load { background:transparent; border:1px solid var(--border); border-radius:20px; color:var(--text2); font-family:'DM Mono',monospace; font-size:.6rem; letter-spacing:.1em; padding:.2rem .6rem; cursor:pointer; transition:all .2s; text-transform:uppercase }
 .cc-item-load:hover { border-color:var(--accent); color:var(--accent) }
 .cc-item-del { background:none; border:none; color:var(--text3); font-size:.9rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
@@ -3180,8 +3178,8 @@ function ccBuildGrid() {
 
     tr.innerHTML =
       `<td>${i + 1}</td>` +
-      `<td><input class="cc-grid-inp cc-kgf${kgfHas}" type="text" inputmode="decimal" value="${kgfVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
-      `<td><input class="cc-grid-inp cc-read${readHas}" type="text" inputmode="decimal" value="${readVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>`;
+      `<td><input class="cc-grid-inp cc-kgf${kgfHas}" type="text" value="${kgfVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
+      `<td><input class="cc-grid-inp cc-read${readHas}" type="text" value="${readVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>`;
 
     tbody.appendChild(tr);
 
@@ -3664,7 +3662,7 @@ function tmBuildTable() {
       const hasVal  = val !== null ? ' has-val' : '';
       return `<td class="defl-td">
         <div class="defl-cell">
-          <input class="defl-inp ${cls}${hasVal}" data-idx="${i}" data-side="${side}" type="text" inputmode="decimal"
+          <input class="defl-inp ${cls}${hasVal}" data-idx="${i}" data-side="${side}" type="text"
             value="${dispVal}" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="—">
           <div class="defl-result ${cls}" id="dr-${side}-${i}">${kgf !== null ? kgf + ' kgf' : ''}</div>
         </div>
