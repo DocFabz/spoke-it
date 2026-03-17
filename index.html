@@ -402,11 +402,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-conv-table tr:last-child td { border-bottom:none }
 .tm-conv-table td:first-child { color:var(--text2); font-weight:300 }
 .tm-conv-table td:last-child  { font-weight:400; color:var(--accent2) }
-.tm-conv-btn      { display:inline-flex; align-items:center; gap:.3rem; padding:.3rem .75rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.65rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:none }
-.tm-conv-btn:hover { border-color:var(--accent); color:var(--accent) }
-.tm-conv-btn.locked { pointer-events:none; cursor:not-allowed }
-.tm-conv-btn svg  { width:12px; height:12px; flex-shrink:0 }
-
 /* ── Sub-toggle (DT Standard/Aerolite, WF Old/New) ───────────────────────── */
 .wf-toggle   { display:inline-flex; background:var(--inp); border:1px solid var(--border); border-radius:20px; padding:2px; gap:2px }
 .wf-pill      { padding:.2rem .7rem; border:none; border-radius:18px; background:transparent; color:var(--text3); font-family:'DM Mono',monospace; font-size:.62rem; font-weight:400; letter-spacing:.08em; cursor:pointer; transition:all .2s; text-transform:uppercase; line-height:1.4 }
@@ -414,10 +409,11 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .wf-pill.active { background:var(--bg2); color:var(--accent); box-shadow:0 1px 6px rgba(0,0,0,.3) }
 
 /* ── Charte personnalisée button ──────────────────────────────────────────────────── */
-.tm-custom-btn { display:inline-flex; align-items:center; gap:.3rem; padding:.3rem .75rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.65rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:none }
-.tm-custom-btn:hover { border-color:var(--accent); color:var(--accent) }
+.tm-conv-btn, .tm-custom-btn { display:inline-flex; align-items:center; gap:.21rem; padding:.21rem .525rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.46rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:border-color .2s, color .2s, background .2s }
+.tm-conv-btn.locked { pointer-events:none; cursor:not-allowed }
 .tm-custom-btn.locked { pointer-events:none; opacity:.35 }
-.tm-custom-btn svg { width:12px; height:12px; flex-shrink:0 }
+.tm-conv-btn.lit, .tm-custom-btn.lit { border-color:rgba(126,200,227,.5); color:var(--accent); background:rgba(126,200,227,.07) }
+.tm-conv-btn svg, .tm-custom-btn svg { width:8px; height:8px; flex-shrink:0 }
 
 /* ── Charte personnalisée modal ──────────────────────────────────────────────────── */
 .cc-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
@@ -526,8 +522,9 @@ input[type=number] { -moz-appearance:textfield }
 .tm-wheel-btn  { flex:1; height:2.35rem; background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500; cursor:pointer; transition:all .2s }
 .tm-wheel-btn.on { background:var(--bg2); border-color:rgba(255,255,255,.2); color:var(--text) }
 .tm-wheel-btn.locked, .tm-select.locked { opacity:.45; pointer-events:none; cursor:not-allowed }
-.tm-clear-tensio { background:none; border:none; color:var(--text3); font-size:.8rem; cursor:pointer; padding:.2rem .4rem; line-height:1; transition:color .2s; flex-shrink:0 }
+.tm-clear-tensio { background:none; border:none; color:var(--text3); font-size:.8rem; cursor:pointer; padding:.2rem .4rem; line-height:1; transition:color .2s, opacity .2s; flex-shrink:0 }
 .tm-clear-tensio:hover { color:var(--warm) }
+.tm-clear-tensio.inactive { opacity:0; pointer-events:none }
 
 /* ── Tension module: unit badge ───────────────────────────────────────── */
 .tm-unit-badge { margin-left:auto; font-family:'DM Mono',monospace; font-size:.62rem; color:var(--text3); background:var(--card-alt); border:1px solid var(--border); border-radius:10px; padding:.12rem .6rem; transition:color .2s, border-color .2s }
@@ -1001,6 +998,7 @@ input[type=number] { -moz-appearance:textfield }
         <line x1="12" y1="12" x2="9.2" y2="6.8" stroke="var(--warm)" stroke-width="1.6" stroke-linecap="round"/>
       </svg>
       <div class="clabel" data-i18n="tmTensioLabel">Tensiomètre</div>
+      <button class="ct-add-btn" id="ct-add-btn" onclick="ctOpen()">+</button>
       <div class="cfg-loaded-name" id="tm-cfg-loaded-name">
         <svg class="cfg-loaded-icon" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
           <path d="M1.5 4.5 Q1.5 3 3 3 L5 3 L6 4.5 L10.5 4.5 Q12 4.5 12 6 L12 10 Q12 11.5 10.5 11.5 L3 11.5 Q1.5 11.5 1.5 10 Z"/>
@@ -1020,8 +1018,7 @@ input[type=number] { -moz-appearance:textfield }
           <option value="pk">P&amp;KLie</option>
           <option value="un">UNIOR 1752</option>
         </select>
-        <button class="tm-clear-tensio" id="tm-clear-tensio" onclick="tmClearTensio()" style="display:none" title="Reset">✕</button>
-        <button class="ct-add-btn" id="ct-add-btn" onclick="ctOpen()">+</button>
+        <button class="tm-clear-tensio inactive" id="tm-clear-tensio" onclick="tmClearTensio()" title="Reset">✕</button>
       </div>
     </div>
 
@@ -1060,12 +1057,12 @@ input[type=number] { -moz-appearance:textfield }
         <select id="tm-spoke-select" class="tm-select" style="flex:1" onchange="tmOnSpokeChange()">
           <option value="">—</option>
         </select>
-        <button class="tm-clear-tensio" id="tm-clear-spoke" onclick="tmClearSpoke()" style="display:none" title="Reset">✕</button>
+        <button class="tm-clear-tensio inactive" id="tm-clear-spoke" onclick="tmClearSpoke()" title="Reset">✕</button>
       </div>
     </div>
 
     <!-- Boutons charte de conversion + charte personnalisée -->
-    <div style="margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;gap:.4rem;flex-wrap:wrap">
+    <div style="margin-bottom:1rem;margin-top:-.5rem;display:flex;justify-content:space-between;align-items:center;gap:.4rem;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:.4rem">
         <button class="tm-conv-btn locked" id="tm-conv-btn" onclick="tmOpenConvTable()">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="2" width="13" height="12" rx="1.5"/><line x1="1.5" y1="5.5" x2="14.5" y2="5.5"/><line x1="1.5" y1="9" x2="14.5" y2="9"/><line x1="6" y1="5.5" x2="6" y2="14"/><line x1="11" y1="5.5" x2="11" y2="14"/></svg>
@@ -1089,7 +1086,7 @@ input[type=number] { -moz-appearance:textfield }
     </div>
 
     <!-- Nb rayons + badge roue -->
-    <div class="g2" style="margin-top:.2rem">
+    <div style="display:grid;grid-template-columns:0.8fr 1.2fr;gap:1rem;margin-top:.2rem">
       <div class="f">
         <label data-i18n="totalSpokes">Nb total de rayons</label>
         <select id="tm-nb-select" class="tm-select tm-select-mono" onchange="tmOnNbChange()">
@@ -1099,7 +1096,7 @@ input[type=number] { -moz-appearance:textfield }
         </select>
       </div>
       <div class="f">
-        <label data-i18n="wheelType">Type de roue</label>
+        <label data-i18n="wheelType" style="text-align:center">Type de roue</label>
         <div style="display:flex;gap:.35rem;height:2.35rem">
           <button id="tm-btn-avant"   class="tm-wheel-btn" onclick="tmSetWheel('avant')"   data-i18n="frontWheel">Avant</button>
           <button id="tm-btn-arriere" class="tm-wheel-btn" onclick="tmSetWheel('arriere')" data-i18n="rearWheel">Arrière</button>
@@ -1793,7 +1790,7 @@ function applyState(s) {
     const tmTensioSel = $id('tm-tensio-select');
     if (tmTensioSel) tmTensioSel.value = tmType;
     const clearBtn = $id('tm-clear-tensio');
-    if (clearBtn) clearBtn.style.display = tmType ? '' : 'none';
+    if (clearBtn) clearBtn.classList.toggle('inactive', !tmType);
     $id('tm-dt-subtype') && ($id('tm-dt-subtype').style.display = tmType === 'dt' ? 'flex' : 'none');
     $id('tm-wf-subtype') && ($id('tm-wf-subtype').style.display = tmType === 'wf' ? 'flex' : 'none');
 
@@ -3024,7 +3021,7 @@ function tmPopulateSpokeSelect() {
   tmUpdateUnitBadge();
   tmUpdateConvBtn();
   const clearSpoke = $id('tm-clear-spoke');
-  if (clearSpoke) clearSpoke.style.display = tmSpokeKey ? '' : 'none';
+  if (clearSpoke) clearSpoke.classList.toggle('inactive', !tmSpokeKey);
 }
 
 // ── Badge unité ───────────────────────────────────────────────────────────────
@@ -3120,7 +3117,7 @@ function setTM(type) {
   $id('tm-dt-subtype').style.display = type === 'dt' ? 'flex' : 'none';
   $id('tm-wf-subtype').style.display = type === 'wf' ? 'flex' : 'none';
   const clearBtn = $id('tm-clear-tensio');
-  if (clearBtn) clearBtn.style.display = type ? '' : 'none';
+  if (clearBtn) clearBtn.classList.toggle('inactive', !type);
 }
 
 function tmOnTensioSelectChange(val) {
@@ -3148,7 +3145,7 @@ function tmClearTensio() {
   tmBuildTable();
   tmHideResult();
   const clearBtn = $id('tm-clear-tensio');
-  if (clearBtn) clearBtn.style.display = 'none';
+  if (clearBtn) clearBtn.classList.add('inactive');
 }
 
 function setDTSub(sub) {
@@ -3196,7 +3193,7 @@ function tmOnSpokeChange() {
   tmHideResult();
   tmUpdateConvBtn();
   const clearSpoke = $id('tm-clear-spoke');
-  if (clearSpoke) clearSpoke.style.display = tmSpokeKey ? '' : 'none';
+  if (clearSpoke) clearSpoke.classList.toggle('inactive', !tmSpokeKey);
 }
 
 function tmClearSpoke() {
@@ -3211,11 +3208,14 @@ function tmUpdateConvBtn() {
   if (btn) {
     const hasSpoke = !!tmSpokeKey;
     btn.classList.toggle('locked', !hasSpoke);
-    btn.classList.toggle('active', hasSpoke);
+    btn.classList.toggle('lit', hasSpoke);
   }
-  // Charte personnalisée : toujours actif (rayons standard ou custom, ou vide)
+  // Charte personnalisée : s'allume quand un tensiomètre est sélectionné
   const ccBtn = $id('cc-open-btn');
-  if (ccBtn) ccBtn.classList.remove('locked');
+  if (ccBtn) {
+    ccBtn.classList.remove('locked');
+    ccBtn.classList.toggle('lit', !!tmType);
+  }
 }
 
 // ── Ouvrir la modale charte de conversion ────────────────────────────────────
