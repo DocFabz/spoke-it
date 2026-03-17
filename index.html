@@ -500,6 +500,10 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 /* Custom tensiometer options in dropdowns */
 .tm-tensio-custom { color:var(--accent) !important; font-weight:500 }
 
+/* ── Cache toast ──────────────────────────────────────────────────────────── */
+.cache-toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid rgba(232,146,124,.35); border-radius:var(--rs); padding:.55rem 1.1rem; font-family:'DM Sans',sans-serif; font-size:.67rem; color:var(--warm2); z-index:10000; pointer-events:none; opacity:0; transition:opacity .3s; white-space:nowrap; margin-bottom:env(safe-area-inset-bottom, 0px) }
+.cache-toast.show { opacity:1 }
+
 /* ── Scrollbar ─────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar       { width:4px }
 ::-webkit-scrollbar-track { background:transparent }
@@ -1306,6 +1310,8 @@ input[type=number] { -moz-appearance:textfield }
   </div>
 </div>
 
+<div class="cache-toast" id="cache-toast"></div>
+
 <script>
 
 // ── i18n ────────────────────────────────────────────────────────────────────
@@ -1394,6 +1400,7 @@ const i18n = {
     ccSaved:'Charte enregistrée !',
     ccCustomLabel:'★ PERSO',
     ccManageTitle:'Chartes personnalisées',
+    cacheToast:'⚠︎ Données sauvegardées en cache navigateur',
     ctTitle:'★ Tensiomètre perso',
     ctLabel:'Nom du tensiomètre',
     ctPlaceholder:'Ex : Mon Tensiomètre',
@@ -1483,6 +1490,7 @@ const i18n = {
     ccSaved:'Chart saved!',
     ccCustomLabel:'★ CUSTOM',
     ccManageTitle:'Custom charts',
+    cacheToast:'⚠︎ Data saved in browser cache',
     ctTitle:'★ Custom tensiometer',
     ctLabel:'Tensiometer name',
     ctPlaceholder:'E.g.: My Tensiometer',
@@ -1609,6 +1617,7 @@ let _hubScrolled = false, _rimScrolled = false, _tensionScrolled = false;
 const _loadedConfigName = { avant: null, arriere: null };
 let _switchingHub = false;
 let _applyingState = false;
+let _toastTimer = null;
 function resetScrollFlags() { _hubScrolled = false; _rimScrolled = false; _tensionScrolled = false; }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -1621,6 +1630,16 @@ function getERD() {
 }
 function setInvalid(id)  { $id(id).classList.add('invalid'); }
 function clearInvalids() { document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid')); }
+
+// ── Cache toast ───────────────────────────────────────────────────────────────
+function showCacheToast() {
+  const el = $id('cache-toast');
+  if (!el) return;
+  el.textContent = t('cacheToast');
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
 
 // ── i18n apply ───────────────────────────────────────────────────────────────
 function applyLang() {
@@ -2833,6 +2852,7 @@ function ctSave() {
   setTM('ct_' + id);
   ctRenderList();
   ctClose();
+  setTimeout(showCacheToast, 50);
 }
 
 // ── Rendre la liste ──────────────────────────────────────────────────────────
@@ -3821,6 +3841,7 @@ function ccSave() {
 
   // Fermer la modale
   ccClose();
+  setTimeout(showCacheToast, 50);
 }
 
 // ── tmInit ───────────────────────────────────────────────────────────────────
