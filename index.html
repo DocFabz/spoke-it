@@ -1259,7 +1259,9 @@ input[type=number] { -moz-appearance:textfield }
 <script>
 
 // ── i18n ────────────────────────────────────────────────────────────────────
-let lang = 'fr';
+const _storedLang = localStorage.getItem('spoke-it-lang');
+const _browserLang = (navigator.languages?.[0] || navigator.language || 'en').toLowerCase();
+let lang = _storedLang || (_browserLang.startsWith('fr') ? 'fr' : 'en');
 
 const i18n = {
   fr: {
@@ -1587,7 +1589,7 @@ function applyLang() {
   if ($id('tm-result-card').style.display !== 'none') tmTryRenderRadar();
 }
 
-function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; applyLang(); }
+function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; localStorage.setItem('spoke-it-lang', lang); applyLang(); }
 
 // ── Error display ─────────────────────────────────────────────────────────────
 function showErr(key) {
