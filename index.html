@@ -1259,7 +1259,7 @@ input[type=number] { -moz-appearance:textfield }
 <script>
 
 // ── i18n ────────────────────────────────────────────────────────────────────
-const _storedLang = localStorage.getItem('spoke-it-lang');
+const _storedLang = ['fr','en'].includes(localStorage.getItem('spoke-it-lang')) ? localStorage.getItem('spoke-it-lang') : null;
 const _browserLang = (navigator.languages?.[0] || navigator.language || 'en').toLowerCase();
 let lang = _storedLang || (_browserLang.startsWith('fr') ? 'fr' : 'en');
 
@@ -1551,7 +1551,9 @@ function clearInvalids() { document.querySelectorAll('.invalid').forEach(el => e
 
 // ── i18n apply ───────────────────────────────────────────────────────────────
 function applyLang() {
-  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    if (!el.children.length) el.textContent = t(el.dataset.i18n);
+  });
   reorderTensionFields(wtype); // réapplique les bons labels DS/NDS après la retraduction
   onTension();                 // met à jour tension-help-text en dernier
   $id('lang-btn').textContent = lang === 'fr' ? 'EN' : 'FR';
