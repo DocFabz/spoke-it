@@ -430,9 +430,9 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cc-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
 .cc-step { margin-bottom:1rem }
 .cc-step-label { font-size:.58rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--text3); margin-bottom:.4rem }
-.cc-input { width:100%; background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:400; padding:.55rem .9rem; transition:border-color .2s; box-sizing:border-box }
-.cc-input:focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
-.cc-input::placeholder { color:var(--text3) }
+.cc-input, .ct-input { width:100%; background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:400; padding:.55rem .9rem; transition:border-color .2s; box-sizing:border-box }
+.cc-input:focus, .ct-input:focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
+.cc-input::placeholder, .ct-input::placeholder { color:var(--text3) }
 .cc-select { width:100%; background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text); font-family:'DM Sans',sans-serif; font-size:.85rem; padding:.55rem .9rem; cursor:pointer; appearance:none; -webkit-appearance:none; background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22 fill=%22none%22 stroke=%22%23596778%22 stroke-width=%221.5%22><path d=%22M1 1l5 5 5-5%22/></svg>'); background-repeat:no-repeat; background-position:right .8rem center; background-size:10px; transition:border-color .2s }
 /* ── Charte personnalisée: save button ────────────────────────────────────────────── */
 .cc-save-btn { width:100%; padding:.7rem 1rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.8rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .25s }
@@ -475,6 +475,30 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cc-item-load:hover { border-color:var(--accent); color:var(--accent) }
 .cc-item-del { background:none; border:none; color:var(--text3); font-size:.9rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
 .cc-item-del:hover { color:#f08080 }
+
+/* ── Tensiomètre personnalisé ─────────────────────────────────────────────── */
+.ct-add-btn  { padding:.38rem .7rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Mono',monospace; font-size:.8rem; font-weight:500; cursor:pointer; transition:all .22s; flex-shrink:0; line-height:1; display:flex; align-items:center; gap:.3rem }
+.ct-add-btn:hover { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06) }
+.ct-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9992; opacity:0; transition:opacity .22s; display:none }
+.ct-overlay.show { display:block; opacity:1 }
+.ct-modal   { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9993; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:400px; max-height:88vh; overflow-y:auto; display:none; flex-direction:column; gap:.9rem }
+.ct-modal.show { display:flex; animation:conv-in .2s ease both }
+.ct-header  { display:flex; align-items:center; gap:.5rem }
+.ct-title   { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); flex:1 }
+.ct-close   { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.85rem; cursor:pointer; padding:.3rem .55rem; line-height:1; transition:all .2s; flex-shrink:0 }
+.ct-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+.ct-save-btn { width:100%; padding:.7rem 1rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.8rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .25s; margin-top:.1rem }
+.ct-save-btn:hover { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06) }
+.ct-feedback { font-size:.66rem; color:#f08080; min-height:.9rem; font-style:italic; margin-top:.3rem }
+.ct-list    { display:flex; flex-direction:column; gap:.35rem }
+.ct-item    { display:flex; align-items:center; gap:.5rem; padding:.5rem .9rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); font-size:.75rem; transition:border-color .2s }
+.ct-item:hover { border-color:var(--border-s) }
+.ct-item-name { flex:1; font-family:'DM Mono',monospace; font-size:.72rem; color:var(--accent2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.ct-item-del  { background:none; border:none; color:var(--text3); font-size:.9rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
+.ct-item-del:hover { color:#f08080 }
+.ct-section-sep { font-size:.58rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--text3); padding-top:.3rem; border-top:1px solid var(--border); margin-top:.2rem }
+/* Custom tensiometer options in dropdowns */
+.tm-tensio-custom { color:var(--accent) !important; font-weight:500 }
 
 /* ── Scrollbar ─────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar       { width:4px }
@@ -983,7 +1007,7 @@ input[type=number] { -moz-appearance:textfield }
     <!-- Sélecteur tensiomètre -->
     <div class="f" style="margin-bottom:1rem">
       <div style="display:flex;gap:.4rem;align-items:center">
-        <select id="tm-tensio-select" class="tm-select" style="flex:1" onchange="setTM(this.value)">
+        <select id="tm-tensio-select" class="tm-select" style="flex:1" onchange="tmOnTensioSelectChange(this.value)">
           <option value="" disabled selected hidden>—</option>
           <option value="wf">Wheel Fanatyk</option>
           <option value="pt">Park Tool TM-1</option>
@@ -992,6 +1016,7 @@ input[type=number] { -moz-appearance:textfield }
           <option value="un">UNIOR 1752</option>
         </select>
         <button class="tm-clear-tensio" id="tm-clear-tensio" onclick="tmClearTensio()" style="display:none" title="Reset">✕</button>
+        <button class="ct-add-btn" id="ct-add-btn" onclick="ctOpen()">+</button>
       </div>
     </div>
 
@@ -1250,11 +1275,36 @@ input[type=number] { -moz-appearance:textfield }
       <div class="cc-feedback" id="cc-feedback"></div>
     </div>
 
-    <button class="cc-save-btn" id="cc-save-btn" onclick="ccSave()" data-i18n="ccSaveBtn" style="flex-shrink:0">Enregistrer la charte</button>
+    <button class="cc-save-btn" id="cc-save-btn" onclick="ccSave()" data-i18n="ccSaveBtn" style="flex-shrink:0">✓ Enregistrer la charte</button>
   </div>
 
 </div><!-- /.wrap -->
 </div><!-- /#tension-module -->
+
+<!-- ── Modal tensiomètre personnalisé ── -->
+<div class="ct-overlay" id="ct-overlay" onclick="ctClose()"></div>
+<div class="ct-modal" id="ct-modal" onclick="event.stopPropagation()">
+  <div class="ct-header">
+    <div class="ct-title" id="ct-modal-title" data-i18n="ctTitle">★ Tensiomètre personnalisé</div>
+    <button class="ct-close" onclick="ctClose()">✕</button>
+  </div>
+
+  <!-- Créer nouveau -->
+  <div id="ct-create-section">
+    <div class="cc-step-label" data-i18n="ctLabel">Nom du tensiomètre</div>
+    <input type="text" id="ct-name-inp" class="ct-input" placeholder="Ex : Mon Tensiomètre" maxlength="50" autocomplete="off"
+      oninput="$id('ct-feedback').textContent=''"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();ctSave()}">
+    <div class="ct-feedback" id="ct-feedback"></div>
+    <button class="ct-save-btn" onclick="ctSave()" data-i18n="ctSave">✓ Créer</button>
+  </div>
+
+  <!-- Liste des tensiomètres existants -->
+  <div id="ct-list-section" style="display:none">
+    <div class="ct-section-sep" data-i18n="ctMyTensios">Mes tensiomètres</div>
+    <div class="ct-list" id="ct-list"></div>
+  </div>
+</div>
 
 <script>
 
@@ -1333,7 +1383,7 @@ const i18n = {
     ccNamePlaceholder:'Ex : Mon Rayon Custom 2.0',
     ccStepNbPoints:'Points',
     ccReadingPlaceholder:'Lecture',
-    ccSaveBtn:'Enregistrer la charte',
+    ccSaveBtn:'✓ Enregistrer la charte',
     ccErrName:'Veuillez saisir un nom pour la charte.',
     ccErrValues:'Remplissez toutes les lignes (kgf et lecture).',
     ccErrIncomplete:'{n}/{max} points saisis. Complétez avant d\'enregistrer.',
@@ -1344,6 +1394,14 @@ const i18n = {
     ccSaved:'Charte enregistrée !',
     ccCustomLabel:'★ PERSO',
     ccManageTitle:'Chartes personnalisées',
+    ctTitle:'★ Tensiomètre perso',
+    ctLabel:'Nom du tensiomètre',
+    ctPlaceholder:'Ex : Mon Tensiomètre',
+    ctSave:'✓ Créer',
+    ctErrName:'Veuillez saisir un nom.',
+    ctErrDup:'Ce nom existe déjà.',
+    ctMyTensios:'Mes tensiomètres',
+    ctDeleteConfirm:'Supprimer ce tensiomètre et toutes ses chartes ?',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -1414,7 +1472,7 @@ const i18n = {
     ccNamePlaceholder:'Ex: My Custom Spoke 2.0',
     ccStepNbPoints:'Points',
     ccReadingPlaceholder:'Reading',
-    ccSaveBtn:'Save chart',
+    ccSaveBtn:'✓ Save chart',
     ccErrName:'Please enter a name for the chart.',
     ccErrValues:'Fill in all rows (kgf and reading).',
     ccErrIncomplete:'{n}/{max} points entered. Complete before saving.',
@@ -1425,6 +1483,14 @@ const i18n = {
     ccSaved:'Chart saved!',
     ccCustomLabel:'★ CUSTOM',
     ccManageTitle:'Custom charts',
+    ctTitle:'★ Custom tensiometer',
+    ctLabel:'Tensiometer name',
+    ctPlaceholder:'E.g.: My Tensiometer',
+    ctSave:'✓ Create',
+    ctErrName:'Please enter a name.',
+    ctErrDup:'This name already exists.',
+    ctMyTensios:'My tensiometers',
+    ctDeleteConfirm:'Delete this tensiometer and all its charts?',
   }
 };
 
@@ -1508,8 +1574,13 @@ let tmActiveKey = null;   // key of the tensiometer whose data is currently in t
 let tmDTSub = 'standard'; // 'standard' | 'aerolite2'
 let tmWFSub = 'new';     // 'old' | 'new'
 let tmSpokeKey = null;    // clé rayon sélectionnée dans la table active
+// ── État highlight ──────────────────────────────────────────────────────────
+let tmCVThreshold = 5;    // % — seuil écart-type coefficient de variation
+let tmHighlightOn = false;
+let tmOutliers = { fo: new Set(), fa: new Set() };
 function tmStoreKey() {
   if (!tmType) return null;
+  if (tmType.startsWith('ct_')) return tmType;  // tensiomètre perso : clé directe
   if (tmType === 'dt') return 'dt_' + tmDTSub;
   if (tmType === 'wf') return 'wf_' + tmWFSub;
   return tmType;
@@ -1530,6 +1601,8 @@ let currentErrKey = null;
 let summaryData = null;
 let arbData  = { fo: null, fa: null };
 let evenMode = { fo: false, fa: false };
+let ccPoints = [];       // [{kgf, reading}] — état charte personnalisée
+let ccInputOrder = null; // null | 'kgf-first' | 'read-first'
 
 // ── Scroll flags ─────────────────────────────────────────────────────────────
 let _hubScrolled = false, _rimScrolled = false, _tensionScrolled = false;
@@ -1579,15 +1652,18 @@ function applyLang() {
     const sel = $id(id);
     if (sel) sel.querySelector('option[value=""]').textContent = t('tmTensioPlaceholder');
   });
+  const ctInp = $id('ct-name-inp');
+  if (ctInp) ctInp.placeholder = t('ctPlaceholder');
   renderConfigsList();
+  // Refresh custom tensio options (separator label is language-dependent)
+  ctPopulateTensioSelect();
+  ctPopulateCCTensioSelect();
   // Refresh tension module dynamic content
   tmUpdateBadges();
   tmUpdateHint();
-  if (typeof TM_TABLES !== 'undefined') {
-    tmPopulateSpokeSelect();  // rafraîchit le placeholder du dropdown
-    tmBuildTable();           // rafraîchit les messages dans le tbody
-    tmUpdateOutlierCount();
-  }
+  tmPopulateSpokeSelect();
+  tmBuildTable();
+  tmUpdateOutlierCount();
   if ($id('tm-result-card').style.display !== 'none') tmTryRenderRadar();
 }
 
@@ -2626,6 +2702,12 @@ function ccInjectAll() {
   const customs = ccLoadAll();
   customs.forEach(cc => {
     const key = CC_PREFIX + cc.name;
+    // Tensiomètre perso (ct_*) : injecter directement dans sa table
+    if (cc.tensioKey && cc.tensioKey.startsWith('ct_')) {
+      if (!TM_TABLES[cc.tensioKey]) TM_TABLES[cc.tensioKey] = {};
+      TM_TABLES[cc.tensioKey][key] = cc.points;
+      return;
+    }
     // Wheel Fanatyk : injecter dans les deux tables (old + new)
     if (cc.tensioKey === 'wf') {
       if (TM_TABLES.wf_old) TM_TABLES.wf_old[key] = cc.points;
@@ -2670,9 +2752,147 @@ function ccInjectAll() {
 // ── Injecter les chartes personnalisées dès que toutes les tables sont prêtes ──
 ccInjectAll();
 
+// ══════════════════════════════════════════════════════════════════════════════
+// TENSIOMÈTRES PERSONNALISÉS
+// ══════════════════════════════════════════════════════════════════════════════
+
+const CT_LS_KEY = 'spokeit_custom_tensios';
+
+function ctLoadAll()    { try { return JSON.parse(localStorage.getItem(CT_LS_KEY)) || []; } catch(e) { return []; } }
+function ctPersist(arr) { localStorage.setItem(CT_LS_KEY, JSON.stringify(arr)); }
+
+// Créer une table vide dans TM_TABLES pour chaque tensiomètre custom
+function ctInjectAll() {
+  ctLoadAll().forEach(ct => {
+    const key = 'ct_' + ct.id;
+    if (!TM_TABLES[key]) TM_TABLES[key] = {};
+  });
+  // Réinjecter aussi les chartes custom (car elles peuvent cibler un tensio perso)
+  ccInjectAll();
+}
+
+// ── Peupler un select tensiomètre avec les perso ──────────────────────────────
+function ctPopulateSelect(sel) {
+  if (!sel) return;
+  Array.from(sel.options).forEach(o => { if (o.dataset.ctCustom || o.dataset.ctSep) o.remove(); });
+  const cts = ctLoadAll();
+  if (!cts.length) return;
+  const sep = document.createElement('option');
+  sep.disabled = true;
+  sep.textContent = '── ' + t('ctMyTensios') + ' ──';
+  sep.dataset.ctSep = '1';
+  sel.appendChild(sep);
+  const isTmSelect = sel.id === 'tm-tensio-select';
+  cts.forEach(ct => {
+    const opt = document.createElement('option');
+    opt.value = 'ct_' + ct.id;
+    opt.textContent = CC_PREFIX + ct.name;
+    opt.dataset.ctCustom = '1';
+    if (isTmSelect) opt.className = 'tm-tensio-custom';
+    sel.appendChild(opt);
+  });
+}
+
+function ctPopulateTensioSelect()   { ctPopulateSelect($id('tm-tensio-select')); }
+function ctPopulateCCTensioSelect() { ctPopulateSelect($id('cc-tensio')); }
+
+// ── Ouvrir la modale tensiomètre perso ──────────────────────────────────────
+function ctOpen() {
+  $id('ct-name-inp').value = '';
+  $id('ct-feedback').textContent = '';
+  ctRenderList();
+  $id('ct-overlay').classList.add('show');
+  $id('ct-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => $id('ct-name-inp').focus(), 200);
+}
+
+function ctClose() {
+  $id('ct-overlay').classList.remove('show');
+  $id('ct-modal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+// ── Sauvegarder le nouveau tensiomètre ──────────────────────────────────────
+function ctSave() {
+  const fb   = $id('ct-feedback');
+  const name = $id('ct-name-inp').value.trim();
+  if (!name) { fb.textContent = t('ctErrName'); return; }
+
+  const cts = ctLoadAll();
+  if (cts.find(ct => ct.name.toLowerCase() === name.toLowerCase())) {
+    fb.textContent = t('ctErrDup'); return;
+  }
+
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  cts.push({ id, name });
+  ctPersist(cts);
+  ctInjectAll();
+  ctPopulateTensioSelect();
+  ctPopulateCCTensioSelect();
+  setTM('ct_' + id);
+  ctRenderList();
+  ctClose();
+}
+
+// ── Rendre la liste ──────────────────────────────────────────────────────────
+function ctRenderList() {
+  const cts = ctLoadAll();
+  const listSec = $id('ct-list-section');
+  const listEl  = $id('ct-list');
+  if (!listSec || !listEl) return;
+  listSec.style.display = cts.length > 0 ? '' : 'none';
+  listEl.innerHTML = '';
+  cts.forEach((ct, i) => {
+    const div = document.createElement('div');
+    div.className = 'ct-item';
+    div.id = 'ct-item-' + i;
+    div.innerHTML =
+      `<span class="ct-item-name">${CC_PREFIX}${escHtml(ct.name)}</span>` +
+      `<button class="ct-item-del" title="Supprimer">×</button>`;
+    div.querySelector('.ct-item-del').addEventListener('click', function(e) {
+      e.stopPropagation();
+      ctDelete(i);
+    });
+    listEl.appendChild(div);
+  });
+}
+
+// ── Supprimer un tensiomètre perso ───────────────────────────────────────────
+function ctDelete(idx) {
+  const cts = ctLoadAll();
+  const ct  = cts[idx];
+  if (!ct) return;
+  const tmKey = 'ct_' + ct.id;
+
+  // Si c'est le tensiomètre actif, reset
+  if (tmActiveKey === tmKey || tmType === tmKey) {
+    tmClearTensio();
+  }
+
+  // Supprimer aussi les chartes custom de ce tensiomètre
+  const allCustoms = ccLoadAll().filter(cc => cc.tensioKey !== tmKey);
+  ccPersist(allCustoms);
+
+  cts.splice(idx, 1);
+  ctPersist(cts);
+  delete TM_TABLES[tmKey];
+  ccInjectAll();
+  ctPopulateTensioSelect();
+  ctPopulateCCTensioSelect();
+  tmPopulateSpokeSelect();
+  ctRenderList();
+}
+
+// Initialiser les tensiomètres perso au démarrage
+ctInjectAll();
+ctPopulateTensioSelect();
+ctPopulateCCTensioSelect();
+
 // ── Obtenir la table active (objet {spokeKey: [[defl,kgf]…]}) ─────────────────
 function tmGetActiveTable() {
   if (!tmType) return null;
+  if (tmType.startsWith('ct_')) return TM_TABLES[tmType] || {};
   if (tmType === 'wf')          return tmWFSub === 'new' ? TM_TABLES.wf_new : TM_TABLES.wf_old;
   if (tmType === 'pt')          return TM_TABLES.pt;
   if (tmType === 'pk')          return TM_TABLES.pk;
@@ -2748,7 +2968,7 @@ function tmParseInput(raw) {
     if (Number.isInteger(n) && n >= 10) n = n / 100;
     return Math.round(n * 10000) / 10000;
   } else {
-    // DT Swiss : valeur exacte en mm, virgule ou point acceptés, pas de raccourci
+    // DT Swiss, PK, tensiomètre perso : valeur exacte décimale
     const n = parseFloat(s);
     return isNaN(n) ? null : Math.round(n * 10000) / 10000;
   }
@@ -2764,6 +2984,13 @@ function tmDisplayValue(val) {
 // ── Hint selon tensiomètre ────────────────────────────────────────────────────
 function tmGetHintHTML() {
   if (!tmType) return '';
+  if (tmType.startsWith('ct_')) {
+    const ct = ctLoadAll().find(c => 'ct_' + c.id === tmType);
+    const name = ct ? CC_PREFIX + ct.name : '★';
+    return lang === 'fr'
+      ? `Tensiomètre perso <strong style="color:var(--accent)">${name}</strong> — Créez une charte personnalisée via le bouton ci-dessous.`
+      : `Custom tensiometer <strong style="color:var(--accent)">${name}</strong> — Create a custom chart using the button below.`;
+  }
   if (tmType === 'pt') return t('tmHintPT');
   if (tmType === 'dt') return t('tmHintDT');
   if (tmType === 'pk') return t('tmHintPK');
@@ -2820,6 +3047,12 @@ function tmPopulateSpokeSelect() {
 
 // ── Badge unité ───────────────────────────────────────────────────────────────
 function tmUpdateUnitBadge() {
+  if (tmType && tmType.startsWith('ct_')) {
+    // Tensiomètre perso : afficher les 2 premières lettres du nom
+    const ct = ctLoadAll().find(c => 'ct_' + c.id === tmType);
+    $id('tm-unit-badge').textContent = ct ? CC_PREFIX + ct.name.slice(0, 4) : '★';
+    return;
+  }
   const labels = { wf: 'WF', pt: 'PT', dt: 'DT', pk: 'PK', un: 'UN' };
   $id('tm-unit-badge').textContent = tmType ? (labels[tmType] || tmType.toUpperCase()) : '—';
 }
@@ -2891,7 +3124,8 @@ function tmSwitchActiveKey(newKey) {
 }
 
 function setTM(type) {
-  const newKey = type === 'dt' ? 'dt_' + tmDTSub : type === 'wf' ? 'wf_' + tmWFSub : type;
+  const isCt = type && type.startsWith('ct_');
+  const newKey = isCt ? type : (type === 'dt' ? 'dt_' + tmDTSub : type === 'wf' ? 'wf_' + tmWFSub : type);
   if (newKey === tmActiveKey) return;
   tmType = type;
   tmSwitchActiveKey(newKey);
@@ -2902,6 +3136,10 @@ function setTM(type) {
   $id('tm-entry-hint').innerHTML = tmGetHintHTML();
   const clearBtn = $id('tm-clear-tensio');
   if (clearBtn) clearBtn.style.display = type ? '' : 'none';
+}
+
+function tmOnTensioSelectChange(val) {
+  if (val) setTM(val);
 }
 
 function tmClearTensio() {
@@ -3006,9 +3244,15 @@ function tmOpenConvTable() {
 
   // Label tensiomètre
   const tensioNames = { wf:'Wheel Fanatyk', pt:'Park Tool TM-1', dt:'DT Swiss', pk:'P&KLie', un:'UNIOR 1752' };
-  let tensioLabel = tensioNames[tmType] || tmType;
-  if (tmType === 'dt' && tmDTSub === 'aerolite2') tensioLabel += ' (Tensio Aerolite II)';
-  if (tmType === 'wf') tensioLabel += tmWFSub === 'new' ? ' (New Chart)' : ' (Old Chart)';
+  let tensioLabel;
+  if (tmType && tmType.startsWith('ct_')) {
+    const ct = ctLoadAll().find(c => 'ct_' + c.id === tmType);
+    tensioLabel = CC_PREFIX + (ct ? ct.name : tmType);
+  } else {
+    tensioLabel = tensioNames[tmType] || tmType;
+    if (tmType === 'dt' && tmDTSub === 'aerolite2') tensioLabel += ' (Tensio Aerolite II)';
+    if (tmType === 'wf') tensioLabel += tmWFSub === 'new' ? ' (New Chart)' : ' (Old Chart)';
+  }
 
   // Label rayon
   $id('tm-conv-spoke-label').innerHTML = `${t('tmConvTensio')}\u00a0: <strong style="color:var(--accent)">${tensioLabel}</strong><br>${t('tmSpokeLabel')}\u00a0: <strong style="color:var(--text)">${tmSpokeKey}</strong>`;
@@ -3048,11 +3292,12 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && $id('cc-modal').classList.contains('show')) {
     ccClose();
   }
+  if (e.key === 'Escape' && $id('ct-modal').classList.contains('show')) {
+    ctClose();
+  }
 });
 
 // ── État Charte personnalisée ────────────────────────────────────────────────────────
-let ccPoints = [];            // [{kgf, reading}]
-let ccInputOrder = null;      // null | 'kgf-first' | 'read-first'
 
 // ── Ouvrir la modale ────────────────────────────────────────────────────────
 function ccOpen() {
@@ -3063,6 +3308,8 @@ function ccOpen() {
   // Mapper wf_old/wf_new → wf pour le select du modal
   const ccTensioVal = (activeKey === 'wf_old' || activeKey === 'wf_new') ? 'wf' : activeKey;
   if (sel) {
+    // S'assurer que les options perso sont bien présentes
+    ctPopulateCCTensioSelect();
     const opts = Array.from(sel.options).map(o => o.value).filter(v => v);
     sel.value = opts.includes(ccTensioVal) ? ccTensioVal : '';
     sel.disabled = hasTensio;
@@ -3468,8 +3715,10 @@ function ccLoadChart(idx) {
   const customs = ccLoadAll();
   const cc = customs[idx];
   if (!cc) return;
-  // Mapper wf_old/wf_new → wf pour le select du modal
-  const selectVal = (cc.tensioKey === 'wf' || cc.tensioKey === 'wf_old' || cc.tensioKey === 'wf_new') ? 'wf' : cc.tensioKey;
+  // Mapper wf_old/wf_new → wf pour le select du modal ; ct_* passe tel quel
+  const selectVal = (cc.tensioKey === 'wf' || cc.tensioKey === 'wf_old' || cc.tensioKey === 'wf_new')
+    ? 'wf'
+    : cc.tensioKey;
   $id('cc-tensio').value = selectVal;
   ccToggleTensioClear();
   ccUpdateReadingLabel();
@@ -3542,11 +3791,14 @@ function ccSave() {
   // Sauvegarder (remplacer si même nom, sinon ajouter)
   const existing = ccLoadAll();
   // Chercher par nom ET tensioKey compatible (wf, wf_old, wf_new sont unifiés)
-  const isWF = tensioKey === 'wf' || tensioKey === 'wf_old' || tensioKey === 'wf_new';
+  const isCt = tensioKey && tensioKey.startsWith('ct_');
+  const isWF = !isCt && (tensioKey === 'wf' || tensioKey === 'wf_old' || tensioKey === 'wf_new');
   const existIdx = existing.findIndex(cc => cc.name === name && (
+    isCt ? cc.tensioKey === tensioKey :
     isWF ? (cc.tensioKey === 'wf' || cc.tensioKey === 'wf_old' || cc.tensioKey === 'wf_new') : cc.tensioKey === tensioKey
   ));
-  const entry = { name, tensioKey: isWF ? 'wf' : tensioKey, points };
+  const finalKey = isCt ? tensioKey : (isWF ? 'wf' : tensioKey);
+  const entry = { name, tensioKey: finalKey, points };
   if (existIdx >= 0) existing.splice(existIdx, 1, entry);
   else existing.push(entry);
   ccPersist(existing);
@@ -3555,7 +3807,8 @@ function ccSave() {
 
   // Sélectionner automatiquement la nouvelle charte si on est sur le bon tensiomètre
   const activeKey = tmStoreKey();
-  const tensioMatch = isWF ? (activeKey === 'wf_old' || activeKey === 'wf_new') : (activeKey === tensioKey);
+  const tensioMatch = isCt ? (activeKey === tensioKey) :
+    (isWF ? (activeKey === 'wf_old' || activeKey === 'wf_new') : (activeKey === tensioKey));
   if (tensioMatch) {
     tmSpokeKey = CC_PREFIX + name;
     const sel = $id('tm-spoke-select');
@@ -3848,11 +4101,6 @@ function tmResetSide(col) {
 
   tmTryRenderRadar();
 }
-
-// ── État highlight ────────────────────────────────────────────────────────────
-let tmCVThreshold = 5;    // % — seuil écart-type coefficient de variation
-let tmHighlightOn = false;
-let tmOutliers = { fo: new Set(), fa: new Set() }; // indices outliers courants
 
 function tmSetCV(pct) {
   tmCVThreshold = pct;
