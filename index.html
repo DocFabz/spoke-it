@@ -182,6 +182,24 @@ select option             { background:#161b27 }
 .cp        { flex:1; padding:.48rem; border:1px solid var(--border); border-radius:var(--rs); background:transparent; color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:500; cursor:pointer; transition:all .2s; text-align:center }
 .cp.active { border-color:rgba(126,200,227,.4); color:var(--accent2); background:var(--inp) }
 
+/* ── Differential cross toggle ─────────────────────────────────────────────── */
+.diff-toggle-wrap  { display:flex; align-items:center; gap:.45rem; flex-shrink:0 }
+.diff-toggle-label { font-size:.6rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--text3) }
+.diff-toggle       { position:relative; width:28px; height:16px; border-radius:8px; border:1px solid var(--border-s); background:var(--inp); cursor:pointer; transition:background .22s, border-color .22s; padding:0; flex-shrink:0 }
+.diff-toggle[aria-checked="true"]  { background:rgba(126,200,227,.25); border-color:rgba(126,200,227,.5) }
+.diff-toggle-thumb { position:absolute; top:2px; left:2px; width:10px; height:10px; border-radius:50%; background:var(--text3); transition:transform .22s, background .22s }
+.diff-toggle[aria-checked="true"] .diff-toggle-thumb { transform:translateX(12px); background:var(--accent) }
+
+/* ── Differential side labels ───────────────────────────────────────────────── */
+.diff-side-label { font-size:.5rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; width:2.8rem; flex-shrink:0; text-align:right; line-height:1.25 }
+.diff-side-fo    { color:var(--warm) }
+.diff-side-fa    { color:var(--accent) }
+
+/* ── Cross buttons: fo/fa variants ─────────────────────────────────────────── */
+#cross-row-diff        { flex-direction:column; gap:.45rem }
+.cp-fo.active { border-color:rgba(232,146,124,.5); color:var(--warm2); background:rgba(232,146,124,.08) }
+.cp-fa.active { border-color:rgba(126,200,227,.4); color:var(--accent2); background:var(--inp) }
+
 /* ── Misc ──────────────────────────────────────────────────────────────────── */
 .div  { height:1px; background:var(--border); margin:1.15rem 0 }
 .help { font-size:.66rem; color:var(--text3); margin-top:.22rem; font-style:italic; line-height:1.4 }
@@ -819,13 +837,45 @@ input[type=number] { -moz-appearance:textfield }
     <div class="div"></div>
 
     <div class="f">
-      <label data-i18n="cross">Croisement</label>
-      <div class="crow">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">
+        <label data-i18n="cross" style="margin-bottom:0">Croisement</label>
+        <div class="diff-toggle-wrap">
+          <span class="diff-toggle-label" data-i18n="diffLabel">Différentiel</span>
+          <button class="diff-toggle" id="diff-toggle" onclick="toggleDiff()" role="switch" aria-checked="false">
+            <span class="diff-toggle-thumb"></span>
+          </button>
+        </div>
+      </div>
+      <!-- Mode normal : une seule rangée -->
+      <div id="cross-row-single" class="crow">
         <button class="cp" data-cross="0" onclick="setCross(this)">Radial</button>
         <button class="cp" data-cross="1" onclick="setCross(this)">1×</button>
         <button class="cp" data-cross="2" onclick="setCross(this)">2×</button>
         <button class="cp" data-cross="3" onclick="setCross(this)">3×</button>
         <button class="cp" data-cross="4" onclick="setCross(this)">4×</button>
+      </div>
+      <!-- Mode différentiel : deux rangées DS / NDS -->
+      <div id="cross-row-diff" style="display:none">
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <span class="diff-side-label diff-side-fo" id="diff-label-fo">DS</span>
+          <div class="crow" style="flex:1">
+            <button class="cp cp-fo" data-cross="0" onclick="setCrossFo(this)">Radial</button>
+            <button class="cp cp-fo" data-cross="1" onclick="setCrossFo(this)">1×</button>
+            <button class="cp cp-fo" data-cross="2" onclick="setCrossFo(this)">2×</button>
+            <button class="cp cp-fo" data-cross="3" onclick="setCrossFo(this)">3×</button>
+            <button class="cp cp-fo" data-cross="4" onclick="setCrossFo(this)">4×</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <span class="diff-side-label diff-side-fa" id="diff-label-fa">NDS</span>
+          <div class="crow" style="flex:1">
+            <button class="cp cp-fa" data-cross="0" onclick="setCrossFa(this)">Radial</button>
+            <button class="cp cp-fa" data-cross="1" onclick="setCrossFa(this)">1×</button>
+            <button class="cp cp-fa" data-cross="2" onclick="setCrossFa(this)">2×</button>
+            <button class="cp cp-fa" data-cross="3" onclick="setCrossFa(this)">3×</button>
+            <button class="cp cp-fa" data-cross="4" onclick="setCrossFa(this)">4×</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1423,6 +1473,7 @@ const i18n = {
     ctErrDup:'Ce nom existe déjà.',
     ctMyTensios:'Mes tensiomètres',
     ctDeleteConfirm:'Supprimer ce tensiomètre et toutes ses chartes ?',
+    diffLabel:'Différentiel',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -1504,6 +1555,7 @@ const i18n = {
     ctErrDup:'This name already exists.',
     ctMyTensios:'My tensiometers',
     ctDeleteConfirm:'Delete this tensiometer and all its charts?',
+    diffLabel:'Differential',
   }
 };
 
@@ -1578,6 +1630,7 @@ function clearLoadedConfigName() {
 
 // ── State ────────────────────────────────────────────────────────────────────
 let wtype = 'avant', erdMode = 'direct', sd = 2.0, sa = null, cross = null, hubType = 'jbend';
+let diffMode = false, crossFo = null, crossFa = null;
 let tmType = null;
 let tmData = { fo: [], fa: [] };
 let tmPrevFo = [], tmPrevFa = [];
@@ -1721,7 +1774,7 @@ function readState() {
     nsdVal: $id('nsd-val').value, ecrouType: $id('ecrou-type').value,
     erdNsdResult: $id('erd-nsd-result').value,
     asym: $id('asym').value, spokeSelect: $id('spoke-select').value,
-    cross, hubType, sd, sa,
+    cross, crossFo, crossFa, diffMode, hubType, sd, sa,
     soLeft: $id('sp-so-left').value, soRight: $id('sp-so-right').value,
     tensionForte: $id('tension-forte').value,
     hasResult: $id('results').classList.contains('show'),
@@ -1757,6 +1810,7 @@ function applyState(s) {
   $id('spoke-select').value   = s.spokeSelect;
   $id('tension-forte').value  = s.tensionForte;
   sd = s.sd; sa = s.sa; cross = s.cross;
+  diffMode = s.diffMode || false; crossFo = s.crossFo ?? null; crossFa = s.crossFa ?? null;
   if (s.hubType) { hubType = s.hubType; setHubType(hubType, true); }
   $id('sp-so-left').value  = s.soLeft  || '';
   $id('sp-so-right').value = s.soRight || '';
@@ -1766,7 +1820,22 @@ function applyState(s) {
   $id('btn-erd-nsd').classList.toggle('active', erdMode === 'nsd');
   $id('erd-direct-section').style.display = erdMode === 'direct' ? '' : 'none';
   $id('erd-nsd-section').style.display    = erdMode === 'nsd'    ? '' : 'none';
-  document.querySelectorAll('.cp').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cross) === cross));
+
+  // Restore cross UI
+  const diffBtn = $id('diff-toggle');
+  if (diffBtn) diffBtn.setAttribute('aria-checked', diffMode ? 'true' : 'false');
+  const rowSingle = $id('cross-row-single'), rowDiff = $id('cross-row-diff');
+  if (rowSingle) rowSingle.style.display = diffMode ? 'none' : '';
+  if (rowDiff)   rowDiff.style.display   = diffMode ? 'flex' : 'none';
+  if (diffMode) {
+    document.querySelectorAll('.cp-fo').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cross) === crossFo));
+    document.querySelectorAll('.cp-fa').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cross) === crossFa));
+    document.querySelectorAll('#cross-row-single .cp').forEach(b => b.classList.remove('active'));
+  } else {
+    document.querySelectorAll('#cross-row-single .cp').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cross) === cross));
+    document.querySelectorAll('.cp-fo,.cp-fa').forEach(b => b.classList.remove('active'));
+  }
+  updateDiffSideLabels();
 
   if (s.hasResult) {
     $id('r-fo').textContent = s.rFo; $id('r-fa').textContent = s.rFa;
@@ -1875,6 +1944,12 @@ function clearFormSilent() {
   $id('ecrou-type').value = ''; $id('sp-so-left').value = ''; $id('sp-so-right').value = '';
   $id('spoke-select').value = '2.0|';
   sd = 2.0; sa = null; cross = null; hubType = 'jbend';
+  diffMode = false; crossFo = null; crossFa = null;
+  const diffBtn = $id('diff-toggle');
+  if (diffBtn) diffBtn.setAttribute('aria-checked','false');
+  const rowSingle = $id('cross-row-single'), rowDiff = $id('cross-row-diff');
+  if (rowSingle) rowSingle.style.display = '';
+  if (rowDiff)   rowDiff.style.display   = 'none';
   $id('btn-hub-jbend').classList.add('active'); $id('btn-hub-sp').classList.remove('active');
   $id('field-diam-trou').style.display = ''; $id('field-sp-so-left').style.display = 'none'; $id('field-sp-so-right').style.display = 'none';
 
@@ -1955,6 +2030,8 @@ function reorderTensionFields(wh) {
   }
   setLabel('tension-forte-field',  fortSide);
   setLabel('tension-faible-field', faibleSide);
+  // Mettre à jour les labels différentiels selon le type de roue
+  updateDiffSideLabels();
   // Couleur : fort (saisi) = warm (orange), faible (calculé) = accent (bleu) — toujours
   const fortDot   = $id('tension-forte-field').querySelector('.tension-dot');
   const faibleDot = $id('tension-faible-field').querySelector('.tension-dot');
@@ -2017,13 +2094,56 @@ function setSpokeFromSelect(sel) {
 }
 
 function setCross(b) {
-  document.querySelectorAll('.cp').forEach(x => { x.classList.remove('active'); x.classList.remove('invalid'); });
+  document.querySelectorAll('#cross-row-single .cp').forEach(x => x.classList.remove('active','invalid'));
   b.classList.add('active');
   cross = parseInt(b.dataset.cross);
   if (!document.querySelector('.invalid')) $id('err').classList.remove('show');
   markModified();
   clearResults(); updateCalcBtn();
   checkRimComplete();
+}
+
+function setCrossFo(b) {
+  document.querySelectorAll('.cp-fo').forEach(x => x.classList.remove('active','invalid'));
+  b.classList.add('active');
+  crossFo = parseInt(b.dataset.cross);
+  if (!document.querySelector('.invalid')) $id('err').classList.remove('show');
+  markModified();
+  clearResults(); updateCalcBtn();
+  checkRimComplete();
+}
+
+function setCrossFa(b) {
+  document.querySelectorAll('.cp-fa').forEach(x => x.classList.remove('active','invalid'));
+  b.classList.add('active');
+  crossFa = parseInt(b.dataset.cross);
+  if (!document.querySelector('.invalid')) $id('err').classList.remove('show');
+  markModified();
+  clearResults(); updateCalcBtn();
+  checkRimComplete();
+}
+
+function toggleDiff() {
+  diffMode = !diffMode;
+  const btn = $id('diff-toggle');
+  btn.setAttribute('aria-checked', diffMode ? 'true' : 'false');
+  $id('cross-row-single').style.display = diffMode ? 'none' : '';
+  $id('cross-row-diff').style.display   = diffMode ? 'flex' : 'none';
+  // Reset croisements différentiels quand on active
+  if (diffMode) { crossFo = null; crossFa = null; document.querySelectorAll('.cp-fo,.cp-fa').forEach(x => x.classList.remove('active','invalid')); }
+  else          { cross = null;   document.querySelectorAll('#cross-row-single .cp').forEach(x => x.classList.remove('active','invalid')); }
+  updateDiffSideLabels();
+  markModified();
+  clearResults(); updateCalcBtn();
+}
+
+function updateDiffSideLabels() {
+  const isArriere = wtype === 'arriere';
+  const foLabel = isArriere ? (lang === 'fr' ? 'DS<br>Droit' : 'DS<br>Right') : (lang === 'fr' ? 'NDS<br>Gauche' : 'NDS<br>Left');
+  const faLabel = isArriere ? (lang === 'fr' ? 'NDS<br>Gauche' : 'NDS<br>Left') : (lang === 'fr' ? 'DS<br>Droit' : 'DS<br>Right');
+  const lFo = $id('diff-label-fo'), lFa = $id('diff-label-fa');
+  if (lFo) lFo.innerHTML = foLabel;
+  if (lFa) lFa.innerHTML = faLabel;
 }
 
 function onTension() {
@@ -2079,7 +2199,7 @@ function checkReady() {
   const oL = parseFloat($id('offset-left').value), oR = parseFloat($id('offset-right').value);
   if ([pL,pR,oL,oR].some(isNaN) || pL <= 0 || pR <= 0) return false;
   const erd = getERD(); if (isNaN(erd) || erd <= 0) return false;
-  if (cross === null) return false;
+  if (diffMode ? (crossFo === null || crossFa === null) : cross === null) return false;
   if (isNaN(parseFloat($id('tension-forte').value))) return false;
   if (hubType === 'straightpull' && ($id('sp-so-left').value === '' || $id('sp-so-right').value === '')) return false;
   const sign = wtype === 'arriere' ? -1 : 1, asym = parseFloat($id('asym').value) || 0;
@@ -2156,9 +2276,16 @@ function calc() {
   const asym = parseFloat($id('asym').value) || 0;
   const trou = parseFloat($id('diam-trou').value) || 2.55;
 
-  if (cross === null) {
-    document.querySelectorAll('.cp').forEach(b => b.classList.add('invalid'));
-    return showErr('errCross');
+  if (diffMode) {
+    if (crossFo === null || crossFa === null) {
+      document.querySelectorAll('.cp-fo,.cp-fa').forEach(b => { if ((b.classList.contains('cp-fo') && crossFo === null) || (b.classList.contains('cp-fa') && crossFa === null)) b.classList.add('invalid'); });
+      return showErr('errCross');
+    }
+  } else {
+    if (cross === null) {
+      document.querySelectorAll('#cross-row-single .cp').forEach(b => b.classList.add('invalid'));
+      return showErr('errCross');
+    }
   }
 
   const isSP = hubType === 'straightpull';
@@ -2187,11 +2314,16 @@ function calc() {
   const tf    = tF * ratio;
   const soFo  = isSP ? soR : 0;
   const soFa  = isSP ? soL : 0;
-  const Lfo   = isSP ? slenSP(foPCD, foOff, cross, n, erd, soFo) : slen(foPCD, foOff, cross, n, erd, trou);
-  const Lfa   = isSP ? slenSP(faPCD, faOff, cross, n, erd, soFa) : slen(faPCD, faOff, cross, n, erd, trou);
+  const isArriere = wtype === 'arriere';
+  // En mode différentiel, crossFo = croisement de la rangée orange (UI), crossFa = rangée bleue (UI)
+  // Roue arrière : rangée orange = DS → crFo doit alimenter Lfo (DS) ✓
+  // Roue avant   : rangée orange = NDS → crFo alimente en réalité NDS = Lfa ; il faut swapper
+  const crFo = diffMode ? (isArriere ? crossFo : crossFa) : cross;
+  const crFa = diffMode ? (isArriere ? crossFa : crossFo) : cross;
+  const Lfo   = isSP ? slenSP(foPCD, foOff, crFo, n, erd, soFo) : slen(foPCD, foOff, crFo, n, erd, trou);
+  const Lfa   = isSP ? slenSP(faPCD, faOff, crFa, n, erd, soFa) : slen(faPCD, faOff, crFa, n, erd, trou);
   // Roue arrière : tF = tension DS, tf = tension NDS
   // Roue avant   : tF = tension NDS (côté fort avant), tf = tension DS
-  const isArriere = wtype === 'arriere';
   const tDS  = isArriere ? tF : tf;
   const tNDS = isArriere ? tf : tF;
   const eFo   = el(tDS,  Lfo);   // élongation DS
@@ -2214,7 +2346,7 @@ function calc() {
   $id('m-fa').innerHTML = `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFaDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFaDisplay.toFixed(1)} kgf</strong></div>`;
 
   const sl = sa ? `${sd}×${sa} mm` : `${sd} mm`;
-  summaryData = { erd: erd.toFixed(1), wtype, n, h, cross, isSP, sl, asym, ratio };
+  summaryData = { erd: erd.toFixed(1), wtype, n, h, cross, crossFo, crossFa, diffMode, isSP, sl, asym, ratio };
   renderSummary(); $id('summary-wrap').classList.add('show');
 
   // Roue arrière : card fo (orange) à droite | Roue avant : card fo (orange) à gauche
@@ -2246,7 +2378,16 @@ function calc() {
 function renderSummary() {
   if (!summaryData) return;
   const d = summaryData;
-  const cl = d.cross === 0 ? t('radial') : d.cross + '×';
+  const crossStr = (c) => c === 0 ? t('radial') : c + '×';
+  let cl;
+  if (d.diffMode) {
+    const isArriere = d.wtype === 'arriere';
+    const foName = isArriere ? 'DS' : 'NDS';
+    const faName = isArriere ? 'NDS' : 'DS';
+    cl = `${foName} ${crossStr(d.crossFo)} / ${faName} ${crossStr(d.crossFa)}`;
+  } else {
+    cl = crossStr(d.cross);
+  }
   const ratioColor = d.ratio >= 0.7 ? 'var(--success)' : d.ratio >= 0.6 ? '#e8a040' : '#e06060';
   function item(lbl, val, color) {
     return `<div class="sum-row"><span class="sum-lbl">${lbl}</span><span class="sum-val"${color ? ' style="color:'+color+'"' : ''}>${val}</span></div>`;
