@@ -199,6 +199,10 @@ select option             { background:#161b27 }
 #cross-row-diff        { flex-direction:column; gap:.45rem }
 .cp-fo.active { border-color:rgba(232,146,124,.5); color:var(--warm2); background:var(--inp) }
 .cp-fa.active { border-color:rgba(126,200,227,.4); color:var(--accent2); background:var(--inp) }
+.cp.sp-disabled { opacity:.25; pointer-events:none; cursor:not-allowed }
+
+/* ── Radial disc warning ────────────────────────────────────────────────────── */
+.radial-disc-warn { display:none; font-size:.66rem; font-style:italic; color:#e8927c; margin-top:.4rem; line-height:1.4; animation:fu .25s cubic-bezier(.22,1,.36,1) }
 
 /* ── Misc ──────────────────────────────────────────────────────────────────── */
 .div  { height:1px; background:var(--border); margin:1.15rem 0 }
@@ -877,6 +881,8 @@ input[type=number] { -moz-appearance:textfield }
           </div>
         </div>
       </div>
+      <!-- Warning Radial -->
+      <p class="radial-disc-warn" id="radial-disc-warn" data-i18n="radialDiscWarn">⚠ Incompatible roue à disque</p>
     </div>
   </div>
 
@@ -1474,6 +1480,7 @@ const i18n = {
     ctMyTensios:'Mes tensiomètres',
     ctDeleteConfirm:'Supprimer ce tensiomètre et toutes ses chartes ?',
     diffLabel:'Différentiel',
+    radialDiscWarn:'⚠ Incompatible roue à disque',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -1556,6 +1563,7 @@ const i18n = {
     ctMyTensios:'My tensiometers',
     ctDeleteConfirm:'Delete this tensiometer and all its charts?',
     diffLabel:'Differential',
+    radialDiscWarn:'⚠ Disc brake incompatible',
   }
 };
 
@@ -1631,6 +1639,7 @@ function clearLoadedConfigName() {
 // ── State ────────────────────────────────────────────────────────────────────
 let wtype = 'avant', erdMode = 'direct', sd = 2.0, sa = null, cross = null, hubType = 'jbend';
 let diffMode = false, crossFo = null, crossFa = null;
+const hubTypeByWheel = { avant: 'jbend', arriere: 'jbend' }; // hubType indépendant par roue
 let tmType = null;
 let tmData = { fo: [], fa: [] };
 let tmPrevFo = [], tmPrevFa = [];
@@ -1811,7 +1820,7 @@ function applyState(s) {
   $id('tension-forte').value  = s.tensionForte;
   sd = s.sd; sa = s.sa; cross = s.cross;
   diffMode = s.diffMode || false; crossFo = s.crossFo ?? null; crossFa = s.crossFa ?? null;
-  if (s.hubType) { hubType = s.hubType; setHubType(hubType, true); }
+  if (s.hubType) { hubType = s.hubType; hubTypeByWheel[wtype] = s.hubType; setHubType(hubType, true); }
   $id('sp-so-left').value  = s.soLeft  || '';
   $id('sp-so-right').value = s.soRight || '';
 
@@ -1836,6 +1845,7 @@ function applyState(s) {
     document.querySelectorAll('.cp-fo,.cp-fa').forEach(b => b.classList.remove('active'));
   }
   updateDiffSideLabels();
+  updateRadialWarn();
 
   if (s.hasResult) {
     $id('r-fo').textContent = s.rFo; $id('r-fa').textContent = s.rFa;
@@ -1943,15 +1953,18 @@ function clearFormSilent() {
   $id('diam-trou').value = '2.55'; $id('asym').value = '0';
   $id('ecrou-type').value = ''; $id('sp-so-left').value = ''; $id('sp-so-right').value = '';
   $id('spoke-select').value = '2.0|';
-  sd = 2.0; sa = null; cross = null; hubType = 'jbend';
+  sd = 2.0; sa = null; cross = null; hubType = hubTypeByWheel[wtype];
   diffMode = false; crossFo = null; crossFa = null;
   const diffBtn = $id('diff-toggle');
   if (diffBtn) diffBtn.setAttribute('aria-checked','false');
   const rowSingle = $id('cross-row-single'), rowDiff = $id('cross-row-diff');
   if (rowSingle) rowSingle.style.display = '';
   if (rowDiff)   rowDiff.style.display   = 'none';
-  $id('btn-hub-jbend').classList.add('active'); $id('btn-hub-sp').classList.remove('active');
-  $id('field-diam-trou').style.display = ''; $id('field-sp-so-left').style.display = 'none'; $id('field-sp-so-right').style.display = 'none';
+  $id('btn-hub-jbend').classList.toggle('active', hubType === 'jbend');
+  $id('btn-hub-sp').classList.toggle('active', hubType === 'straightpull');
+  $id('field-diam-trou').style.display   = hubType === 'jbend'        ? '' : 'none';
+  $id('field-sp-so-left').style.display  = hubType === 'straightpull' ? '' : 'none';
+  $id('field-sp-so-right').style.display = hubType === 'straightpull' ? '' : 'none';
 
   erdMode = 'direct';
   $id('btn-erd-direct').classList.add('active'); $id('btn-erd-nsd').classList.remove('active');
@@ -1982,8 +1995,9 @@ function clearFormSilent() {
 }
 
 function clearForm() {
+  hubTypeByWheel[wtype] = 'jbend'; // reset explicite du hub au reset du formulaire
   clearFormSilent();
-  clearLoadedConfigName();   // Reset seul dissocie la roue chargée
+  clearLoadedConfigName();
   resetScrollFlags();
   setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 120);
 }
@@ -1994,6 +2008,7 @@ function switchTo(wh) {
   resetScrollFlags();
   saved[wtype] = readState(); saved[wtype].wtype = wtype;
   wtype = wh;
+  hubType = hubTypeByWheel[wh]; // restaure le hubType propre à cette roue
   $id('btn-avant').classList.toggle('active', wh === 'avant');
   $id('btn-avant').classList.toggle('c', wh === 'avant');
   $id('btn-arriere').classList.toggle('active', wh === 'arriere');
@@ -2032,6 +2047,8 @@ function reorderTensionFields(wh) {
   setLabel('tension-faible-field', faibleSide);
   // Mettre à jour les labels différentiels selon le type de roue
   updateDiffSideLabels();
+  // Mettre à jour les restrictions de croisement selon roue + moyeu
+  updateCrossForHubType();
   // Couleur : fort (saisi) = warm (orange), faible (calculé) = accent (bleu) — toujours
   const fortDot   = $id('tension-forte-field').querySelector('.tension-dot');
   const faibleDot = $id('tension-faible-field').querySelector('.tension-dot');
@@ -2055,10 +2072,51 @@ function setErdMode(m) {
   clearResults(); updateCalcBtn();
 }
 
+function updateRadialWarn() {
+  const hasRadial = !![
+    ...document.querySelectorAll('#cross-row-single .cp[data-cross="0"].active'),
+    ...document.querySelectorAll('.cp-fo[data-cross="0"].active'),
+    ...document.querySelectorAll('.cp-fa[data-cross="0"].active'),
+  ].length;
+  const w = $id('radial-disc-warn');
+  if (w) w.style.display = hasRadial ? 'block' : 'none';
+}
+
+function updateCrossForHubType() {
+  const isSP      = hubType === 'straightpull';
+  const isArriere = wtype === 'arriere';
+
+  // 4× interdit en Straightpull
+  document.querySelectorAll('.cp[data-cross="4"]').forEach(b => {
+    b.classList.toggle('sp-disabled', isSP);
+    if (isSP && b.classList.contains('active')) {
+      b.classList.remove('active');
+      if (b.classList.contains('cp-fo')) crossFo = null;
+      else if (b.classList.contains('cp-fa')) crossFa = null;
+      else cross = null;
+    }
+  });
+
+  // Radial interdit côté DS roue arrière uniquement
+  // En mode diff : cp-fo = DS arrière, cp-fa = jamais bloqué
+  const radialSingle = document.querySelector('#cross-row-single .cp[data-cross="0"]');
+  if (radialSingle) {
+    radialSingle.classList.toggle('sp-disabled', isArriere);
+    if (isArriere && radialSingle.classList.contains('active')) { radialSingle.classList.remove('active'); cross = null; }
+  }
+  const radialFo = document.querySelector('.cp-fo[data-cross="0"]');
+  if (radialFo) {
+    radialFo.classList.toggle('sp-disabled', isArriere);
+    if (isArriere && radialFo.classList.contains('active')) { radialFo.classList.remove('active'); crossFo = null; }
+  }
+  updateRadialWarn();
+}
+
 function setHubType(htype, skipClearSO) {
   // Verrouillé quand une config est chargée
   if (!skipClearSO && _loadedConfigName[wtype]) return;
   hubType = htype;
+  hubTypeByWheel[wtype] = htype;
   $id('btn-hub-jbend').classList.toggle('active', htype === 'jbend');
   $id('btn-hub-sp').classList.toggle('active', htype === 'straightpull');
   $id('field-diam-trou').style.display   = htype === 'jbend'        ? '' : 'none';
@@ -2066,19 +2124,21 @@ function setHubType(htype, skipClearSO) {
   $id('field-sp-so-right').style.display = htype === 'straightpull' ? '' : 'none';
   if (!skipClearSO) {
     markModified();
-    // Effacer tous les champs du moyeu lors d'un switch manuel
     $id('nb-rayons').value = '';
     $id('diam-trou').value = '2.55';
     $id('pcd-left').value  = ''; $id('offset-left').value  = '';
     $id('pcd-right').value = ''; $id('offset-right').value = '';
     const soL = $id('sp-so-left');  soL.value = ''; soL._prevVal = undefined;
     const soR = $id('sp-so-right'); soR.value = ''; soR._prevVal = undefined;
-    // Bloquer le scroll pendant le switch (le blur du champ précédent arrive après le onclick)
     _hubScrolled = false;
     _switchingHub = true;
     setTimeout(() => { _switchingHub = false; }, 100);
+    // Réinitialiser le lacing (mode simple et différentiel)
+    cross = null; crossFo = null; crossFa = null;
+    document.querySelectorAll('.cp').forEach(x => x.classList.remove('active', 'invalid'));
   }
   clearResults(); updateCalcBtn();
+  updateCrossForHubType();
 }
 
 function calcNsd() {
@@ -2101,6 +2161,7 @@ function setCross(b) {
   markModified();
   clearResults(); updateCalcBtn();
   checkRimComplete();
+  updateRadialWarn();
 }
 
 function setCrossFo(b) {
@@ -2111,6 +2172,7 @@ function setCrossFo(b) {
   markModified();
   clearResults(); updateCalcBtn();
   checkRimComplete();
+  updateRadialWarn();
 }
 
 function setCrossFa(b) {
@@ -2121,6 +2183,7 @@ function setCrossFa(b) {
   markModified();
   clearResults(); updateCalcBtn();
   checkRimComplete();
+  updateRadialWarn();
 }
 
 function toggleDiff() {
@@ -2135,6 +2198,7 @@ function toggleDiff() {
   updateDiffSideLabels();
   markModified();
   clearResults(); updateCalcBtn();
+  updateRadialWarn();
 }
 
 function updateDiffSideLabels() {
