@@ -84,13 +84,13 @@ body {
 }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
-header        { text-align:center; padding:3.5rem 1rem 2rem }
-.logo-ring    { display:inline-block; width:50px; height:50px; margin-bottom:1.1rem; animation:spin 20s linear infinite, pulse 3s ease-in-out infinite }
+header        { text-align:center; padding:1.5rem 1rem 2rem }
+.logo-ring    { display:inline-block; width:50px; height:50px; margin-bottom:0.3rem; animation:spin 20s linear infinite, pulse 3s ease-in-out infinite }
 @keyframes spin  { to { transform:rotate(360deg) } }
 @keyframes pulse { 0%, 100% { opacity:.38 } 50% { opacity:.72 } }
 .brand        { font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:.18em; text-transform:uppercase; color:var(--text) }
 .brand em     { font-style:normal; color:var(--accent) }
-.sub          { font-family:'DM Mono',monospace; font-size:.67rem; font-weight:300; color:var(--text3); letter-spacing:.2em; margin-top:.45rem }
+.sub          { font-family:'DM Mono',monospace; font-size:.67rem; font-weight:300; color:var(--text3); letter-spacing:.2em; margin-top:.1rem }
 .insta-link   { display:inline-flex; align-items:center; gap:.35rem; color:var(--text3); text-decoration:none; letter-spacing:.15em; transition:color .2s }
 .insta-link:hover { color:var(--accent) }
 .insta-icon   { width:13px; height:13px; flex-shrink:0; vertical-align:middle }
@@ -1053,10 +1053,10 @@ input[type=number] { -moz-appearance:textfield }
       <div style="display:flex;gap:.4rem;align-items:center">
         <select id="tm-tensio-select" class="tm-select" style="flex:1" onchange="tmOnTensioSelectChange(this.value)">
           <option value="" disabled selected hidden>—</option>
-          <option value="wf">Wheel Fanatyk</option>
-          <option value="pt">Park Tool TM-1</option>
-          <option value="dt">DT Swiss</option>
-          <option value="pk">P&amp;KLie</option>
+          <option value="wf">WHEEL FANATYK</option>
+          <option value="pt">PARK TOOL TM-1</option>
+          <option value="dt">DT SWISS</option>
+          <option value="pk">P&amp;KLIE</option>
           <option value="un">UNIOR 1752</option>
         </select>
         <button class="tm-clear-tensio inactive" id="tm-clear-tensio" onclick="tmClearTensio()" title="Reset">✕</button>
@@ -1257,11 +1257,11 @@ input[type=number] { -moz-appearance:textfield }
       <div style="display:flex;gap:.35rem">
         <select id="cc-tensio" class="cc-select" onchange="ccOnTensioChange()">
           <option value="" disabled selected hidden>—</option>
-          <option value="wf">Wheel Fanatyk</option>
-          <option value="pt">Park Tool TM-1</option>
-          <option value="dt_standard">DT Swiss (Standard)</option>
-          <option value="dt_aerolite2">DT Swiss (Aerolite II)</option>
-          <option value="pk">P&amp;KLie</option>
+          <option value="wf">WHEEL FANATYK</option>
+          <option value="pt">PARK TOOL TM-1</option>
+          <option value="dt_standard">DT SWISS (STANDARD)</option>
+          <option value="dt_aerolite2">DT SWISS (AEROLITE II)</option>
+          <option value="pk">P&amp;KLIE</option>
           <option value="un">UNIOR 1752</option>
         </select>
         <button class="tm-clear-tensio" id="cc-clear-tensio" onclick="ccClearTensio()" style="display:none" title="Reset">✕</button>
