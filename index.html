@@ -158,9 +158,8 @@ select option             { background:#161b27 }
 }
 
 /* ── Hub layout ────────────────────────────────────────────────────────────── */
-.hub-top      { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.2rem }
+.hub-top      { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin-bottom:1.2rem }
 .hub-sides    { display:grid; grid-template-columns:1fr 1px 1fr; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); overflow:hidden }
-.hub-sides-rim{ grid-template-columns:1fr 1fr; margin-top:1.35rem }
 .hub-side     { padding:1.1rem 1.2rem; display:flex; flex-direction:column; gap:.75rem }
 .hub-divider  { background:var(--border); width:1px }
 
@@ -207,7 +206,6 @@ select option             { background:#161b27 }
 .radial-disc-warn { display:none; font-size:.66rem; font-style:italic; color:#e8927c; margin-top:.4rem; line-height:1.4; animation:fu .25s cubic-bezier(.22,1,.36,1) }
 
 /* ── Misc ──────────────────────────────────────────────────────────────────── */
-.div  { height:1px; background:var(--border); margin:1.15rem 0 }
 .help { font-size:.66rem; color:var(--text3); margin-top:.22rem; font-style:italic; line-height:1.4 }
 
 /* ── Tooltip ───────────────────────────────────────────────────────────────── */
@@ -730,6 +728,18 @@ input[type=number] { -moz-appearance:textfield }
         <label data-i18n="holeDiam">Ø trous de bride (mm)</label>
         <input type="number" id="diam-trou" value="2.55" step="0.05" min="1" max="5" inputmode="decimal">
       </div>
+      <div class="f">
+        <label data-i18n="spokeSection">Section de rayon (mm)</label>
+        <select id="spoke-select" onchange="setSpokeFromSelect(this)">
+          <option value="" disabled selected hidden>—</option>
+          <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
+          <option value="1.7|">1.7</option>  <option value="1.8|">1.8</option>
+          <option value="2.0|">2.0</option>
+          <option value="2.3|">2.3</option>
+          <option value="0.9|2.2">0.9×2.2</option>
+          <option value="0.9|2.3">0.9×2.3</option>
+        </select>
+      </div>
     </div>
 
     <div class="hub-sides">
@@ -781,40 +791,29 @@ input[type=number] { -moz-appearance:textfield }
       <button class="pill pill-icon"        id="btn-erd-nsd"    onclick="setErdMode('nsd')">NSD + ADDON</button>
     </div>
 
-    <div class="hub-sides hub-sides-rim">
+    <div class="g2">
 
-      <div class="hub-side">
-
+      <!-- Colonne gauche : ERD / NSD + ERD calculé -->
+      <div class="f">
         <!-- ERD direct -->
         <div id="erd-direct-section" class="f">
           <label>ERD (mm)</label>
           <input type="number" id="erd-direct" step="0.1" inputmode="decimal" placeholder="—">
         </div>
-
         <!-- NSD (mode NSD) -->
         <div id="erd-nsd-section" style="display:none" class="f">
           <label>NSD (mm)</label>
           <input type="number" id="nsd-val" step="0.1" inputmode="decimal" placeholder="—" oninput="calcNsd()">
         </div>
-
         <!-- ERD calculé (mode NSD) -->
         <div id="erd-nsd-result-field" style="display:none" class="f">
           <label data-i18n="erdCalc">ERD calculé (mm)</label>
           <input type="number" id="erd-nsd-result" readonly tabindex="-1" class="inp-readonly">
         </div>
-
-        <!-- Asymétrie jante -->
-        <div class="f">
-          <label data-i18n="rimAsym">Asymétrie jante (mm)</label>
-          <input type="number" id="asym" value="0" step="0.5" min="0" inputmode="decimal" onkeydown="if(event.key==='-')event.preventDefault()">
-          <p class="asym-warn" id="asym-warn" data-i18n="asymWarn">Moyeu symétrique : Jante asymétrique déconseillée.</p>
-        </div>
-
       </div>
 
-      <!-- Colonne droite -->
-      <div class="hub-side">
-
+      <!-- Colonne droite : ADDON + Asymétrie -->
+      <div class="f">
         <!-- ADDON (mode NSD) -->
         <div id="erd-addon-field" style="display:none" class="f">
           <label class="tip-wrap">ADDON (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="addonTip">Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.</span></label>
@@ -832,28 +831,30 @@ input[type=number] { -moz-appearance:textfield }
             <option value="3.6">3.6</option>
           </select>
         </div>
-
-        <!-- Section de rayon -->
+        <!-- Asymétrie jante -->
         <div class="f">
-          <label data-i18n="spokeSection">Section de rayon</label>
-          <select id="spoke-select" onchange="setSpokeFromSelect(this)">
-            <option value="1.6|">1.6 mm</option>  <option value="1.65|">1.65 mm</option>
-            <option value="1.7|">1.7 mm</option>  <option value="1.8|">1.8 mm</option>
-            <option value="2.0|" selected>2.0 mm</option>
-            <option value="2.3|">2.3 mm</option>
-            <option value="0.9|2.2">CX-Ray 0.9×2.2</option>
-            <option value="0.9|2.3">Aerolite 0.9×2.3</option>
-          </select>
+          <label data-i18n="rimAsym">Asymétrie jante (mm)</label>
+          <input type="number" id="asym" value="0" step="0.5" min="0" inputmode="decimal" onkeydown="if(event.key==='-')event.preventDefault()">
+          <p class="asym-warn" id="asym-warn" data-i18n="asymWarn">Moyeu symétrique : Jante asymétrique déconseillée.</p>
         </div>
-
       </div>
+
     </div>
+  </div>
 
-    <div class="div"></div>
 
+  <!-- ── Lacing ── -->
+  <div class="card">
+    <div class="ch">
+      <svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+        <line x1="3" y1="21" x2="18" y2="3"/>
+        <line x1="6" y1="3" x2="21" y2="21"/>
+        <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+      </svg>
+      <div class="clabel" data-i18n="cross">Croisement</div>
+    </div>
     <div class="f">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">
-        <label data-i18n="cross" style="margin-bottom:0">Croisement</label>
         <div class="diff-toggle-wrap">
           <span class="diff-toggle-label" data-i18n="diffLabel">Différentiel</span>
           <button class="diff-toggle" id="diff-toggle" onclick="toggleDiff()" role="switch" aria-checked="false">
@@ -1418,7 +1419,7 @@ const i18n = {
     pcdTipLeft:'Pitch Circle Diameter Gauche', pcdTipRight:'Pitch Circle Diameter Droit', offset:'Déport', offsetTipLeft:'Centre-Flasque Gauche', offsetTipRight:'Centre-Flasque Droite',
     soLeft:'SO gauche', soRight:'SO droit',
     erdDirect:'ERD DIRECT', addonTip:"Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.",
-    erdCalc:'ERD calculé (mm)', rimAsym:'Asymétrie jante (mm)', spokeSection:'Section de rayon', cross:'Croisement',
+    erdCalc:'ERD calculé (mm)', rimAsym:'Asymétrie jante (mm)', spokeSection:'Section de rayon (mm)', cross:'Croisement',
     driveSide:'Côté Droit (DS)', nonDriveSide:'Côté Gauche (NDS)',
     rtagDriveSideFront:'CÔTÉ DROIT (DS)', rtagNonDriveSideFront:'CÔTÉ GAUCHE (NDS)',
     rtagDriveSideRear:'CÔTÉ DROIT (DS)',  rtagNonDriveSideRear:'CÔTÉ GAUCHE (NDS)',
@@ -1429,6 +1430,7 @@ const i18n = {
     hubType:'Type moyeu', spokeSection2:'Section rayon', rimAsym2:'Asymétrie jante',
     tensionRatio:'Tension ratio', frontLabel:'Avant', rearLabel:'Arrière', radial:'Radial',
     errSpokes:'Veuillez choisir le nombre de rayons.',
+    errSpoke:'Veuillez choisir la section de rayon.',
     errPcd:'Veuillez renseigner PCD et déport pour les deux côtés.',
     errErd:'ERD invalide ou non renseigné.', errCross:'Veuillez choisir un croisement.',
     errTension:'Veuillez choisir la tension cible du côté fort.',
@@ -1501,7 +1503,7 @@ const i18n = {
     pcdTipLeft:'Left Pitch Circle Diameter', pcdTipRight:'Right Pitch Circle Diameter', offset:'Offset', offsetTipLeft:'Left Flange to Center', offsetTipRight:'Right Flange to Center',
     soLeft:'SO left', soRight:'SO right',
     erdDirect:'ERD DIRECT', addonTip:'Depends on nipple used. Select 2 mm for standard 12 mm nipples.',
-    erdCalc:'Calculated ERD (mm)', rimAsym:'Rim asymmetry (mm)', spokeSection:'Spoke section', cross:'Lacing',
+    erdCalc:'Calculated ERD (mm)', rimAsym:'Rim asymmetry (mm)', spokeSection:'Spoke section (mm)', cross:'Lacing',
     driveSide:'Right Side (DS)', nonDriveSide:'Left Side (NDS)',
     rtagDriveSideFront:'RIGHT SIDE (DS)', rtagNonDriveSideFront:'LEFT SIDE (NDS)',
     rtagDriveSideRear:'RIGHT SIDE (DS)',  rtagNonDriveSideRear:'LEFT SIDE (NDS)',
@@ -1512,6 +1514,7 @@ const i18n = {
     hubType:'Hub type', spokeSection2:'Spoke section', rimAsym2:'Rim asymmetry',
     tensionRatio:'Tension ratio', frontLabel:'Front', rearLabel:'Rear', radial:'Radial',
     errSpokes:'Please select the number of spokes.',
+    errSpoke:'Please select the spoke section.',
     errPcd:'Please enter PCD and offset for both sides.',
     errErd:'ERD is invalid or missing.', errCross:'Please select a lacing pattern.',
     errTension:'Please select the tension target for the strong side.',
@@ -1648,7 +1651,7 @@ function clearLoadedConfigName() {
 }
 
 // ── State ────────────────────────────────────────────────────────────────────
-let wtype = 'avant', erdMode = 'direct', sd = 2.0, sa = null, cross = null, hubType = 'jbend';
+let wtype = 'avant', erdMode = 'direct', sd = null, sa = null, cross = null, hubType = 'jbend';
 let diffMode = false, crossFo = null, crossFa = null;
 const hubTypeByWheel = { avant: 'jbend', arriere: 'jbend' }; // hubType indépendant par roue
 let tmType = null;
@@ -1965,8 +1968,8 @@ function clearFormSilent() {
    'erd-direct','nsd-val','erd-nsd-result','tension-forte'].forEach(id => { $id(id).value = ''; });
   $id('diam-trou').value = '2.55'; $id('asym').value = '0';
   $id('ecrou-type').value = ''; $id('sp-so-left').value = ''; $id('sp-so-right').value = '';
-  $id('spoke-select').value = '2.0|';
-  sd = 2.0; sa = null; cross = null; hubType = hubTypeByWheel[wtype];
+  $id('spoke-select').value = ''; syncSelectPlaceholder($id('spoke-select'));
+  sd = null; sa = null; cross = null; hubType = hubTypeByWheel[wtype];
   diffMode = false; crossFo = null; crossFa = null;
   const diffBtn = $id('diff-toggle');
   if (diffBtn) diffBtn.setAttribute('aria-checked','false');
@@ -2275,6 +2278,7 @@ function updateAsymField() {
 // ── Validation ────────────────────────────────────────────────────────────────
 function checkReady() {
   const n = parseInt($id('nb-rayons').value); if (!n) return false;
+  if (sd === null || isNaN(sd)) return false;
   const pL = parseFloat($id('pcd-left').value),  pR = parseFloat($id('pcd-right').value);
   const oL = parseFloat($id('offset-left').value), oR = parseFloat($id('offset-right').value);
   if ([pL,pR,oL,oR].some(isNaN) || pL <= 0 || pR <= 0) return false;
@@ -2334,6 +2338,8 @@ function calc() {
 
   const n = parseInt($id('nb-rayons').value);
   if (!n) { setInvalid('nb-rayons'); return showErr('errSpokes'); }
+
+  if (sd === null || isNaN(sd)) { setInvalid('spoke-select'); return showErr('errSpoke'); }
 
   const pL = parseFloat($id('pcd-left').value),  pR = parseFloat($id('pcd-right').value);
   const oL = parseFloat($id('offset-left').value), oR = parseFloat($id('offset-right').value);
