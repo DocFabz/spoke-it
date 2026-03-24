@@ -108,7 +108,7 @@ header        { text-align:center; padding:0.6rem 1rem 2rem }
 .card-muted   { border-color:rgba(255,255,255,.06) }
 
 /* ── Card header ───────────────────────────────────────────────────────────── */
-.ch            { display:flex; align-items:center; gap:.5rem; margin-bottom:1.35rem }
+.ch            { display:flex; align-items:center; gap:.5rem; margin-bottom:.75rem }
 .ch-toggle     { cursor:pointer; user-select:none; margin-bottom:0 }
 .clabel        { font-size:.63rem; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--accent) }
 .clabel-success { color:var(--success) }
@@ -158,10 +158,11 @@ select option             { background:#161b27 }
 }
 
 /* ── Hub layout ────────────────────────────────────────────────────────────── */
-.hub-top     { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.2rem }
-.hub-sides   { display:grid; grid-template-columns:1fr 1px 1fr; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); overflow:hidden }
-.hub-side    { padding:1.1rem 1.2rem; display:flex; flex-direction:column; gap:.75rem }
-.hub-divider { background:var(--border); width:1px }
+.hub-top      { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.2rem }
+.hub-sides    { display:grid; grid-template-columns:1fr 1px 1fr; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); overflow:hidden }
+.hub-sides-rim{ grid-template-columns:1fr 1fr; margin-top:1.35rem }
+.hub-side     { padding:1.1rem 1.2rem; display:flex; flex-direction:column; gap:.75rem }
+.hub-divider  { background:var(--border); width:1px }
 
 /* ── Side labels ───────────────────────────────────────────────────────────── */
 .plabel   { font-size:.6rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; margin-bottom:.75rem; display:flex; align-items:center; gap:.38rem }
@@ -296,7 +297,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .arb-even-btn.active { border-color:rgba(126,200,227,.4); color:var(--accent2); background:rgba(126,200,227,.06) }
 .arb-grid          { display:flex; flex-direction:column; gap:.3rem }
 .arb-row           { display:flex; align-items:center; justify-content:space-between; padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--rs); background:var(--card-alt) }
-.arb-row.best      { border-color:var(--success) }
+.arb-row.best-fo  { border-color:var(--warm) }
+.arb-row.best-fa  { border-color:var(--accent) }
 .arb-row.arb-muted { opacity:.25; border-color:transparent }
 .arb-left          { display:flex; flex-direction:column; align-items:flex-start; gap:.05rem }
 .arb-sz            { font-family:'DM Mono',monospace; font-size:.88rem; font-weight:500; color:var(--text); line-height:1 }
@@ -693,25 +695,26 @@ input[type=number] { -moz-appearance:textfield }
         <circle cx="20" cy="10" r=".7" fill="currentColor" stroke="none"/>
       </svg>
       <div class="clabel" data-i18n="hub">Moyeu</div>
-      <div style="margin-left:auto;display:flex;gap:.3rem">
-        <button class="pill pill-icon active" id="btn-hub-jbend" onclick="setHubType('jbend')">
-          <svg class="spoke-icon" viewBox="0 0 24 10" fill="none" stroke="currentColor" stroke-width="1.2">
-            <line x1="3" y1="8" x2="3" y2="4"/>
-            <path d="M3 4 Q3 1.5 5.5 1.5" stroke-linecap="round"/>
-            <line x1="5.5" y1="1.5" x2="20" y2="1.5"/>
-            <line x1="19" y1="1" x2="22" y2="1"/>  <line x1="19.5" y1="1.5" x2="22" y2="1.5"/>  <line x1="19" y1="2" x2="22" y2="2"/>
-          </svg>
-          J-bend
-        </button>
-        <button class="pill pill-icon" id="btn-hub-sp" onclick="setHubType('straightpull')">
-          <svg class="spoke-icon" viewBox="0 0 24 10" fill="none" stroke="currentColor" stroke-width="1.2">
-            <line x1="2"  y1="5" x2="19" y2="5"/>
-            <line x1="2"  y1="4.2" x2="2" y2="5.8"/>
-            <line x1="18" y1="4.5" x2="21" y2="4.5"/>  <line x1="18" y1="5" x2="21" y2="5"/>  <line x1="18" y1="5.5" x2="21" y2="5.5"/>
-          </svg>
-          Straightpull
-        </button>
-      </div>
+    </div>
+
+    <div class="prow">
+      <button class="pill pill-icon active" id="btn-hub-jbend" onclick="setHubType('jbend')">
+        <svg class="spoke-icon" viewBox="0 0 24 10" fill="none" stroke="currentColor" stroke-width="1.2">
+          <line x1="3" y1="8" x2="3" y2="4"/>
+          <path d="M3 4 Q3 1.5 5.5 1.5" stroke-linecap="round"/>
+          <line x1="5.5" y1="1.5" x2="20" y2="1.5"/>
+          <line x1="19" y1="1" x2="22" y2="1"/>  <line x1="19.5" y1="1.5" x2="22" y2="1.5"/>  <line x1="19" y1="2" x2="22" y2="2"/>
+        </svg>
+        J-BEND
+      </button>
+      <button class="pill pill-icon" id="btn-hub-sp" onclick="setHubType('straightpull')">
+        <svg class="spoke-icon" viewBox="0 0 24 10" fill="none" stroke="currentColor" stroke-width="1.2">
+          <line x1="2"  y1="5" x2="19" y2="5"/>
+          <line x1="2"  y1="4.2" x2="2" y2="5.8"/>
+          <line x1="18" y1="4.5" x2="21" y2="4.5"/>  <line x1="18" y1="5" x2="21" y2="5"/>  <line x1="18" y1="5.5" x2="21" y2="5.5"/>
+        </svg>
+        STRAIGHTPULL
+      </button>
     </div>
 
     <div class="hub-top">
@@ -774,26 +777,46 @@ input[type=number] { -moz-appearance:textfield }
     </div>
 
     <div class="prow">
-      <button class="pill active" id="btn-erd-direct" onclick="setErdMode('direct')" data-i18n="erdDirect">ERD DIRECT</button>
-      <button class="pill"        id="btn-erd-nsd"    onclick="setErdMode('nsd')">NSD + ADDON</button>
+      <button class="pill pill-icon active" id="btn-erd-direct" onclick="setErdMode('direct')" data-i18n="erdDirect">ERD DIRECT</button>
+      <button class="pill pill-icon"        id="btn-erd-nsd"    onclick="setErdMode('nsd')">NSD + ADDON</button>
     </div>
 
-    <div id="erd-direct-section">
-      <div class="g2" style="max-width:400px">
-        <div class="f">
+    <div class="hub-sides hub-sides-rim">
+
+      <div class="hub-side">
+
+        <!-- ERD direct -->
+        <div id="erd-direct-section" class="f">
           <label>ERD (mm)</label>
           <input type="number" id="erd-direct" step="0.1" inputmode="decimal" placeholder="—">
         </div>
-      </div>
-    </div>
 
-    <div id="erd-nsd-section" style="display:none">
-      <div class="g2" style="max-width:400px">
-        <div class="f">
+        <!-- NSD (mode NSD) -->
+        <div id="erd-nsd-section" style="display:none" class="f">
           <label>NSD (mm)</label>
           <input type="number" id="nsd-val" step="0.1" inputmode="decimal" placeholder="—" oninput="calcNsd()">
         </div>
+
+        <!-- ERD calculé (mode NSD) -->
+        <div id="erd-nsd-result-field" style="display:none" class="f">
+          <label data-i18n="erdCalc">ERD calculé (mm)</label>
+          <input type="number" id="erd-nsd-result" readonly tabindex="-1" class="inp-readonly">
+        </div>
+
+        <!-- Asymétrie jante -->
         <div class="f">
+          <label data-i18n="rimAsym">Asymétrie jante (mm)</label>
+          <input type="number" id="asym" value="0" step="0.5" min="0" inputmode="decimal" onkeydown="if(event.key==='-')event.preventDefault()">
+          <p class="asym-warn" id="asym-warn" data-i18n="asymWarn">Moyeu symétrique : Jante asymétrique déconseillée.</p>
+        </div>
+
+      </div>
+
+      <!-- Colonne droite -->
+      <div class="hub-side">
+
+        <!-- ADDON (mode NSD) -->
+        <div id="erd-addon-field" style="display:none" class="f">
           <label class="tip-wrap">ADDON (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="addonTip">Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.</span></label>
           <select id="ecrou-type" onchange="calcNsd()">
             <option value="" disabled selected hidden>—</option>
@@ -809,33 +832,20 @@ input[type=number] { -moz-appearance:textfield }
             <option value="3.6">3.6</option>
           </select>
         </div>
-      </div>
-      <div class="g2" style="max-width:400px;margin-top:.8rem">
+
+        <!-- Section de rayon -->
         <div class="f">
-          <label data-i18n="erdCalc">ERD calculé (mm)</label>
-          <input type="number" id="erd-nsd-result" readonly tabindex="-1" class="inp-readonly">
+          <label data-i18n="spokeSection">Section de rayon</label>
+          <select id="spoke-select" onchange="setSpokeFromSelect(this)">
+            <option value="1.6|">1.6 mm</option>  <option value="1.65|">1.65 mm</option>
+            <option value="1.7|">1.7 mm</option>  <option value="1.8|">1.8 mm</option>
+            <option value="2.0|" selected>2.0 mm</option>
+            <option value="2.3|">2.3 mm</option>
+            <option value="0.9|2.2">CX-Ray 0.9×2.2</option>
+            <option value="0.9|2.3">Aerolite 0.9×2.3</option>
+          </select>
         </div>
-      </div>
-    </div>
 
-    <div class="div"></div>
-
-    <div class="g2">
-      <div class="f">
-        <label data-i18n="rimAsym">Asymétrie jante (mm)</label>
-        <input type="number" id="asym" value="0" step="0.5" min="0" inputmode="decimal" onkeydown="if(event.key==='-')event.preventDefault()">
-        <p class="asym-warn" id="asym-warn" data-i18n="asymWarn">Moyeu symétrique : Jante asymétrique déconseillée.</p>
-      </div>
-      <div class="f">
-        <label data-i18n="spokeSection">Section de rayon</label>
-        <select id="spoke-select" onchange="setSpokeFromSelect(this)">
-          <option value="1.6|">1.6 mm</option>  <option value="1.65|">1.65 mm</option>
-          <option value="1.7|">1.7 mm</option>  <option value="1.8|">1.8 mm</option>
-          <option value="2.0|" selected>2.0 mm</option>
-          <option value="2.3|">2.3 mm</option>
-          <option value="0.9|2.2">CX-Ray 0.9×2.2</option>
-          <option value="0.9|2.3">Aerolite 0.9×2.3</option>
-        </select>
       </div>
     </div>
 
@@ -1828,8 +1838,10 @@ function applyState(s) {
   erdMode = s.erdMode;
   $id('btn-erd-direct').classList.toggle('active', erdMode === 'direct');
   $id('btn-erd-nsd').classList.toggle('active', erdMode === 'nsd');
-  $id('erd-direct-section').style.display = erdMode === 'direct' ? '' : 'none';
-  $id('erd-nsd-section').style.display    = erdMode === 'nsd'    ? '' : 'none';
+  $id('erd-direct-section').style.display  = erdMode === 'direct' ? '' : 'none';
+  $id('erd-nsd-section').style.display     = erdMode === 'nsd'    ? '' : 'none';
+  $id('erd-addon-field').style.display     = erdMode === 'nsd'    ? '' : 'none';
+  $id('erd-nsd-result-field').style.display= erdMode === 'nsd'    ? '' : 'none';
 
   // Restore cross UI
   const diffBtn = $id('diff-toggle');
@@ -1969,7 +1981,8 @@ function clearFormSilent() {
 
   erdMode = 'direct';
   $id('btn-erd-direct').classList.add('active'); $id('btn-erd-nsd').classList.remove('active');
-  $id('erd-direct-section').style.display = ''; $id('erd-nsd-section').style.display = 'none';
+  $id('erd-direct-section').style.display  = ''; $id('erd-nsd-section').style.display = 'none';
+  $id('erd-addon-field').style.display      = 'none'; $id('erd-nsd-result-field').style.display = 'none';
   document.querySelectorAll('.cp').forEach(b => b.classList.remove('active'));
 
   ['results','arb-wrap','summary-wrap','save-wrap'].forEach(id => $id(id).classList.remove('show'));
@@ -2068,8 +2081,10 @@ function setErdMode(m) {
   erdMode = m;
   $id('btn-erd-direct').classList.toggle('active', m === 'direct');
   $id('btn-erd-nsd').classList.toggle('active', m === 'nsd');
-  $id('erd-direct-section').style.display = m === 'direct' ? '' : 'none';
-  $id('erd-nsd-section').style.display    = m === 'nsd'    ? '' : 'none';
+  $id('erd-direct-section').style.display  = m === 'direct' ? '' : 'none';
+  $id('erd-nsd-section').style.display     = m === 'nsd'    ? '' : 'none';
+  $id('erd-addon-field').style.display     = m === 'nsd'    ? '' : 'none';
+  $id('erd-nsd-result-field').style.display= m === 'nsd'    ? '' : 'none';
   clearResults(); updateCalcBtn();
 }
 
@@ -2481,7 +2496,7 @@ function renderArb(side) {
     const delta = deltas[i];
     let cls = 'arb-row';
     if (onlyEven && sz%2!==0) cls += ' arb-muted';
-    else if (Math.abs(delta) <= minAbs + 0.0001) cls += ' best';
+    else if (Math.abs(delta) <= minAbs + 0.0001) cls += ' best-' + side;
     const rawThreads = delta / 0.45;
     const roundedThreads = Math.round(rawThreads * 2) / 2;
     const threadWord = lang === 'fr'
