@@ -84,7 +84,7 @@ body {
 }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
-header        { text-align:center; padding:1.5rem 1rem 2rem }
+header        { text-align:center; padding:0.6rem 1rem 2rem }
 .logo-ring    { display:inline-block; width:50px; height:50px; margin-bottom:0.3rem; animation:spin 20s linear infinite, pulse 3s ease-in-out infinite }
 @keyframes spin  { to { transform:rotate(360deg) } }
 @keyframes pulse { 0%, 100% { opacity:.38 } 50% { opacity:.72 } }
@@ -144,7 +144,8 @@ input[type=number], select {
   input[type=number], input[type=text], select, .save-input { font-size:16px }
 }
 input:focus, select:not(#tension-forte):focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
-input::placeholder        { color:var(--text3); opacity:1 }
+input::placeholder        { color:var(--text2); opacity:1 }
+select.placeholder        { color:var(--text2) }
 select option             { background:#161b27 }
 .inp-readonly             { opacity:.55; cursor:not-allowed }
 .inp-disabled             { opacity:.35; cursor:not-allowed; pointer-events:none }
@@ -1109,7 +1110,7 @@ input[type=number] { -moz-appearance:textfield }
       <div style="display:flex;gap:.4rem;align-items:center">
         <select id="tm-tensio-select" class="tm-select" style="flex:1" onchange="tmOnTensioSelectChange(this.value)">
           <option value="" disabled selected hidden>—</option>
-          <option value="wf">WHEEL FANATYK</option>
+          <option value="wf">W. FANATYK</option>
           <option value="pt">PARK TOOL TM-1</option>
           <option value="dt">DT SWISS</option>
           <option value="pk">P&amp;KLIE</option>
@@ -1313,7 +1314,7 @@ input[type=number] { -moz-appearance:textfield }
       <div style="display:flex;gap:.35rem">
         <select id="cc-tensio" class="cc-select" onchange="ccOnTensioChange()">
           <option value="" disabled selected hidden>—</option>
-          <option value="wf">WHEEL FANATYK</option>
+          <option value="wf">W. FANATYK</option>
           <option value="pt">PARK TOOL TM-1</option>
           <option value="dt_standard">DT SWISS (STANDARD)</option>
           <option value="dt_aerolite2">DT SWISS (AEROLITE II)</option>
@@ -4588,6 +4589,19 @@ function tmRenderStats(foKgfs, faKgfs) {
     card(fo, foLabel, 'fo');
   }
 }
+
+// ── Select placeholder colour (sync avec input::placeholder) ─────────────────
+function syncSelectPlaceholder(sel) {
+  if (!sel) return;
+  sel.classList.toggle('placeholder', sel.value === '');
+}
+function initSelectPlaceholders() {
+  document.querySelectorAll('select').forEach(sel => {
+    syncSelectPlaceholder(sel);
+    sel.addEventListener('change', () => syncSelectPlaceholder(sel));
+  });
+}
+document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 </script>
 </body>
 </html>
