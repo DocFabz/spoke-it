@@ -635,7 +635,7 @@ input[type=number] { -moz-appearance:textfield }
       </div>
     </div>
     <div class="seg">
-      <button class="sb active c" id="btn-avant"   onclick="setWheel('avant')"   data-i18n="frontWheel">ROUE AVANT</button>
+      <button class="sb active" id="btn-avant"   onclick="setWheel('avant')"   data-i18n="frontWheel">ROUE AVANT</button>
       <button class="sb"        id="btn-arriere" onclick="setWheel('arriere')" data-i18n="rearWheel">ROUE ARRIÈRE</button>
     </div>
   </div>
@@ -732,7 +732,7 @@ input[type=number] { -moz-appearance:textfield }
 
     <div class="g2" style="margin-top:1.2rem">
       <div class="f">
-        <label data-i18n="spokeSection">Section de rayon (mm)</label>
+        <label class="tip-wrap"><span data-i18n="spokeSection">Section de rayon (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="spokeSectionTip">Permet de calculer l'élongation</span></label>
         <select id="spoke-select" onchange="setSpokeFromSelect(this)">
           <option value="" disabled selected hidden>—</option>
           <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
@@ -779,7 +779,7 @@ input[type=number] { -moz-appearance:textfield }
         </div>
       </div>
 
-      <!-- Colonne droite : ADDON + Asymétrie -->
+      <!-- Colonne droite : ADDON + ASYM. JANTE -->
       <div class="f">
         <!-- ADDON (mode NSD) -->
         <div id="erd-addon-field" style="display:none" class="f">
@@ -798,9 +798,9 @@ input[type=number] { -moz-appearance:textfield }
             <option value="3.6">3.6</option>
           </select>
         </div>
-        <!-- Asymétrie jante -->
+        <!-- ASYM. JANTE -->
         <div class="f">
-          <label class="tip-wrap"><span data-i18n="rimAsym">Asymétrie jante (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="asymTip">Offset Spoke Bed for Asymmetric Rim</span></label>
+          <label class="tip-wrap"><span data-i18n="rimAsym">ASYM. JANTE (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="asymTip">Offset Spoke Bed for Asymmetric Rim</span></label>
           <input type="number" id="asym" value="0" step="0.5" min="0" inputmode="decimal" onkeydown="if(event.key==='-')event.preventDefault()">
           <p class="asym-warn" id="asym-warn" data-i18n="asymWarn">Moyeu symétrique : Jante asymétrique déconseillée.</p>
         </div>
@@ -908,7 +908,7 @@ input[type=number] { -moz-appearance:textfield }
 
   <!-- ── Results ── -->
   <div class="rw" id="results">
-    <div class="card card-result">
+    <div class="card">
       <div class="ch ch-toggle" onclick="toggleResultsCard()">
         <svg class="cicon cicon-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
           <rect x="4" y="2" width="16" height="20" rx="2"/>
@@ -1386,7 +1386,7 @@ const i18n = {
     pcdTipLeft:'Pitch Circle Diameter Gauche', pcdTipRight:'Pitch Circle Diameter Droit', offset:'Déport', offsetTipLeft:'Centre-Flasque Gauche', offsetTipRight:'Centre-Flasque Droite',
     soLeft:'SO gauche', soRight:'SO droit',
     erdDirect:'ERD DIRECT', addonTip:"Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.",
-    erdCalc:'ERD calculé (mm)', rimAsym:'Asymétrie jante (mm)', spokeSection:'Section de rayon (mm)', cross:'Croisement',
+    erdCalc:'ERD calculé (mm)', rimAsym:'ASYM. JANTE (mm)', spokeSection:'Section de rayon (mm)', spokeSectionTip:"Permet de calculer l'élongation", cross:'Croisement',
     driveSide:'Côté Droit (DS)', nonDriveSide:'Côté Gauche (NDS)',
     rtagDriveSideFront:'CÔTÉ DROIT (DS)', rtagNonDriveSideFront:'CÔTÉ GAUCHE (NDS)',
     rtagDriveSideRear:'CÔTÉ DROIT (DS)',  rtagNonDriveSideRear:'CÔTÉ GAUCHE (NDS)',
@@ -1394,7 +1394,7 @@ const i18n = {
     tensionHelpFront:'La tension DS est calculée automatiquement selon le ratio des déports.',
     calcBtn:'Calculer', perSide:'/côté', configSummary:'Résumé de configuration',
     wheelLabel:'Roue', spokeCount:'Nb rayons', crossLabel:'Croisement',
-    hubType:'Type moyeu', spokeSection2:'Section rayon', rimAsym2:'Asymétrie jante',
+    hubType:'Type moyeu', spokeSection2:'Section rayon', rimAsym2:'Asym. jante',
     tensionRatio:'Tension ratio', frontLabel:'Avant', rearLabel:'Arrière', radial:'Radial',
     errSpokes:'Veuillez choisir le nombre de rayons.',
     errSpoke:'Veuillez choisir la section de rayon.',
@@ -1471,7 +1471,7 @@ const i18n = {
     pcdTipLeft:'Left Pitch Circle Diameter', pcdTipRight:'Right Pitch Circle Diameter', offset:'Offset', offsetTipLeft:'Left Flange to Center', offsetTipRight:'Right Flange to Center',
     soLeft:'SO left', soRight:'SO right',
     erdDirect:'ERD DIRECT', addonTip:'Depends on nipple used. Select 2 mm for standard 12 mm nipples.',
-    erdCalc:'Calculated ERD (mm)', rimAsym:'Rim asymmetry (mm)', spokeSection:'Spoke section (mm)', cross:'Lacing',
+    erdCalc:'Calculated ERD (mm)', rimAsym:'RIM ASYM. (mm)', spokeSection:'Spoke section (mm)', spokeSectionTip:'Used to calculate elongation', cross:'Lacing',
     driveSide:'Right Side (DS)', nonDriveSide:'Left Side (NDS)',
     rtagDriveSideFront:'RIGHT SIDE (DS)', rtagNonDriveSideFront:'LEFT SIDE (NDS)',
     rtagDriveSideRear:'RIGHT SIDE (DS)',  rtagNonDriveSideRear:'LEFT SIDE (NDS)',
@@ -1479,7 +1479,7 @@ const i18n = {
     tensionHelpFront:'DS tension is calculated automatically from the offset ratio.',
     calcBtn:'Calculate', perSide:'/side', configSummary:'Configuration summary',
     wheelLabel:'Wheel', spokeCount:'Spoke count', crossLabel:'Lacing',
-    hubType:'Hub type', spokeSection2:'Spoke section', rimAsym2:'Rim asymmetry',
+    hubType:'Hub type', spokeSection2:'Spoke section', rimAsym2:'Rim asym.',
     tensionRatio:'Tension ratio', frontLabel:'Front', rearLabel:'Rear', radial:'Radial',
     errSpokes:'Please select the number of spokes.',
     errSpoke:'Please select the spoke section.',
