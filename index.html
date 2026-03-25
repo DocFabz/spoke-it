@@ -2061,11 +2061,26 @@ function setErdMode(m) {
 }
 
 function updateRadialWarn() {
-  const hasRadial = !![
-    ...document.querySelectorAll('#cross-row-single .cp[data-cross="0"].active'),
-    ...document.querySelectorAll('.cp-fo[data-cross="0"].active'),
-    ...document.querySelectorAll('.cp-fa[data-cross="0"].active'),
-  ].length;
+  // Roue avant : fo = NDS gauche (interdit), fa = DS droit (autorisé)
+  // Roue arrière : fo = DS droit (interdit), fa = NDS gauche (autorisé)
+  // En mode simple, le radial est toujours interdit (bloqué par updateCrossForHubType pour l'arrière)
+  // Le warning disque ne concerne que le côté NDS (= fo pour avant, fa pour arrière) = côté bloqué
+  const isAvant = wtype === 'avant';
+  const isDiff = typeof diffMode !== 'undefined' ? diffMode : ($id('cross-row-diff') && $id('cross-row-diff').style.display !== 'none');
+
+  let hasRadial = false;
+  if (isDiff) {
+    if (isAvant) {
+      // Avant diff : NDS = cp-fo (gauche) → warning si radial NDS
+      hasRadial = !!document.querySelector('.cp-fo[data-cross="0"].active');
+    } else {
+      // Arrière diff : NDS = cp-fa (gauche) → warning si radial NDS
+      hasRadial = !!document.querySelector('.cp-fa[data-cross="0"].active');
+    }
+  } else {
+    hasRadial = !!document.querySelector('#cross-row-single .cp[data-cross="0"].active');
+  }
+
   const w = $id('radial-disc-warn');
   if (w) w.style.display = hasRadial ? 'block' : 'none';
 }
