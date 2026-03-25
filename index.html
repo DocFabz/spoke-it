@@ -84,10 +84,7 @@ body {
 }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
-header        { text-align:center; padding:0.6rem 1rem 2rem }
-.logo-ring    { display:inline-block; width:50px; height:50px; margin-bottom:0.3rem; animation:spin 20s linear infinite, pulse 3s ease-in-out infinite }
-@keyframes spin  { to { transform:rotate(360deg) } }
-@keyframes pulse { 0%, 100% { opacity:.38 } 50% { opacity:.72 } }
+header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .brand        { font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:.18em; text-transform:uppercase; color:var(--text) }
 .brand em     { font-style:normal; color:var(--accent) }
 .sub          { font-family:'DM Mono',monospace; font-size:.67rem; font-weight:300; color:var(--text3); letter-spacing:.2em; margin-top:.1rem }
@@ -222,8 +219,7 @@ select option             { background:#161b27 }
 .faible-display               { background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); color:var(--text2); font-family:'DM Mono',monospace; font-size:.85rem; font-weight:300; padding:.55rem .9rem; width:100%; height:2.35rem; box-sizing:border-box; display:flex; align-items:center; transition:background .2s, border-color .2s, color .2s }
 .faible-display.has-val-accent { background:var(--inp); border-color:rgba(126,200,227,.4); color:var(--text) }
 .faible-display.has-val-warm   { background:var(--inp); border-color:rgba(232,146,124,.4);  color:var(--text) }
-.tension-select-warm.has-val,  .tension-select-warm:focus  { border-color:rgba(232,146,124,.4); background:var(--inp) }
-.tension-select-accent.has-val, .tension-select-accent:focus { border-color:rgba(126,200,227,.4); background:var(--inp) }
+.tension-select-warm.has-val, .tension-select-warm:focus { border-color:rgba(232,146,124,.4); background:var(--inp) }
 #tension-forte { outline:none; transition:border-color .2s, background .2s }
 .tension-dot         { display:inline-block; width:7px; height:7px; border-radius:2px; flex-shrink:0 }
 .tension-dot-warm    { background:var(--warm) }
@@ -315,10 +311,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 /* Conteneur principal du module */
 #tension-module  { display:none }
 #calc-module     { display:block }
-
-/* Sélecteur sous-type DT Swiss */
-.tm-btn          { flex:1; padding:.55rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.84rem; font-weight:500; cursor:pointer; transition:all .22s }
-.tm-btn.active   { background:var(--bg2); color:var(--text); box-shadow:0 2px 12px rgba(0,0,0,.4) }
 
 /* Grille de saisie des déflections */
 .tm-grid-wrap    { overflow-x:auto; border-radius:var(--rs); border:1px solid var(--border) }
@@ -450,11 +442,11 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .wf-pill.active { border-color:rgba(126,200,227,.5); color:var(--accent); background:rgba(126,200,227,.07) }
 
 /* ── Charte personnalisée button ──────────────────────────────────────────────────── */
-.tm-conv-btn, .tm-custom-btn { display:inline-flex; align-items:center; gap:.21rem; padding:.21rem .525rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.46rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:border-color .2s, color .2s, background .2s }
+.tm-conv-btn, .tm-custom-btn { display:inline-flex; align-items:center; gap:.3rem; padding:.18rem .65rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.65rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:border-color .2s, color .2s, background .2s }
 .tm-conv-btn.locked { pointer-events:none; cursor:not-allowed }
 .tm-custom-btn.locked { pointer-events:none; opacity:.35 }
 .tm-conv-btn.lit, .tm-custom-btn.lit { border-color:rgba(126,200,227,.5); color:var(--accent); background:rgba(126,200,227,.07) }
-.tm-conv-btn svg, .tm-custom-btn svg { width:8px; height:8px; flex-shrink:0 }
+.tm-conv-btn svg, .tm-custom-btn svg { width:11px; height:11px; flex-shrink:0 }
 
 /* ── Charte personnalisée modal ──────────────────────────────────────────────────── */
 .cc-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
@@ -589,31 +581,6 @@ input[type=number] { -moz-appearance:textfield }
 <body>
 
 <header>
-  <svg class="logo-ring" viewBox="0 0 50 50" fill="none">
-    <!-- Jante extérieure fine -->
-    <circle cx="25" cy="25" r="21" stroke="rgba(126,200,227,.6)" stroke-width=".8"/>
-    <circle cx="25" cy="25" r="19" stroke="rgba(126,200,227,.2)" stroke-width=".4"/>
-    <!-- Moyeu -->
-    <circle cx="25" cy="25" r="2.8" stroke="rgba(126,200,227,.8)" stroke-width=".8"/>
-    <circle cx="25" cy="25" r="1.1" fill="rgba(126,200,227,.9)"/>
-    <!-- 16 rayons fins alternés accent/warm -->
-    <line x1="25.0" y1="22.2" x2="25.0" y2="4.0" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
-    <line x1="26.1" y1="22.4" x2="33.0" y2="5.6" stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
-    <line x1="27.0" y1="23.0" x2="39.8" y2="10.2" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
-    <line x1="27.6" y1="23.9" x2="44.4" y2="17.0" stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
-    <line x1="27.8" y1="25.0" x2="46.0" y2="25.0" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
-    <line x1="27.6" y1="26.1" x2="44.4" y2="33.0" stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
-    <line x1="27.0" y1="27.0" x2="39.8" y2="39.8" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
-    <line x1="26.1" y1="27.6" x2="33.0" y2="44.4" stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
-    <line x1="25.0" y1="27.8" x2="25.0" y2="46.0" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
-    <line x1="23.9" y1="27.6" x2="17.0" y2="44.4" stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
-    <line x1="23.0" y1="27.0" x2="10.2" y2="39.8" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
-    <line x1="22.4" y1="26.1" x2="5.6"  y2="33.0" stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
-    <line x1="22.2" y1="25.0" x2="4.0"  y2="25.0" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
-    <line x1="22.4" y1="23.9" x2="5.6"  y2="17.0" stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
-    <line x1="23.0" y1="23.0" x2="10.2" y2="10.2" stroke="rgba(126,200,227,.5)" stroke-width=".5"/>
-    <line x1="23.9" y1="22.4" x2="17.0" y2="5.6"  stroke="rgba(232,146,124,.4)" stroke-width=".5"/>
-  </svg>
   <div class="brand">Spoke <em>It</em></div>
   <div class="sub">
     by
@@ -669,8 +636,8 @@ input[type=number] { -moz-appearance:textfield }
       </div>
     </div>
     <div class="seg">
-      <button class="sb active c" id="btn-avant"   onclick="setWheel('avant')"   data-i18n="frontWheel">Roue Avant</button>
-      <button class="sb w"        id="btn-arriere" onclick="setWheel('arriere')" data-i18n="rearWheel">Roue Arrière</button>
+      <button class="sb active c" id="btn-avant"   onclick="setWheel('avant')"   data-i18n="frontWheel">ROUE AVANT</button>
+      <button class="sb"        id="btn-arriere" onclick="setWheel('arriere')" data-i18n="rearWheel">ROUE ARRIÈRE</button>
     </div>
   </div>
 
@@ -798,12 +765,12 @@ input[type=number] { -moz-appearance:textfield }
       <div class="f">
         <!-- ERD direct -->
         <div id="erd-direct-section" class="f">
-          <label>ERD (mm)</label>
+          <label class="tip-wrap">ERD (mm)<span class="tip-icon">?</span><span class="tip-box">Effective Rim Diameter</span></label>
           <input type="number" id="erd-direct" step="0.1" inputmode="decimal" placeholder="—">
         </div>
         <!-- NSD (mode NSD) -->
         <div id="erd-nsd-section" style="display:none" class="f">
-          <label>NSD (mm)</label>
+          <label class="tip-wrap">NSD (mm)<span class="tip-icon">?</span><span class="tip-box">Nipple Seat Diameter</span></label>
           <input type="number" id="nsd-val" step="0.1" inputmode="decimal" placeholder="—" oninput="calcNsd()">
         </div>
         <!-- ERD calculé (mode NSD) -->
@@ -834,7 +801,7 @@ input[type=number] { -moz-appearance:textfield }
         </div>
         <!-- Asymétrie jante -->
         <div class="f">
-          <label data-i18n="rimAsym">Asymétrie jante (mm)</label>
+          <label class="tip-wrap"><span data-i18n="rimAsym">Asymétrie jante (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="asymTip">Offset Spoke Bed for Asymmetric Rim</span></label>
           <input type="number" id="asym" value="0" step="0.5" min="0" inputmode="decimal" onkeydown="if(event.key==='-')event.preventDefault()">
           <p class="asym-warn" id="asym-warn" data-i18n="asymWarn">Moyeu symétrique : Jante asymétrique déconseillée.</p>
         </div>
@@ -1094,8 +1061,8 @@ input[type=number] { -moz-appearance:textfield }
       </div>
     </div>
     <div class="seg">
-      <button class="sb active" id="tm-btn-avant"   onclick="tmSetWheel('avant')"   data-i18n="frontWheel">Roue Avant</button>
-      <button class="sb"        id="tm-btn-arriere" onclick="tmSetWheel('arriere')" data-i18n="rearWheel">Roue Arrière</button>
+      <button class="sb active" id="tm-btn-avant"   onclick="tmSetWheel('avant')"   data-i18n="frontWheel">ROUE AVANT</button>
+      <button class="sb"        id="tm-btn-arriere" onclick="tmSetWheel('arriere')" data-i18n="rearWheel">ROUE ARRIÈRE</button>
     </div>
   </div>
 
@@ -1414,7 +1381,7 @@ let lang = _storedLang || (_browserLang.startsWith('fr') ? 'fr' : 'en');
 const i18n = {
   fr: {
     wheelType:'Type de roue', hub:'Moyeu', rim:'Jante', targetTensions:'Tensions cibles', results:'Résultats',
-    frontWheel:'Roue Avant', rearWheel:'Roue Arrière',
+    frontWheel:'ROUE AVANT', rearWheel:'ROUE ARRIÈRE',
     totalSpokes:'Nb total de rayons', holeDiam:'Ø trous de bride (mm)',
     left:'Gauche', right:'Droit',
     pcdTipLeft:'Pitch Circle Diameter Gauche', pcdTipRight:'Pitch Circle Diameter Droit', offset:'Déport', offsetTipLeft:'Centre-Flasque Gauche', offsetTipRight:'Centre-Flasque Droite',
@@ -1444,6 +1411,7 @@ const i18n = {
     configsTitle:'Configurations sauvegardées', loadBtn:'Charger',
     saveWarning:'⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.',
     asymWarn:'Moyeu symétrique : Jante asymétrique déconseillée.',
+    asymTip:'Décalage des trous de rayons des jantes asymétriques',
     tmTitle:'Module Tension', tmCalc:'Calculateur',
     tmTensioLabel:'Tensiomètre', tmDeflLabel:'Déflections mesurées',
     tmLeft:'Côté Gauche', tmRight:'Côté Droit',
@@ -1498,7 +1466,7 @@ const i18n = {
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
-    frontWheel:'Front Wheel', rearWheel:'Rear Wheel',
+    frontWheel:'FRONT WHEEL', rearWheel:'REAR WHEEL',
     totalSpokes:'Total spoke count', holeDiam:'Flange hole Ø (mm)',
     left:'Left', right:'Right',
     pcdTipLeft:'Left Pitch Circle Diameter', pcdTipRight:'Right Pitch Circle Diameter', offset:'Offset', offsetTipLeft:'Left Flange to Center', offsetTipRight:'Right Flange to Center',
@@ -1528,6 +1496,7 @@ const i18n = {
     configsTitle:'Saved configurations', loadBtn:'Load',
     saveWarning:'⚠︎ Locally stored in browser cache. Clearing the cache will erase all data.',
     asymWarn:'Symmetric hub: Asymmetric rim not recommended.',
+    asymTip:'Offset Spoke Bed for Asymmetric Rim',
     tmTitle:'Tension Module', tmCalc:'Calculator',
     tmTensioLabel:'Tensiometer', tmDeflLabel:'Measured deflections',
     tmLeft:'Left Side', tmRight:'Right Side',
@@ -2074,7 +2043,6 @@ function reorderTensionFields(wh) {
   if (faibleDot){ faibleDot.classList.add('tension-dot-accent'); faibleDot.classList.remove('tension-dot-warm'); }
   const sel = $id('tension-forte');
   sel.classList.add('tension-select-warm');
-  sel.classList.remove('tension-select-accent');
   const disp = $id('tension-faible-display');
   disp._colorClass = 'has-val-accent';
 }
