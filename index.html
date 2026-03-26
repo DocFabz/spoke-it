@@ -418,7 +418,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cfg-del        { background:transparent; border:none; color:var(--text3); font-size:.95rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
 .cfg-del:hover  { color:#f08080 }
 
-
 /* ── Loaded config name ────────────────────────────────────────────────────── */
 .cfg-loaded-name {
   display:none; align-items:center; gap:.35rem;
@@ -858,7 +857,6 @@ input[type=number] { -moz-appearance:textfield }
 
     </div>
   </div>
-
 
   <!-- ── Lacing ── -->
   <div class="card">
@@ -1938,6 +1936,8 @@ function applyState(s) {
     // Tensiomètre
     tmType = s.tmType;
     const tmTensioSel = $id('tm-tensio-select');
+    // Si tensio custom, garantir que l'option est dans le DOM avant assignation
+    if (tmType && tmType.startsWith('ct_')) ctRefreshAll();
     if (tmTensioSel) tmTensioSel.value = tmType;
     const clearBtn = $id('tm-clear-tensio');
     if (clearBtn) clearBtn.classList.toggle('inactive', !tmType);
@@ -1962,6 +1962,8 @@ function applyState(s) {
 
     // Dropdown rayon
     tmSpokeKey = s.tmSpokeKey || null;
+    // Si la clé rayon est une charte custom, garantir injection dans TM_TABLES avant
+    if (tmSpokeKey && tmSpokeKey.startsWith(CC_PREFIX)) ccInjectAll();
     tmPopulateSpokeSelect();   // peuple selon tmType+tmDTSub, sélectionne tmSpokeKey si présent
 
     // Badge unité
@@ -1976,7 +1978,6 @@ function applyState(s) {
     tmActiveKey = tmStoreKey();
     // Clear store on config load — session-only data, not persisted
     Object.keys(tmStore).forEach(k => delete tmStore[k]);
-
 
     // Reconstruire la table + radar (même si le module est caché — sera correct quand on y navigue)
     tmBuildTable();
@@ -2701,29 +2702,7 @@ function importConfigs(event) {
       const data = JSON.parse(e.target.result);
       if (!data.spokeit) throw new Error();
 
-      // ── Configs de roues ──
-      if (Array.isArray(data.configs)) {
-        const existing = loadConfigs();
-        data.configs.forEach(entry => {
-          const idx = existing.findIndex(c => c.name === entry.name && (c.state.wtype || 'avant') === (entry.state.wtype || 'avant'));
-          if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
-        });
-        persistConfigs(existing);
-        renderConfigsList(); showConfigsPanel();
-      }
-
-      // ── Chartes personnalisées ──
-      if (Array.isArray(data.customCharts)) {
-        const existing = ccLoadAll();
-        data.customCharts.forEach(entry => {
-          const idx = existing.findIndex(c => c.name === entry.name);
-          if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
-        });
-        ccPersist(existing);
-        if (typeof ccRenderExisting === 'function') ccRenderExisting();
-      }
-
-      // ── Tensiomètres personnalisés ──
+      // ── 1. Tout persister d'abord ──
       if (Array.isArray(data.customTensios)) {
         const existing = ctLoadAll();
         data.customTensios.forEach(entry => {
@@ -2731,8 +2710,35 @@ function importConfigs(event) {
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
         ctPersist(existing);
-        if (typeof ctRenderList === 'function') ctRenderList();
       }
+
+      if (Array.isArray(data.customCharts)) {
+        const existing = ccLoadAll();
+        data.customCharts.forEach(entry => {
+          const idx = existing.findIndex(c => c.name === entry.name);
+          if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
+        });
+        ccPersist(existing);
+      }
+
+      if (Array.isArray(data.configs)) {
+        const existing = loadConfigs();
+        data.configs.forEach(entry => {
+          const idx = existing.findIndex(c => c.name === entry.name && (c.state.wtype || 'avant') === (entry.state.wtype || 'avant'));
+          if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
+        });
+        persistConfigs(existing);
+      }
+
+      // ── 2. Tout rafraîchir en une seule passe ──
+      ctInjectAll();
+      ccInjectAll();
+      ctPopulateTensioSelect();
+      ctPopulateCCTensioSelect();
+      tmPopulateSpokeSelect();
+      if (typeof ctRenderList === 'function') ctRenderList();
+      if (typeof ccRenderExisting === 'function') ccRenderExisting();
+      renderConfigsList(); showConfigsPanel();
 
       fb.style.color = 'var(--success)'; fb.textContent = t('importSuccess');
       setTimeout(() => { fb.textContent = ''; }, 3500);
@@ -3199,9 +3205,7 @@ function ctSave() {
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   cts.push({ id, name });
   ctPersist(cts);
-  ctInjectAll();
-  ctPopulateTensioSelect();
-  ctPopulateCCTensioSelect();
+  ctRefreshAll();
   setTM('ct_' + id);
   ctRenderList();
   ctClose();
@@ -3251,16 +3255,20 @@ function ctDelete(idx) {
   ctPersist(cts);
   delete TM_TABLES[tmKey];
   ccInjectAll();
-  ctPopulateTensioSelect();
-  ctPopulateCCTensioSelect();
+  ctRefreshAll();
   tmPopulateSpokeSelect();
   ctRenderList();
 }
 
+// ── Rafraîchir tensiomètres perso (tables + dropdowns) ──────────────────────
+function ctRefreshAll() {
+  ctInjectAll();
+  ctPopulateTensioSelect();
+  ctPopulateCCTensioSelect();
+}
+
 // Initialiser les tensiomètres perso au démarrage
-ctInjectAll();
-ctPopulateTensioSelect();
-ctPopulateCCTensioSelect();
+ctRefreshAll();
 
 // ── Obtenir la table active (objet {spokeKey: [[defl,kgf]…]}) ─────────────────
 function tmGetActiveTable() {
