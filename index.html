@@ -1411,7 +1411,7 @@ input[type=number] { -moz-appearance:textfield }
 
   <!-- Liste des tensiomètres existants -->
   <div id="ct-list-section" style="display:none">
-    <div class="ct-section-sep" data-i18n="ctMyTensios">Mes tensiomètres</div>
+    <div class="ct-section-sep" data-i18n="ctMyTensios">★ MES TENSIOS</div>
     <div class="ct-list" id="ct-list"></div>
   </div>
 </div>
@@ -1511,7 +1511,7 @@ const i18n = {
     ctSave:'✓ Créer',
     ctErrName:'Veuillez saisir un nom.',
     ctErrDup:'Ce nom existe déjà.',
-    ctMyTensios:'Mes tensiomètres',
+    ctMyTensios:'★ MES TENSIOS',
     ctDeleteConfirm:'Supprimer ce tensiomètre et toutes ses chartes ?',
     diffLabel:'Différentiel',
     radialDiscWarn:'⚠ Incompatible roue à disque',
@@ -1601,7 +1601,7 @@ const i18n = {
     ctSave:'✓ Create',
     ctErrName:'Please enter a name.',
     ctErrDup:'This name already exists.',
-    ctMyTensios:'My tensiometers',
+    ctMyTensios:'★ MY TENSIOS',
     ctDeleteConfirm:'Delete this tensiometer and all its charts?',
     diffLabel:'Differential',
     radialDiscWarn:'⚠ Disc brake incompatible',
@@ -1936,7 +1936,6 @@ function applyState(s) {
     // Tensiomètre
     tmType = s.tmType;
     const tmTensioSel = $id('tm-tensio-select');
-    // Si tensio custom, garantir que l'option est dans le DOM avant assignation
     if (tmType && tmType.startsWith('ct_')) ctRefreshAll();
     if (tmTensioSel) tmTensioSel.value = tmType;
     const clearBtn = $id('tm-clear-tensio');
@@ -1962,7 +1961,6 @@ function applyState(s) {
 
     // Dropdown rayon
     tmSpokeKey = s.tmSpokeKey || null;
-    // Si la clé rayon est une charte custom, garantir injection dans TM_TABLES avant
     if (tmSpokeKey && tmSpokeKey.startsWith(CC_PREFIX)) ccInjectAll();
     tmPopulateSpokeSelect();   // peuple selon tmType+tmDTSub, sélectionne tmSpokeKey si présent
 
