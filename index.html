@@ -100,11 +100,19 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .save-mgr-btn { background:transparent; border:1px solid var(--border-s); border-radius:20px; color:var(--text3); padding:.28rem .9rem; cursor:pointer; transition:all .2s; display:inline-flex; align-items:center; justify-content:center; line-height:1 }
 .save-mgr-btn:hover { border-color:var(--accent); color:var(--accent) }
 
+/* ── Data picker (choix backup / data manager) ── */
+.picker-overlay { position:fixed; inset:0; z-index:9978; display:none }
+.picker-overlay.show { display:block }
+.picker-popup { position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); z-index:9979; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:.6rem; box-shadow:0 8px 32px rgba(0,0,0,.45); display:none; flex-direction:column; gap:.3rem; min-width:180px }
+.picker-popup.show { display:flex; animation:conv-in .15s ease both }
+.picker-btn { display:flex; align-items:center; gap:.6rem; padding:.6rem .85rem; background:transparent; border:1px solid var(--border); border-radius:var(--rs); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500; cursor:pointer; transition:all .2s; text-align:left }
+.picker-btn:hover { border-color:var(--border-s); color:var(--text); background:rgba(255,255,255,.03) }
+
 /* ── Save manager modal ── */
 .savemgr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
 .savemgr-overlay.show { display:block; opacity:1 }
-.savemgr-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:360px; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
-.savemgr-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+.savemgr-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:360px; display:flex; flex-direction:column; gap:.9rem; opacity:0; visibility:hidden; pointer-events:none; transition:opacity .2s, visibility .2s }
+.savemgr-modal.show { opacity:1; visibility:visible; pointer-events:auto }
 .savemgr-header { display:flex; align-items:center; justify-content:space-between }
 .savemgr-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
 .savemgr-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
@@ -114,6 +122,33 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .savemgr-action-btn { display:flex; align-items:center; gap:.6rem; padding:.75rem 1rem; background:transparent; border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:500; cursor:pointer; transition:all .22s; text-align:left }
 .savemgr-export:hover, .savemgr-import:hover { border-color:rgba(126,200,227,.5); color:var(--accent2); background:rgba(126,200,227,.05) }
 .savemgr-warning { font-size:.65rem; color:var(--text3); font-style:italic; line-height:1.5 }
+
+/* ── Erase manager modal ── */
+.erasemgr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9982; opacity:0; transition:opacity .22s; display:none }
+.erasemgr-overlay.show { display:block; opacity:1 }
+.erasemgr-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9983; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:420px; max-height:88vh; overflow-y:auto; display:none; flex-direction:column; gap:.75rem }
+.erasemgr-modal.show { display:flex; animation:conv-in .2s ease both }
+.erasemgr-header { display:flex; align-items:center; justify-content:space-between }
+.erasemgr-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
+.erasemgr-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
+.erasemgr-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+/* Accordion */
+.erasemgr-acc { display:flex; flex-direction:column; gap:.45rem }
+.erasemgr-acc-head { display:flex; align-items:center; gap:.5rem; padding:.5rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; user-select:none; transition:border-color .2s }
+.erasemgr-acc-head:hover:not(.disabled) { border-color:var(--border-s) }
+.erasemgr-acc-head.disabled { opacity:.4; cursor:default; pointer-events:none }
+.erasemgr-acc-label { font-size:.6rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--text2); flex:1 }
+.erasemgr-acc-count { font-family:'DM Mono',monospace; font-size:.6rem; color:var(--text3); background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:.08rem .45rem }
+.erasemgr-acc-chevron { font-size:.7rem; color:var(--text3); transition:transform .2s; display:inline-block }
+.erasemgr-acc-body { display:none; flex-direction:column; gap:.3rem; padding:.1rem 0 .2rem }
+.erasemgr-acc-body.open { display:flex }
+.erasemgr-item { display:flex; align-items:center; gap:.5rem; padding:.4rem .75rem; background:var(--bg2); border:1px solid var(--border); border-radius:var(--rs); transition:border-color .2s }
+.erasemgr-item:hover { border-color:rgba(232,146,124,.3) }
+.erasemgr-item-info { flex:1; display:flex; flex-direction:column; gap:.1rem; overflow:hidden }
+.erasemgr-item-name { font-family:'DM Mono',monospace; font-size:.7rem; color:var(--text2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.erasemgr-item-sub { font-size:.6rem; color:var(--text3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.erasemgr-item-btn { background:none; border:1px solid rgba(232,146,124,.3); border-radius:var(--rs); color:var(--warm2); font-size:.65rem; font-family:'DM Mono',monospace; cursor:pointer; padding:.18rem .45rem; line-height:1; transition:all .2s; flex-shrink:0 }
+.erasemgr-item-btn:hover { border-color:rgba(232,146,124,.7); background:rgba(232,146,124,.08); color:var(--warm) }
 
 /* ── Layout ────────────────────────────────────────────────────────────────── */
 .wrap { max-width:880px; margin:0 auto; padding:0 1.2rem 4rem; display:flex; flex-direction:column; gap:1rem }
@@ -551,7 +586,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cc-item-del:hover { color:#f08080 }
 
 /* ── Tensiomètre personnalisé ─────────────────────────────────────────────── */
-.ct-add-btn  { padding:.38rem .7rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Mono',monospace; font-size:.8rem; font-weight:500; cursor:pointer; transition:all .22s; flex-shrink:0; line-height:1; display:flex; align-items:center; gap:.3rem }
+.ct-add-btn  { padding:.22rem .52rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Mono',monospace; font-size:.7rem; font-weight:500; cursor:pointer; transition:all .22s; flex-shrink:0; line-height:1; display:flex; align-items:center; gap:.3rem }
 .ct-add-btn:hover { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06) }
 .ct-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9992; opacity:0; transition:opacity .22s; display:none }
 .ct-overlay.show { display:block; opacity:1 }
@@ -639,36 +674,26 @@ input[type=number] { -moz-appearance:textfield }
     </a>
   </div>
   <div class="hline"></div>
-  <div class="header-actions">
+  <div class="header-actions" style="position:relative">
     <button id="lang-btn" onclick="toggleLang()" class="lang-btn">EN</button>
-    <button class="save-mgr-btn" onclick="openSaveMgr()" id="save-mgr-btn">
+    <button class="save-mgr-btn" onclick="openPicker()" id="save-mgr-btn">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
     </button>
+    <div class="picker-popup" id="picker-popup">
+      <button class="picker-btn" onclick="closePicker();openSaveMgr()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span data-i18n="pickerBackup">Backup manager</span>
+      </button>
+      <button class="picker-btn" onclick="closePicker();openEraseMgr()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 20H7L3 16l10-10 7 7-2.5 2.5"/><path d="M6.5 17.5l5-5"/><path d="M15 3l6 6"/></svg>
+        <span data-i18n="pickerDataMgr">Data manager</span>
+      </button>
+    </div>
   </div>
 </header>
 
-<!-- ── Save manager modal ── -->
-<div class="savemgr-overlay" id="savemgr-overlay" onclick="closeSaveMgr()"></div>
-<div class="savemgr-modal" id="savemgr-modal">
-  <div class="savemgr-header">
-    <div class="savemgr-title" data-i18n="saveMgrTitle">Gestion des sauvegardes</div>
-    <button class="savemgr-close" onclick="closeSaveMgr()">&#x2715;</button>
-  </div>
-  <p class="savemgr-desc" data-i18n="saveMgrDesc">Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.</p>
-  <div class="savemgr-btns">
-    <button class="savemgr-action-btn savemgr-export" onclick="exportConfigs()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <span data-i18n="exportBtn">Exporter tout (.json)</span>
-    </button>
-    <button class="savemgr-action-btn savemgr-import" onclick="$id('import-file-input').click()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 14 12 9 17 14"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <span data-i18n="importBtn">Importer (.json)</span>
-    </button>
-    <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="importConfigs(event)">
-  </div>
-  <p class="savemgr-warning" data-i18n="saveMgrWarning">&#9888;&#65038; L'import fusionne les données. En cas de nom identique, la version importée écrase l'existante.</p>
-  <p class="help" id="import-feedback" style="min-height:.9rem;text-align:center"></p>
-</div>
+<!-- ── Picker overlay ── -->
+<div class="picker-overlay" id="picker-overlay" onclick="closePicker()"></div>
 
 <!-- ── Module nav ── -->
 <div style="max-width:880px;margin:0 auto;padding:0 1.2rem 1.2rem">
@@ -1446,6 +1471,39 @@ input[type=number] { -moz-appearance:textfield }
 
 <div class="cache-toast" id="cache-toast"></div>
 
+<!-- ── Save manager modal ── -->
+<div class="savemgr-overlay" id="savemgr-overlay" onclick="closeSaveMgr()"></div>
+<div class="savemgr-modal" id="savemgr-modal">
+  <div class="savemgr-header">
+    <div class="savemgr-title" data-i18n="saveMgrTitle">Gestion des sauvegardes</div>
+    <button class="savemgr-close" onclick="closeSaveMgr()">&#x2715;</button>
+  </div>
+  <p class="savemgr-desc" data-i18n="saveMgrDesc">Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.</p>
+  <div class="savemgr-btns">
+    <button class="savemgr-action-btn savemgr-export" onclick="exportConfigs()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span data-i18n="exportBtn">Exporter (.json)</span>
+    </button>
+    <button class="savemgr-action-btn savemgr-import" onclick="$id('import-file-input').click()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 14 12 9 17 14"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span data-i18n="importBtn">Importer (.json)</span>
+    </button>
+    <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="importConfigs(event)">
+  </div>
+  <p class="savemgr-warning" data-i18n="saveMgrWarning">&#9888;&#65038; L'import fusionne les données. En cas de nom identique, la version importée écrase l'existante.</p>
+  <p class="help" id="import-feedback" style="min-height:.9rem;text-align:center"></p>
+</div>
+
+<!-- ── Erase manager modal ── -->
+<div class="erasemgr-overlay" id="erasemgr-overlay" onclick="closeEraseMgr()"></div>
+<div class="erasemgr-modal" id="erasemgr-modal" onclick="event.stopPropagation()">
+  <div class="erasemgr-header">
+    <div class="erasemgr-title" data-i18n="eraseMgrTitle">Supprimer des données</div>
+    <button class="erasemgr-close" onclick="closeEraseMgr()">&#x2715;</button>
+  </div>
+  <div id="erasemgr-body"></div>
+</div>
+
 <script>
 
 // ── i18n ────────────────────────────────────────────────────────────────────
@@ -1485,11 +1543,19 @@ const i18n = {
     saveOk:'OK', saveError:'Veuillez saisir un nom.',
     configsTitle:'Configurations sauvegardées', loadBtn:'Charger',
     saveWarning:'⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.',
-    exportBtn:'Exporter tout (.json)', importBtn:'Importer (.json)',
+    exportBtn:'Exporter (.json)', importBtn:'Importer (.json)',
     importSuccess:'✓ Données importées avec succès.', importError:'Fichier invalide ou corrompu.',
     saveMgrTitle:'Gestion des sauvegardes',
     saveMgrDesc:'Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.',
     saveMgrWarning:'⚠︎ L\'import fusionne les données. En cas de nom identique, la version importée écrase l\'existante.',
+    eraseMgrTitle:'Supprimer des données',
+    pickerBackup:'Backup manager',
+    pickerDataMgr:'Data manager',
+    eraseMgrWheelsFront:'Roues avant',
+    eraseMgrWheelsRear:'Roues arrière',
+    eraseMgrCustomTensios:'Tensiomètres perso',
+    eraseMgrCustomSpokes:'Rayons perso',
+    eraseMgrDel:'✕',
     asymWarn:'Moyeu symétrique : Jante asymétrique déconseillée.',
     asymTip:'Décalage des trous de rayons des jantes asymétriques',
     tmTitle:'Module Tension', tmCalc:'Calculateur',
@@ -1576,11 +1642,19 @@ const i18n = {
     saveOk:'OK', saveError:'Please enter a name.',
     configsTitle:'Saved configurations', loadBtn:'Load',
     saveWarning:'⚠︎ Locally stored in browser cache. Clearing the cache will erase all data.',
-    exportBtn:'Export all (.json)', importBtn:'Import (.json)',
+    exportBtn:'Export (.json)', importBtn:'Import (.json)',
     importSuccess:'✓ Data imported successfully.', importError:'Invalid or corrupted file.',
     saveMgrTitle:'Backup manager',
     saveMgrDesc:'The JSON file contains all your data: wheel configurations, tension charts and custom tensiometers.',
     saveMgrWarning:'⚠︎ Import merges data. If a name already exists, the imported version overwrites it.',
+    eraseMgrTitle:'Delete data',
+    pickerBackup:'Backup manager',
+    pickerDataMgr:'Data manager',
+    eraseMgrWheelsFront:'Front wheels',
+    eraseMgrWheelsRear:'Rear wheels',
+    eraseMgrCustomTensios:'Custom tensiometers',
+    eraseMgrCustomSpokes:'Custom spokes',
+    eraseMgrDel:'✕',
     asymWarn:'Symmetric hub: Asymmetric rim not recommended.',
     asymTip:'Offset Spoke Bed for Asymmetric Rim',
     tmTitle:'Tension Module', tmCalc:'Calculator',
@@ -2768,6 +2842,16 @@ function renderConfigsList() {
 }
 
 // ── Save manager modal ────────────────────────────────────────────────────────
+// ── Picker (disquette → choix) ────────────────────────────────────────────────
+function openPicker() {
+  $id('picker-overlay').classList.add('show');
+  $id('picker-popup').classList.add('show');
+}
+function closePicker() {
+  $id('picker-overlay').classList.remove('show');
+  $id('picker-popup').classList.remove('show');
+}
+
 function openSaveMgr() {
   $id('savemgr-overlay').classList.add('show');
   $id('savemgr-modal').classList.add('show');
@@ -2776,6 +2860,137 @@ function openSaveMgr() {
 function closeSaveMgr() {
   $id('savemgr-overlay').classList.remove('show');
   $id('savemgr-modal').classList.remove('show');
+}
+
+// ── Erase manager ─────────────────────────────────────────────────────────────
+function openEraseMgr() {
+  renderEraseMgr();
+  $id('erasemgr-overlay').classList.add('show');
+  $id('erasemgr-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeEraseMgr() {
+  $id('erasemgr-overlay').classList.remove('show');
+  $id('erasemgr-modal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function renderEraseMgr() {
+  const body = $id('erasemgr-body');
+  body.innerHTML = '';
+
+  const configs = loadConfigs();
+  const charts  = ccLoadAll();
+  const tensios = ctLoadAll();
+
+  const acc = document.createElement('div');
+  acc.className = 'erasemgr-acc';
+  body.appendChild(acc);
+
+  // ── Helper: item row ────────────────────────────────────────────────────
+  function makeItem(name, sub, onDel) {
+    const div = document.createElement('div');
+    div.className = 'erasemgr-item';
+    const info = document.createElement('div');
+    info.className = 'erasemgr-item-info';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'erasemgr-item-name';
+    nameEl.textContent = name;
+    info.appendChild(nameEl);
+    if (sub) {
+      const subEl = document.createElement('div');
+      subEl.className = 'erasemgr-item-sub';
+      subEl.textContent = sub;
+      info.appendChild(subEl);
+    }
+    const btn = document.createElement('button');
+    btn.className = 'erasemgr-item-btn';
+    btn.textContent = t('eraseMgrDel');
+    btn.addEventListener('click', e => { e.stopPropagation(); onDel(); renderEraseMgr(); });
+    div.appendChild(info);
+    div.appendChild(btn);
+    return div;
+  }
+
+  // ── Helper: accordion section ───────────────────────────────────────────
+  function makeAccSection(labelKey, items) {
+    const wrap = document.createElement('div');
+    const empty = items.length === 0;
+
+    const head = document.createElement('div');
+    head.className = 'erasemgr-acc-head' + (empty ? ' disabled' : '');
+
+    const label = document.createElement('span');
+    label.className = 'erasemgr-acc-label';
+    label.textContent = t(labelKey);
+
+    const count = document.createElement('span');
+    count.className = 'erasemgr-acc-count';
+    count.textContent = items.length;
+
+    const chev = document.createElement('span');
+    chev.className = 'erasemgr-acc-chevron';
+    chev.textContent = '›';
+
+    head.appendChild(label);
+    head.appendChild(count);
+    head.appendChild(chev);
+    wrap.appendChild(head);
+
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'erasemgr-acc-body';
+    items.forEach(el => bodyEl.appendChild(el));
+    wrap.appendChild(bodyEl);
+
+    if (!empty) {
+      head.addEventListener('click', () => {
+        const open = bodyEl.classList.toggle('open');
+        chev.style.transform = open ? 'rotate(90deg)' : '';
+      });
+    }
+
+    return wrap;
+  }
+
+  // ── Roues avant ─────────────────────────────────────────────────────────
+  const frontItems = configs
+    .map((cfg, i) => ({ cfg, i }))
+    .filter(({ cfg }) => (cfg.state?.wtype || 'avant') === 'avant')
+    .map(({ cfg, i }) => makeItem(cfg.name, null, () => deleteConfig(i)));
+  acc.appendChild(makeAccSection('eraseMgrWheelsFront', frontItems));
+
+  // ── Roues arrière ────────────────────────────────────────────────────────
+  const rearItems = configs
+    .map((cfg, i) => ({ cfg, i }))
+    .filter(({ cfg }) => (cfg.state?.wtype || 'avant') === 'arriere')
+    .map(({ cfg, i }) => makeItem(cfg.name, null, () => deleteConfig(i)));
+  acc.appendChild(makeAccSection('eraseMgrWheelsRear', rearItems));
+
+  // ── Tensiomètres perso ───────────────────────────────────────────────────
+  const tensioItems = tensios.map(ct => makeItem(
+    CC_PREFIX + ct.name, null,
+    () => { const idx = ctLoadAll().findIndex(c => c.id === ct.id); if (idx >= 0) ctDelete(idx); }
+  ));
+  acc.appendChild(makeAccSection('eraseMgrCustomTensios', tensioItems));
+
+  // ── Rayons perso (tous tensiomètres) ────────────────────────────────────
+  const fixedTensioLabels = { wf:'W. FANATYK', pt:'PARK TOOL TM-1', dt:'DT SWISS', pk:'P&KLIE', un:'UNIOR 1752' };
+
+  function tensioLabel(tensioKey) {
+    if (fixedTensioLabels[tensioKey]) return fixedTensioLabels[tensioKey];
+    if (tensioKey === 'wf_old' || tensioKey === 'wf_new') return 'W. FANATYK';
+    const ct = tensios.find(c => 'ct_' + c.id === tensioKey);
+    return ct ? CC_PREFIX + ct.name : tensioKey;
+  }
+
+  const spokeItems = charts.map(cc => {
+    return { cc, globalIdx: ccLoadAll().findIndex(c => c.name === cc.name && c.tensioKey === cc.tensioKey) };
+  }).map(({ cc, globalIdx }) => makeItem(
+    CC_PREFIX + cc.name,
+    tensioLabel(cc.tensioKey),
+    () => ccDeleteDirect(globalIdx, null)
+  ));
+  acc.appendChild(makeAccSection('eraseMgrCustomSpokes', spokeItems));
 }
 
 // ── Export / Import JSON (toutes données) ─────────────────────────────────────
@@ -3768,6 +3983,12 @@ document.addEventListener('keydown', function(e) {
   }
   if (e.key === 'Escape' && $id('ct-modal').classList.contains('show')) {
     ctClose();
+  }
+  if (e.key === 'Escape' && $id('erasemgr-modal').classList.contains('show')) {
+    closeEraseMgr();
+  }
+  if (e.key === 'Escape' && $id('picker-popup').classList.contains('show')) {
+    closePicker();
   }
 });
 
