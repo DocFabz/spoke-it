@@ -3484,7 +3484,7 @@ function closeEraseMgr() {
   $id('erasemgr-modal').classList.remove('show');
   document.body.style.overflow = '';
 }
-function renderEraseMgr() {
+function renderEraseMgr(openKeys) {
   const body = $id('erasemgr-body');
   body.innerHTML = '';
   const configs = loadConfigs();
@@ -3512,13 +3512,20 @@ function renderEraseMgr() {
     const btn = document.createElement('button');
     btn.className = 'erasemgr-item-btn';
     btn.textContent = t('eraseMgrDel');
-    btn.addEventListener('click', e => { e.stopPropagation(); onDel(); renderEraseMgr(); });
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      // Mémoriser les sections ouvertes
+      const openKeys = Array.from(document.querySelectorAll('.erasemgr-acc-body.open'))
+        .map(el => el.dataset.key);
+      onDel();
+      renderEraseMgr(openKeys);
+    });
     div.appendChild(info);
     div.appendChild(btn);
     return div;
   }
 
-  function makeAccSection(labelKey, items) {
+  function makeAccSection(labelKey, items, openKeys) {
     const wrap  = document.createElement('div');
     const empty = items.length === 0;
     const head  = document.createElement('div');
@@ -3536,6 +3543,12 @@ function renderEraseMgr() {
     wrap.appendChild(head);
     const bodyEl = document.createElement('div');
     bodyEl.className = 'erasemgr-acc-body';
+    bodyEl.dataset.key = labelKey;
+    // Rouvrir si elle était ouverte avant le re-render
+    if (openKeys && openKeys.includes(labelKey)) {
+      bodyEl.classList.add('open');
+      chev.style.transform = 'rotate(90deg)';
+    }
     items.forEach(el => bodyEl.appendChild(el));
     wrap.appendChild(bodyEl);
     if (!empty) {
@@ -3554,14 +3567,14 @@ function renderEraseMgr() {
       (cfg.state?.wtype || 'avant') === 'avant' ? t('frontLabel') : t('rearLabel'),
       () => deleteConfig(i)
     ));
-  acc.appendChild(makeAccSection('eraseMgrWheels', wheelItems));
+  acc.appendChild(makeAccSection('eraseMgrWheels', wheelItems, openKeys));
 
   // Tensiomètres perso
   const tensioItems = tensios.map(ct => makeItem(
     CC_PREFIX + ct.name, null,
     () => { const idx = ctLoadAll().findIndex(c => c.id === ct.id); if (idx >= 0) ctDelete(idx); }
   ));
-  acc.appendChild(makeAccSection('eraseMgrCustomTensios', tensioItems));
+  acc.appendChild(makeAccSection('eraseMgrCustomTensios', tensioItems, openKeys));
 
   // Rayons perso
   const fixedLabels = { wf:'W. FANATYK', pt:'PARK TOOL TM-1', dt:'DT SWISS', pk:'P&KLIE', un:'UNIOR 1752' };
@@ -3575,7 +3588,7 @@ function renderEraseMgr() {
     const globalIdx = ccLoadAll().findIndex(c => c.name === cc.name && c.tensioKey === cc.tensioKey);
     return makeItem(CC_PREFIX + cc.name, tensioLabel(cc.tensioKey), () => ccDeleteDirect(globalIdx, null));
   });
-  acc.appendChild(makeAccSection('eraseMgrCustomSpokes', spokeItems));
+  acc.appendChild(makeAccSection('eraseMgrCustomSpokes', spokeItems, openKeys));
 }
 
 // ── Obtenir la table active (objet {spokeKey: [[defl,kgf]…]}) ─────────────────
