@@ -147,15 +147,15 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .erasemgr-acc-label { font-size:.6rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--text2); flex:1 }
 .erasemgr-acc-count { font-family:'DM Mono',monospace; font-size:.6rem; color:var(--text3); background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:.08rem .45rem }
 .erasemgr-acc-chevron { font-size:.7rem; color:var(--text3); transition:transform .2s; display:inline-block }
-.erasemgr-acc-body { display:none; flex-direction:column; gap:.3rem; padding:.1rem 0 .2rem }
+.erasemgr-acc-body { display:none; flex-direction:column; gap:.05rem; padding:.2rem 0 .1rem }
 .erasemgr-acc-body.open { display:flex }
-.erasemgr-item { display:flex; align-items:center; gap:.5rem; padding:.4rem .75rem; background:var(--bg2); border:1px solid var(--border); border-radius:var(--rs); transition:border-color .2s }
-.erasemgr-item:hover { border-color:rgba(232,146,124,.3) }
-.erasemgr-item-info { flex:1; display:flex; flex-direction:column; gap:.1rem; overflow:hidden }
-.erasemgr-item-name { font-family:'DM Mono',monospace; font-size:.7rem; color:var(--text2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-.erasemgr-item-sub { font-size:.6rem; color:var(--text3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-.erasemgr-item-btn { background:none; border:1px solid rgba(232,146,124,.3); border-radius:var(--rs); color:var(--warm2); font-size:.65rem; font-family:'DM Mono',monospace; cursor:pointer; padding:.18rem .45rem; line-height:1; transition:all .2s; flex-shrink:0 }
-.erasemgr-item-btn:hover { border-color:rgba(232,146,124,.7); background:rgba(232,146,124,.08); color:var(--warm) }
+.erasemgr-item { display:flex; align-items:center; gap:.5rem; padding:.2rem .75rem }
+.erasemgr-item:hover .erasemgr-item-name { color:var(--accent) }
+.erasemgr-item-info { flex:1; display:flex; align-items:baseline; gap:.4rem; overflow:hidden }
+.erasemgr-item-name { font-family:'DM Mono',monospace; font-size:.72rem; color:var(--accent2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.erasemgr-item-sub { font-size:.58rem; color:var(--text3); flex-shrink:0 }
+.erasemgr-item-btn { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
+.erasemgr-item-btn:hover { color:var(--warm) }
 
 /* ── Layout ────────────────────────────────────────────────────────────────── */
 .wrap { max-width:880px; margin:0 auto; padding:0 1.2rem 4rem; display:flex; flex-direction:column; gap:1rem }
@@ -693,7 +693,7 @@ input[type=number] { -moz-appearance:textfield }
         <span data-i18n="pickerBackup">Backup manager</span>
       </button>
       <button class="picker-btn" onclick="closePicker();openEraseMgr()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 20H7L3 16l10-10 7 7-2.5 2.5"/><path d="M6.5 17.5l5-5"/><path d="M15 3l6 6"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
         <span data-i18n="pickerDataMgr">Data manager</span>
       </button>
     </div>
@@ -1298,16 +1298,18 @@ input[type=number] { -moz-appearance:textfield }
 
   <!-- ── Grille de saisie ── -->
   <div class="card" id="tm-input-card">
-    <div class="ch">
+    <div class="ch ch-toggle" onclick="toggleTmInputCard()">
       <svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
         <rect x="3" y="4" width="18" height="16" rx="2"/>
         <line x1="3" y1="9" x2="21" y2="9"/>
         <line x1="12" y1="9" x2="12" y2="20"/>
       </svg>
       <div class="clabel" data-i18n="tmDeflLabel">Déflections mesurées</div>
-      <span id="tm-unit-badge" class="tm-unit-badge">WF</span>
+      <em id="tm-input-card-chevron" class="chevron">&#8964;</em>
     </div>
+    <span id="tm-unit-badge" class="tm-unit-badge" style="margin-top:.4rem;align-self:flex-start">WF</span>
 
+    <div id="tm-input-card-body" style="display:none;margin-top:.75rem">
     <div class="tm-grid-wrap">
       <table class="tm-table" id="tm-table">
         <colgroup>
@@ -1337,19 +1339,22 @@ input[type=number] { -moz-appearance:textfield }
         <tbody id="tm-tbody"></tbody>
       </table>
     </div>
+    </div>
 
   </div>
 
   <!-- ── Radar + stats ── -->
   <div class="card" id="tm-result-card" style="display:none">
-    <div class="ch">
-      <svg class="cicon cicon-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+    <div class="ch ch-toggle" onclick="toggleTmResultCard()">
+      <svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
         <polygon points="12,2.5 20,8 20,16 12,21.5 4,16 4,8"/>
         <polygon points="12,7 16.5,10 16.5,14 12,17 7.5,14 7.5,10"/>
       </svg>
-      <div class="clabel clabel-success" data-i18n="tmRadarTitle">Diagramme de tension</div>
+      <div class="clabel" data-i18n="tmRadarTitle">Diagramme de tension</div>
+      <em id="tm-result-card-chevron" class="chevron">&#8964;</em>
     </div>
 
+    <div id="tm-result-card-body" style="margin-top:.75rem">
     <div class="radar-wrap">
       <canvas class="radar-canvas" id="tm-radar"></canvas>
     </div>
@@ -1384,6 +1389,7 @@ input[type=number] { -moz-appearance:textfield }
       </select>
       <button class="tm-hl-btn" id="tm-hl-btn" onclick="tmToggleHighlight()">Highlight</button>
     </div><!-- /tm-outlier-bar -->
+    </div>
   </div><!-- /tm-result-card -->
 
   <!-- ── Modal charte de conversion ── -->
@@ -1562,9 +1568,8 @@ const i18n = {
     tmRadarTitle:'Diagramme de tension',
     tmAvg:'Moyenne', tmStd:'Écart-type',
     tmCVMaxLabel:'Tolérance',
-    tmNoSpokes:'Saisir le nombre de rayons dans le Calculateur.',
+    tmTensioLabel:'Tensiomètre',
     tmReadingKgf:'lecture · kgf',
-    tmChooseSpoke:'Choisir un rayon ci-dessus',
     tmSpokeSelectPlaceholder:'—',
     tmTensioPlaceholder:'—',
     tmWarnAerolite2:'⚠ Valeurs valables UNIQUEMENT avec le Tensiomètre Aerolite II',
@@ -1606,8 +1611,7 @@ const i18n = {
     pickerBackup:'Backup manager',
     pickerDataMgr:'Data manager',
     eraseMgrTitle:'Supprimer des données',
-    eraseMgrWheelsFront:'Roues avant',
-    eraseMgrWheelsRear:'Roues arrière',
+    eraseMgrWheels:'Roues',
     eraseMgrCustomTensios:'Tensiomètres perso',
     eraseMgrCustomSpokes:'Rayons perso',
     eraseMgrDel:'✕',
@@ -1661,9 +1665,7 @@ const i18n = {
     tmRadarTitle:'Tension diagram',
     tmAvg:'Average', tmStd:'Std deviation',
     tmCVMaxLabel:'Tolerance',
-    tmNoSpokes:'Enter the spoke count in the Calculator.',
     tmReadingKgf:'reading · kgf',
-    tmChooseSpoke:'Choose a spoke above',
     tmSpokeSelectPlaceholder:'—',
     tmTensioPlaceholder:'—',
     tmWarnAerolite2:'⚠ Values valid ONLY with the Aerolite II Tensiometer',
@@ -1705,8 +1707,7 @@ const i18n = {
     pickerBackup:'Backup manager',
     pickerDataMgr:'Data manager',
     eraseMgrTitle:'Delete data',
-    eraseMgrWheelsFront:'Front wheels',
-    eraseMgrWheelsRear:'Rear wheels',
+    eraseMgrWheels:'Wheels',
     eraseMgrCustomTensios:'Custom tensiometers',
     eraseMgrCustomSpokes:'Custom spokes',
     eraseMgrDel:'✕',
@@ -1803,6 +1804,7 @@ let tmSpokeKey = null;    // clé rayon sélectionnée dans la table active
 let tmCVThreshold = 5;    // % — seuil écart-type coefficient de variation
 let tmHighlightOn = false;
 let tmOutliers = { fo: new Set(), fa: new Set() };
+let tmRadarCollapsed = false; // true si l'utilisateur a fermé le diagramme manuellement
 function tmStoreKey() {
   if (!tmType) return null;
   if (tmType.startsWith('ct_')) return tmType;  // tensiomètre perso : clé directe
@@ -2753,6 +2755,15 @@ function toggleCard(bodyId, chevronId) {
   }
 }
 function toggleResultsCard() { toggleCard('results-card-body', 'results-card-chevron'); }
+function toggleTmInputCard()  { toggleCard('tm-input-card-body',  'tm-input-card-chevron'); }
+function toggleTmResultCard() {
+  const body = $id('tm-result-card-body'), chev = $id('tm-result-card-chevron');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  chev.style.transform = open ? '' : 'rotate(180deg)';
+  tmRadarCollapsed = open; // l'utilisateur ferme → collapsed, ouvre → pas collapsed
+  if (!open) tmTryRenderRadar();
+}
 function toggleArbCard() {
   const body = $id('arb-card-body'), chevron = $id('arb-card-chevron'), wrap = $id('arb-wrap');
   if (body.style.display === 'none') {
@@ -3215,12 +3226,6 @@ function switchModule(mod) {
   activeBtn.addEventListener('animationend', () => activeBtn.classList.remove('nav-flash'), { once: true });
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (!isCalc) {
-    // Si plus de config chargée, reset tension proprement
-    if (!_loadedConfigName[wtype]) {
-      tmResetData();
-      Object.keys(tmStore).forEach(k => delete tmStore[k]);
-      tmActiveKey = tmStoreKey();
-    }
     try { tmInit(); } catch(e) { console.error('tmInit error:', e); }
   }
 }
@@ -3542,17 +3547,14 @@ function renderEraseMgr() {
     return wrap;
   }
 
-  // Roues avant
-  const frontItems = configs.map((cfg, i) => ({ cfg, i }))
-    .filter(({ cfg }) => (cfg.state?.wtype || 'avant') === 'avant')
-    .map(({ cfg, i }) => makeItem(cfg.name, null, () => deleteConfig(i)));
-  acc.appendChild(makeAccSection('eraseMgrWheelsFront', frontItems));
-
-  // Roues arrière
-  const rearItems = configs.map((cfg, i) => ({ cfg, i }))
-    .filter(({ cfg }) => (cfg.state?.wtype || 'avant') === 'arriere')
-    .map(({ cfg, i }) => makeItem(cfg.name, null, () => deleteConfig(i)));
-  acc.appendChild(makeAccSection('eraseMgrWheelsRear', rearItems));
+  // Roues (avant + arrière)
+  const wheelItems = configs.map((cfg, i) => ({ cfg, i }))
+    .map(({ cfg, i }) => makeItem(
+      cfg.name,
+      (cfg.state?.wtype || 'avant') === 'avant' ? t('frontLabel') : t('rearLabel'),
+      () => deleteConfig(i)
+    ));
+  acc.appendChild(makeAccSection('eraseMgrWheels', wheelItems));
 
   // Tensiomètres perso
   const tensioItems = tensios.map(ct => makeItem(
@@ -4601,19 +4603,24 @@ function tmBuildTable() {
   const tbody = $id('tm-tbody');
   tbody.innerHTML = '';
 
+  const body = $id('tm-input-card-body');
+  const chev = $id('tm-input-card-chevron');
+
   if (nb < 2) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="3" class="tm-empty-msg">${t('tmNoSpokes')}</td>`;
-    tbody.appendChild(tr);
+    if (body) { body.style.display = 'none'; }
+    if (chev) { chev.style.transform = ''; }
     return;
   }
 
   if (!tmSpokeKey) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="3" class="tm-empty-msg">${t('tmChooseSpoke')}</td>`;
-    tbody.appendChild(tr);
+    if (body) { body.style.display = 'none'; }
+    if (chev) { chev.style.transform = ''; }
     return;
   }
+
+  // Table peuplée — ouvrir la card
+  if (body) { body.style.display = 'block'; }
+  if (chev) { chev.style.transform = 'rotate(180deg)'; }
 
   const perSide = Math.floor(nb / 2);
   while (tmData.fo.length < perSide) tmData.fo.push(null);
@@ -4751,6 +4758,7 @@ function tmUpdateCell(idx, side) {
 
 function tmHideResult() {
   $id('tm-result-card').style.display = 'none';
+  tmRadarCollapsed = false; // reset : prochaine apparition sera ouverte
   // Reset highlight silencieux — pas d'appel à tmTryRenderRadar
   tmHighlightOn = false;
   const btn = $id('tm-hl-btn');
@@ -4871,6 +4879,12 @@ function tmTryRenderRadar() {
 
   $id('tm-result-card').style.display = '';
   void $id('tm-result-card').offsetWidth;
+  // Ouvrir le body seulement si l'utilisateur ne l'a pas fermé manuellement
+  const rcBody = $id('tm-result-card-body'), rcChev = $id('tm-result-card-chevron');
+  if (!tmRadarCollapsed) {
+    if (rcBody) rcBody.style.display = 'block';
+    if (rcChev) rcChev.style.transform = 'rotate(180deg)';
+  }
   tmOutliers.fo = tmComputeOutliers(foKgfs, tmCVThreshold);
   tmOutliers.fa = tmComputeOutliers(faKgfs, tmCVThreshold);
   tmUpdateOutlierCount();
