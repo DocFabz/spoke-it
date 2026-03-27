@@ -2,6 +2,13 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TPCFCDQH');</script>
+<!-- End Google Tag Manager -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Spoke It</title>
 
@@ -100,19 +107,11 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .save-mgr-btn { background:transparent; border:1px solid var(--border-s); border-radius:20px; color:var(--text3); padding:.28rem .9rem; cursor:pointer; transition:all .2s; display:inline-flex; align-items:center; justify-content:center; line-height:1 }
 .save-mgr-btn:hover { border-color:var(--accent); color:var(--accent) }
 
-/* ── Data picker (choix backup / data manager) ── */
-.picker-overlay { position:fixed; inset:0; z-index:9978; display:none }
-.picker-overlay.show { display:block }
-.picker-popup { position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); z-index:9979; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:.6rem; box-shadow:0 8px 32px rgba(0,0,0,.45); display:none; flex-direction:column; gap:.3rem; min-width:180px }
-.picker-popup.show { display:flex; animation:conv-in .15s ease both }
-.picker-btn { display:flex; align-items:center; gap:.6rem; padding:.6rem .85rem; background:transparent; border:1px solid var(--border); border-radius:var(--rs); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500; cursor:pointer; transition:all .2s; text-align:left }
-.picker-btn:hover { border-color:var(--border-s); color:var(--text); background:rgba(255,255,255,.03) }
-
 /* ── Save manager modal ── */
 .savemgr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
 .savemgr-overlay.show { display:block; opacity:1 }
-.savemgr-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:360px; display:flex; flex-direction:column; gap:.9rem; opacity:0; visibility:hidden; pointer-events:none; transition:opacity .2s, visibility .2s }
-.savemgr-modal.show { opacity:1; visibility:visible; pointer-events:auto }
+.savemgr-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:360px; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
+.savemgr-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
 .savemgr-header { display:flex; align-items:center; justify-content:space-between }
 .savemgr-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
 .savemgr-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
@@ -123,16 +122,23 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .savemgr-export:hover, .savemgr-import:hover { border-color:rgba(126,200,227,.5); color:var(--accent2); background:rgba(126,200,227,.05) }
 .savemgr-warning { font-size:.65rem; color:var(--text3); font-style:italic; line-height:1.5 }
 
-/* ── Erase manager modal ── */
+/* ── Picker popup ── */
+.picker-popup { position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); z-index:9979; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:.6rem; box-shadow:0 8px 32px rgba(0,0,0,.45); display:none; flex-direction:column; gap:.3rem; min-width:180px }
+.picker-popup.show { display:flex; animation:conv-in .15s ease both }
+.picker-overlay { position:fixed; inset:0; z-index:9978; display:none }
+.picker-overlay.show { display:block }
+.picker-btn { display:flex; align-items:center; gap:.6rem; padding:.6rem .85rem; background:transparent; border:1px solid var(--border); border-radius:var(--rs); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500; cursor:pointer; transition:all .2s; text-align:left; white-space:nowrap }
+.picker-btn:hover { border-color:var(--border-s); color:var(--text); background:rgba(255,255,255,.03) }
+
+/* ── Modal suppression tensiomètre perso ── */
 .erasemgr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9982; opacity:0; transition:opacity .22s; display:none }
 .erasemgr-overlay.show { display:block; opacity:1 }
-.erasemgr-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9983; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:420px; max-height:88vh; overflow-y:auto; display:none; flex-direction:column; gap:.75rem }
+.erasemgr-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9983; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:420px; max-height:88vh; overflow-y:auto; display:none; flex-direction:column; gap:.9rem }
 .erasemgr-modal.show { display:flex; animation:conv-in .2s ease both }
 .erasemgr-header { display:flex; align-items:center; justify-content:space-between }
 .erasemgr-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
 .erasemgr-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
 .erasemgr-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
-/* Accordion */
 .erasemgr-acc { display:flex; flex-direction:column; gap:.45rem }
 .erasemgr-acc-head { display:flex; align-items:center; gap:.5rem; padding:.5rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; user-select:none; transition:border-color .2s }
 .erasemgr-acc-head:hover:not(.disabled) { border-color:var(--border-s) }
@@ -659,6 +665,10 @@ input[type=number] { -moz-appearance:textfield }
 </style>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TPCFCDQH"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 
 <header>
   <div class="brand">Spoke <em>It</em></div>
@@ -679,6 +689,7 @@ input[type=number] { -moz-appearance:textfield }
     <button class="save-mgr-btn" onclick="openPicker()" id="save-mgr-btn">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
     </button>
+    <div class="picker-overlay" id="picker-overlay" onclick="closePicker()"></div>
     <div class="picker-popup" id="picker-popup">
       <button class="picker-btn" onclick="closePicker();openSaveMgr()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -692,8 +703,28 @@ input[type=number] { -moz-appearance:textfield }
   </div>
 </header>
 
-<!-- ── Picker overlay ── -->
-<div class="picker-overlay" id="picker-overlay" onclick="closePicker()"></div>
+<!-- ── Save manager modal ── -->
+<div class="savemgr-overlay" id="savemgr-overlay" onclick="closeSaveMgr()"></div>
+<div class="savemgr-modal" id="savemgr-modal">
+  <div class="savemgr-header">
+    <div class="savemgr-title" data-i18n="saveMgrTitle">Gestion des sauvegardes</div>
+    <button class="savemgr-close" onclick="closeSaveMgr()">&#x2715;</button>
+  </div>
+  <p class="savemgr-desc" data-i18n="saveMgrDesc">Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.</p>
+  <div class="savemgr-btns">
+    <button class="savemgr-action-btn savemgr-export" onclick="exportConfigs()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span data-i18n="exportBtn">Exporter (.json)</span>
+    </button>
+    <button class="savemgr-action-btn savemgr-import" onclick="$id('import-file-input').click()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 14 12 9 17 14"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span data-i18n="importBtn">Importer (.json)</span>
+    </button>
+    <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="importConfigs(event)">
+  </div>
+  <p class="savemgr-warning" data-i18n="saveMgrWarning">&#9888;&#65038; L'import fusionne les données. En cas de nom identique, la version importée écrase l'existante.</p>
+  <p class="help" id="import-feedback" style="min-height:.9rem;text-align:center"></p>
+</div>
 
 <!-- ── Module nav ── -->
 <div style="max-width:880px;margin:0 auto;padding:0 1.2rem 1.2rem">
@@ -1471,29 +1502,6 @@ input[type=number] { -moz-appearance:textfield }
 
 <div class="cache-toast" id="cache-toast"></div>
 
-<!-- ── Save manager modal ── -->
-<div class="savemgr-overlay" id="savemgr-overlay" onclick="closeSaveMgr()"></div>
-<div class="savemgr-modal" id="savemgr-modal">
-  <div class="savemgr-header">
-    <div class="savemgr-title" data-i18n="saveMgrTitle">Gestion des sauvegardes</div>
-    <button class="savemgr-close" onclick="closeSaveMgr()">&#x2715;</button>
-  </div>
-  <p class="savemgr-desc" data-i18n="saveMgrDesc">Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.</p>
-  <div class="savemgr-btns">
-    <button class="savemgr-action-btn savemgr-export" onclick="exportConfigs()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <span data-i18n="exportBtn">Exporter (.json)</span>
-    </button>
-    <button class="savemgr-action-btn savemgr-import" onclick="$id('import-file-input').click()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 14 12 9 17 14"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <span data-i18n="importBtn">Importer (.json)</span>
-    </button>
-    <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="importConfigs(event)">
-  </div>
-  <p class="savemgr-warning" data-i18n="saveMgrWarning">&#9888;&#65038; L'import fusionne les données. En cas de nom identique, la version importée écrase l'existante.</p>
-  <p class="help" id="import-feedback" style="min-height:.9rem;text-align:center"></p>
-</div>
-
 <!-- ── Erase manager modal ── -->
 <div class="erasemgr-overlay" id="erasemgr-overlay" onclick="closeEraseMgr()"></div>
 <div class="erasemgr-modal" id="erasemgr-modal" onclick="event.stopPropagation()">
@@ -1548,14 +1556,6 @@ const i18n = {
     saveMgrTitle:'Gestion des sauvegardes',
     saveMgrDesc:'Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.',
     saveMgrWarning:'⚠︎ L\'import fusionne les données. En cas de nom identique, la version importée écrase l\'existante.',
-    eraseMgrTitle:'Supprimer des données',
-    pickerBackup:'Backup manager',
-    pickerDataMgr:'Data manager',
-    eraseMgrWheelsFront:'Roues avant',
-    eraseMgrWheelsRear:'Roues arrière',
-    eraseMgrCustomTensios:'Tensiomètres perso',
-    eraseMgrCustomSpokes:'Rayons perso',
-    eraseMgrDel:'✕',
     asymWarn:'Moyeu symétrique : Jante asymétrique déconseillée.',
     asymTip:'Décalage des trous de rayons des jantes asymétriques',
     tmTitle:'Module Tension', tmCalc:'Calculateur',
@@ -1606,6 +1606,14 @@ const i18n = {
     ctErrName:'Veuillez saisir un nom.',
     ctErrDup:'Ce nom existe déjà.',
     ctMyTensios:'★ MES TENSIOS',
+    pickerBackup:'Backup manager',
+    pickerDataMgr:'Data manager',
+    eraseMgrTitle:'Supprimer des données',
+    eraseMgrWheelsFront:'Roues avant',
+    eraseMgrWheelsRear:'Roues arrière',
+    eraseMgrCustomTensios:'Tensiomètres perso',
+    eraseMgrCustomSpokes:'Rayons perso',
+    eraseMgrDel:'✕',
     diffLabel:'Différentiel',
     radialDiscWarn:'⚠ Incompatible roue à disque',
     diamTrouWarn:'⚠ Valeur incohérente',
@@ -1647,14 +1655,6 @@ const i18n = {
     saveMgrTitle:'Backup manager',
     saveMgrDesc:'The JSON file contains all your data: wheel configurations, tension charts and custom tensiometers.',
     saveMgrWarning:'⚠︎ Import merges data. If a name already exists, the imported version overwrites it.',
-    eraseMgrTitle:'Delete data',
-    pickerBackup:'Backup manager',
-    pickerDataMgr:'Data manager',
-    eraseMgrWheelsFront:'Front wheels',
-    eraseMgrWheelsRear:'Rear wheels',
-    eraseMgrCustomTensios:'Custom tensiometers',
-    eraseMgrCustomSpokes:'Custom spokes',
-    eraseMgrDel:'✕',
     asymWarn:'Symmetric hub: Asymmetric rim not recommended.',
     asymTip:'Offset Spoke Bed for Asymmetric Rim',
     tmTitle:'Tension Module', tmCalc:'Calculator',
@@ -1705,6 +1705,14 @@ const i18n = {
     ctErrName:'Please enter a name.',
     ctErrDup:'This name already exists.',
     ctMyTensios:'★ MY TENSIOS',
+    pickerBackup:'Backup manager',
+    pickerDataMgr:'Data manager',
+    eraseMgrTitle:'Delete data',
+    eraseMgrWheelsFront:'Front wheels',
+    eraseMgrWheelsRear:'Rear wheels',
+    eraseMgrCustomTensios:'Custom tensiometers',
+    eraseMgrCustomSpokes:'Custom spokes',
+    eraseMgrDel:'✕',
     diffLabel:'Differential',
     radialDiscWarn:'⚠ Disc brake incompatible',
     diamTrouWarn:'⚠ Inconsistent value',
@@ -2842,7 +2850,7 @@ function renderConfigsList() {
 }
 
 // ── Save manager modal ────────────────────────────────────────────────────────
-// ── Picker (disquette → choix) ────────────────────────────────────────────────
+// ── Picker ────────────────────────────────────────────────────────────────────
 function openPicker() {
   $id('picker-overlay').classList.add('show');
   $id('picker-popup').classList.add('show');
@@ -2860,137 +2868,6 @@ function openSaveMgr() {
 function closeSaveMgr() {
   $id('savemgr-overlay').classList.remove('show');
   $id('savemgr-modal').classList.remove('show');
-}
-
-// ── Erase manager ─────────────────────────────────────────────────────────────
-function openEraseMgr() {
-  renderEraseMgr();
-  $id('erasemgr-overlay').classList.add('show');
-  $id('erasemgr-modal').classList.add('show');
-  document.body.style.overflow = 'hidden';
-}
-function closeEraseMgr() {
-  $id('erasemgr-overlay').classList.remove('show');
-  $id('erasemgr-modal').classList.remove('show');
-  document.body.style.overflow = '';
-}
-
-function renderEraseMgr() {
-  const body = $id('erasemgr-body');
-  body.innerHTML = '';
-
-  const configs = loadConfigs();
-  const charts  = ccLoadAll();
-  const tensios = ctLoadAll();
-
-  const acc = document.createElement('div');
-  acc.className = 'erasemgr-acc';
-  body.appendChild(acc);
-
-  // ── Helper: item row ────────────────────────────────────────────────────
-  function makeItem(name, sub, onDel) {
-    const div = document.createElement('div');
-    div.className = 'erasemgr-item';
-    const info = document.createElement('div');
-    info.className = 'erasemgr-item-info';
-    const nameEl = document.createElement('div');
-    nameEl.className = 'erasemgr-item-name';
-    nameEl.textContent = name;
-    info.appendChild(nameEl);
-    if (sub) {
-      const subEl = document.createElement('div');
-      subEl.className = 'erasemgr-item-sub';
-      subEl.textContent = sub;
-      info.appendChild(subEl);
-    }
-    const btn = document.createElement('button');
-    btn.className = 'erasemgr-item-btn';
-    btn.textContent = t('eraseMgrDel');
-    btn.addEventListener('click', e => { e.stopPropagation(); onDel(); renderEraseMgr(); });
-    div.appendChild(info);
-    div.appendChild(btn);
-    return div;
-  }
-
-  // ── Helper: accordion section ───────────────────────────────────────────
-  function makeAccSection(labelKey, items) {
-    const wrap = document.createElement('div');
-    const empty = items.length === 0;
-
-    const head = document.createElement('div');
-    head.className = 'erasemgr-acc-head' + (empty ? ' disabled' : '');
-
-    const label = document.createElement('span');
-    label.className = 'erasemgr-acc-label';
-    label.textContent = t(labelKey);
-
-    const count = document.createElement('span');
-    count.className = 'erasemgr-acc-count';
-    count.textContent = items.length;
-
-    const chev = document.createElement('span');
-    chev.className = 'erasemgr-acc-chevron';
-    chev.textContent = '›';
-
-    head.appendChild(label);
-    head.appendChild(count);
-    head.appendChild(chev);
-    wrap.appendChild(head);
-
-    const bodyEl = document.createElement('div');
-    bodyEl.className = 'erasemgr-acc-body';
-    items.forEach(el => bodyEl.appendChild(el));
-    wrap.appendChild(bodyEl);
-
-    if (!empty) {
-      head.addEventListener('click', () => {
-        const open = bodyEl.classList.toggle('open');
-        chev.style.transform = open ? 'rotate(90deg)' : '';
-      });
-    }
-
-    return wrap;
-  }
-
-  // ── Roues avant ─────────────────────────────────────────────────────────
-  const frontItems = configs
-    .map((cfg, i) => ({ cfg, i }))
-    .filter(({ cfg }) => (cfg.state?.wtype || 'avant') === 'avant')
-    .map(({ cfg, i }) => makeItem(cfg.name, null, () => deleteConfig(i)));
-  acc.appendChild(makeAccSection('eraseMgrWheelsFront', frontItems));
-
-  // ── Roues arrière ────────────────────────────────────────────────────────
-  const rearItems = configs
-    .map((cfg, i) => ({ cfg, i }))
-    .filter(({ cfg }) => (cfg.state?.wtype || 'avant') === 'arriere')
-    .map(({ cfg, i }) => makeItem(cfg.name, null, () => deleteConfig(i)));
-  acc.appendChild(makeAccSection('eraseMgrWheelsRear', rearItems));
-
-  // ── Tensiomètres perso ───────────────────────────────────────────────────
-  const tensioItems = tensios.map(ct => makeItem(
-    CC_PREFIX + ct.name, null,
-    () => { const idx = ctLoadAll().findIndex(c => c.id === ct.id); if (idx >= 0) ctDelete(idx); }
-  ));
-  acc.appendChild(makeAccSection('eraseMgrCustomTensios', tensioItems));
-
-  // ── Rayons perso (tous tensiomètres) ────────────────────────────────────
-  const fixedTensioLabels = { wf:'W. FANATYK', pt:'PARK TOOL TM-1', dt:'DT SWISS', pk:'P&KLIE', un:'UNIOR 1752' };
-
-  function tensioLabel(tensioKey) {
-    if (fixedTensioLabels[tensioKey]) return fixedTensioLabels[tensioKey];
-    if (tensioKey === 'wf_old' || tensioKey === 'wf_new') return 'W. FANATYK';
-    const ct = tensios.find(c => 'ct_' + c.id === tensioKey);
-    return ct ? CC_PREFIX + ct.name : tensioKey;
-  }
-
-  const spokeItems = charts.map(cc => {
-    return { cc, globalIdx: ccLoadAll().findIndex(c => c.name === cc.name && c.tensioKey === cc.tensioKey) };
-  }).map(({ cc, globalIdx }) => makeItem(
-    CC_PREFIX + cc.name,
-    tensioLabel(cc.tensioKey),
-    () => ccDeleteDirect(globalIdx, null)
-  ));
-  acc.appendChild(makeAccSection('eraseMgrCustomSpokes', spokeItems));
 }
 
 // ── Export / Import JSON (toutes données) ─────────────────────────────────────
@@ -3592,6 +3469,115 @@ function ctRefreshAll() {
 
 // Initialiser les tensiomètres perso au démarrage
 ctRefreshAll();
+
+// ── Erase manager ─────────────────────────────────────────────────────────────
+function openEraseMgr() {
+  renderEraseMgr();
+  $id('erasemgr-overlay').classList.add('show');
+  $id('erasemgr-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeEraseMgr() {
+  $id('erasemgr-overlay').classList.remove('show');
+  $id('erasemgr-modal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+function renderEraseMgr() {
+  const body = $id('erasemgr-body');
+  body.innerHTML = '';
+  const configs = loadConfigs();
+  const charts  = ccLoadAll();
+  const tensios = ctLoadAll();
+  const acc = document.createElement('div');
+  acc.className = 'erasemgr-acc';
+  body.appendChild(acc);
+
+  function makeItem(name, sub, onDel) {
+    const div = document.createElement('div');
+    div.className = 'erasemgr-item';
+    const info = document.createElement('div');
+    info.className = 'erasemgr-item-info';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'erasemgr-item-name';
+    nameEl.textContent = name;
+    info.appendChild(nameEl);
+    if (sub) {
+      const subEl = document.createElement('div');
+      subEl.className = 'erasemgr-item-sub';
+      subEl.textContent = sub;
+      info.appendChild(subEl);
+    }
+    const btn = document.createElement('button');
+    btn.className = 'erasemgr-item-btn';
+    btn.textContent = t('eraseMgrDel');
+    btn.addEventListener('click', e => { e.stopPropagation(); onDel(); renderEraseMgr(); });
+    div.appendChild(info);
+    div.appendChild(btn);
+    return div;
+  }
+
+  function makeAccSection(labelKey, items) {
+    const wrap  = document.createElement('div');
+    const empty = items.length === 0;
+    const head  = document.createElement('div');
+    head.className = 'erasemgr-acc-head' + (empty ? ' disabled' : '');
+    const label = document.createElement('span');
+    label.className = 'erasemgr-acc-label';
+    label.textContent = t(labelKey);
+    const count = document.createElement('span');
+    count.className = 'erasemgr-acc-count';
+    count.textContent = items.length;
+    const chev = document.createElement('span');
+    chev.className = 'erasemgr-acc-chevron';
+    chev.textContent = '›';
+    head.appendChild(label); head.appendChild(count); head.appendChild(chev);
+    wrap.appendChild(head);
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'erasemgr-acc-body';
+    items.forEach(el => bodyEl.appendChild(el));
+    wrap.appendChild(bodyEl);
+    if (!empty) {
+      head.addEventListener('click', () => {
+        const open = bodyEl.classList.toggle('open');
+        chev.style.transform = open ? 'rotate(90deg)' : '';
+      });
+    }
+    return wrap;
+  }
+
+  // Roues avant
+  const frontItems = configs.map((cfg, i) => ({ cfg, i }))
+    .filter(({ cfg }) => (cfg.state?.wtype || 'avant') === 'avant')
+    .map(({ cfg, i }) => makeItem(cfg.name, null, () => deleteConfig(i)));
+  acc.appendChild(makeAccSection('eraseMgrWheelsFront', frontItems));
+
+  // Roues arrière
+  const rearItems = configs.map((cfg, i) => ({ cfg, i }))
+    .filter(({ cfg }) => (cfg.state?.wtype || 'avant') === 'arriere')
+    .map(({ cfg, i }) => makeItem(cfg.name, null, () => deleteConfig(i)));
+  acc.appendChild(makeAccSection('eraseMgrWheelsRear', rearItems));
+
+  // Tensiomètres perso
+  const tensioItems = tensios.map(ct => makeItem(
+    CC_PREFIX + ct.name, null,
+    () => { const idx = ctLoadAll().findIndex(c => c.id === ct.id); if (idx >= 0) ctDelete(idx); }
+  ));
+  acc.appendChild(makeAccSection('eraseMgrCustomTensios', tensioItems));
+
+  // Rayons perso
+  const fixedLabels = { wf:'W. FANATYK', pt:'PARK TOOL TM-1', dt:'DT SWISS', pk:'P&KLIE', un:'UNIOR 1752' };
+  function tensioLabel(key) {
+    if (fixedLabels[key]) return fixedLabels[key];
+    if (key === 'wf_old' || key === 'wf_new') return 'W. FANATYK';
+    const ct = tensios.find(c => 'ct_' + c.id === key);
+    return ct ? CC_PREFIX + ct.name : key;
+  }
+  const spokeItems = charts.map(cc => {
+    const globalIdx = ccLoadAll().findIndex(c => c.name === cc.name && c.tensioKey === cc.tensioKey);
+    return makeItem(CC_PREFIX + cc.name, tensioLabel(cc.tensioKey), () => ccDeleteDirect(globalIdx, null));
+  });
+  acc.appendChild(makeAccSection('eraseMgrCustomSpokes', spokeItems));
+}
 
 // ── Obtenir la table active (objet {spokeKey: [[defl,kgf]…]}) ─────────────────
 function tmGetActiveTable() {
