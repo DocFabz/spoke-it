@@ -5069,11 +5069,15 @@ async function tmScreenshot(e) {
 
   // Constantes de mise en page
   const W      = radar.width;
-  const PAD_H  = 28;   // espace entre radar et stats
-  const LINE_H = 20;
+  const SCALE  = 0.65;
+  const rW     = Math.round(W * SCALE);
+  const rH     = Math.round(radar.height * SCALE);
+  const rX     = Math.round((W - rW) / 2);   // centré horizontalement
+  const PAD_H  = 24;
+  const LINE_H = 24;
   const BPADX  = 16;
-  const BPADY  = 12;
-  const LABELH = 22;
+  const BPADY  = 14;
+  const LABELH = 24;
   const COLW   = Math.floor(W / 2);
   function blockH(b) { return BPADY * 2 + LABELH + b.entries.length * LINE_H; }
 
@@ -5094,14 +5098,12 @@ async function tmScreenshot(e) {
 
   // Barre de titre (nom de la roue chargée)
   const wheelName  = document.getElementById('tm-cfg-loaded-text')?.textContent.trim() || '';
-  const wheelLabel = typeof wtype !== 'undefined'
-    ? (wtype === 'arriere' ? t('rearWheel') : t('frontWheel'))
-    : '';
+  const wheelLabel = wtype === 'arriere' ? t('rearWheel') : t('frontWheel');
   const titleBarH  = wheelName ? 36 : 0;
 
   // Hauteur totale du canvas de sortie
   const statsH = statBlocks.length ? Math.max(...statBlocks.map(blockH)) + 24 : 0;
-  const totalH = titleBarH + radar.height + (statsH ? PAD_H + statsH : 0);
+  const totalH = titleBarH + rH + (statsH ? PAD_H + statsH : 0);
 
   // Créer le canvas off-screen
   const off = document.createElement('canvas');
@@ -5131,19 +5133,19 @@ async function tmScreenshot(e) {
     ctx.fillText(wheelName, W / 2, titleBarH / 2);
   }
 
-  // Radar
-  ctx.drawImage(radar, 0, titleBarH);
+  // Radar (réduit à 65%, centré)
+  ctx.drawImage(radar, rX, titleBarH, rW, rH);
 
   // Blocs de stats
   if (statBlocks.length) {
-    const statsY = titleBarH + radar.height + PAD_H;
+    const statsY = titleBarH + rH + PAD_H;
 
     // Séparateur
     ctx.strokeStyle = 'rgba(255,255,255,0.07)';
     ctx.lineWidth   = 1;
     ctx.beginPath();
-    ctx.moveTo(24, titleBarH + radar.height + PAD_H / 2);
-    ctx.lineTo(W - 24, titleBarH + radar.height + PAD_H / 2);
+    ctx.moveTo(24, titleBarH + rH + PAD_H / 2);
+    ctx.lineTo(W - 24, titleBarH + rH + PAD_H / 2);
     ctx.stroke();
 
     statBlocks.forEach((block, idx) => {
@@ -5172,7 +5174,7 @@ async function tmScreenshot(e) {
       ctx.stroke();
 
       // Label
-      ctx.font         = '600 10px DM Sans, sans-serif';
+      ctx.font         = '600 12px DM Sans, sans-serif';
       ctx.fillStyle    = warm ? 'rgba(232,146,124,0.9)' : 'rgba(126,200,227,0.9)';
       ctx.textAlign    = 'left';
       ctx.textBaseline = 'top';
@@ -5181,11 +5183,11 @@ async function tmScreenshot(e) {
       // Lignes clé / valeur
       block.entries.forEach((row, ri) => {
         const ry = statsY + BPADY + LABELH + ri * LINE_H;
-        ctx.font      = '300 11px DM Sans, sans-serif';
+        ctx.font      = '300 13px DM Sans, sans-serif';
         ctx.fillStyle = 'rgba(154,170,187,0.85)';
         ctx.textAlign = 'left';
         ctx.fillText(row.key, mx + BPADX, ry);
-        ctx.font      = '400 11px DM Mono, monospace';
+        ctx.font      = '400 14px DM Mono, monospace';
         ctx.fillStyle = '#dce4ed';
         ctx.textAlign = 'right';
         ctx.fillText(row.val, mx + mw - BPADX, ry);
