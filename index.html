@@ -5067,18 +5067,14 @@ async function tmScreenshot(e) {
   const statsEl = document.getElementById('tm-stats');
   if (!radar) return;
 
-  // Constantes de mise en page
-  const W      = radar.width;
-  const SCALE  = 0.65;
-  const rW     = Math.round(W * SCALE);
-  const rH     = Math.round(radar.height * SCALE);
-  const rX     = Math.round((W - rW) / 2);   // centré horizontalement
-  const PAD_H  = 24;
-  const LINE_H = 24;
-  const BPADX  = 16;
-  const BPADY  = 14;
-  const LABELH = 24;
-  const COLW   = Math.floor(W / 2);
+  // Constantes de mise en page — format portrait smartphone
+  const W      = 800;
+  const MARGIN = 24;
+  const PAD_H  = 28;
+  const LINE_H = 26;
+  const BPADX  = 20;
+  const BPADY  = 16;
+  const LABELH = 26;
   function blockH(b) { return BPADY * 2 + LABELH + b.entries.length * LINE_H; }
 
   // Lire les blocs de stats depuis le DOM
@@ -5099,11 +5095,17 @@ async function tmScreenshot(e) {
   // Barre de titre (nom de la roue chargée)
   const wheelName  = document.getElementById('tm-cfg-loaded-text')?.textContent.trim() || '';
   const wheelLabel = wtype === 'arriere' ? t('rearWheel') : t('frontWheel');
-  const titleBarH  = wheelName ? 36 : 0;
+  const titleBarH  = wheelName ? 48 : 0;
 
-  // Hauteur totale du canvas de sortie
-  const statsH = statBlocks.length ? Math.max(...statBlocks.map(blockH)) + 24 : 0;
-  const totalH = titleBarH + rH + (statsH ? PAD_H + statsH : 0);
+  // Radar centré, 70% de la largeur
+  const rW = Math.round(W * 0.70);
+  const rH = Math.round(rW * (radar.height / radar.width));
+  const rX = Math.round((W - rW) / 2);
+
+  // Blocs stats empilés verticalement
+  const statsBH  = statBlocks.reduce((acc, b) => acc + blockH(b) + 12, 0) - 12;
+  const statsH   = statBlocks.length ? PAD_H + statsBH + MARGIN : 0;
+  const totalH   = titleBarH + rH + statsH + MARGIN;
 
   // Créer le canvas off-screen
   const off = document.createElement('canvas');
@@ -5123,75 +5125,76 @@ async function tmScreenshot(e) {
     ctx.lineWidth   = 1;
     ctx.beginPath(); ctx.moveTo(0, titleBarH); ctx.lineTo(W, titleBarH); ctx.stroke();
     ctx.textBaseline = 'middle';
-    ctx.font      = '500 10px DM Sans, sans-serif';
+    ctx.font      = '500 13px DM Sans, sans-serif';
     ctx.fillStyle = 'rgba(126,200,227,0.5)';
     ctx.textAlign = 'left';
-    ctx.fillText(wheelLabel.toUpperCase(), 20, titleBarH / 2);
-    ctx.font      = '500 13px DM Mono, monospace';
+    ctx.fillText(wheelLabel.toUpperCase(), MARGIN, titleBarH / 2);
+    ctx.font      = '500 16px DM Mono, monospace';
     ctx.fillStyle = 'rgba(126,200,227,0.9)';
     ctx.textAlign = 'center';
     ctx.fillText(wheelName, W / 2, titleBarH / 2);
   }
 
-  // Radar (réduit à 65%, centré)
+  // Radar centré
   ctx.drawImage(radar, rX, titleBarH, rW, rH);
 
-  // Blocs de stats
+  // Blocs de stats empilés
   if (statBlocks.length) {
-    const statsY = titleBarH + rH + PAD_H;
-
-    // Séparateur
+    const sepY = titleBarH + rH + PAD_H / 2;
     ctx.strokeStyle = 'rgba(255,255,255,0.07)';
     ctx.lineWidth   = 1;
     ctx.beginPath();
-    ctx.moveTo(24, titleBarH + rH + PAD_H / 2);
-    ctx.lineTo(W - 24, titleBarH + rH + PAD_H / 2);
+    ctx.moveTo(MARGIN, sepY); ctx.lineTo(W - MARGIN, sepY);
     ctx.stroke();
 
-    statBlocks.forEach((block, idx) => {
-      const mx = idx === 0 ? 8 : COLW + 4;
-      const mw = COLW - 12;
-      const bh = blockH(block);
-      const rx = 8;
-      const warm   = block.isFo;
+    let curY = titleBarH + rH + PAD_H;
+
+    statBlocks.forEach(block => {
+      const bh   = blockH(block);
+      const mx   = MARGIN;
+      const mw   = W - MARGIN * 2;
+      const rx   = 10;
+      const warm = block.isFo;
 
       // Fond + bordure arrondie
       ctx.fillStyle   = warm ? 'rgba(232,146,124,0.06)' : 'rgba(126,200,227,0.06)';
       ctx.strokeStyle = warm ? 'rgba(232,146,124,0.28)' : 'rgba(126,200,227,0.28)';
       ctx.lineWidth   = 1;
       ctx.beginPath();
-      ctx.moveTo(mx + rx, statsY);
-      ctx.lineTo(mx + mw - rx, statsY);
-      ctx.arcTo(mx + mw, statsY,      mx + mw, statsY + rx,      rx);
-      ctx.lineTo(mx + mw, statsY + bh - rx);
-      ctx.arcTo(mx + mw, statsY + bh, mx + mw - rx, statsY + bh, rx);
-      ctx.lineTo(mx + rx, statsY + bh);
-      ctx.arcTo(mx,       statsY + bh, mx, statsY + bh - rx,     rx);
-      ctx.lineTo(mx,      statsY + rx);
-      ctx.arcTo(mx,       statsY,      mx + rx, statsY,           rx);
+      ctx.moveTo(mx + rx, curY);
+      ctx.lineTo(mx + mw - rx, curY);
+      ctx.arcTo(mx + mw, curY,      mx + mw, curY + rx,      rx);
+      ctx.lineTo(mx + mw, curY + bh - rx);
+      ctx.arcTo(mx + mw, curY + bh, mx + mw - rx, curY + bh, rx);
+      ctx.lineTo(mx + rx, curY + bh);
+      ctx.arcTo(mx,       curY + bh, mx, curY + bh - rx,     rx);
+      ctx.lineTo(mx,      curY + rx);
+      ctx.arcTo(mx,       curY,      mx + rx, curY,           rx);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
 
       // Label
-      ctx.font         = '600 12px DM Sans, sans-serif';
+      ctx.font         = '600 13px DM Sans, sans-serif';
       ctx.fillStyle    = warm ? 'rgba(232,146,124,0.9)' : 'rgba(126,200,227,0.9)';
       ctx.textAlign    = 'left';
       ctx.textBaseline = 'top';
-      ctx.fillText(block.label.toUpperCase(), mx + BPADX, statsY + BPADY);
+      ctx.fillText(block.label.toUpperCase(), mx + BPADX, curY + BPADY);
 
       // Lignes clé / valeur
       block.entries.forEach((row, ri) => {
-        const ry = statsY + BPADY + LABELH + ri * LINE_H;
-        ctx.font      = '300 13px DM Sans, sans-serif';
+        const ry = curY + BPADY + LABELH + ri * LINE_H;
+        ctx.font      = '300 14px DM Sans, sans-serif';
         ctx.fillStyle = 'rgba(154,170,187,0.85)';
         ctx.textAlign = 'left';
         ctx.fillText(row.key, mx + BPADX, ry);
-        ctx.font      = '400 14px DM Mono, monospace';
+        ctx.font      = '400 15px DM Mono, monospace';
         ctx.fillStyle = '#dce4ed';
         ctx.textAlign = 'right';
         ctx.fillText(row.val, mx + mw - BPADX, ry);
       });
+
+      curY += bh + 12;
     });
   }
 
