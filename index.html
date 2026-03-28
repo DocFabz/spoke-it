@@ -5059,6 +5059,33 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
 }
 
 
+// ── Helpers canvas ────────────────────────────────────────────────────────────
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);    ctx.arcTo(x + w, y,     x + w, y + r,     r);
+  ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);    ctx.arcTo(x,     y + h, x,     y + h - r, r);
+  ctx.lineTo(x,     y + r);    ctx.arcTo(x,     y,     x + r, y,         r);
+  ctx.closePath();
+}
+
+function drawHexIcon(ctx, cx, cy, r, color) {
+  function hexPath(radius) {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = (i * Math.PI) / 3 - Math.PI / 6;
+      i === 0 ? ctx.moveTo(cx + radius * Math.cos(a), cy + radius * Math.sin(a))
+              : ctx.lineTo(cx + radius * Math.cos(a), cy + radius * Math.sin(a));
+    }
+    ctx.closePath();
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = 1.3;
+  hexPath(r);        ctx.stroke();
+  hexPath(r * 0.52); ctx.stroke();
+}
+
 // ── Screenshot diagramme de tension ──────────────────────────────────────────
 async function tmScreenshot(e) {
   if (e) e.stopPropagation();
@@ -5067,14 +5094,15 @@ async function tmScreenshot(e) {
   const statsEl = document.getElementById('tm-stats');
   if (!radar) return;
 
-  // Constantes de mise en page — format portrait smartphone
-  const W      = 800;
-  const MARGIN = 24;
-  const PAD_H  = 28;
-  const LINE_H = 26;
-  const BPADX  = 20;
-  const BPADY  = 16;
-  const LABELH = 26;
+  // Constantes de mise en page
+  const W       = 640;   // largeur fixe, format portrait smartphone
+  const CARD_MX = 20;    // marge extérieure gauche/droite
+  const PAD     = 24;    // padding interne de la card
+  const LINE_H  = 26;
+  const BPADY   = 14;
+  const LABELH  = 24;
+  const STAT_GAP = 10;
+  const CARD_R  = 16;
   function blockH(b) { return BPADY * 2 + LABELH + b.entries.length * LINE_H; }
 
   // Lire les blocs de stats depuis le DOM
@@ -5092,109 +5120,132 @@ async function tmScreenshot(e) {
     statBlocks.push({ label: label?.textContent.trim() || '', isFo, entries });
   });
 
-  // Barre de titre (nom de la roue chargée)
+  // Nom + type de roue, légendes
   const wheelName  = document.getElementById('tm-cfg-loaded-text')?.textContent.trim() || '';
   const wheelLabel = wtype === 'arriere' ? t('rearWheel') : t('frontWheel');
-  const titleBarH  = wheelName ? 48 : 0;
+  const legFo      = document.getElementById('radar-leg-fo')?.textContent.trim() || 'DS';
+  const legFa      = document.getElementById('radar-leg-fa')?.textContent.trim() || 'NDS';
 
-  // Radar centré, 70% de la largeur
-  const rW = Math.round(W * 0.70);
+  // Dimensions internes
+  const cardW  = W - CARD_MX * 2;
+  const innerW = cardW - PAD * 2;
+
+  // Radar : 88% de la largeur interne, ratio préservé
+  const rW = Math.round(innerW * 0.88);
   const rH = Math.round(rW * (radar.height / radar.width));
-  const rX = Math.round((W - rW) / 2);
+  const rX = CARD_MX + PAD + Math.round((innerW - rW) / 2);
 
-  // Blocs stats empilés verticalement
-  const statsBH  = statBlocks.reduce((acc, b) => acc + blockH(b) + 12, 0) - 12;
-  const statsH   = statBlocks.length ? PAD_H + statsBH + MARGIN : 0;
-  const totalH   = titleBarH + rH + statsH + MARGIN;
+  // Hauteurs des sections
+  const headerH = 44;
+  const legendH = 32;
+  const statsBH = statBlocks.length
+    ? statBlocks.reduce((acc, b) => acc + blockH(b) + STAT_GAP, 0) - STAT_GAP
+    : 0;
+  const statsH  = statBlocks.length ? statsBH + PAD : 0;
+  const cardH   = headerH + rH + legendH + statsH + PAD;
+  const totalH  = PAD + cardH + PAD;
 
-  // Créer le canvas off-screen
+  // Canvas off-screen
   const off = document.createElement('canvas');
   off.width  = W;
   off.height = totalH;
   const ctx  = off.getContext('2d');
 
-  // Fond
+  // Fond global
   ctx.fillStyle = '#181c24';
   ctx.fillRect(0, 0, W, totalH);
 
-  // Barre de titre
+  // Card
+  const cardX = CARD_MX, cardY = PAD;
+  ctx.fillStyle   = '#232a38';
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth   = 1;
+  roundRect(ctx, cardX, cardY, cardW, cardH, CARD_R);
+  ctx.fill(); ctx.stroke();
+
+  // Header : icône + titre + (roue si chargée)
+  const hY = cardY + headerH / 2;
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  ctx.moveTo(cardX + PAD, cardY + headerH);
+  ctx.lineTo(cardX + cardW - PAD, cardY + headerH);
+  ctx.stroke();
+
+  drawHexIcon(ctx, cardX + PAD + 6, hY, 6, 'rgba(126,200,227,0.7)');
+
+  ctx.font         = '600 11px DM Sans, sans-serif';
+  ctx.fillStyle    = 'rgba(126,200,227,0.9)';
+  ctx.textAlign    = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('TENSION DIAGRAM', cardX + PAD + 18, hY);
+
   if (wheelName) {
-    ctx.fillStyle = 'rgba(126,200,227,0.04)';
-    ctx.fillRect(0, 0, W, titleBarH);
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-    ctx.lineWidth   = 1;
-    ctx.beginPath(); ctx.moveTo(0, titleBarH); ctx.lineTo(W, titleBarH); ctx.stroke();
-    ctx.textBaseline = 'middle';
-    ctx.font      = '500 13px DM Sans, sans-serif';
-    ctx.fillStyle = 'rgba(126,200,227,0.5)';
-    ctx.textAlign = 'left';
-    ctx.fillText(wheelLabel.toUpperCase(), MARGIN, titleBarH / 2);
-    ctx.font      = '500 16px DM Mono, monospace';
-    ctx.fillStyle = 'rgba(126,200,227,0.9)';
-    ctx.textAlign = 'center';
-    ctx.fillText(wheelName, W / 2, titleBarH / 2);
+    ctx.font      = '400 11px DM Mono, monospace';
+    ctx.fillStyle = 'rgba(126,200,227,0.55)';
+    ctx.textAlign = 'right';
+    ctx.fillText(wheelLabel.toUpperCase() + ' · ' + wheelName, cardX + cardW - PAD, hY);
   }
 
-  // Radar centré
-  ctx.drawImage(radar, rX, titleBarH, rW, rH);
+  // Radar
+  const radarY = cardY + headerH + 8;
+  ctx.drawImage(radar, rX, radarY, rW, rH);
 
-  // Blocs de stats empilés
+  // Légende
+  const legY  = radarY + rH + legendH / 2;
+  const DOT_R = 5;
+  const legMid = cardX + cardW / 2;
+  const legGap = 70;
+
+  ctx.textBaseline = 'middle';
+  ctx.font         = '400 12px DM Sans, sans-serif';
+  ctx.textAlign    = 'left';
+
+  ctx.fillStyle = 'rgba(232,146,124,0.9)';
+  ctx.beginPath(); ctx.arc(legMid - legGap, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(154,170,187,0.85)';
+  ctx.fillText(legFo, legMid - legGap + DOT_R + 5, legY);
+
+  ctx.fillStyle = 'rgba(126,200,227,0.9)';
+  ctx.beginPath(); ctx.arc(legMid + legGap, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(154,170,187,0.85)';
+  ctx.fillText(legFa, legMid + legGap + DOT_R + 5, legY);
+
+  // Blocs stats empilés
   if (statBlocks.length) {
-    const sepY = titleBarH + rH + PAD_H / 2;
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-    ctx.lineWidth   = 1;
-    ctx.beginPath();
-    ctx.moveTo(MARGIN, sepY); ctx.lineTo(W - MARGIN, sepY);
-    ctx.stroke();
-
-    let curY = titleBarH + rH + PAD_H;
+    let curY = radarY + rH + legendH;
+    const bx = cardX + PAD;
+    const bw = cardW - PAD * 2;
 
     statBlocks.forEach(block => {
       const bh   = blockH(block);
-      const mx   = MARGIN;
-      const mw   = W - MARGIN * 2;
-      const rx   = 10;
       const warm = block.isFo;
 
-      // Fond + bordure arrondie
       ctx.fillStyle   = warm ? 'rgba(232,146,124,0.06)' : 'rgba(126,200,227,0.06)';
       ctx.strokeStyle = warm ? 'rgba(232,146,124,0.28)' : 'rgba(126,200,227,0.28)';
       ctx.lineWidth   = 1;
-      ctx.beginPath();
-      ctx.moveTo(mx + rx, curY);
-      ctx.lineTo(mx + mw - rx, curY);
-      ctx.arcTo(mx + mw, curY,      mx + mw, curY + rx,      rx);
-      ctx.lineTo(mx + mw, curY + bh - rx);
-      ctx.arcTo(mx + mw, curY + bh, mx + mw - rx, curY + bh, rx);
-      ctx.lineTo(mx + rx, curY + bh);
-      ctx.arcTo(mx,       curY + bh, mx, curY + bh - rx,     rx);
-      ctx.lineTo(mx,      curY + rx);
-      ctx.arcTo(mx,       curY,      mx + rx, curY,           rx);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+      roundRect(ctx, bx, curY, bw, bh, 8);
+      ctx.fill(); ctx.stroke();
 
-      // Label
-      ctx.font         = '600 13px DM Sans, sans-serif';
+      ctx.font         = '600 11px DM Sans, sans-serif';
       ctx.fillStyle    = warm ? 'rgba(232,146,124,0.9)' : 'rgba(126,200,227,0.9)';
       ctx.textAlign    = 'left';
       ctx.textBaseline = 'top';
-      ctx.fillText(block.label.toUpperCase(), mx + BPADX, curY + BPADY);
+      ctx.fillText(block.label.toUpperCase(), bx + PAD, curY + BPADY);
 
-      // Lignes clé / valeur
       block.entries.forEach((row, ri) => {
         const ry = curY + BPADY + LABELH + ri * LINE_H;
-        ctx.font      = '300 14px DM Sans, sans-serif';
+        ctx.font      = '300 13px DM Sans, sans-serif';
         ctx.fillStyle = 'rgba(154,170,187,0.85)';
         ctx.textAlign = 'left';
-        ctx.fillText(row.key, mx + BPADX, ry);
-        ctx.font      = '400 15px DM Mono, monospace';
+        ctx.fillText(row.key, bx + PAD, ry);
+        ctx.font      = '400 14px DM Mono, monospace';
         ctx.fillStyle = '#dce4ed';
         ctx.textAlign = 'right';
-        ctx.fillText(row.val, mx + mw - BPADX, ry);
+        ctx.fillText(row.val, bx + bw - PAD, ry);
       });
 
-      curY += bh + 12;
+      curY += bh + STAT_GAP;
     });
   }
 
