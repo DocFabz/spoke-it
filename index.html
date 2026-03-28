@@ -931,10 +931,13 @@ input[type=number] { -moz-appearance:textfield }
       <div class="f">
         <!-- ADDON (mode NSD) -->
         <div id="erd-addon-field" style="display:none" class="f">
-          <label class="tip-wrap">ADDON (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="addonTip">Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.</span></label>
+          <label class="tip-wrap">ADDON (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="addonTip">Dépend de l'ecrou utilisé</span></label>
           <select id="ecrou-type" onchange="calcNsd()">
             <option value="" disabled selected hidden>—</option>
-            <option value="1.8">1.8</option><option value="1.9">1.9</option>
+            <option value="1.0">1.0</option><option value="1.1">1.1</option>
+            <option value="1.2">1.2</option><option value="1.3">1.3</option>
+            <option value="1.4">1.4</option><option value="1.5">1.5</option><option value="1.6">1.6</option>
+            <option value="1.7">1.7</option><option value="1.8">1.8</option><option value="1.9">1.9</option>
             <option value="2.0">2.0</option><option value="2.1">2.1</option>
             <option value="2.2">2.2</option><option value="2.3">2.3</option>
             <option value="2.4">2.4</option><option value="2.5">2.5</option>
@@ -1554,7 +1557,7 @@ const i18n = {
     left:'Gauche', right:'Droit',
     pcdTipLeft:'Pitch Circle Diameter Gauche', pcdTipRight:'Pitch Circle Diameter Droit', offset:'Déport', offsetTipLeft:'Centre-Flasque Gauche', offsetTipRight:'Centre-Flasque Droite',
     soLeft:'SO gauche', soRight:'SO droit',
-    erdDirect:'ERD DIRECT', addonTip:"Dépend de l'écrou utilisé. Sélectionner 2 mm pour écrous standard 12 mm.",
+    erdDirect:'ERD DIRECT', addonTip:"Dépend de l'ecrou utilisé",
     erdCalc:'ERD calculé (mm)', rimAsym:'ASYM. JANTE (mm)', spokeSection:'Section de rayon (mm)', spokeSectionTip:"Permet de calculer l'élongation", cross:'Croisement',
     driveSide:'Côté Droit (DS)', nonDriveSide:'Côté Gauche (NDS)',
     rtagDriveSideFront:'CÔTÉ DROIT (DS)', rtagNonDriveSideFront:'CÔTÉ GAUCHE (NDS)',
@@ -1651,7 +1654,7 @@ const i18n = {
     left:'Left', right:'Right',
     pcdTipLeft:'Left Pitch Circle Diameter', pcdTipRight:'Right Pitch Circle Diameter', offset:'Offset', offsetTipLeft:'Left Flange to Center', offsetTipRight:'Right Flange to Center',
     soLeft:'SO left', soRight:'SO right',
-    erdDirect:'ERD DIRECT', addonTip:'Depends on nipple used. Select 2 mm for standard 12 mm nipples.',
+    erdDirect:'ERD DIRECT', addonTip:'Depends on the nipple used',
     erdCalc:'Calculated ERD (mm)', rimAsym:'RIM ASYM. (mm)', spokeSection:'Spoke section (mm)', spokeSectionTip:'Used to calculate elongation', cross:'Lacing',
     driveSide:'Right Side (DS)', nonDriveSide:'Left Side (NDS)',
     rtagDriveSideFront:'RIGHT SIDE (DS)', rtagNonDriveSideFront:'LEFT SIDE (NDS)',
