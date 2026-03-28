@@ -377,6 +377,24 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .arb-delta         { font-family:'DM Mono',monospace; font-size:.8rem; font-weight:500; color:var(--text2) }
 .arb-lbl           { font-size:.53rem; color:var(--text3); letter-spacing:.06em }
 
+/* ── Screenshot button ─────────────────────────────────────────────────────── */
+.tm-screenshot-btn {
+  background: transparent;
+  border: 1px solid var(--border-s);
+  border-radius: var(--rs);
+  color: var(--text3);
+  cursor: pointer;
+  padding: .25rem .45rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.tm-screenshot-btn:hover { border-color: var(--accent); color: var(--accent) }
+.tm-screenshot-btn.flash { border-color: var(--success); color: var(--success) }
+
 /* ── Module Tension ─────────────────────────────────────────────────────────── */
 .module-nav     { display:flex; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); padding:3px; gap:3px; max-width:880px; margin:0 auto 1.2rem; width:100% }
 .module-nav-btn { flex:1; padding:.6rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500; cursor:pointer; transition:all .3s cubic-bezier(.22,1,.36,1); display:flex; align-items:center; justify-content:center; gap:.4rem; letter-spacing:0; text-transform:uppercase; position:relative; overflow:hidden }
@@ -1351,7 +1369,13 @@ input[type=number] { -moz-appearance:textfield }
         <polygon points="12,7 16.5,10 16.5,14 12,17 7.5,14 7.5,10"/>
       </svg>
       <div class="clabel" data-i18n="tmRadarTitle">Diagramme de tension</div>
-      <em id="tm-result-card-chevron" class="chevron">&#8964;</em>
+      <button class="tm-screenshot-btn" id="tm-screenshot-btn" onclick="tmScreenshot(event)" title="Screenshot">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      </button>
+      <em id="tm-result-card-chevron" class="chevron" style="margin-left:auto">&#8964;</em>
     </div>
 
     <div id="tm-result-card-body" style="margin-top:.75rem">
@@ -5032,6 +5056,168 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
   ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
   ctx.fillStyle = 'rgba(150,170,190,0.35)';
   ctx.fill();
+}
+
+
+// ── Screenshot diagramme de tension ──────────────────────────────────────────
+async function tmScreenshot(e) {
+  if (e) e.stopPropagation();
+
+  const radar   = document.getElementById('tm-radar');
+  const statsEl = document.getElementById('tm-stats');
+  if (!radar) return;
+
+  // Constantes de mise en page
+  const W      = radar.width;
+  const PAD_H  = 28;   // espace entre radar et stats
+  const LINE_H = 20;
+  const BPADX  = 16;
+  const BPADY  = 12;
+  const LABELH = 22;
+  const COLW   = Math.floor(W / 2);
+  function blockH(b) { return BPADY * 2 + LABELH + b.entries.length * LINE_H; }
+
+  // Lire les blocs de stats depuis le DOM
+  const statBlocks = [];
+  statsEl && statsEl.querySelectorAll('.tm-stat').forEach(card => {
+    const label = card.querySelector('.tm-stat-label');
+    const isFo  = label && label.classList.contains('fo');
+    const entries = [];
+    card.querySelectorAll('.tm-stat-row').forEach(row => {
+      entries.push({
+        key: (row.querySelector('span:first-child') || {}).textContent?.trim() || '',
+        val: (row.querySelector('strong')           || {}).textContent?.trim() || ''
+      });
+    });
+    statBlocks.push({ label: label?.textContent.trim() || '', isFo, entries });
+  });
+
+  // Barre de titre (nom de la roue chargée)
+  const wheelName  = document.getElementById('tm-cfg-loaded-text')?.textContent.trim() || '';
+  const wheelLabel = typeof wtype !== 'undefined'
+    ? (wtype === 'arriere' ? t('rearWheel') : t('frontWheel'))
+    : '';
+  const titleBarH  = wheelName ? 36 : 0;
+
+  // Hauteur totale du canvas de sortie
+  const statsH = statBlocks.length ? Math.max(...statBlocks.map(blockH)) + 24 : 0;
+  const totalH = titleBarH + radar.height + (statsH ? PAD_H + statsH : 0);
+
+  // Créer le canvas off-screen
+  const off = document.createElement('canvas');
+  off.width  = W;
+  off.height = totalH;
+  const ctx  = off.getContext('2d');
+
+  // Fond
+  ctx.fillStyle = '#181c24';
+  ctx.fillRect(0, 0, W, totalH);
+
+  // Barre de titre
+  if (wheelName) {
+    ctx.fillStyle = 'rgba(126,200,227,0.04)';
+    ctx.fillRect(0, 0, W, titleBarH);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth   = 1;
+    ctx.beginPath(); ctx.moveTo(0, titleBarH); ctx.lineTo(W, titleBarH); ctx.stroke();
+    ctx.textBaseline = 'middle';
+    ctx.font      = '500 10px DM Sans, sans-serif';
+    ctx.fillStyle = 'rgba(126,200,227,0.5)';
+    ctx.textAlign = 'left';
+    ctx.fillText(wheelLabel.toUpperCase(), 20, titleBarH / 2);
+    ctx.font      = '500 13px DM Mono, monospace';
+    ctx.fillStyle = 'rgba(126,200,227,0.9)';
+    ctx.textAlign = 'center';
+    ctx.fillText(wheelName, W / 2, titleBarH / 2);
+  }
+
+  // Radar
+  ctx.drawImage(radar, 0, titleBarH);
+
+  // Blocs de stats
+  if (statBlocks.length) {
+    const statsY = titleBarH + radar.height + PAD_H;
+
+    // Séparateur
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(24, titleBarH + radar.height + PAD_H / 2);
+    ctx.lineTo(W - 24, titleBarH + radar.height + PAD_H / 2);
+    ctx.stroke();
+
+    statBlocks.forEach((block, idx) => {
+      const mx = idx === 0 ? 8 : COLW + 4;
+      const mw = COLW - 12;
+      const bh = blockH(block);
+      const rx = 8;
+      const warm   = block.isFo;
+
+      // Fond + bordure arrondie
+      ctx.fillStyle   = warm ? 'rgba(232,146,124,0.06)' : 'rgba(126,200,227,0.06)';
+      ctx.strokeStyle = warm ? 'rgba(232,146,124,0.28)' : 'rgba(126,200,227,0.28)';
+      ctx.lineWidth   = 1;
+      ctx.beginPath();
+      ctx.moveTo(mx + rx, statsY);
+      ctx.lineTo(mx + mw - rx, statsY);
+      ctx.arcTo(mx + mw, statsY,      mx + mw, statsY + rx,      rx);
+      ctx.lineTo(mx + mw, statsY + bh - rx);
+      ctx.arcTo(mx + mw, statsY + bh, mx + mw - rx, statsY + bh, rx);
+      ctx.lineTo(mx + rx, statsY + bh);
+      ctx.arcTo(mx,       statsY + bh, mx, statsY + bh - rx,     rx);
+      ctx.lineTo(mx,      statsY + rx);
+      ctx.arcTo(mx,       statsY,      mx + rx, statsY,           rx);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Label
+      ctx.font         = '600 10px DM Sans, sans-serif';
+      ctx.fillStyle    = warm ? 'rgba(232,146,124,0.9)' : 'rgba(126,200,227,0.9)';
+      ctx.textAlign    = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(block.label.toUpperCase(), mx + BPADX, statsY + BPADY);
+
+      // Lignes clé / valeur
+      block.entries.forEach((row, ri) => {
+        const ry = statsY + BPADY + LABELH + ri * LINE_H;
+        ctx.font      = '300 11px DM Sans, sans-serif';
+        ctx.fillStyle = 'rgba(154,170,187,0.85)';
+        ctx.textAlign = 'left';
+        ctx.fillText(row.key, mx + BPADX, ry);
+        ctx.font      = '400 11px DM Mono, monospace';
+        ctx.fillStyle = '#dce4ed';
+        ctx.textAlign = 'right';
+        ctx.fillText(row.val, mx + mw - BPADX, ry);
+      });
+    });
+  }
+
+  // Export JPEG — share natif sur mobile, téléchargement sur desktop
+  const jpeg     = off.toDataURL('image/jpeg', 0.92);
+  const filename = 'tension-diagram.jpg';
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  let shared     = false;
+
+  if (isMobile && navigator.canShare) {
+    const blob = await (await fetch(jpeg)).blob();
+    const file = new File([blob], filename, { type: 'image/jpeg' });
+    if (navigator.canShare({ files: [file] })) {
+      try   { await navigator.share({ files: [file], title: 'Tension Diagram' }); shared = true; }
+      catch (err) { if (err.name === 'AbortError') return; }
+    }
+  }
+
+  if (!shared) {
+    const a = document.createElement('a');
+    a.download = filename;
+    a.href     = jpeg;
+    a.click();
+  }
+
+  // Flash confirmation
+  const btn = document.getElementById('tm-screenshot-btn');
+  if (btn) { btn.classList.add('flash'); setTimeout(() => btn.classList.remove('flash'), 800); }
 }
 
 function tmRenderStats(foKgfs, faKgfs) {
