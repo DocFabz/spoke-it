@@ -4412,7 +4412,7 @@ function ccBuildGrid() {
           e.preventDefault();
           const allInps = ccGetOrderedInputs(tbody);
           const ci = allInps.indexOf(this);
-          if (ci < allInps.length - 1) { this.blur(); allInps[ci + 1].focus(); }
+          if (ci < allInps.length - 1) { this.blur(); allInps[ci + 1].focus((_gaugeModal && _gaugeModal.classList.contains('show')) || (_radarModal && _radarModal.classList.contains('show')) ? { preventScroll: true } : undefined); }
           else this.blur();
         }
       });
@@ -4944,7 +4944,7 @@ function tmBuildTable() {
           }
           const allInps = [...document.querySelectorAll(`.defl-inp.${inp.className.split(' ').find(c => c === 'fo' || c === 'fa')}`)];
           const ci = allInps.indexOf(this);
-          if (ci < allInps.length - 1) { this.blur(); allInps[ci + 1].focus(); }
+          if (ci < allInps.length - 1) { this.blur(); allInps[ci + 1].focus((_gaugeModal && _gaugeModal.classList.contains('show')) || (_radarModal && _radarModal.classList.contains('show')) ? { preventScroll: true } : undefined); }
           else this.blur();
         }
       });
