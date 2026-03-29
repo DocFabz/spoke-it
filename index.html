@@ -433,7 +433,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-empty-msg { padding:.8rem; color:var(--text3); font-size:.72rem; font-family:'DM Sans',sans-serif; font-style:italic; text-align:center }
 
 /* Input déflection */
-.defl-inp        { width:62px; background:var(--inp); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'DM Mono',monospace; font-size:.8rem; font-weight:300; padding:.3rem .4rem; text-align:center; transition:border-color .18s, background .18s; -webkit-appearance:none; appearance:none }
+.defl-inp        { width:62px; background:var(--inp); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'DM Mono',monospace; font-size:.8rem; font-weight:300; padding:.3rem .4rem; text-align:center; transition:border-color .18s, background .18s; -webkit-appearance:none; appearance:none; scroll-margin-top: 320px; }
 .defl-inp:focus  { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.02) }
 .defl-inp.fo     { border-color:rgba(232,146,124,.25) }
 .defl-inp.fa     { border-color:rgba(126,200,227,.2) }
@@ -5593,12 +5593,7 @@ function gaugeInit() {
     if (e.target && e.target.classList.contains('defl-inp')) {
       _gaugeLastFocused = e.target;
       var _pw = document.getElementById('panels-wrap');
-      if (_pw && _pw.classList.contains('show')) {
-        // Neutraliser le scroll automatique iOS au focus
-        var _sy = window.scrollY;
-        requestAnimationFrame(function() { window.scrollTo(0, _sy); });
-        gaugeOpen(e.target);
-      }
+      if (_pw && _pw.classList.contains('show')) gaugeOpen(e.target);
     }
   });
 
