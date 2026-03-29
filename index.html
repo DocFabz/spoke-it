@@ -5538,9 +5538,11 @@ function vpPin(el) {
 function vpReposition() {
   if (!_vpModals.length) return;
   var vp   = window.visualViewport;
-  var top  = vp ? (vp.offsetTop + vp.pageTop + 12)  : (window.scrollY + 12);
+  // Sur iOS : offsetTop = position du visual viewport dans le layout viewport
+  // La position absolue correcte = scroll page + offsetTop du visual viewport + marge
+  var top  = vp ? (window.scrollY + vp.offsetTop + 12) : (window.scrollY + 12);
   var vpW  = vp ? vp.width : window.innerWidth;
-  var offL = vp ? (vp.offsetLeft + vp.pageLeft) : 0;
+  var offL = vp ? vp.offsetLeft : 0;
   _vpModals.forEach(function(el) {
     if (!el || !el.classList.contains('show')) return;
     var left = offL + vpW / 2 - (el.offsetWidth || 280) / 2;
