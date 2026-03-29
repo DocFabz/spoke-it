@@ -1777,12 +1777,9 @@ function flashWheelCard(configName) {
 function markModified() {
   if (Date.now() - _lastLoadTime < 500) return;
   if (_loadedConfigName[wtype]) {
-    // Première modification = nouvelle roue : reset tension
-    tmResetData();
+    // Première modification = nouvelle roue : reset complet du module tension
+    tmClearTensio();
     Object.keys(tmStore).forEach(k => delete tmStore[k]);
-    tmActiveKey = tmStoreKey();
-    tmBuildTable();
-    tmHideResult();
   }
   _loadedConfigName[wtype] = null;
   _refreshLoadedBadges();
@@ -3897,6 +3894,10 @@ function tmClearTensio() {
   tmUpdateConvBtn();
   tmBuildTable();
   tmHideResult();
+  // Fermer le body de la card measured deflections
+  const icBody = $id('tm-input-card-body'), icChev = $id('tm-input-card-chevron');
+  if (icBody) icBody.style.display = 'none';
+  if (icChev) icChev.style.transform = '';
   const clearBtn = $id('tm-clear-tensio');
   if (clearBtn) clearBtn.classList.add('inactive');
 }
