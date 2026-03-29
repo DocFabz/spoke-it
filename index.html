@@ -5592,7 +5592,13 @@ function gaugeInit() {
   document.addEventListener('focusin', function(e) {
     if (e.target && e.target.classList.contains('defl-inp')) {
       _gaugeLastFocused = e.target;
-      var _pw = document.getElementById('panels-wrap'); if (_pw && _pw.classList.contains('show')) gaugeOpen(e.target);
+      var _pw = document.getElementById('panels-wrap');
+      if (_pw && _pw.classList.contains('show')) {
+        // Neutraliser le scroll automatique iOS au focus
+        var _sy = window.scrollY;
+        requestAnimationFrame(function() { window.scrollTo(0, _sy); });
+        gaugeOpen(e.target);
+      }
     }
   });
 
@@ -5619,9 +5625,9 @@ var _radarSize = 256; // sera recalculé dynamiquement
       '<button class="radar-panel-close" id="radar-modal-close" title="Fermer">&#x2715;</button>' +
     '</div>' +
     '<canvas id="radar-modal-canvas" style="display:block"></canvas>' +
-    '<div id="radar-modal-avgs" style="display:flex;justify-content:center;gap:1.2rem;width:100%;margin-top:.1rem">' +
-      '<span id="radar-avg-nds" style="font-family:\'DM Mono\',monospace;font-size:.62rem;font-weight:400;color:rgba(232,146,124,0.35)">\u2014</span>' +
-      '<span id="radar-avg-ds"  style="font-family:\'DM Mono\',monospace;font-size:.62rem;font-weight:400;color:rgba(126,200,227,0.35)">\u2014</span>' +
+    '<div id="radar-modal-avgs" style="display:flex;justify-content:center;gap:.5rem;width:100%;margin-top:.1rem;flex-wrap:wrap">' +
+      '<span id="radar-avg-nds" style="font-family:\'DM Mono\',monospace;font-size:.5rem;font-weight:400;color:rgba(232,146,124,0.35);white-space:nowrap">\u2014</span>' +
+      '<span id="radar-avg-ds"  style="font-family:\'DM Mono\',monospace;font-size:.5rem;font-weight:400;color:rgba(126,200,227,0.35);white-space:nowrap">\u2014</span>' +
     '</div>';
   _radarPanel.appendChild(inner);
 
