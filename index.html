@@ -682,97 +682,69 @@ input[type=number] { -moz-appearance:textfield }
   .radar-legend { gap: .7rem; margin-top: .5rem; }
 }
 
-/* ── Radar modal ─────────────────────────────────────────────────────────── */
-.radar-modal {
-  position: fixed;
-  bottom: auto;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 9994;
+/* ── Panneaux sticky compteur + radar ────────────────────────────────────── */
+#panels-wrap {
+  position: sticky;
+  top: 8px;
+  z-index: 100;
+  display: none;
+  flex-direction: row;
+  gap: .5rem;
+  align-items: stretch;
+  width: 100%;
+  margin-top: .6rem;
+  box-sizing: border-box;
+}
+#panels-wrap.show { display: flex; }
+#gauge-panel, #radar-panel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.gauge-panel, .radar-panel-inner {
   background: rgba(18, 22, 34, 0.97);
   border: 1px solid rgba(126, 200, 227, 0.2);
   border-radius: 14px;
-  padding: .7rem .9rem .6rem;
-  box-shadow: 0 12px 48px rgba(0,0,0,0.75), 0 0 0 1px rgba(126,200,227,0.06) inset;
-  pointer-events: auto;
-  display: none;
+  padding: .55rem .6rem .5rem;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.45);
+  display: flex;
   flex-direction: column;
   align-items: center;
-  gap: .28rem;
+  gap: .2rem;
+  width: 100%;
+  flex: 1;
+  box-sizing: border-box;
 }
-.radar-modal.show {
-  display: flex;
-  animation: gauge-pop .22s cubic-bezier(.22,1,.36,1) both;
-}
-.radar-modal-header {
+#gauge-canvas, #radar-modal-canvas { display: block; }
+.gauge-panel-header, .radar-panel-header {
   display: flex; align-items: center; justify-content: space-between;
   width: 100%; gap: .4rem; margin-bottom: .04rem;
 }
-.radar-modal-title {
+.gauge-panel-title, .radar-panel-title {
   font-family: 'DM Mono', monospace;
   font-size: .48rem; font-weight: 600;
   letter-spacing: .18em; text-transform: uppercase;
   color: var(--text3);
-}
-.radar-modal-close {
-  background: none; border: none;
-  color: var(--text3); font-size: .7rem;
-  cursor: pointer; line-height: 1; padding: .1rem .2rem;
-  border-radius: 4px; transition: color .2s; flex-shrink: 0;
-}
-.radar-modal-close:hover { color: var(--warm); }
-.gauge-modal {
-  position: fixed;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 9995;
-  background: rgba(18, 22, 34, 0.97);
-  border: 1px solid rgba(126, 200, 227, 0.2);
-  border-radius: 14px;
-  padding: .7rem .9rem .6rem;
-  box-shadow: 0 12px 48px rgba(0,0,0,0.75), 0 0 0 1px rgba(126,200,227,0.06) inset;
-  pointer-events: auto;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  gap: .28rem;
-}
-.gauge-modal.show {
-  display: flex;
-  animation: gauge-pop .22s cubic-bezier(.22,1,.36,1) both;
-}
-@keyframes gauge-pop {
-  from { opacity: 0; transform: translateX(-50%) scale(.93) translateY(-4px); }
-  to   { opacity: 1; transform: translateX(-50%) scale(1)   translateY(0); }
-}
-.gauge-header {
-  display: flex; align-items: center; justify-content: space-between;
-  width: 100%; gap: .4rem; margin-bottom: .04rem;
-}
-.gauge-title {
-  font-family: 'DM Mono', monospace;
-  font-size: .48rem; font-weight: 600;
-  letter-spacing: .18em; text-transform: uppercase;
   transition: color .25s;
 }
-.gauge-close-btn {
+.gauge-panel-close, .radar-panel-close {
   background: none; border: none;
   color: var(--text3); font-size: .7rem;
   cursor: pointer; line-height: 1; padding: .1rem .2rem;
   border-radius: 4px; transition: color .2s; flex-shrink: 0;
 }
-.gauge-close-btn:hover { color: var(--warm); }
+.gauge-panel-close:hover, .radar-panel-close:hover { color: var(--warm); }
 .gauge-kgf-display {
   font-family: 'DM Mono', monospace;
-  font-size: 1.28rem; font-weight: 300;
+  font-size: 1.7rem; font-weight: 300;
   letter-spacing: .02em; text-align: center;
   transition: color .35s; line-height: 1;
 }
 .gauge-kgf-unit {
   font-family: 'DM Mono', monospace;
-  font-size: .44rem; font-weight: 400;
+  font-size: .6rem; font-weight: 400;
   letter-spacing: .2em; color: var(--text3);
   text-align: center; margin-top: -.04rem;
 }
@@ -1413,7 +1385,7 @@ input[type=number] { -moz-appearance:textfield }
   </div>
 
   <!-- ── Grille de saisie ── -->
-  <div class="card" id="tm-input-card">
+  <div class="card" id="tm-input-card" style="display:none">
     <div class="ch ch-toggle" onclick="toggleTmInputCard()">
       <svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
         <rect x="3" y="4" width="18" height="16" rx="2"/>
@@ -1421,25 +1393,28 @@ input[type=number] { -moz-appearance:textfield }
         <line x1="12" y1="9" x2="12" y2="20"/>
       </svg>
       <div class="clabel" data-i18n="tmDeflLabel">Déflections mesurées</div>
+      <button id="panels-toggle-btn" class="tm-screenshot-btn" onclick="panelsToggle(); event.stopPropagation();" title="Compteur · Diagramme" style="opacity:.35;pointer-events:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="12" cy="12" r="10"/>
+          <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+          <line x1="12" y1="12" x2="17" y2="8"/>
+          <line x1="12" y1="4" x2="12" y2="6"/>
+          <line x1="20" y1="12" x2="18" y2="12"/>
+        </svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-left:.25rem">
+          <polygon points="12,2.5 20,8 20,16 12,21.5 4,16 4,8"/>
+          <polygon points="12,7.5 17,11 17,13 12,16.5 7,13 7,11"/>
+        </svg>
+      </button>
       <em id="tm-input-card-chevron" class="chevron">&#8964;</em>
     </div>
     <span id="tm-unit-badge" class="tm-unit-badge" style="display:none"></span>
-    <button id="gauge-toggle-btn" class="tm-unit-badge" onclick="gaugeToggle()" title="Compteur de tension" style="margin-top:.4rem;align-self:flex-start;cursor:pointer;background:transparent;border:1px solid var(--border-s);display:inline-flex;align-items:center;gap:.3rem;padding:.12rem .6rem">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-        <circle cx="12" cy="12" r="10"/>
-        <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
-        <line x1="12" y1="12" x2="17" y2="8"/>
-        <line x1="12" y1="4" x2="12" y2="6"/>
-        <line x1="20" y1="12" x2="18" y2="12"/>
-        <line x1="6.5" y1="6.5" x2="7.9" y2="7.9"/>
-      </svg>
-    </button>
-    <button id="radar-modal-btn" class="tm-unit-badge" onclick="radarModalToggle()" title="Diagramme de tension" style="margin-top:.4rem;align-self:flex-start;cursor:pointer;background:transparent;border:1px solid var(--border-s);display:inline-flex;align-items:center;gap:.3rem;padding:.12rem .6rem;opacity:.35;pointer-events:none">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="12,2.5 20,8 20,16 12,21.5 4,16 4,8"/>
-        <polygon points="12,7.5 17,11 17,13 12,16.5 7,13 7,11"/>
-      </svg>
-    </button>
+
+    <!-- Panneaux sticky compteur + radar côte à côte -->
+    <div id="panels-wrap" style="width:100%;margin-top:.6rem">
+      <div id="gauge-panel" style="flex:1;min-width:0"></div>
+      <div id="radar-panel" style="flex:1;min-width:0"></div>
+    </div>
 
     <div id="tm-input-card-body" style="display:none;margin-top:.75rem">
     <div class="tm-grid-wrap">
@@ -1483,7 +1458,7 @@ input[type=number] { -moz-appearance:textfield }
         <polygon points="12,7 16.5,10 16.5,14 12,17 7.5,14 7.5,10"/>
       </svg>
       <div class="clabel" data-i18n="tmRadarTitle">Diagramme de tension</div>
-      <button class="tm-screenshot-btn" id="tm-screenshot-btn" onclick="tmScreenshot(event)" title="Screenshot">
+      <button class="tm-screenshot-btn" id="tm-screenshot-btn" onclick="tmScreenshot(event)" title="Screenshot" style="opacity:.35;pointer-events:none;cursor:not-allowed">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
           <circle cx="12" cy="13" r="4"/>
@@ -2896,6 +2871,16 @@ function toggleCard(bodyId, chevronId) {
 }
 function toggleResultsCard() { toggleCard('results-card-body', 'results-card-chevron'); }
 function toggleTmInputCard()  { toggleCard('tm-input-card-body',  'tm-input-card-chevron'); }
+function tmUpdateScreenshotBtn() {
+  const btn  = $id('tm-screenshot-btn');
+  if (!btn) return;
+  const body = $id('tm-result-card-body');
+  const open = body && body.style.display !== 'none';
+  btn.style.opacity       = open ? '' : '.35';
+  btn.style.pointerEvents = open ? '' : 'none';
+  btn.style.cursor        = open ? 'pointer' : 'not-allowed';
+}
+
 function toggleTmResultCard() {
   const card = $id('tm-result-card');
   const body = $id('tm-result-card-body'), chev = $id('tm-result-card-chevron');
@@ -2903,6 +2888,7 @@ function toggleTmResultCard() {
   body.style.display   = open ? 'none' : 'block';
   chev.style.transform = open ? '' : 'rotate(180deg)';
   tmRadarCollapsed = open;
+  tmUpdateScreenshotBtn();
   if (!open) tmTryRenderRadarFull();
 }
 function toggleArbCard() {
@@ -3886,53 +3872,38 @@ function tmUpdateUnitBadge() {
   const ready = !!tmType && !!tmSpokeKey && nb > 0;
   badge.classList.toggle('ready', ready);
 
-  // Activer / désactiver le bouton compteur selon les mêmes conditions
-  const gBtn = $id('gauge-toggle-btn');
-  if (gBtn) {
+  // Afficher/masquer les cards selon les conditions
+  const inputCard  = $id('tm-input-card');
+  const resultCard = $id('tm-result-card');
+  if (inputCard)  inputCard.style.display  = ready ? '' : 'none';
+  if (resultCard) resultCard.style.display = ready ? '' : 'none';
+  if (!ready) {
+    // Fermer les panneaux et réinitialiser si conditions perdues
+    const wrap = $id('panels-wrap');
+    if (wrap && wrap.classList.contains('show')) panelsClose();
+    tmUpdateScreenshotBtn();
+  }
+
+
+  // Bouton unique compteur+radar
+  const pBtn = $id('panels-toggle-btn');
+  if (pBtn) {
+    const wrap = $id('panels-wrap');
     if (ready) {
-      gBtn.style.opacity       = '';
-      gBtn.style.pointerEvents = '';
-      gBtn.style.cursor        = 'pointer';
-      // Bleu à l'état idle (sauf si le compteur est déjà ouvert, auquel qu'il garde son état)
-      if (!_gaugeModal || !_gaugeModal.classList.contains('show')) {
-        gBtn.style.borderColor = 'rgba(126,200,227,.5)';
-        gBtn.style.color       = 'var(--accent)';
-      }
+      pBtn.style.opacity       = '';
+      pBtn.style.pointerEvents = '';
+      pBtn.style.cursor        = '';
+      pBtn.style.borderColor   = wrap && wrap.classList.contains('show') ? 'rgba(126,200,227,.5)' : '';
+      pBtn.style.color         = wrap && wrap.classList.contains('show') ? 'var(--accent)' : '';
     } else {
-      gBtn.style.opacity       = '.35';
-      gBtn.style.pointerEvents = 'none';
-      gBtn.style.cursor        = 'not-allowed';
-      gBtn.style.borderColor   = '';
-      gBtn.style.color         = '';
-      // Fermer le compteur s'il était ouvert
-      if (typeof gaugeClose === 'function' && typeof _gaugeModal !== 'undefined' && _gaugeModal && _gaugeModal.classList.contains('show')) {
-        gaugeClose();
-      }
+      pBtn.style.opacity       = '.35';
+      pBtn.style.pointerEvents = 'none';
+      pBtn.style.cursor        = 'not-allowed';
+      pBtn.style.borderColor   = '';
+      pBtn.style.color         = '';
+      if (wrap && wrap.classList.contains('show')) panelsClose();
     }
   }
-  // Bouton radar — mêmes conditions que le compteur
-  const rBtn = $id('radar-modal-btn');
-  if (rBtn) {
-    if (ready) {
-      rBtn.style.opacity       = '';
-      rBtn.style.pointerEvents = '';
-      rBtn.style.cursor        = 'pointer';
-      if (!_radarModal || !_radarModal.classList.contains('show')) {
-        rBtn.style.borderColor = 'rgba(126,200,227,.5)';
-        rBtn.style.color       = 'var(--accent)';
-      }
-    } else {
-      rBtn.style.opacity       = '.35';
-      rBtn.style.pointerEvents = 'none';
-      rBtn.style.cursor        = 'not-allowed';
-      rBtn.style.borderColor   = '';
-      rBtn.style.color         = '';
-      if (typeof radarModalClose === 'function' && _radarModal && _radarModal.classList.contains('show')) {
-        radarModalClose();
-      }
-    }
-  }
-  // Sync bouton radar (refresh données)
   if (typeof radarModalRefresh === 'function') radarModalRefresh();
 }
 
@@ -4412,7 +4383,7 @@ function ccBuildGrid() {
           e.preventDefault();
           const allInps = ccGetOrderedInputs(tbody);
           const ci = allInps.indexOf(this);
-          if (ci < allInps.length - 1) { this.blur(); allInps[ci + 1].focus((_gaugeModal && _gaugeModal.classList.contains('show')) || (_radarModal && _radarModal.classList.contains('show')) ? { preventScroll: true } : undefined); }
+          if (ci < allInps.length - 1) { this.blur(); allInps[ci + 1].focus(); }
           else this.blur();
         }
       });
@@ -4944,7 +4915,7 @@ function tmBuildTable() {
           }
           const allInps = [...document.querySelectorAll(`.defl-inp.${inp.className.split(' ').find(c => c === 'fo' || c === 'fa')}`)];
           const ci = allInps.indexOf(this);
-          if (ci < allInps.length - 1) { this.blur(); allInps[ci + 1].focus((_gaugeModal && _gaugeModal.classList.contains('show')) || (_radarModal && _radarModal.classList.contains('show')) ? { preventScroll: true } : undefined); }
+          if (ci < allInps.length - 1) { this.blur(); allInps[ci + 1].focus((document.getElementById('panels-wrap') && document.getElementById('panels-wrap').classList.contains('show')) ? { preventScroll: true } : undefined); }
           else this.blur();
         }
       });
@@ -4960,14 +4931,13 @@ function tmUpdateCell(idx, side) {
 }
 
 function tmHideResult() {
-  // Laisser la card visible (header cliquable) mais fermer son body
-  const card  = $id('tm-result-card');
+  // Fermer le body — la visibilité de la card est gérée par tmUpdateUnitBadge
   const body  = $id('tm-result-card-body');
   const chev  = $id('tm-result-card-chevron');
-  card.style.display = '';          // card toujours visible
   if (body) body.style.display = 'none';
   if (chev) chev.style.transform = '';
   tmRadarCollapsed = false;
+  tmUpdateScreenshotBtn();
   // Reset highlight silencieux — pas d'appel à tmTryRenderRadar
   tmHighlightOn = false;
   const btn = $id('tm-hl-btn');
@@ -5089,6 +5059,7 @@ function tmTryRenderRadarFull() {
   if (rcBody) rcBody.style.display = 'block';
   if (rcChev) rcChev.style.transform = 'rotate(180deg)';
   tmRadarCollapsed = false;
+  tmUpdateScreenshotBtn();
   tmOutliers.fo = tmComputeOutliers(foKgfs, tmCVThreshold);
   tmOutliers.fa = tmComputeOutliers(faKgfs, tmCVThreshold);
   tmUpdateOutlierCount();
@@ -5533,81 +5504,98 @@ function initSelectPlaceholders() {
 }
 document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 
-var _gaugeModal      = null;
+
+// ── GAUGE + RADAR PANELS (inline, scrollent avec la page) ────────────────────
+var _gaugePanel      = null;
+var _gaugeCanvas     = null;
 var _gaugeCtx        = null;
 var _gaugeDPR        = 1;
-var _gaugeActive     = null;   // input .defl-inp actuellement focalisé
-var _gaugeLastFocused= null;   // dernier input focalisé dans cette session
+var _gaugeActive     = null;
+var _gaugeLastFocused= null;
 var _gaugeCurrentKgf = null;
 var _gaugeAnimFrame  = null;
 var _gaugeDisplayed  = 0;
-var _gaugeLastIdx    = null;   // dernier rayon affiché (mémorisé par saisie utilisateur)
+var _gaugeLastIdx    = null;
 var _gaugeLastSide   = null;
 
-// Géométrie (80% de l'original)
-var G_W   = 256;
-var G_H   = 168;
-var G_CX  = 128;
-var G_CY  = 116;
-var G_R   = 86;
-var G_AS  = 170;   // angle de départ de l'arc (degrés)
-var G_SW  = 200;   // amplitude de l'arc (degrés)
-var G_MAX = 140;   // kgf maximum
+var _radarPanel  = null;
+var _radarCtx    = null;
+var _radarDPR    = 1;
+var _radarSize   = 256;
 
-// ── Reset complet — appelé uniquement au chargement de config ────────────────
-function gaugeReset() {
-  _gaugeLastIdx     = null;
-  _gaugeLastSide    = null;
-  _gaugeLastFocused = null;
-  _gaugeActive      = null;
-  _gaugeCurrentKgf  = null;
-  _gaugeDisplayed   = 0;
-  if (_gaugeAnimFrame) { cancelAnimationFrame(_gaugeAnimFrame); _gaugeAnimFrame = null; }
-  if (_gaugeCtx) { gaugeDraw(0); }
-  var disp = document.getElementById('gauge-kgf-display');
-  if (disp) { disp.textContent = '\u2014'; disp.style.color = 'var(--text3)'; }
-  var titleEl = document.getElementById('gauge-title');
-  if (titleEl) { titleEl.textContent = 'Tension'; titleEl.style.color = 'var(--text3)'; }
+// Géométrie compteur — recalculée dynamiquement selon la largeur du conteneur
+var G_W = 256; var G_H = 168; var G_CX = 128; var G_CY = 116;
+var G_R = 86;  var G_AS = 170; var G_SW = 200; var G_MAX = 140;
+
+function gaugeUpdateGeometry() {
+  if (!_gaugeCanvas) return;
+  // Utiliser la même taille que le radar pour avoir des panneaux de hauteur égale
+  var radarCanvas = document.getElementById('radar-modal-canvas');
+  var w = (radarCanvas && radarCanvas.parentElement)
+    ? radarCanvas.parentElement.clientWidth
+    : (_gaugeCanvas.parentElement ? _gaugeCanvas.parentElement.clientWidth : 256);
+  if (w < 10) w = 256;
+  G_W  = w; G_H  = w;
+  G_CX = Math.round(w * 0.5);
+  G_CY = Math.round(w * 0.72);
+  G_R  = Math.round(w * 0.40);
+  _gaugeCanvas.width  = Math.round(G_W * _gaugeDPR);
+  _gaugeCanvas.height = Math.round(G_H * _gaugeDPR);
+  _gaugeCanvas.style.width  = G_W + 'px';
+  _gaugeCanvas.style.height = G_H + 'px';
+  _gaugeCtx.setTransform(_gaugeDPR, 0, 0, _gaugeDPR, 0, 0);
+  _gaugeCtx.imageSmoothingEnabled = false;
 }
 
-// ── Initialisation ────────────────────────────────────────────────────────────
+// ── Reset ────────────────────────────────────────────────────────────────────
+function gaugeReset() {
+  _gaugeLastIdx = null; _gaugeLastSide = null;
+  _gaugeLastFocused = null; _gaugeActive = null;
+  _gaugeCurrentKgf = null; _gaugeDisplayed = 0;
+  if (_gaugeAnimFrame) { cancelAnimationFrame(_gaugeAnimFrame); _gaugeAnimFrame = null; }
+  if (_gaugeCtx) gaugeDraw(0);
+  var disp = document.getElementById('gauge-kgf-display');
+  if (disp) { disp.textContent = '\u2014'; disp.style.color = 'var(--text3)'; }
+  var t = document.getElementById('gauge-panel-title');
+  if (t) { t.textContent = 'Tension'; t.style.color = 'var(--text3)'; }
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
 function gaugeInit() {
-  _gaugeModal = document.createElement('div');
-  _gaugeModal.id        = 'gauge-modal';
-  _gaugeModal.className = 'gauge-modal';
-  _gaugeModal.innerHTML =
-    '<div class="gauge-header">' +
-      '<span class="gauge-title" id="gauge-title">Tension</span>' +
-      '<button class="gauge-close-btn" id="gauge-close-btn" title="Fermer">&#x2715;</button>' +
+  _gaugePanel = document.getElementById('gauge-panel');
+
+  var inner = document.createElement('div');
+  inner.className = 'gauge-panel';
+  inner.innerHTML =
+    '<div class="gauge-panel-header">' +
+      '<span class="gauge-panel-title" id="gauge-panel-title">Tension</span>' +
+      '<button class="gauge-panel-close" id="gauge-close-btn" title="Fermer">&#x2715;</button>' +
     '</div>' +
-    '<canvas id="gauge-canvas" style="display:block;margin:0 auto;' +
-      'width:' + G_W + 'px;height:' + G_H + 'px"></canvas>' +
+    '<canvas id="gauge-canvas" style="display:block"></canvas>' +
     '<div class="gauge-kgf-display" id="gauge-kgf-display" style="margin-top:.2rem">\u2014</div>' +
     '<div class="gauge-kgf-unit">kgf</div>';
-  document.body.appendChild(_gaugeModal);
+  _gaugePanel.appendChild(inner);
 
-  var canvas = document.getElementById('gauge-canvas');
-  _gaugeDPR  = window.devicePixelRatio || 1;
-  canvas.width  = Math.round(G_W * _gaugeDPR);
-  canvas.height = Math.round(G_H * _gaugeDPR);
-  _gaugeCtx = canvas.getContext('2d');
+  _gaugeCanvas = document.getElementById('gauge-canvas');
+  _gaugeDPR = window.devicePixelRatio || 1;
+  // Taille initiale provisoire — recalculée dans gaugeDraw
+  _gaugeCanvas.width  = Math.round(256 * _gaugeDPR);
+  _gaugeCanvas.height = Math.round(168 * _gaugeDPR);
+  _gaugeCtx = _gaugeCanvas.getContext('2d');
   _gaugeCtx.scale(_gaugeDPR, _gaugeDPR);
   _gaugeCtx.imageSmoothingEnabled = false;
 
   document.getElementById('gauge-close-btn').addEventListener('click', function(e) {
-    e.stopPropagation();
-    gaugeClose();
+    e.stopPropagation(); panelsClose();
   });
 
-  // Suivre le champ focalisé — mise à jour live si le compteur est ouvert
   document.addEventListener('focusin', function(e) {
     if (e.target && e.target.classList.contains('defl-inp')) {
       _gaugeLastFocused = e.target;
-      if (_gaugeModal.classList.contains('show')) { gaugeOpen(e.target); }
+      var _pw = document.getElementById('panels-wrap'); if (_pw && _pw.classList.contains('show')) gaugeOpen(e.target);
     }
   });
 
-  // Monkey-patch tmUpdateCell pour animer l'aiguille et rafraîchir le radar modal
   var _origCell = window.tmUpdateCell;
   window.tmUpdateCell = function(idx, side) {
     if (_origCell) _origCell(idx, side);
@@ -5618,27 +5606,54 @@ function gaugeInit() {
   gaugeDraw(0);
 }
 
-// ── Helpers géométriques ─────────────────────────────────────────────────────
-function gaugeDeg(d) { return d * Math.PI / 180; }
+function radarModalInit() {
+  _radarPanel = document.getElementById('radar-panel');
 
-function gaugeAngle(kgf) {
-  var c = Math.max(0, Math.min(G_MAX, kgf || 0));
-  return G_AS + (c / G_MAX) * G_SW;
+var _radarSize = 256; // sera recalculé dynamiquement
+
+  var inner = document.createElement('div');
+  inner.className = 'radar-panel-inner';
+  inner.innerHTML =
+    '<div class="radar-panel-header">' +
+      '<span class="gauge-panel-title" id="radar-panel-title">Radar</span>' +
+      '<button class="radar-panel-close" id="radar-modal-close" title="Fermer">&#x2715;</button>' +
+    '</div>' +
+    '<canvas id="radar-modal-canvas" style="display:block"></canvas>' +
+    '<div id="radar-modal-avgs" style="display:flex;justify-content:center;gap:1.2rem;width:100%;margin-top:.1rem">' +
+      '<span id="radar-avg-nds" style="font-family:\'DM Mono\',monospace;font-size:.62rem;font-weight:400;color:rgba(232,146,124,0.35)">\u2014</span>' +
+      '<span id="radar-avg-ds"  style="font-family:\'DM Mono\',monospace;font-size:.62rem;font-weight:400;color:rgba(126,200,227,0.35)">\u2014</span>' +
+    '</div>';
+  _radarPanel.appendChild(inner);
+
+  var canvas = document.getElementById('radar-modal-canvas');
+  _radarDPR = window.devicePixelRatio || 1;
+  canvas.width  = Math.round(256 * _radarDPR);
+  canvas.height = Math.round(256 * _radarDPR);
+  _radarCtx = canvas.getContext('2d');
+  _radarCtx.scale(_radarDPR, _radarDPR);
+  _radarCtx.imageSmoothingEnabled = false;
+
+  document.getElementById('radar-modal-close').addEventListener('click', function(e) {
+    e.stopPropagation(); panelsClose();
+  });
 }
 
+// ── Helpers géométriques ─────────────────────────────────────────────────────
+function gaugeDeg(d) { return d * Math.PI / 180; }
+function gaugeAngle(kgf) {
+  return G_AS + (Math.max(0, Math.min(G_MAX, kgf || 0)) / G_MAX) * G_SW;
+}
 function gaugePt(ang, r) {
   var rad = gaugeDeg(ang);
   return { x: G_CX + r * Math.cos(rad), y: G_CY + r * Math.sin(rad) };
 }
 
-// ── Lire les tensions cibles depuis le calculateur ────────────────────────────
 function gaugeTargets() {
   var tF  = parseFloat((document.getElementById('tension-forte') || {}).value);
   var tFa = parseFloat(((document.getElementById('tension-faible-display') || {}).textContent) || '');
   return { forte: isNaN(tF) ? null : tF, faible: isNaN(tFa) ? null : tFa };
 }
 
-// ── Couleur selon le côté (fo=warm, fa=accent) ────────────────────────────────
 function gaugeKgfColor(kgf, side) {
   if (kgf === null) return 'var(--text3)';
   if (side === 'fo') return 'rgba(232,146,124,1)';
@@ -5646,483 +5661,314 @@ function gaugeKgfColor(kgf, side) {
   return 'rgba(220,228,237,0.9)';
 }
 
-// ── Dessin du cadran ─────────────────────────────────────────────────────────
+// ── Dessin compteur ───────────────────────────────────────────────────────────
 function gaugeDraw(kgf) {
-  var ctx    = _gaugeCtx;
-  var trackW = 9;
+  var ctx = _gaugeCtx; if (!ctx) return;
+  gaugeUpdateGeometry();
+  var sc     = G_R / 86;                    // facteur d'échelle par rapport à l'original
+  var trackW = Math.round(9 * sc);
   var arcEnd = G_AS + G_SW;
   ctx.clearRect(0, 0, G_W, G_H);
 
-  // Déterminer le côté actif pour filtrer les marques
-  // → champ actif s'il a une valeur, sinon dernier côté mémorisé
   var activeSide = null;
   if (_gaugeActive) {
-    var _aIdx  = parseInt(_gaugeActive.dataset.idx, 10);
+    var _aIdx = parseInt(_gaugeActive.dataset.idx, 10);
     var _aSide = _gaugeActive.dataset.side;
-    var _aRaw  = (typeof tmData !== 'undefined')
-      ? (_aSide === 'fo' ? tmData.fo[_aIdx] : tmData.fa[_aIdx]) : null;
-    var _aKgf  = (typeof toKgf === 'function') ? toKgf(_aRaw) : null;
-    activeSide = _aKgf !== null ? _aSide : _gaugeLastSide;
-  } else {
-    activeSide = _gaugeLastSide;
-  }
+    var _aRaw = (typeof tmData !== 'undefined') ? (_aSide === 'fo' ? tmData.fo[_aIdx] : tmData.fa[_aIdx]) : null;
+    activeSide = (typeof toKgf === 'function' && toKgf(_aRaw) !== null) ? _aSide : _gaugeLastSide;
+  } else { activeSide = _gaugeLastSide; }
 
-  // Arc neutre
-  ctx.save();
-  ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+  ctx.save(); ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
   ctx.beginPath();
   ctx.arc(G_CX, G_CY, G_R, gaugeDeg(G_AS), gaugeDeg(arcEnd));
-  ctx.strokeStyle = 'rgba(255,255,255,0.13)';
-  ctx.lineWidth   = trackW;
-  ctx.lineCap     = 'round';
-  ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,0.13)'; ctx.lineWidth = trackW; ctx.lineCap = 'round'; ctx.stroke();
   ctx.restore();
 
-  // Graduations + étiquettes
+  var fontSize = Math.round(8 * sc);
   var v;
   for (v = 0; v <= G_MAX; v += 10) {
-    var isMajor = (v % 20 === 0);
-    var ang     = gaugeAngle(v);
-    var rInner  = G_R - trackW / 2 - (isMajor ? 11 : 6);
-    var p0      = gaugePt(ang, rInner);
-    var p1      = gaugePt(ang, G_R + 4);
-    ctx.save();
-    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+    var isMajor = (v % 20 === 0); var ang = gaugeAngle(v);
+    var rInner = G_R - trackW / 2 - (isMajor ? Math.round(11*sc) : Math.round(6*sc));
+    var p0 = gaugePt(ang, rInner); var p1 = gaugePt(ang, G_R + Math.round(4*sc));
+    ctx.save(); ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
     ctx.beginPath();
-    ctx.moveTo(Math.round(p0.x) + 0.5, Math.round(p0.y) + 0.5);
-    ctx.lineTo(Math.round(p1.x) + 0.5, Math.round(p1.y) + 0.5);
+    ctx.moveTo(Math.round(p0.x)+.5, Math.round(p0.y)+.5);
+    ctx.lineTo(Math.round(p1.x)+.5, Math.round(p1.y)+.5);
     ctx.strokeStyle = isMajor ? 'rgba(220,228,237,0.75)' : 'rgba(220,228,237,0.28)';
-    ctx.lineWidth   = isMajor ? 1.5 : 0.8;
-    ctx.lineCap     = 'butt';
-    ctx.stroke();
+    ctx.lineWidth = isMajor ? Math.max(1.5, 1.5*sc) : Math.max(0.8, 0.8*sc); ctx.lineCap = 'butt'; ctx.stroke();
     if (isMajor) {
-      var lp = gaugePt(ang, G_R - trackW / 2 - 21);
-      ctx.font = '500 8px "DM Mono",monospace';
-      ctx.fillStyle    = 'rgba(154,170,187,0.9)';
-      ctx.textAlign    = 'center';
-      ctx.textBaseline = 'middle';
+      var lp = gaugePt(ang, G_R - trackW / 2 - Math.round(21*sc));
+      ctx.font = '500 ' + fontSize + 'px "DM Mono",monospace';
+      ctx.fillStyle = 'rgba(154,170,187,0.9)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(String(v), Math.round(lp.x), Math.round(lp.y));
     }
     ctx.restore();
   }
 
-  // Marques tensions cibles (forte=fo=warm, faible=fa=accent)
   var tgt = gaugeTargets();
-  if (!activeSide || activeSide === 'fo') {
-    gaugeDrawMarker(tgt.forte,  'rgba(232,146,124,1)', tgt.forte  !== null ? String(tgt.forte)       : '');
-  }
-  if (!activeSide || activeSide === 'fa') {
-    gaugeDrawMarker(tgt.faible, 'rgba(126,200,227,1)', tgt.faible !== null ? tgt.faible.toFixed(1)   : '');
-  }
+  if (!activeSide || activeSide === 'fo') gaugeDrawMarker(tgt.forte,  'rgba(232,146,124,1)', sc);
+  if (!activeSide || activeSide === 'fa') gaugeDrawMarker(tgt.faible, 'rgba(126,200,227,1)', sc);
 
-  // Arc de progression
   if (kgf !== null && kgf > 0) {
     var progEnd = G_AS + Math.min(kgf / G_MAX, 1) * G_SW;
-    ctx.save();
-    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
-    ctx.beginPath();
-    ctx.arc(G_CX, G_CY, G_R, gaugeDeg(G_AS), gaugeDeg(progEnd));
-    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-    ctx.lineWidth   = 3;
-    ctx.lineCap     = 'round';
-    ctx.stroke();
+    ctx.save(); ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+    ctx.beginPath(); ctx.arc(G_CX, G_CY, G_R, gaugeDeg(G_AS), gaugeDeg(progEnd));
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = Math.round(3*sc); ctx.lineCap = 'round'; ctx.stroke();
     ctx.restore();
   }
 
-  // Aiguille
-  var nAng   = gaugeAngle(kgf !== null ? kgf : 0);
-  var tipPt  = gaugePt(nAng, G_R - 6);
-  var basePt = gaugePt(nAng + 180, 11);
-  ctx.save();
-  ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
-  // Lueur
-  ctx.beginPath();
-  ctx.moveTo(basePt.x, basePt.y);
-  ctx.lineTo(tipPt.x, tipPt.y);
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-  ctx.lineWidth   = 6;
-  ctx.lineCap     = 'round';
-  ctx.stroke();
-  // Trait principal
-  ctx.beginPath();
-  ctx.moveTo(basePt.x, basePt.y);
-  ctx.lineTo(tipPt.x, tipPt.y);
-  ctx.strokeStyle = 'rgba(240,244,255,0.97)';
-  ctx.lineWidth   = 2;
-  ctx.lineCap     = 'round';
-  ctx.stroke();
-  // Pivot
-  ctx.beginPath();
-  ctx.arc(G_CX, G_CY, 5.5, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(G_CX, G_CY, 2.8, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(18,22,34,1)';
-  ctx.fill();
+  var nAng  = gaugeAngle(kgf !== null ? kgf : 0);
+  var tipPt = gaugePt(nAng, G_R - Math.round(6*sc));
+  var basePt= gaugePt(nAng + 180, Math.round(11*sc));
+  ctx.save(); ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+  ctx.beginPath(); ctx.moveTo(basePt.x, basePt.y); ctx.lineTo(tipPt.x, tipPt.y);
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = Math.round(6*sc); ctx.lineCap = 'round'; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(basePt.x, basePt.y); ctx.lineTo(tipPt.x, tipPt.y);
+  ctx.strokeStyle = 'rgba(240,244,255,0.97)'; ctx.lineWidth = Math.max(1.5, Math.round(2*sc)); ctx.lineCap = 'round'; ctx.stroke();
+  ctx.beginPath(); ctx.arc(G_CX, G_CY, Math.round(5.5*sc), 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(G_CX, G_CY, Math.round(2.8*sc), 0, Math.PI*2); ctx.fillStyle = 'rgba(18,22,34,1)'; ctx.fill();
   ctx.restore();
 } // end gaugeDraw
 
-// ── Marque triangulaire d'une tension cible ───────────────────────────────────
-function gaugeDrawMarker(val, color, label) {
+function gaugeDrawMarker(val, color, sc) {
   if (val === null || val <= 0 || val > G_MAX) return;
-  var ctx  = _gaugeCtx;
-  var ang  = gaugeAngle(val);
-  var RAD  = gaugeDeg(ang);
-  var PERP = gaugeDeg(ang + 90);
-  var rTip = G_R + 10, rBase = G_R + 2, hw = 3.5;
-  var tip  = { x: G_CX + rTip  * Math.cos(RAD), y: G_CY + rTip  * Math.sin(RAD) };
-  var bl   = { x: G_CX + rBase * Math.cos(RAD) + hw * Math.cos(PERP),
-               y: G_CY + rBase * Math.sin(RAD) + hw * Math.sin(PERP) };
-  var br   = { x: G_CX + rBase * Math.cos(RAD) - hw * Math.cos(PERP),
-               y: G_CY + rBase * Math.sin(RAD) - hw * Math.sin(PERP) };
-  ctx.save();
-  ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
-  // Triangle
-  ctx.beginPath();
-  ctx.moveTo(tip.x, tip.y); ctx.lineTo(bl.x, bl.y); ctx.lineTo(br.x, br.y);
-  ctx.closePath();
-  ctx.fillStyle = color;
-  ctx.fill();
-  // Trait radial
-  var le = { x: G_CX + (G_R + 17) * Math.cos(RAD), y: G_CY + (G_R + 17) * Math.sin(RAD) };
-  ctx.globalAlpha = 0.6;
-  ctx.beginPath();
-  ctx.moveTo(Math.round(tip.x) + 0.5, Math.round(tip.y) + 0.5);
-  ctx.lineTo(Math.round(le.x)  + 0.5, Math.round(le.y)  + 0.5);
-  ctx.strokeStyle = color; ctx.lineWidth = 1.5;
-  ctx.stroke();
-  ctx.globalAlpha = 1;
-  // Étiquette
-  var lp = { x: G_CX + (G_R + 27) * Math.cos(RAD), y: G_CY + (G_R + 27) * Math.sin(RAD) };
-  ctx.font = '600 8px "DM Mono",monospace';
-  ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(label, Math.round(lp.x), Math.round(lp.y));
+  sc = sc || 1;
+  var ctx = _gaugeCtx; var ang = gaugeAngle(val);
+  var RAD = gaugeDeg(ang); var PERP = gaugeDeg(ang + 90);
+  var rTip = G_R + Math.round(10*sc); var rBase = G_R + Math.round(2*sc); var hw = Math.round(4.5*sc);
+  var tip = { x: G_CX + rTip  * Math.cos(RAD), y: G_CY + rTip  * Math.sin(RAD) };
+  var bl  = { x: G_CX + rBase * Math.cos(RAD) + hw * Math.cos(PERP), y: G_CY + rBase * Math.sin(RAD) + hw * Math.sin(PERP) };
+  var br  = { x: G_CX + rBase * Math.cos(RAD) - hw * Math.cos(PERP), y: G_CY + rBase * Math.sin(RAD) - hw * Math.sin(PERP) };
+  ctx.save(); ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+  ctx.beginPath(); ctx.moveTo(tip.x, tip.y); ctx.lineTo(bl.x, bl.y); ctx.lineTo(br.x, br.y);
+  ctx.closePath(); ctx.fillStyle = color; ctx.fill();
   ctx.restore();
 }
 
-// ── Animation fluide de l'aiguille ───────────────────────────────────────────
+// ── Animation ─────────────────────────────────────────────────────────────────
 function gaugeAnimateTo(targetKgf) {
   if (_gaugeAnimFrame) cancelAnimationFrame(_gaugeAnimFrame);
-  var start = _gaugeDisplayed, end = targetKgf !== null ? targetKgf : 0;
-  var duration = 380, startTime = performance.now();
-  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  var start = _gaugeDisplayed; var end = targetKgf !== null ? targetKgf : 0;
+  var duration = 380; var startTime = performance.now();
+  function easeOut(t) { return 1 - Math.pow(1-t, 3); }
   function step(now) {
     var t = Math.min((now - startTime) / duration, 1);
     _gaugeDisplayed = start + (end - start) * easeOut(t);
     gaugeDraw(_gaugeDisplayed);
     var disp = document.getElementById('gauge-kgf-display');
     if (disp) {
-      if (targetKgf !== null) {
-        disp.textContent = _gaugeDisplayed.toFixed(1);
-        disp.style.color = gaugeKgfColor(_gaugeDisplayed, _gaugeActive ? _gaugeActive.dataset.side : null);
-      } else {
-        disp.textContent = '\u2014';
-        disp.style.color = 'var(--text3)';
-      }
+      if (targetKgf !== null) { disp.textContent = _gaugeDisplayed.toFixed(1); disp.style.color = gaugeKgfColor(_gaugeDisplayed, _gaugeActive ? _gaugeActive.dataset.side : null); }
+      else { disp.textContent = '\u2014'; disp.style.color = 'var(--text3)'; }
     }
     if (t < 1) _gaugeAnimFrame = requestAnimationFrame(step);
   }
   _gaugeAnimFrame = requestAnimationFrame(step);
 }
 
-// ── Mise à jour du titre (rayon + côté coloré) ────────────────────────────────
+// ── Titre ─────────────────────────────────────────────────────────────────────
 function gaugeRefreshTitle(idx, side) {
-  var el = document.getElementById('gauge-title');
-  if (!el) return;
+  var el = document.getElementById('gauge-panel-title'); if (!el) return;
   if (idx === null) { el.textContent = 'Tension'; el.style.color = 'var(--text3)'; return; }
-  el.textContent = 'Rayon ' + (idx + 1) + ' \u00b7 ' + (side === 'fo' ? 'NDS' : 'DS');
+  el.textContent = 'Rayon ' + (idx+1) + ' \u00b7 ' + (side === 'fo' ? 'NDS' : 'DS');
   el.style.color = side === 'fo' ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
 }
 
-// ── Ouvrir/mettre à jour le compteur sur un champ ─────────────────────────────
+// ── Ouvrir / mettre à jour ────────────────────────────────────────────────────
 function gaugeOpen(inputEl) {
   _gaugeActive = inputEl;
-  var side = inputEl.dataset.side;
-  var idx  = parseInt(inputEl.dataset.idx, 10);
-  var kgf  = null;
+  var side = inputEl.dataset.side; var idx = parseInt(inputEl.dataset.idx, 10);
+  var kgf = null;
   if (typeof toKgf === 'function' && typeof tmData !== 'undefined') {
-    var raw = side === 'fo' ? tmData.fo[idx] : tmData.fa[idx];
-    kgf = toKgf(raw);
+    kgf = toKgf(side === 'fo' ? tmData.fo[idx] : tmData.fa[idx]);
   }
+  if (kgf !== null) { _gaugeLastIdx = idx; _gaugeLastSide = side; gaugeRefreshTitle(idx, side); }
+  else if (_gaugeLastIdx !== null) gaugeRefreshTitle(_gaugeLastIdx, _gaugeLastSide);
+  else gaugeRefreshTitle(null, null);
 
-  // Titre : ce champ si valide, sinon dernier rayon mémorisé par saisie, sinon rien
-  if (kgf !== null) {
-    _gaugeLastIdx = idx; _gaugeLastSide = side;
-    gaugeRefreshTitle(idx, side);
-  } else if (_gaugeLastIdx !== null) {
-    gaugeRefreshTitle(_gaugeLastIdx, _gaugeLastSide);
-  } else {
-    gaugeRefreshTitle(null, null);
-  }
-
-  _gaugeCurrentKgf = kgf;
-  _gaugeDisplayed  = kgf !== null ? kgf : 0;
+  _gaugeCurrentKgf = kgf; _gaugeDisplayed = kgf !== null ? kgf : 0;
   gaugeDraw(_gaugeDisplayed);
 
-  // Affichage numérique : valeur et couleur du champ réellement montré
   var disp = document.getElementById('gauge-kgf-display');
   if (disp) {
-    if (kgf !== null) {
-      disp.textContent = kgf.toFixed(1);
-      disp.style.color = gaugeKgfColor(kgf, side);
-    } else if (_gaugeLastIdx !== null) {
+    if (kgf !== null) { disp.textContent = kgf.toFixed(1); disp.style.color = gaugeKgfColor(kgf, side); }
+    else if (_gaugeLastIdx !== null) {
       var lastRaw = _gaugeLastSide === 'fo' ? tmData.fo[_gaugeLastIdx] : tmData.fa[_gaugeLastIdx];
       var lastKgf = toKgf(lastRaw);
       disp.textContent = lastKgf !== null ? lastKgf.toFixed(1) : '\u2014';
       disp.style.color = gaugeKgfColor(lastKgf, _gaugeLastSide);
-    } else {
-      disp.textContent = '\u2014';
-      disp.style.color = 'var(--text3)';
-    }
+    } else { disp.textContent = '\u2014'; disp.style.color = 'var(--text3)'; }
   }
-  _gaugeModal.classList.add('show');
 }
 
-// ── Toggle : ouvre/ferme le compteur via la capsule ──────────────────────────
-function gaugeToggle() {
-  var btn = document.getElementById('gauge-toggle-btn');
-  if (_gaugeModal.classList.contains('show')) {
-    gaugeClose();
+// ── Toggle ────────────────────────────────────────────────────────────────────
+function panelsToggle() {
+  var wrap = document.getElementById('panels-wrap');
+  if (!wrap) return;
+  if (wrap.classList.contains('show')) {
+    panelsClose();
   } else {
-    // Fermer la modale radar si ouverte
-    if (typeof radarModalClose === 'function') radarModalClose();
-    if (_gaugeLastFocused) {
-      gaugeOpen(_gaugeLastFocused);
-    } else {
-      _gaugeModal.classList.add('show');
-      gaugeDraw(0);
-        }
+    wrap.classList.add('show');
+    if (_gaugeLastFocused) gaugeOpen(_gaugeLastFocused);
+    else gaugeDraw(0);
+    radarModalDraw();
+    var btn = document.getElementById('panels-toggle-btn');
     if (btn) { btn.style.borderColor = 'rgba(126,200,227,.5)'; btn.style.color = 'var(--accent)'; }
   }
 }
 
-// ── Fermer le compteur ────────────────────────────────────────────────────────
-function gaugeClose() {
-  _gaugeModal.classList.remove('show');
-  var btn = document.getElementById('gauge-toggle-btn');
-  if (btn) { btn.style.borderColor = 'rgba(126,200,227,.5)'; btn.style.color = 'var(--accent)'; }
+function panelsClose() {
+  var wrap = document.getElementById('panels-wrap');
+  if (wrap) wrap.classList.remove('show');
+  var btn = document.getElementById('panels-toggle-btn');
+  if (btn) { btn.style.borderColor = ''; btn.style.color = ''; }
   _gaugeActive = null;
   if (_gaugeAnimFrame) { cancelAnimationFrame(_gaugeAnimFrame); _gaugeAnimFrame = null; }
+  // Laisser tmUpdateUnitBadge remettre la couleur idle
+  if (typeof tmUpdateUnitBadge === 'function') tmUpdateUnitBadge();
 }
 
-// ── Callback post-validation d'une cellule (monkey-patch tmUpdateCell) ────────
 function gaugeOnCellUpdate(idx, side) {
-  if (!_gaugeModal.classList.contains('show')) return;
-  if (!_gaugeActive) return;
-  if (parseInt(_gaugeActive.dataset.idx, 10) !== idx || _gaugeActive.dataset.side !== side) return;
-
+  var wrap = document.getElementById('panels-wrap');
+  if (!wrap || !wrap.classList.contains('show')) return;
+  if (!_gaugeActive || parseInt(_gaugeActive.dataset.idx,10) !== idx || _gaugeActive.dataset.side !== side) return;
   var kgf = null;
   if (typeof toKgf === 'function' && typeof tmData !== 'undefined') {
-    var raw = side === 'fo' ? tmData.fo[idx] : tmData.fa[idx];
-    kgf = toKgf(raw);
+    kgf = toKgf(side === 'fo' ? tmData.fo[idx] : tmData.fa[idx]);
   }
-  // Mémoriser le rayon si valide, sinon garder le dernier mémorisé
-  if (kgf !== null) {
-    _gaugeLastIdx = idx; _gaugeLastSide = side;
-    gaugeRefreshTitle(idx, side);
-  } else if (_gaugeLastIdx !== null) {
-    gaugeRefreshTitle(_gaugeLastIdx, _gaugeLastSide);
-  } else {
-    gaugeRefreshTitle(null, null);
-  }
+  if (kgf !== null) { _gaugeLastIdx = idx; _gaugeLastSide = side; gaugeRefreshTitle(idx, side); }
+  else if (_gaugeLastIdx !== null) gaugeRefreshTitle(_gaugeLastIdx, _gaugeLastSide);
+  else gaugeRefreshTitle(null, null);
   if (kgf !== _gaugeCurrentKgf) { _gaugeCurrentKgf = kgf; gaugeAnimateTo(kgf); }
 }
 
-document.addEventListener('DOMContentLoaded', gaugeInit);
-// ── END GAUGE ─────────────────────────────────────────────────────────────────
-
-// ── RADAR MODAL ───────────────────────────────────────────────────────────────
-var _radarModal = null;
-var _radarCtx   = null;
-var _radarDPR   = 1;
-var _radarSize  = 256; // même largeur que la modale compteur
-
-function radarModalInit() {
-  _radarModal = document.createElement('div');
-  _radarModal.id        = 'radar-modal';
-  _radarModal.className = 'radar-modal';
-  _radarModal.innerHTML =
-    '<div class="radar-modal-header">' +
-      '<span class="radar-modal-title">Tension</span>' +
-      '<button class="radar-modal-close" id="radar-modal-close" title="Fermer">&#x2715;</button>' +
-    '</div>' +
-    '<canvas id="radar-modal-canvas" style="display:block;margin:0 auto;' +
-      'width:' + _radarSize + 'px;height:' + _radarSize + 'px"></canvas>' +
-    '<div id="radar-modal-avgs" style="display:flex;justify-content:center;gap:1.2rem;width:100%;margin-top:.1rem">' +
-      '<span id="radar-avg-fo" style="font-family:\'DM Mono\',monospace;font-size:.62rem;font-weight:400;color:rgba(232,146,124,0.5)">\u2014</span>' +
-      '<span id="radar-avg-fa" style="font-family:\'DM Mono\',monospace;font-size:.62rem;font-weight:400;color:rgba(126,200,227,0.5)">\u2014</span>' +
-    '</div>';
-  document.body.appendChild(_radarModal);
-
-  var canvas = document.getElementById('radar-modal-canvas');
-  _radarDPR  = window.devicePixelRatio || 1;
-  canvas.width  = Math.round(_radarSize * _radarDPR);
-  canvas.height = Math.round(_radarSize * _radarDPR);
-  _radarCtx = canvas.getContext('2d');
-  _radarCtx.scale(_radarDPR, _radarDPR);
-  _radarCtx.imageSmoothingEnabled = false;
-
-  document.getElementById('radar-modal-close').addEventListener('click', function(e) {
-    e.stopPropagation();
-    radarModalClose();
-  });
-}
-
-// Redessine la modale radar si elle est ouverte
+// ── Radar panel ───────────────────────────────────────────────────────────────
 function radarModalRefresh() {
-  if (_radarModal && _radarModal.classList.contains('show')) radarModalDraw();
+  var _pw2 = document.getElementById('panels-wrap'); if (_pw2 && _pw2.classList.contains('show')) radarModalDraw();
 }
 
-// Dessine le radar et les moyennes dans la modale
 function radarModalDraw() {
   if (!_radarCtx) return;
   var nb = parseInt((document.getElementById('nb-rayons') || {}).value) || 0;
-  var perSide = Math.floor(nb / 2);
-  if (perSide < 2) return;
+  var perSide = Math.floor(nb / 2); if (perSide < 2) return;
 
+  // Taille dynamique selon le conteneur
+  var canvas = document.getElementById('radar-modal-canvas');
+  if (canvas && canvas.parentElement) {
+    var w = canvas.parentElement.clientWidth;
+    if (w > 10) {
+      _radarSize = w;
+      canvas.width  = Math.round(w * _radarDPR);
+      canvas.height = Math.round(w * _radarDPR);
+      canvas.style.width  = w + 'px';
+      canvas.style.height = w + 'px';
+      _radarCtx.setTransform(_radarDPR, 0, 0, _radarDPR, 0, 0);
+      _radarCtx.imageSmoothingEnabled = false;
+    }
+  }
   var foKgfs = tmData.fo.slice(0, perSide).map(function(v) { return toKgf(v); });
   var faKgfs = tmData.fa.slice(0, perSide).map(function(v) { return toKgf(v); });
-
-  var ctx = _radarCtx;
-  var W = _radarSize, H = _radarSize;
-  var cx = W / 2, cy = H / 2;
-  var R  = W * 0.36;
-
+  var ctx = _radarCtx; var W = _radarSize; var H = _radarSize;
+  var cx = W/2; var cy = H/2; var R = W * 0.36;
   ctx.clearRect(0, 0, W, H);
-
-  var allVals  = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
-  // Utiliser une échelle par défaut si pas encore de données
-  var scaleMax = allVals.length ? (Math.ceil(Math.max.apply(null, allVals) / 20) * 20 || 20) : 140;
-  var noData   = !allVals.length;
-
-  var N = perSide * 2;
-  var angleStep = (2 * Math.PI) / N;
-
-  // Anneaux + étiquettes
+  var allVals = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
+  var noData = !allVals.length;
+  var scaleMax = noData ? 140 : (Math.ceil(Math.max.apply(null,allVals)/20)*20 || 140);
+  var N = perSide * 2; var angleStep = (2*Math.PI) / N;
   var rings = 5;
   for (var r = 1; r <= rings; r++) {
-    var rr = (r / rings) * R;
+    var rr = (r/rings)*R;
     ctx.beginPath();
     for (var i = 0; i < N; i++) {
-      var a = i * angleStep - Math.PI / 2;
-      if (i === 0) ctx.moveTo(cx + rr * Math.cos(a), cy + rr * Math.sin(a));
-      else         ctx.lineTo(cx + rr * Math.cos(a), cy + rr * Math.sin(a));
+      var a = i*angleStep - Math.PI/2;
+      if (i===0) ctx.moveTo(cx+rr*Math.cos(a), cy+rr*Math.sin(a));
+      else ctx.lineTo(cx+rr*Math.cos(a), cy+rr*Math.sin(a));
     }
-    ctx.closePath();
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-    ctx.lineWidth   = 1;
-    ctx.stroke();
-    if (r === 2 || r === 4 || r === rings) {
-      ctx.fillStyle    = 'rgba(150,170,190,0.4)';
-      ctx.font         = Math.round(W * 0.028) + 'px "DM Mono",monospace';
-      ctx.textAlign    = 'center';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText(Math.round((r / rings) * scaleMax), cx, cy - rr - 2);
+    ctx.closePath(); ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1; ctx.stroke();
+    if (r===2||r===4||r===rings) {
+      ctx.fillStyle = 'rgba(150,170,190,0.4)'; ctx.font = Math.round(W*0.028)+'px "DM Mono",monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(Math.round((r/rings)*scaleMax), cx, cy-rr-2);
     }
   }
-
-  // Axes + numéros de rayons
   for (var i = 0; i < N; i++) {
-    var a    = i * angleStep - Math.PI / 2;
-    var isFo = (i % 2 === 0);
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
-    ctx.strokeStyle = isFo ? 'rgba(232,146,124,0.12)' : 'rgba(126,200,227,0.12)';
-    ctx.lineWidth   = 1;
-    ctx.stroke();
-    if (perSide <= 16 || i % 2 === 0) {
-      ctx.fillStyle    = isFo ? 'rgba(232,146,124,0.45)' : 'rgba(126,200,227,0.38)';
-      ctx.font         = Math.round(W * 0.024) + 'px "DM Mono",monospace';
-      ctx.textAlign    = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(Math.floor(i / 2) + 1, cx + (R + Math.max(9, W * 0.03)) * Math.cos(a),
-                                           cy + (R + Math.max(9, W * 0.03)) * Math.sin(a));
+    var a = i*angleStep - Math.PI/2; var isFo = (i%2===0);
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+R*Math.cos(a), cy+R*Math.sin(a));
+    ctx.strokeStyle = isFo ? 'rgba(232,146,124,0.12)' : 'rgba(126,200,227,0.12)'; ctx.lineWidth = 1; ctx.stroke();
+    if (perSide<=16||i%2===0) {
+      ctx.fillStyle = isFo ? 'rgba(232,146,124,0.45)' : 'rgba(126,200,227,0.38)';
+      ctx.font = Math.round(W*0.024)+'px "DM Mono",monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(Math.floor(i/2)+1, cx+(R+Math.max(9,W*0.03))*Math.cos(a), cy+(R+Math.max(9,W*0.03))*Math.sin(a));
     }
   }
-
-  // Polygones — seulement si des données existent
   if (!noData) {
     function drawPoly(vals, angleOffset, strokeColor, fillColor) {
-      var pts = vals.map(function(v, i) {
-        var a  = (i * 2 + angleOffset) * angleStep - Math.PI / 2;
-        var rr = v !== null ? (v / scaleMax) * R : 0;
-        return [cx + rr * Math.cos(a), cy + rr * Math.sin(a)];
+      var pts = vals.map(function(v,i) {
+        var a = (i*2+angleOffset)*angleStep - Math.PI/2;
+        return [cx+(v!==null?(v/scaleMax)*R:0)*Math.cos(a)+cx-(v!==null?(v/scaleMax)*R:0)*Math.cos(a)+(v!==null?(v/scaleMax)*R:0)*Math.cos(a),
+                cy+(v!==null?(v/scaleMax)*R:0)*Math.sin(a)];
+      });
+      // Recalculate properly
+      pts = vals.map(function(v,i) {
+        var a = (i*2+angleOffset)*angleStep - Math.PI/2;
+        var rr = v !== null ? (v/scaleMax)*R : 0;
+        return [cx+rr*Math.cos(a), cy+rr*Math.sin(a)];
       });
       ctx.beginPath();
-      pts.forEach(function(p, i) { if (i === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]); });
-      ctx.closePath();
-      ctx.fillStyle   = fillColor;   ctx.fill();
+      pts.forEach(function(p,i){ if(i===0) ctx.moveTo(p[0],p[1]); else ctx.lineTo(p[0],p[1]); });
+      ctx.closePath(); ctx.fillStyle = fillColor; ctx.fill();
       ctx.strokeStyle = strokeColor; ctx.lineWidth = 1.8; ctx.stroke();
-      vals.forEach(function(v, i) {
-        if (v === null) return;
-        var a  = (i * 2 + angleOffset) * angleStep - Math.PI / 2;
-        var rr = (v / scaleMax) * R;
-        ctx.beginPath();
-        ctx.arc(cx + rr * Math.cos(a), cy + rr * Math.sin(a), 3, 0, 2 * Math.PI);
+      vals.forEach(function(v,i) {
+        if(v===null) return;
+        var a=(i*2+angleOffset)*angleStep-Math.PI/2; var rr=(v/scaleMax)*R;
+        ctx.beginPath(); ctx.arc(cx+rr*Math.cos(a), cy+rr*Math.sin(a), 3, 0, 2*Math.PI);
         ctx.fillStyle = strokeColor; ctx.fill();
       });
     }
     drawPoly(faKgfs, 1, 'rgba(126,200,227,0.8)', 'rgba(126,200,227,0.06)');
     drawPoly(foKgfs, 0, 'rgba(232,146,124,0.8)', 'rgba(232,146,124,0.06)');
   }
+  ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 2*Math.PI); ctx.fillStyle = 'rgba(150,170,190,0.35)'; ctx.fill();
 
-  // Centre
-  ctx.beginPath();
-  ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
-  ctx.fillStyle = 'rgba(150,170,190,0.35)';
-  ctx.fill();
-
-  // Moyennes (MOY/AVG selon langue)
   function avg(vals) {
-    var v = vals.filter(function(x) { return x !== null; });
-    return v.length ? v.reduce(function(a, b) { return a + b; }, 0) / v.length : null;
+    var v = vals.filter(function(x){return x!==null;});
+    return v.length ? v.reduce(function(a,b){return a+b;},0)/v.length : null;
   }
   var isFront = typeof wtype !== 'undefined' && wtype === 'avant';
   var prefix  = (typeof lang !== 'undefined' && lang === 'en') ? 'AVG' : 'MOY';
+  // Affichage moyennes : NDS toujours à gauche, DS toujours à droite
+  // (comme les colonnes de mesure)
+  var elNds = document.getElementById('radar-avg-nds');
+  var elDs  = document.getElementById('radar-avg-ds');
 
-  function setAvg(elId, val, label, color, dimColor) {
-    var el = document.getElementById(elId);
+  function showAvg(el, val, label, color, dimColor) {
     if (!el) return;
-    if (val !== null) {
-      el.textContent = prefix + '\u00a0' + label + '\u00a0' + val.toFixed(1) + ' kgf';
-      el.style.color = color;
-    } else {
-      el.textContent = '\u2014';
-      el.style.color = dimColor;
-    }
+    if (val !== null) { el.textContent = prefix+'\u00a0'+label+'\u00a0'+val.toFixed(1)+' kgf'; el.style.color = color; }
+    else { el.textContent = '\u2014'; el.style.color = dimColor; }
   }
 
-  setAvg('radar-avg-fo', avg(foKgfs), isFront ? 'NDS' : 'DS',
-         'rgba(232,146,124,1)', 'rgba(232,146,124,0.35)');
-  setAvg('radar-avg-fa', avg(faKgfs), isFront ? 'DS'  : 'NDS',
-         'rgba(126,200,227,1)', 'rgba(126,200,227,0.35)');
+  // NDS = fo pour avant, fa pour arrière
+  var ndsKgfs = isFront ? foKgfs : faKgfs;
+  var dsKgfs  = isFront ? faKgfs : foKgfs;
+  var ndsColor     = isFront ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
+  var ndsDimColor  = isFront ? 'rgba(232,146,124,0.35)' : 'rgba(126,200,227,0.35)';
+  var dsColor      = isFront ? 'rgba(126,200,227,1)' : 'rgba(232,146,124,1)';
+  var dsDimColor   = isFront ? 'rgba(126,200,227,0.35)' : 'rgba(232,146,124,0.35)';
+
+  showAvg(elNds, avg(ndsKgfs), 'NDS', ndsColor, ndsDimColor);
+  showAvg(elDs,  avg(dsKgfs),  'DS',  dsColor,  dsDimColor);
 }
 
-// Toggle ouverture/fermeture (ferme le compteur si ouvert)
-function radarModalToggle() {
-  if (!_radarModal) return;
-  var btn = document.getElementById('radar-modal-btn');
-  if (_radarModal.classList.contains('show')) {
-    radarModalClose();
-  } else {
-    if (typeof gaugeClose === 'function') gaugeClose();
-    _radarModal.classList.add('show');
-    radarModalDraw();
-      if (btn) { btn.style.borderColor = 'rgba(126,200,227,.5)'; btn.style.color = 'var(--accent)'; }
-  }
-}
-
-function radarModalClose() {
-  if (!_radarModal) return;
-  _radarModal.classList.remove('show');
-  var btn = document.getElementById('radar-modal-btn');
-  if (btn) { btn.style.borderColor = 'rgba(126,200,227,.5)'; btn.style.color = 'var(--accent)'; }
-}
-
+document.addEventListener('DOMContentLoaded', gaugeInit);
 document.addEventListener('DOMContentLoaded', radarModalInit);
-// ── END RADAR MODAL ───────────────────────────────────────────────────────────
+window.addEventListener('resize', function() {
+  var wrap = document.getElementById('panels-wrap');
+  if (wrap && wrap.classList.contains('show')) {
+    gaugeDraw(_gaugeDisplayed);
+    radarModalDraw();
+  }
+}, { passive: true });
+// ── END GAUGE + RADAR PANELS ──────────────────────────────────────────────────
+
 
 
 
