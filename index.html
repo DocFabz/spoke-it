@@ -663,8 +663,6 @@ input[type=number] { -moz-appearance:textfield }
 .tm-clear-tensio.inactive { opacity:0; pointer-events:none }
 
 /* ── Tension module: unit badge ───────────────────────────────────────── */
-.tm-unit-badge { margin-left:auto; font-family:'DM Mono',monospace; font-size:.62rem; color:var(--text3); background:var(--card-alt); border:1px solid var(--border); border-radius:10px; padding:.12rem .6rem; transition:color .2s, border-color .2s }
-.tm-unit-badge.ready { color:var(--accent); border-color:rgba(126,200,227,.5) }
 
 /* ── Tension module: table header reset button ────────────────────────── */
 .tm-th-reset   { background:none; border:none; cursor:pointer; padding:.1rem .3rem; border-radius:4px; opacity:.45; font-size:.7rem; color:inherit; line-height:1; transition:opacity .15s }
@@ -1318,7 +1316,7 @@ input[type=number] { -moz-appearance:textfield }
   </div>
 
   <!-- ── Grille de saisie ── -->
-  <div class="card" id="tm-input-card">
+  <div class="card" id="tm-input-card" style="display:none">
     <div class="ch ch-toggle" onclick="toggleTmInputCard()">
       <svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
         <rect x="3" y="4" width="18" height="16" rx="2"/>
@@ -1328,7 +1326,6 @@ input[type=number] { -moz-appearance:textfield }
       <div class="clabel" data-i18n="tmDeflLabel">Déflections mesurées</div>
       <em id="tm-input-card-chevron" class="chevron">&#8964;</em>
     </div>
-    <span id="tm-unit-badge" class="tm-unit-badge" style="margin-top:.4rem;align-self:flex-start">WF</span>
 
     <div id="tm-input-card-body" style="display:none;margin-top:.75rem">
     <div class="tm-grid-wrap">
@@ -1372,7 +1369,7 @@ input[type=number] { -moz-appearance:textfield }
         <polygon points="12,7 16.5,10 16.5,14 12,17 7.5,14 7.5,10"/>
       </svg>
       <div class="clabel" data-i18n="tmRadarTitle">Diagramme de tension</div>
-      <button class="tm-screenshot-btn" id="tm-screenshot-btn" onclick="tmScreenshot(event)" title="Screenshot">
+      <button class="tm-screenshot-btn" id="tm-screenshot-btn" onclick="tmScreenshot(event)" title="Screenshot" style="opacity:.35;pointer-events:none;cursor:not-allowed">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
           <circle cx="12" cy="13" r="4"/>
@@ -1827,6 +1824,8 @@ let tmActiveKey = null;   // key of the tensiometer whose data is currently in t
 let tmDTSub = 'standard'; // 'standard' | 'aerolite2'
 let tmWFSub = 'new';     // 'old' | 'new'
 let tmSpokeKey = null;    // clé rayon sélectionnée dans la table active
+let _tmLoadedType  = null; // tensio du couple chargé depuis config
+let _tmLoadedSpoke = null; // rayon du couple chargé depuis config
 // ── État highlight ──────────────────────────────────────────────────────────
 let tmCVThreshold = 5;    // % — seuil écart-type coefficient de variation
 let tmHighlightOn = false;
@@ -2116,13 +2115,22 @@ function applyState(s) {
     // Clear store on config load — session-only data, not persisted
     Object.keys(tmStore).forEach(k => delete tmStore[k]);
 
-    // Reconstruire la table + radar (même si le module est caché — sera correct quand on y navigue)
+    // Reconstruire la table — cards fermées, spoke verrouillé si config chargée
     tmBuildTable();
-    if (tmData.fo.some(v => v !== null && v !== '') || tmData.fa.some(v => v !== null && v !== '')) {
-      tmTryRenderRadar();
+    tmHideResult();
+    // Mémoriser et verrouiller le couple tensio/rayon chargé
+    if (tmSpokeKey) {
+      _tmLoadedType  = tmType;
+      _tmLoadedSpoke = tmSpokeKey;
+      tmLockSpokeSelect(true);
     } else {
-      tmHideResult();
+      _tmLoadedType  = null;
+      _tmLoadedSpoke = null;
     }
+    // Fermer la card measured deflections (body fermé, header visible)
+    const icBody = $id('tm-input-card-body'), icChev = $id('tm-input-card-chevron');
+    if (icBody) icBody.style.display = 'none';
+    if (icChev) icChev.style.transform = '';
   }
 
   _applyingState = false;
@@ -2783,12 +2791,25 @@ function toggleCard(bodyId, chevronId) {
 }
 function toggleResultsCard() { toggleCard('results-card-body', 'results-card-chevron'); }
 function toggleTmInputCard()  { toggleCard('tm-input-card-body',  'tm-input-card-chevron'); }
+function tmUpdateScreenshotBtn() {
+  const btn  = $id('tm-screenshot-btn');
+  if (!btn) return;
+  const body = $id('tm-result-card-body');
+  const open = body && body.style.display !== 'none';
+  btn.style.opacity       = open ? '' : '.35';
+  btn.style.pointerEvents = open ? '' : 'none';
+  btn.style.cursor        = open ? '' : 'not-allowed';
+}
+
 function toggleTmResultCard() {
+  const card = $id('tm-result-card');
   const body = $id('tm-result-card-body'), chev = $id('tm-result-card-chevron');
+  if (card.style.display === 'none') return; // card pas encore disponible
   const open = body.style.display !== 'none';
   body.style.display = open ? 'none' : 'block';
   chev.style.transform = open ? '' : 'rotate(180deg)';
-  tmRadarCollapsed = open; // l'utilisateur ferme → collapsed, ouvre → pas collapsed
+  tmRadarCollapsed = open;
+  tmUpdateScreenshotBtn();
   if (!open) tmTryRenderRadar();
 }
 function toggleArbCard() {
@@ -3759,18 +3780,12 @@ function tmPopulateSpokeSelect() {
 
 // ── Badge unité ───────────────────────────────────────────────────────────────
 function tmUpdateUnitBadge() {
-  const badge = $id('tm-unit-badge');
-  if (!badge) return;
-  if (tmType && tmType.startsWith('ct_')) {
-    const ct = ctLoadAll().find(c => 'ct_' + c.id === tmType);
-    badge.textContent = ct ? CC_PREFIX + ct.name.slice(0, 4) : '★';
-  } else {
-    const labels = { wf: 'WF', pt: 'PT', dt: 'DT', pk: 'PK', un: 'UN' };
-    badge.textContent = tmType ? (labels[tmType] || tmType.toUpperCase()) : '—';
-  }
   const nb = parseInt($id('nb-rayons').value) || 0;
   const ready = !!tmType && !!tmSpokeKey && nb > 0;
-  badge.classList.toggle('ready', ready);
+  const inputCard  = $id('tm-input-card');
+  const resultCard = $id('tm-result-card');
+  if (inputCard)  inputCard.style.display  = ready ? '' : 'none';
+  if (resultCard) resultCard.style.display = ready ? '' : 'none';
 }
 
 // ── Sync boutons type de roue dans le module tension ─────────────────────────
@@ -3843,6 +3858,9 @@ function setTM(type) {
   const newKey = isCt ? type : (type === 'dt' ? 'dt_' + tmDTSub : type === 'wf' ? 'wf_' + tmWFSub : type);
   if (newKey === tmActiveKey) return;
   tmType = type;
+  // Re-verrouiller si on revient au tensio chargé avec son rayon d'origine
+  const backToLoaded = !!_tmLoadedType && type === _tmLoadedType && tmSpokeKey === _tmLoadedSpoke;
+  tmLockSpokeSelect(backToLoaded);
   tmSwitchActiveKey(newKey);
   const tmTensioSel = $id('tm-tensio-select');
   if (tmTensioSel && tmTensioSel.value !== type) tmTensioSel.value = type;
@@ -3871,6 +3889,9 @@ function tmClearTensio() {
   $id('tm-btn-wf-old').classList.remove('active');
   $id('tm-btn-wf-new').classList.add('active');
   tmSpokeKey = null;
+  _tmLoadedType  = null;
+  _tmLoadedSpoke = null;
+  tmLockSpokeSelect(false);
   tmPopulateSpokeSelect();
   tmUpdateBadges();
   tmUpdateConvBtn();
@@ -3914,6 +3935,21 @@ function updateWFTip() {
   const key = tmWFSub === 'old' ? 'tmWFTipOld' : 'tmWFTipNew';
   tip.setAttribute('data-i18n', key);
   tip.textContent = t(key);
+}
+
+// ── Verrouillage du select rayon quand config chargée ────────────────────────
+function tmLockSpokeSelect(locked) {
+  const sel   = $id('tm-spoke-select');
+  const clear = $id('tm-clear-spoke');
+  if (sel) {
+    sel.disabled = locked;
+    sel.style.opacity      = locked ? '.5' : '';
+    sel.style.pointerEvents= locked ? 'none' : '';
+  }
+  if (clear) {
+    clear.style.opacity      = locked ? '.35' : '';
+    clear.style.pointerEvents= locked ? 'none' : '';
+  }
 }
 
 // ── onchange sur le dropdown de rayons ───────────────────────────────────────
@@ -4658,9 +4694,7 @@ function tmBuildTable() {
     return;
   }
 
-  // Table peuplée — ouvrir la card
-  if (body) { body.style.display = 'block'; }
-  if (chev) { chev.style.transform = 'rotate(180deg)'; }
+  // Table peuplée — laisser la card fermée, l'utilisateur l'ouvre manuellement
 
   const perSide = Math.floor(nb / 2);
   while (tmData.fo.length < perSide) tmData.fo.push(null);
@@ -4797,9 +4831,12 @@ function tmUpdateCell(idx, side) {
 }
 
 function tmHideResult() {
-  $id('tm-result-card').style.display = 'none';
-  tmRadarCollapsed = false; // reset : prochaine apparition sera ouverte
-  // Reset highlight silencieux — pas d'appel à tmTryRenderRadar
+  const body  = $id('tm-result-card-body');
+  const chev  = $id('tm-result-card-chevron');
+  if (body) body.style.display = 'none';
+  if (chev) chev.style.transform = '';
+  tmRadarCollapsed = false;
+  tmUpdateScreenshotBtn();
   tmHighlightOn = false;
   const btn = $id('tm-hl-btn');
   if (btn) btn.classList.remove('active');
@@ -4915,16 +4952,12 @@ function tmTryRenderRadar() {
 
   const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v));
   const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v));
-  if (!foKgfs.some(v => v !== null) && !faKgfs.some(v => v !== null)) { tmHideResult(); return; }
 
-  $id('tm-result-card').style.display = '';
+  // Ne redessiner que si le body est déjà ouvert — jamais d'ouverture automatique
+  const rcBody = $id('tm-result-card-body');
+  if (!rcBody || rcBody.style.display === 'none') return;
+
   void $id('tm-result-card').offsetWidth;
-  // Ouvrir le body seulement si l'utilisateur ne l'a pas fermé manuellement
-  const rcBody = $id('tm-result-card-body'), rcChev = $id('tm-result-card-chevron');
-  if (!tmRadarCollapsed) {
-    if (rcBody) rcBody.style.display = 'block';
-    if (rcChev) rcChev.style.transform = 'rotate(180deg)';
-  }
   tmOutliers.fo = tmComputeOutliers(foKgfs, tmCVThreshold);
   tmOutliers.fa = tmComputeOutliers(faKgfs, tmCVThreshold);
   tmUpdateOutlierCount();
