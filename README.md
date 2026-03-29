@@ -1,2 +1,2 @@
 # spoke-it
-Spoke calulator
+Spoke calculator
