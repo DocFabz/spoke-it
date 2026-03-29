@@ -433,7 +433,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-empty-msg { padding:.8rem; color:var(--text3); font-size:.72rem; font-family:'DM Sans',sans-serif; font-style:italic; text-align:center }
 
 /* Input déflection */
-.defl-inp        { width:62px; background:var(--inp); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'DM Mono',monospace; font-size:.8rem; font-weight:300; padding:.3rem .4rem; text-align:center; transition:border-color .18s, background .18s; -webkit-appearance:none; appearance:none; scroll-margin-top: 320px; }
+.defl-inp        { width:62px; background:var(--inp); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'DM Mono',monospace; font-size:.8rem; font-weight:300; padding:.3rem .4rem; text-align:center; transition:border-color .18s, background .18s; -webkit-appearance:none; appearance:none }
 .defl-inp:focus  { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.02) }
 .defl-inp.fo     { border-color:rgba(232,146,124,.25) }
 .defl-inp.fa     { border-color:rgba(126,200,227,.2) }
@@ -5814,12 +5814,25 @@ function panelsToggle() {
     radarModalDraw();
     var btn = document.getElementById('panels-toggle-btn');
     if (btn) { btn.style.borderColor = 'rgba(126,200,227,.5)'; btn.style.color = 'var(--accent)'; }
+    // Appliquer scroll-margin-top = hauteur réelle des panneaux + marge
+    requestAnimationFrame(function() {
+      var h = wrap.offsetHeight;
+      if (h > 0) {
+        document.querySelectorAll('.defl-inp').forEach(function(el) {
+          el.style.scrollMarginTop = (h + 12) + 'px';
+        });
+      }
+    });
   }
 }
 
 function panelsClose() {
   var wrap = document.getElementById('panels-wrap');
   if (wrap) wrap.classList.remove('show');
+  // Réinitialiser scroll-margin-top
+  document.querySelectorAll('.defl-inp').forEach(function(el) {
+    el.style.scrollMarginTop = '';
+  });
   var btn = document.getElementById('panels-toggle-btn');
   if (btn) { btn.style.borderColor = ''; btn.style.color = ''; }
   _gaugeActive = null;
