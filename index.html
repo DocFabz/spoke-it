@@ -689,13 +689,11 @@ input[type=number] { -moz-appearance:textfield }
   left: 50%;
   transform: translateX(-50%);
   z-index: 9994;
-  background: rgba(18, 22, 34, 0.85);
-  backdrop-filter: blur(20px) saturate(1.5);
-  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  background: rgba(18, 22, 34, 0.97);
   border: 1px solid rgba(126, 200, 227, 0.2);
   border-radius: 14px;
   padding: .7rem .9rem .6rem;
-  box-shadow: 0 12px 48px rgba(0,0,0,0.65), 0 0 0 1px rgba(126,200,227,0.06) inset;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.75), 0 0 0 1px rgba(126,200,227,0.06) inset;
   pointer-events: auto;
   display: none;
   flex-direction: column;
@@ -729,13 +727,11 @@ input[type=number] { -moz-appearance:textfield }
   left: 50%;
   transform: translateX(-50%);
   z-index: 9995;
-  background: rgba(18, 22, 34, 0.85);
-  backdrop-filter: blur(20px) saturate(1.5);
-  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  background: rgba(18, 22, 34, 0.97);
   border: 1px solid rgba(126, 200, 227, 0.2);
   border-radius: 14px;
   padding: .7rem .9rem .6rem;
-  box-shadow: 0 12px 48px rgba(0,0,0,0.65), 0 0 0 1px rgba(126,200,227,0.06) inset;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.75), 0 0 0 1px rgba(126,200,227,0.06) inset;
   pointer-events: auto;
   display: none;
   flex-direction: column;
@@ -3913,7 +3909,29 @@ function tmUpdateUnitBadge() {
       }
     }
   }
-  // Sync bouton radar
+  // Bouton radar — mêmes conditions que le compteur
+  const rBtn = $id('radar-modal-btn');
+  if (rBtn) {
+    if (ready) {
+      rBtn.style.opacity       = '';
+      rBtn.style.pointerEvents = '';
+      rBtn.style.cursor        = 'pointer';
+      if (!_radarModal || !_radarModal.classList.contains('show')) {
+        rBtn.style.borderColor = 'rgba(126,200,227,.5)';
+        rBtn.style.color       = 'var(--accent)';
+      }
+    } else {
+      rBtn.style.opacity       = '.35';
+      rBtn.style.pointerEvents = 'none';
+      rBtn.style.cursor        = 'not-allowed';
+      rBtn.style.borderColor   = '';
+      rBtn.style.color         = '';
+      if (typeof radarModalClose === 'function' && _radarModal && _radarModal.classList.contains('show')) {
+        radarModalClose();
+      }
+    }
+  }
+  // Sync bouton radar (refresh données)
   if (typeof radarModalRefresh === 'function') radarModalRefresh();
 }
 
@@ -5065,7 +5083,6 @@ function tmTryRenderRadarFull() {
   if (perSide < 2) return;
   const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v));
   const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v));
-  if (!foKgfs.some(v => v !== null) && !faKgfs.some(v => v !== null)) return;
   $id('tm-result-card').style.display = '';
   const rcBody = $id('tm-result-card-body'), rcChev = $id('tm-result-card-chevron');
   if (rcBody) rcBody.style.display = 'block';
@@ -5085,7 +5102,6 @@ function tmTryRenderRadar() {
 
   const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v));
   const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v));
-  if (!foKgfs.some(v => v !== null) && !faKgfs.some(v => v !== null)) { tmHideResult(); return; }
 
   // N'ouvre plus automatiquement le body — seulement si déjà ouvert
   const rcBody = $id('tm-result-card-body');
@@ -5134,9 +5150,9 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
   const angleStep = (2 * Math.PI) / N;
 
   const allVals  = [...foKgfs, ...faKgfs].filter(v => v !== null);
-  if (!allVals.length) return;
-  const maxVal   = Math.max(...allVals);
-  const scaleMax = Math.ceil(maxVal / 20) * 20 || 20;
+  const noData   = !allVals.length;
+  const maxVal   = noData ? 0 : Math.max(...allVals);
+  const scaleMax = Math.ceil(maxVal / 20) * 20 || 140;
 
   // Rings
   const rings = 5;
@@ -5225,8 +5241,10 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
   }
 
   // fa (faible / accent) en dessous, fo (fort / warm) par-dessus
-  drawPoly(faKgfs, 1, 'rgba(126,200,227,0.8)', 'rgba(126,200,227,0.06)', outliers ? outliers.fa : null);
-  drawPoly(foKgfs, 0, 'rgba(232,146,124,0.8)', 'rgba(232,146,124,0.06)', outliers ? outliers.fo : null);
+  if (!noData) {
+    drawPoly(faKgfs, 1, 'rgba(126,200,227,0.8)', 'rgba(126,200,227,0.06)', outliers ? outliers.fa : null);
+    drawPoly(foKgfs, 0, 'rgba(232,146,124,0.8)', 'rgba(232,146,124,0.06)', outliers ? outliers.fo : null);
+  }
 
   // Centre
   ctx.beginPath();
@@ -5951,40 +5969,9 @@ function radarModalInit() {
   });
 }
 
-// Vérifie si des données sont disponibles pour dessiner le radar
-function radarModalHasData() {
-  if (typeof tmData === 'undefined') return false;
-  var nb = parseInt((document.getElementById('nb-rayons') || {}).value) || 0;
-  var perSide = Math.floor(nb / 2);
-  if (perSide < 2) return false;
-  var foKgfs = tmData.fo.slice(0, perSide).map(function(v) { return toKgf(v); });
-  var faKgfs = tmData.fa.slice(0, perSide).map(function(v) { return toKgf(v); });
-  return foKgfs.some(function(v) { return v !== null; }) ||
-         faKgfs.some(function(v) { return v !== null; });
-}
-
-// Met à jour l'état (actif/grisé) de la capsule diagramme
-function radarModalUpdateBtn() {
-  var btn = document.getElementById('radar-modal-btn');
-  if (!btn) return;
-  var nb      = parseInt((document.getElementById('nb-rayons') || {}).value) || 0;
-  var ready   = Math.floor(nb / 2) >= 2 && radarModalHasData();
-  if (ready) {
-    btn.style.opacity       = '';
-    btn.style.pointerEvents = '';
-    btn.style.cursor        = 'pointer';
-    if (!_radarModal || !_radarModal.classList.contains('show')) {
-      btn.style.borderColor = 'rgba(126,200,227,.5)';
-      btn.style.color       = 'var(--accent)';
-    }
-  } else {
-    btn.style.opacity       = '.35';
-    btn.style.pointerEvents = 'none';
-    btn.style.cursor        = 'not-allowed';
-    btn.style.borderColor   = '';
-    btn.style.color         = '';
-    if (_radarModal && _radarModal.classList.contains('show')) radarModalClose();
-  }
+// Redessine la modale radar si elle est ouverte
+function radarModalRefresh() {
+  if (_radarModal && _radarModal.classList.contains('show')) radarModalDraw();
 }
 
 // Dessine le radar et les moyennes dans la modale
@@ -6004,10 +5991,10 @@ function radarModalDraw() {
 
   ctx.clearRect(0, 0, W, H);
 
-  var allVals = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
-  if (!allVals.length) return;
-  var maxVal   = Math.max.apply(null, allVals);
-  var scaleMax = Math.ceil(maxVal / 20) * 20 || 20;
+  var allVals  = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
+  // Utiliser une échelle par défaut si pas encore de données
+  var scaleMax = allVals.length ? (Math.ceil(Math.max.apply(null, allVals) / 20) * 20 || 20) : 140;
+  var noData   = !allVals.length;
 
   var N = perSide * 2;
   var angleStep = (2 * Math.PI) / N;
@@ -6055,30 +6042,31 @@ function radarModalDraw() {
     }
   }
 
-  // Polygones
-  function drawPoly(vals, angleOffset, strokeColor, fillColor) {
-    var pts = vals.map(function(v, i) {
-      var a  = (i * 2 + angleOffset) * angleStep - Math.PI / 2;
-      var rr = v !== null ? (v / scaleMax) * R : 0;
-      return [cx + rr * Math.cos(a), cy + rr * Math.sin(a)];
-    });
-    ctx.beginPath();
-    pts.forEach(function(p, i) { if (i === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]); });
-    ctx.closePath();
-    ctx.fillStyle   = fillColor;   ctx.fill();
-    ctx.strokeStyle = strokeColor; ctx.lineWidth = 1.8; ctx.stroke();
-    vals.forEach(function(v, i) {
-      if (v === null) return;
-      var a  = (i * 2 + angleOffset) * angleStep - Math.PI / 2;
-      var rr = (v / scaleMax) * R;
+  // Polygones — seulement si des données existent
+  if (!noData) {
+    function drawPoly(vals, angleOffset, strokeColor, fillColor) {
+      var pts = vals.map(function(v, i) {
+        var a  = (i * 2 + angleOffset) * angleStep - Math.PI / 2;
+        var rr = v !== null ? (v / scaleMax) * R : 0;
+        return [cx + rr * Math.cos(a), cy + rr * Math.sin(a)];
+      });
       ctx.beginPath();
-      ctx.arc(cx + rr * Math.cos(a), cy + rr * Math.sin(a), 3, 0, 2 * Math.PI);
-      ctx.fillStyle = strokeColor; ctx.fill();
-    });
+      pts.forEach(function(p, i) { if (i === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]); });
+      ctx.closePath();
+      ctx.fillStyle   = fillColor;   ctx.fill();
+      ctx.strokeStyle = strokeColor; ctx.lineWidth = 1.8; ctx.stroke();
+      vals.forEach(function(v, i) {
+        if (v === null) return;
+        var a  = (i * 2 + angleOffset) * angleStep - Math.PI / 2;
+        var rr = (v / scaleMax) * R;
+        ctx.beginPath();
+        ctx.arc(cx + rr * Math.cos(a), cy + rr * Math.sin(a), 3, 0, 2 * Math.PI);
+        ctx.fillStyle = strokeColor; ctx.fill();
+      });
+    }
+    drawPoly(faKgfs, 1, 'rgba(126,200,227,0.8)', 'rgba(126,200,227,0.06)');
+    drawPoly(foKgfs, 0, 'rgba(232,146,124,0.8)', 'rgba(232,146,124,0.06)');
   }
-
-  drawPoly(faKgfs, 1, 'rgba(126,200,227,0.8)', 'rgba(126,200,227,0.06)');
-  drawPoly(foKgfs, 0, 'rgba(232,146,124,0.8)', 'rgba(232,146,124,0.06)');
 
   // Centre
   ctx.beginPath();
@@ -6110,12 +6098,6 @@ function radarModalDraw() {
          'rgba(232,146,124,1)', 'rgba(232,146,124,0.35)');
   setAvg('radar-avg-fa', avg(faKgfs), isFront ? 'DS'  : 'NDS',
          'rgba(126,200,227,1)', 'rgba(126,200,227,0.35)');
-}
-
-// Rafraîchit le bouton et le dessin si la modale est ouverte
-function radarModalRefresh() {
-  radarModalUpdateBtn();
-  if (_radarModal && _radarModal.classList.contains('show')) radarModalDraw();
 }
 
 // Toggle ouverture/fermeture (ferme le compteur si ouvert)
