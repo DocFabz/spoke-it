@@ -684,7 +684,11 @@ input[type=number] { -moz-appearance:textfield }
 
 /* ── Radar modal ─────────────────────────────────────────────────────────── */
 .radar-modal {
-  position: absolute;
+  position: fixed;
+  bottom: auto;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 9994;
   background: rgba(18, 22, 34, 0.97);
   border: 1px solid rgba(126, 200, 227, 0.2);
@@ -719,7 +723,10 @@ input[type=number] { -moz-appearance:textfield }
 }
 .radar-modal-close:hover { color: var(--warm); }
 .gauge-modal {
-  position: absolute;
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 9995;
   background: rgba(18, 22, 34, 0.97);
   border: 1px solid rgba(126, 200, 227, 0.2);
@@ -737,8 +744,8 @@ input[type=number] { -moz-appearance:textfield }
   animation: gauge-pop .22s cubic-bezier(.22,1,.36,1) both;
 }
 @keyframes gauge-pop {
-  from { opacity: 0; transform: scale(.93) translateY(-4px); }
-  to   { opacity: 1; transform: scale(1)   translateY(0); }
+  from { opacity: 0; transform: translateX(-50%) scale(.93) translateY(-4px); }
+  to   { opacity: 1; transform: translateX(-50%) scale(1)   translateY(0); }
 }
 .gauge-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -5526,41 +5533,6 @@ function initSelectPlaceholders() {
 }
 document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 
-// ── ANCRAGE VIEWPORT (iOS visual viewport fix) ────────────────────────────────
-// Sur iOS, position:fixed se décale quand le clavier s'ouvre.
-// On utilise position:absolute repositionné via visualViewport.
-var _vpModals = [];
-
-function vpPin(el) {
-  if (el && !_vpModals.includes(el)) _vpModals.push(el);
-}
-
-function vpReposition() {
-  if (!_vpModals.length) return;
-  var vp   = window.visualViewport;
-  // Sur iOS : offsetTop = position du visual viewport dans le layout viewport
-  // La position absolue correcte = scroll page + offsetTop du visual viewport + marge
-  var top  = vp ? (window.scrollY + vp.offsetTop + 12) : (window.scrollY + 12);
-  var vpW  = vp ? vp.width : window.innerWidth;
-  var offL = vp ? vp.offsetLeft : 0;
-  _vpModals.forEach(function(el) {
-    if (!el || !el.classList.contains('show')) return;
-    var left = offL + vpW / 2 - (el.offsetWidth || 280) / 2;
-    el.style.top  = Math.round(top)  + 'px';
-    el.style.left = Math.round(left) + 'px';
-  });
-}
-
-if (window.visualViewport) {
-  // iOS : clavier + scroll du visual viewport
-  window.visualViewport.addEventListener('resize', vpReposition);
-  window.visualViewport.addEventListener('scroll', vpReposition);
-} else {
-  // Desktop fallback
-  window.addEventListener('resize', vpReposition, { passive: true });
-  window.addEventListener('scroll', vpReposition, { passive: true });
-}
-// ── END VIEWPORT FIX ──────────────────────────────────────────────────────────
 var _gaugeModal      = null;
 var _gaugeCtx        = null;
 var _gaugeDPR        = 1;
@@ -5613,7 +5585,6 @@ function gaugeInit() {
     '<div class="gauge-kgf-display" id="gauge-kgf-display" style="margin-top:.2rem">\u2014</div>' +
     '<div class="gauge-kgf-unit">kgf</div>';
   document.body.appendChild(_gaugeModal);
-  vpPin(_gaugeModal);
 
   var canvas = document.getElementById('gauge-canvas');
   _gaugeDPR  = window.devicePixelRatio || 1;
@@ -5906,7 +5877,6 @@ function gaugeOpen(inputEl) {
     }
   }
   _gaugeModal.classList.add('show');
-  vpReposition();
 }
 
 // ── Toggle : ouvre/ferme le compteur via la capsule ──────────────────────────
@@ -5922,8 +5892,7 @@ function gaugeToggle() {
     } else {
       _gaugeModal.classList.add('show');
       gaugeDraw(0);
-      vpReposition();
-    }
+        }
     if (btn) { btn.style.borderColor = 'rgba(126,200,227,.5)'; btn.style.color = 'var(--accent)'; }
   }
 }
@@ -5985,7 +5954,6 @@ function radarModalInit() {
       '<span id="radar-avg-fa" style="font-family:\'DM Mono\',monospace;font-size:.62rem;font-weight:400;color:rgba(126,200,227,0.5)">\u2014</span>' +
     '</div>';
   document.body.appendChild(_radarModal);
-  vpPin(_radarModal);
 
   var canvas = document.getElementById('radar-modal-canvas');
   _radarDPR  = window.devicePixelRatio || 1;
@@ -6142,8 +6110,7 @@ function radarModalToggle() {
     if (typeof gaugeClose === 'function') gaugeClose();
     _radarModal.classList.add('show');
     radarModalDraw();
-    vpReposition();
-    if (btn) { btn.style.borderColor = 'rgba(126,200,227,.5)'; btn.style.color = 'var(--accent)'; }
+      if (btn) { btn.style.borderColor = 'rgba(126,200,227,.5)'; btn.style.color = 'var(--accent)'; }
   }
 }
 
