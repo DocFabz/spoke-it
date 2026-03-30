@@ -5187,11 +5187,13 @@ async function tmScreenshot(e) {
   const cardH   = headerH + rH + legendH + statsH + PAD;
   const totalH  = PAD + cardH + PAD;
 
-  // Canvas off-screen
-  const off = document.createElement('canvas');
-  off.width  = W;
-  off.height = totalH;
+  // Canvas off-screen — résolution native (Retina / iPhone)
+  const dpr  = window.devicePixelRatio || 1;
+  const off  = document.createElement('canvas');
+  off.width  = Math.round(W      * dpr);
+  off.height = Math.round(totalH * dpr);
   const ctx  = off.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   // Fond global
   ctx.fillStyle = '#181c24';
