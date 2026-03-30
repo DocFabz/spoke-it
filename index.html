@@ -673,7 +673,7 @@ input[type=number] { -moz-appearance:textfield }
 
 /* ── Mobile: radar + stats + outlier bar ─────────────────────────────────── */
 @media (max-width: 520px) {
-  #tm-result-card { padding: 1.2rem .8rem; }
+  #tm-result-card, #tm-input-card { padding: 1.2rem .8rem; }
   .tm-stats { grid-template-columns: 1fr; gap: .6rem; }
   .tm-stat  { padding: .65rem .85rem; }
   .tm-stat-row      { font-size: .74rem; }
@@ -1375,7 +1375,7 @@ input[type=number] { -moz-appearance:textfield }
       <em id="tm-result-card-chevron" class="chevron">&#8964;</em>
     </div>
 
-    <div id="tm-result-card-body" style="margin-top:.75rem">
+    <div id="tm-result-card-body" style="display:none;margin-top:.75rem">
     <div style="display:flex;justify-content:flex-end;margin-bottom:.5rem">
       <button class="tm-screenshot-btn" id="tm-screenshot-btn" onclick="tmScreenshot(event)" title="Screenshot">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
