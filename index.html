@@ -169,8 +169,7 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 
 /* ── Card header ───────────────────────────────────────────────────────────── */
 .ch            { display:flex; align-items:center; gap:.5rem; margin-bottom:.75rem }
-.ch-toggle     { cursor:pointer; user-select:none; margin-bottom:0 }
-.clabel        { font-size:.63rem; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--accent) }
+.ch-toggle     { cursor:pointer; user-select:none; margin-bottom:0 }.clabel        { font-size:.63rem; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--accent) }
 .clabel-success { color:var(--success) }
 .clabel-muted   { color:var(--text2) }
 .cicon         { width:13px; height:13px; flex-shrink:0; opacity:.7; color:var(--accent) }
@@ -395,12 +394,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-screenshot-btn:hover { border-color: var(--accent); color: var(--accent) }
 .tm-screenshot-btn.flash { border-color: var(--success); color: var(--success) }
 
-/* ── Tension module card headers: uniform height & alignment ───────────────── */
-#tm-input-card .ch,
-#tm-result-card .ch {
-  min-height: 2rem;
-}
-
 /* ── Module Tension ─────────────────────────────────────────────────────────── */
 .module-nav     { display:flex; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); padding:3px; gap:3px; max-width:880px; margin:0 auto 1.2rem; width:100% }
 .module-nav-btn { flex:1; padding:.6rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500; cursor:pointer; transition:all .3s cubic-bezier(.22,1,.36,1); display:flex; align-items:center; justify-content:center; gap:.4rem; letter-spacing:0; text-transform:uppercase; position:relative; overflow:hidden }
@@ -456,12 +449,16 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .defl-result.fo  { color:rgba(232,146,124,.7) }
 .defl-result.fa  { color:rgba(126,200,227,.6) }
 
-/* Radar chart */
+/* ── Radar chart */
 .radar-wrap      { width:100%; max-width:440px; margin:0 auto }
 .radar-canvas    { display:block; margin:0 auto }
 .radar-legend    { display:flex; gap:1.2rem; justify-content:center; margin-top:.75rem; flex-wrap:wrap }
 .radar-leg-item  { display:flex; align-items:center; gap:.38rem; font-size:.68rem; color:var(--text2); font-family:'DM Sans',sans-serif }
 .radar-leg-dot   { width:10px; height:10px; border-radius:50%; flex-shrink:0 }
+
+/* Diagramme card : disabled state quand pas de données */
+#tm-result-card.tm-card-no-data .ch-toggle { cursor:default; opacity:.55 }
+#tm-result-card.tm-card-no-data .chevron   { opacity:.35 }
 
 /* Stats row */
 .tm-stats        { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; margin-top:1rem }
@@ -1330,7 +1327,7 @@ input[type=number] { -moz-appearance:textfield }
         <line x1="12" y1="9" x2="12" y2="20"/>
       </svg>
       <div class="clabel" data-i18n="tmDeflLabel">Déflections mesurées</div>
-      <em id="tm-input-card-chevron" class="chevron" style="margin-left:auto">&#8964;</em>
+      <em id="tm-input-card-chevron" class="chevron">&#8964;</em>
     </div>
 
     <div id="tm-input-card-body" style="display:none;margin-top:.75rem">
@@ -1375,16 +1372,18 @@ input[type=number] { -moz-appearance:textfield }
         <polygon points="12,7 16.5,10 16.5,14 12,17 7.5,14 7.5,10"/>
       </svg>
       <div class="clabel" data-i18n="tmRadarTitle">Diagramme de tension</div>
-      <button class="tm-screenshot-btn" id="tm-screenshot-btn" onclick="tmScreenshot(event)" title="Screenshot" style="opacity:.35;pointer-events:none;cursor:not-allowed">
+      <em id="tm-result-card-chevron" class="chevron">&#8964;</em>
+    </div>
+
+    <div id="tm-result-card-body" style="margin-top:.75rem">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:.5rem">
+      <button class="tm-screenshot-btn" id="tm-screenshot-btn" onclick="tmScreenshot(event)" title="Screenshot">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
           <circle cx="12" cy="13" r="4"/>
         </svg>
       </button>
-      <em id="tm-result-card-chevron" class="chevron" style="margin-left:auto">&#8964;</em>
     </div>
-
-    <div id="tm-result-card-body" style="margin-top:.75rem">
     <div class="radar-wrap">
       <canvas class="radar-canvas" id="tm-radar"></canvas>
     </div>
@@ -1833,7 +1832,6 @@ let _tmLoadedSpoke = null; // rayon du couple chargé depuis config
 let tmCVThreshold = 5;    // % — seuil écart-type coefficient de variation
 let tmHighlightOn = false;
 let tmOutliers = { fo: new Set(), fa: new Set() };
-let tmRadarCollapsed = false; // true si l'utilisateur a fermé le diagramme manuellement
 function tmStoreKey() {
   if (!tmType) return null;
   if (tmType.startsWith('ct_')) return tmType;  // tensiomètre perso : clé directe
@@ -2794,25 +2792,15 @@ function toggleCard(bodyId, chevronId) {
 }
 function toggleResultsCard() { toggleCard('results-card-body', 'results-card-chevron'); }
 function toggleTmInputCard()  { toggleCard('tm-input-card-body',  'tm-input-card-chevron'); }
-function tmUpdateScreenshotBtn() {
-  const btn  = $id('tm-screenshot-btn');
-  if (!btn) return;
-  const body = $id('tm-result-card-body');
-  const open = body && body.style.display !== 'none';
-  btn.style.opacity       = open ? '' : '.35';
-  btn.style.pointerEvents = open ? '' : 'none';
-  btn.style.cursor        = open ? '' : 'not-allowed';
-}
-
 function toggleTmResultCard() {
   const card = $id('tm-result-card');
   const body = $id('tm-result-card-body'), chev = $id('tm-result-card-chevron');
   if (card.style.display === 'none') return; // card pas encore disponible
+  // Bloquer l'ouverture si aucune donnée disponible
   const open = body.style.display !== 'none';
+  if (!open && !tmHasData()) return;
   body.style.display = open ? 'none' : 'block';
   chev.style.transform = open ? '' : 'rotate(180deg)';
-  tmRadarCollapsed = open;
-  tmUpdateScreenshotBtn();
   if (!open) tmTryRenderRadar();
 }
 function toggleArbCard() {
@@ -3788,7 +3776,10 @@ function tmUpdateUnitBadge() {
   const inputCard  = $id('tm-input-card');
   const resultCard = $id('tm-result-card');
   if (inputCard)  inputCard.style.display  = ready ? '' : 'none';
-  if (resultCard) resultCard.style.display = ready ? '' : 'none';
+  if (resultCard) {
+    resultCard.style.display = ready ? '' : 'none';
+    if (ready) tmUpdateResultCardState();
+  }
 }
 
 // ── Sync boutons type de roue dans le module tension ─────────────────────────
@@ -4802,6 +4793,7 @@ function tmBuildTable() {
         }
         tmUpdateCell(idx, side);
         tmTryRenderRadar();
+        tmUpdateResultCardState();
       });
 
       inp.addEventListener('keydown', function(e) {
@@ -4837,19 +4829,24 @@ function tmUpdateCell(idx, side) {
   if (el) el.textContent = kgf !== null ? kgf + ' kgf' : '';
 }
 
+function tmUpdateResultCardState() {
+  const card = $id('tm-result-card');
+  if (!card) return;
+  card.classList.toggle('tm-card-no-data', !tmHasData());
+}
+
 function tmHideResult() {
   const body  = $id('tm-result-card-body');
   const chev  = $id('tm-result-card-chevron');
   if (body) body.style.display = 'none';
   if (chev) chev.style.transform = '';
-  tmRadarCollapsed = false;
-  tmUpdateScreenshotBtn();
   tmHighlightOn = false;
   const btn = $id('tm-hl-btn');
   if (btn) btn.classList.remove('active');
   document.querySelectorAll('.defl-inp, .defl-result').forEach(el => {
     el.classList.remove('outlier-fo', 'outlier-fa');
   });
+  tmUpdateResultCardState();
 }
 
 function tmResetSide(col) {
@@ -4871,6 +4868,7 @@ function tmResetSide(col) {
   document.querySelectorAll(`[id^="dr-${side}-"]`).forEach(el => { el.textContent = ''; });
 
   tmTryRenderRadar();
+  tmUpdateResultCardState();
 }
 
 function tmSetCV(pct) {
@@ -4970,6 +4968,7 @@ function tmTryRenderRadar() {
   tmUpdateOutlierCount();
   tmDrawRadar(foKgfs, faKgfs, tmHighlightOn ? tmOutliers : null);
   tmRenderStats(foKgfs, faKgfs);
+  tmUpdateResultCardState();
 }
 
 function tmDrawRadar(foKgfs, faKgfs, outliers) {
@@ -5000,9 +4999,9 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
   const angleStep = (2 * Math.PI) / N;
 
   const allVals  = [...foKgfs, ...faKgfs].filter(v => v !== null);
-  const hasData  = allVals.length > 0;
-  const maxVal   = hasData ? Math.max(...allVals) : 0;
-  const scaleMax = Math.ceil(maxVal / 20) * 20 || 100;
+  if (!allVals.length) return;
+  const maxVal   = Math.max(...allVals);
+  const scaleMax = Math.ceil(maxVal / 20) * 20 || 20;
 
   // Rings
   const rings = 5;
@@ -5090,25 +5089,15 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
     });
   }
 
-  if (hasData) {
-    // fa (faible / accent) en dessous, fo (fort / warm) par-dessus
-    drawPoly(faKgfs, 1, 'rgba(126,200,227,0.8)', 'rgba(126,200,227,0.06)', outliers ? outliers.fa : null);
-    drawPoly(foKgfs, 0, 'rgba(232,146,124,0.8)', 'rgba(232,146,124,0.06)', outliers ? outliers.fo : null);
+  // fa (faible / accent) en dessous, fo (fort / warm) par-dessus
+  drawPoly(faKgfs, 1, 'rgba(126,200,227,0.8)', 'rgba(126,200,227,0.06)', outliers ? outliers.fa : null);
+  drawPoly(foKgfs, 0, 'rgba(232,146,124,0.8)', 'rgba(232,146,124,0.06)', outliers ? outliers.fo : null);
 
-    // Centre
-    ctx.beginPath();
-    ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
-    ctx.fillStyle = 'rgba(150,170,190,0.35)';
-    ctx.fill();
-  } else {
-    // Placeholder message when no data
-    const fontSize = Math.round(W * 0.038);
-    ctx.font = `300 ${fontSize}px 'DM Sans', sans-serif`;
-    ctx.fillStyle = 'rgba(150,170,190,0.25)';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(lang === 'fr' ? '— aucune mesure —' : '— no data —', cx, cy);
-  }
+  // Centre
+  ctx.beginPath();
+  ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
+  ctx.fillStyle = 'rgba(150,170,190,0.35)';
+  ctx.fill();
 }
 
 
