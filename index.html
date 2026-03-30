@@ -395,6 +395,12 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-screenshot-btn:hover { border-color: var(--accent); color: var(--accent) }
 .tm-screenshot-btn.flash { border-color: var(--success); color: var(--success) }
 
+/* ── Tension module card headers: uniform height & alignment ───────────────── */
+#tm-input-card .ch,
+#tm-result-card .ch {
+  min-height: 2rem;
+}
+
 /* ── Module Tension ─────────────────────────────────────────────────────────── */
 .module-nav     { display:flex; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); padding:3px; gap:3px; max-width:880px; margin:0 auto 1.2rem; width:100% }
 .module-nav-btn { flex:1; padding:.6rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500; cursor:pointer; transition:all .3s cubic-bezier(.22,1,.36,1); display:flex; align-items:center; justify-content:center; gap:.4rem; letter-spacing:0; text-transform:uppercase; position:relative; overflow:hidden }
@@ -1324,7 +1330,7 @@ input[type=number] { -moz-appearance:textfield }
         <line x1="12" y1="9" x2="12" y2="20"/>
       </svg>
       <div class="clabel" data-i18n="tmDeflLabel">Déflections mesurées</div>
-      <em id="tm-input-card-chevron" class="chevron">&#8964;</em>
+      <em id="tm-input-card-chevron" class="chevron" style="margin-left:auto">&#8964;</em>
     </div>
 
     <div id="tm-input-card-body" style="display:none;margin-top:.75rem">
@@ -4994,9 +5000,9 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
   const angleStep = (2 * Math.PI) / N;
 
   const allVals  = [...foKgfs, ...faKgfs].filter(v => v !== null);
-  if (!allVals.length) return;
-  const maxVal   = Math.max(...allVals);
-  const scaleMax = Math.ceil(maxVal / 20) * 20 || 20;
+  const hasData  = allVals.length > 0;
+  const maxVal   = hasData ? Math.max(...allVals) : 0;
+  const scaleMax = Math.ceil(maxVal / 20) * 20 || 100;
 
   // Rings
   const rings = 5;
@@ -5084,15 +5090,25 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
     });
   }
 
-  // fa (faible / accent) en dessous, fo (fort / warm) par-dessus
-  drawPoly(faKgfs, 1, 'rgba(126,200,227,0.8)', 'rgba(126,200,227,0.06)', outliers ? outliers.fa : null);
-  drawPoly(foKgfs, 0, 'rgba(232,146,124,0.8)', 'rgba(232,146,124,0.06)', outliers ? outliers.fo : null);
+  if (hasData) {
+    // fa (faible / accent) en dessous, fo (fort / warm) par-dessus
+    drawPoly(faKgfs, 1, 'rgba(126,200,227,0.8)', 'rgba(126,200,227,0.06)', outliers ? outliers.fa : null);
+    drawPoly(foKgfs, 0, 'rgba(232,146,124,0.8)', 'rgba(232,146,124,0.06)', outliers ? outliers.fo : null);
 
-  // Centre
-  ctx.beginPath();
-  ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
-  ctx.fillStyle = 'rgba(150,170,190,0.35)';
-  ctx.fill();
+    // Centre
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(150,170,190,0.35)';
+    ctx.fill();
+  } else {
+    // Placeholder message when no data
+    const fontSize = Math.round(W * 0.038);
+    ctx.font = `300 ${fontSize}px 'DM Sans', sans-serif`;
+    ctx.fillStyle = 'rgba(150,170,190,0.25)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(lang === 'fr' ? '— aucune mesure —' : '— no data —', cx, cy);
+  }
 }
 
 
