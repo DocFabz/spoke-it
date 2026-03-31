@@ -488,6 +488,137 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .defl-result.outlier-fo { color:var(--warm)   !important; font-weight:500 }
 .defl-result.outlier-fa { color:var(--accent) !important; font-weight:500 }
 
+/* ── Easy Fill toggle ──────────────────────────────────────────────────────── */
+.easy-fill-bar {
+  display:flex; align-items:center; gap:.55rem;
+  padding:.55rem .9rem .55rem 1rem;
+  border-bottom:1px solid var(--border);
+}
+
+/* ── Easy Fill modal ───────────────────────────────────────────────────────── */
+.ef-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.65);
+  backdrop-filter:blur(6px); z-index:9994;
+  opacity:0; transition:opacity .22s; display:none;
+}
+.ef-overlay.show { display:block; opacity:1 }
+
+.ef-modal {
+  position:fixed; top:50%; left:50%;
+  transform:translate(-50%,-50%) scale(.97);
+  z-index:9995;
+  background:var(--card); border:1px solid var(--border-s);
+  border-radius:var(--r); padding:1.5rem 1.4rem 1.3rem;
+  box-shadow:0 20px 72px rgba(0,0,0,.6);
+  width:92%; max-width:340px;
+  display:none; flex-direction:column; gap:1.1rem;
+  opacity:0; transition:opacity .2s, transform .2s, top .15s ease-out;
+}
+.ef-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+
+.ef-header { display:flex; align-items:center; justify-content:space-between; gap:.6rem }
+.ef-title {
+  font-size:.6rem; font-weight:600; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--accent);
+}
+.ef-close {
+  background:none; border:1px solid var(--border); border-radius:var(--rs);
+  color:var(--text3); font-size:.8rem; cursor:pointer;
+  padding:.22rem .5rem; line-height:1; transition:all .2s;
+}
+.ef-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+
+.ef-progress-wrap { display:flex; flex-direction:column; gap:.35rem }
+.ef-progress-label {
+  font-family:'DM Mono',monospace; font-size:.6rem; color:var(--text3);
+  letter-spacing:.08em; text-align:center;
+}
+.ef-progress-track {
+  height:3px; background:var(--border); border-radius:2px; overflow:hidden;
+}
+.ef-progress-fill {
+  height:100%; background:rgba(255,255,255,.55); border-radius:2px;
+  transition:width .3s cubic-bezier(.22,1,.36,1);
+}
+
+.ef-step-info {
+  text-align:center;
+}
+.ef-step-side {
+  font-size:.58rem; font-weight:600; letter-spacing:.18em;
+  text-transform:uppercase; margin-bottom:.28rem;
+}
+.ef-step-side.fo { color:var(--warm) }
+.ef-step-side.fa { color:var(--accent) }
+.ef-step-spoke {
+  font-family:'DM Mono',monospace; font-size:1.6rem; font-weight:300;
+  color:var(--text); line-height:1;
+}
+.ef-step-spoke span {
+  font-size:.75rem; font-weight:400; color:var(--text2); margin-left:.15rem;
+}
+
+.ef-input-row { display:flex; flex-direction:column; gap:.5rem; align-items:center }
+.ef-inp {
+  width:100%; max-width:180px;
+  background:var(--inp); border:1px solid var(--border-s);
+  border-radius:var(--rs); color:var(--text);
+  font-family:'DM Mono',monospace; font-size:1.4rem; font-weight:300;
+  text-align:center; padding:.65rem .9rem;
+  transition:border-color .18s, background .18s;
+  outline:none;
+}
+.ef-inp:focus { border-color:rgba(126,200,227,.5); background:rgba(126,200,227,.03) }
+.ef-inp.fo:focus { border-color:rgba(232,146,124,.55); background:rgba(232,146,124,.025) }
+.ef-inp::placeholder { color:var(--text3); font-size:1rem }
+.ef-inp.out-of-range { animation:shake .35s ease; border-color:rgba(240,128,128,.7) !important; }
+.ef-kgf-preview.oor  { color:#f08080 !important; font-style:italic }
+.ef-kgf-preview {
+  font-family:'DM Mono',monospace; font-size:.75rem; font-weight:300;
+  color:var(--text3); min-height:1.1rem; transition:color .2s;
+}
+.ef-kgf-preview.has-val { color:var(--text2) }
+
+.ef-btn-row { display:flex; gap:.5rem; align-items:center; justify-content:center }
+.ef-back-btn {
+  background:transparent; border:1px solid var(--border);
+  border-radius:var(--rs); color:var(--text3);
+  font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500;
+  padding:.55rem .85rem; cursor:pointer; transition:all .2s;
+  display:flex; align-items:center; gap:.35rem;
+}
+.ef-back-btn:hover { border-color:var(--border-s); color:var(--text2) }
+.ef-back-btn:disabled { opacity:.3; cursor:default; pointer-events:none }
+
+.ef-next-btn {
+  background:transparent; border:1px solid var(--border-s);
+  border-radius:var(--rs); color:var(--text2);
+  font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500;
+  padding:.55rem 1.3rem; cursor:pointer; transition:all .2s;
+}
+.ef-next-btn:hover { border-color:rgba(126,200,227,.4); color:var(--accent) }
+
+/* ── Easy Fill : switcher compact (écran de saisie) ──────────────────────── */
+/* Dual-color spans dans le bouton both — fo=warm, fa=accent */
+.color-fo { color:var(--warm) }
+.color-fa { color:var(--accent) }
+.sep-part  { color:var(--text3) }
+.ef-side-switch {
+  display:flex; gap:.3rem; background:var(--card-alt);
+  border:1px solid var(--border); border-radius:var(--rs);
+  padding:.3rem;
+}
+.ef-sw-btn {
+  flex:1; padding:.35rem .4rem; border:1px solid transparent;
+  border-radius:6px; background:transparent;
+  font-family:'DM Mono',monospace; font-size:.6rem; font-weight:500;
+  letter-spacing:.07em; cursor:pointer; transition:all .18s; color:var(--text3);
+}
+.ef-sw-btn:hover { color:var(--text2); background:rgba(255,255,255,.04) }
+.ef-sw-btn.fo.active { background:rgba(232,146,124,.12); border-color:rgba(232,146,124,.35); color:var(--warm) }
+.ef-sw-btn.fa.active { background:rgba(126,200,227,.1);  border-color:rgba(126,200,227,.3);  color:var(--accent) }
+.ef-sw-btn.both.active { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.15); }
+
 /* ── Save ──────────────────────────────────────────────────────────────────── */
 .save-wrap       { display:none; animation:fu .5s cubic-bezier(.22,1,.36,1) }
 .save-wrap.show  { display:block }
@@ -1330,6 +1461,16 @@ input[type=number] { -moz-appearance:textfield }
       <em id="tm-input-card-chevron" class="chevron">&#8964;</em>
     </div>
 
+    <!-- Easy Fill toggle bar -->
+    <div class="easy-fill-bar" id="easy-fill-bar" style="display:none">
+      <div class="diff-toggle-wrap">
+        <span class="diff-toggle-label" data-i18n="efLabel">Easy Fill</span>
+        <button class="diff-toggle" id="easy-fill-toggle" onclick="efToggle()" role="switch" aria-checked="false">
+          <span class="diff-toggle-thumb"></span>
+        </button>
+      </div>
+    </div>
+
     <div id="tm-input-card-body" style="display:none;margin-top:.75rem">
     <div class="tm-grid-wrap">
       <table class="tm-table" id="tm-table">
@@ -1648,6 +1789,11 @@ const i18n = {
     radialDiscWarn:'⚠ Incompatible roue à disque',
     diamTrouWarn:'⚠ Valeur incohérente',
     offsetCoherenceWarn:'⚠ Vérifier cohérence des déports',
+    efLabel:'Easy Fill',
+
+    efSpoke:'Rayon',
+    efBack:'← Retour',
+    efNext:'Suivant →',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -1744,6 +1890,11 @@ const i18n = {
     radialDiscWarn:'⚠ Disc brake incompatible',
     diamTrouWarn:'⚠ Inconsistent value',
     offsetCoherenceWarn:'⚠ Check offset consistency',
+    efLabel:'Easy Fill',
+
+    efSpoke:'Spoke',
+    efBack:'← Back',
+    efNext:'Next →',
   }
 };
 
@@ -3895,6 +4046,9 @@ function tmClearTensio() {
   const icBody = $id('tm-input-card-body'), icChev = $id('tm-input-card-chevron');
   if (icBody) icBody.style.display = 'none';
   if (icChev) icChev.style.transform = '';
+  const efBar = $id('easy-fill-bar'), efBtn = $id('easy-fill-toggle');
+  if (efBar) efBar.style.display = 'none';
+  if (efBtn) efBtn.setAttribute('aria-checked', 'false');
   const clearBtn = $id('tm-clear-tensio');
   if (clearBtn) clearBtn.classList.add('inactive');
 }
@@ -5380,6 +5534,340 @@ function initSelectPlaceholders() {
   });
 }
 document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
+</script>
+
+<!-- ── Easy Fill overlay + modal ── -->
+<div class="ef-overlay" id="ef-overlay" onclick="efClose()"></div>
+<div class="ef-modal" id="ef-modal">
+
+  <!-- Header -->
+  <div class="ef-header">
+    <div class="ef-title">Easy Fill</div>
+    <button class="ef-close" onclick="efClose()">✕</button>
+  </div>
+
+  <!-- ── Écran de saisie pas à pas ── -->
+  <div id="ef-screen-fill" style="flex-direction:column;gap:1.1rem">
+
+    <!-- Sélecteur de nappe compact -->
+    <div class="ef-side-switch">
+      <button class="ef-sw-btn fo" id="ef-sw-fo" onclick="efSwitchSide('fo')"><span id="ef-sw-fo-label">—</span></button>
+      <button class="ef-sw-btn fa" id="ef-sw-fa" onclick="efSwitchSide('fa')"><span id="ef-sw-fa-label">—</span></button>
+      <button class="ef-sw-btn both" id="ef-sw-both" onclick="efSwitchSide('both')">
+        <span id="ef-sw-both-first" class="color-fo">—</span><span class="sep-part"> + </span><span id="ef-sw-both-second" class="color-fa">—</span>
+      </button>
+    </div>
+
+    <div class="ef-progress-wrap">
+      <div class="ef-progress-label" id="ef-prog-label">1 / 16</div>
+      <div class="ef-progress-track">
+        <div class="ef-progress-fill" id="ef-prog-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="ef-step-info">
+      <div class="ef-step-side fo" id="ef-side-label">NDS</div>
+      <div class="ef-step-spoke"><span id="ef-spoke-label" data-i18n="efSpoke">Rayon</span> <span id="ef-spoke-num">1</span></div>
+    </div>
+
+    <div class="ef-input-row">
+      <input class="ef-inp" id="ef-inp" type="text" inputmode="decimal"
+        autocomplete="off" autocorrect="off" spellcheck="false" placeholder="—"
+        oninput="efOnInput()" onkeydown="efOnKey(event)">
+      <div class="ef-kgf-preview" id="ef-kgf-preview"></div>
+    </div>
+
+    <div class="ef-btn-row">
+      <button class="ef-back-btn" id="ef-back-btn" onclick="efBack()" disabled>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        <span id="ef-back-label">←</span>
+      </button>
+      <button class="ef-next-btn" id="ef-next-btn" onclick="efNext()">Next →</button>
+    </div>
+
+  </div><!-- /ef-screen-fill -->
+</div>
+
+<script>
+// ── Easy Fill ─────────────────────────────────────────────────────────────────
+var efSteps      = [];
+var efCurrent    = 0;
+var efSideMode   = 'both'; // 'fo' | 'fa' | 'both'
+
+// Labels lisibles pour fo (fort) et fa (faible) selon wtype
+function efGetLabels() {
+  var isFront = wtype === 'avant';
+  // fo = nappe forte
+  // Avant : fo = gauche (NDS), fa = droite (DS)
+  // Arrière : fo = droite (DS), fa = gauche (NDS)
+  return {
+    fo: (isFront ? (t('tmLeft')||'Left') + ' (NDS)' : (t('tmRight')||'Right') + ' (DS)'),
+    fa: (isFront ? (t('tmRight')||'Right') + ' (DS)' : (t('tmLeft')||'Left') + ' (NDS)')
+  };
+}
+
+function efBuildSteps() {
+  var nb      = parseInt($id('nb-rayons').value) || 0;
+  var perSide = Math.floor(nb / 2);
+  efSteps = [];
+  if (efSideMode === 'fo') {
+    for (var i = 0; i < perSide; i++) efSteps.push({ idx: i, side: 'fo' });
+  } else if (efSideMode === 'fa') {
+    for (var i = 0; i < perSide; i++) efSteps.push({ idx: i, side: 'fa' });
+  } else { // both : fo en premier, fa en second
+    for (var i = 0; i < perSide; i++) {
+      efSteps.push({ idx: i, side: 'fo' });
+      efSteps.push({ idx: i, side: 'fa' });
+    }
+  }
+}
+
+// ── Ouverture de la modale ──────────────────────────────────────────────────
+function efOpen() {
+  efSideMode = 'fo';
+  efBuildSteps();
+  if (!efSteps.length) return;
+  efCurrent = efFirstUnfilled();
+  $id('ef-sw-fo-label').textContent    = efShortLabel('fo');
+  $id('ef-sw-fa-label').textContent    = efShortLabel('fa');
+  $id('ef-sw-both-first').textContent  = efShortLabel('fo');
+  $id('ef-sw-both-second').textContent = efShortLabel('fa');
+  efUpdateSwitcher();
+  $id('ef-overlay').classList.add('show');
+  $id('ef-modal').classList.add('show');
+  efRenderStep();
+  setTimeout(function() { var i = $id('ef-inp'); if (i) i.focus(); }, 80);
+}
+
+// Label court : NDS ou DS selon la roue
+function efShortLabel(side) {
+  var isFront = wtype === 'avant';
+  if (side === 'fo') return isFront ? 'NDS' : 'DS';
+  return isFront ? 'DS' : 'NDS';
+}
+
+// ── Switcher de nappe dans l'écran de saisie ────────────────────────────────
+function efUpdateSwitcher() {
+  $id('ef-sw-fo').classList.toggle('active', efSideMode === 'fo');
+  $id('ef-sw-fa').classList.toggle('active', efSideMode === 'fa');
+  $id('ef-sw-both').classList.toggle('active', efSideMode === 'both');
+}
+
+function efSwitchSide(mode) {
+  if (efSideMode === mode) return;
+  efSideMode = mode;
+  efUpdateSwitcher();
+  efBuildSteps();
+  if (!efSteps.length) { efClose(); return; }
+  efCurrent = efFirstUnfilled();
+  efRenderStep();
+  $id('ef-inp').focus();
+}
+
+function efClose() {
+  $id('ef-overlay').classList.remove('show');
+  $id('ef-modal').classList.remove('show');
+  efResetModalPos();
+  var btn = $id('easy-fill-toggle');
+  if (btn) btn.setAttribute('aria-checked', 'false');
+}
+
+function efToggle() {
+  var btn = $id('easy-fill-toggle');
+  var active = btn.getAttribute('aria-checked') === 'true';
+  if (!active) {
+    btn.setAttribute('aria-checked', 'true');
+    efOpen();
+  } else {
+    btn.setAttribute('aria-checked', 'false');
+    efClose();
+  }
+}
+
+// ── Repositionner la modale au-dessus du clavier virtuel ─────────────────────
+function efRepositionModal() {
+  var modal = $id('ef-modal');
+  if (!modal || !modal.classList.contains('show')) return;
+  var vv = window.visualViewport;
+  if (!vv) return;
+  // Centre vertical dans la zone visible (hors clavier)
+  var visibleTop    = vv.offsetTop;
+  var visibleHeight = vv.height;
+  var topPx = visibleTop + visibleHeight * 0.42; // légèrement au-dessus du centre
+  modal.style.top       = topPx + 'px';
+  modal.style.transform = 'translateX(-50%) scale(1)';
+}
+
+function efResetModalPos() {
+  var modal = $id('ef-modal');
+  if (modal) {
+    modal.style.top       = '50%';
+    modal.style.transform = 'translate(-50%,-50%) scale(1)';
+  }
+}
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', efRepositionModal);
+  window.visualViewport.addEventListener('scroll', efRepositionModal);
+}
+
+// ── Rendu d'un step ─────────────────────────────────────────────────────────
+function efStepSideLabel(step) {
+  var labels = efGetLabels();
+  return step.side === 'fo' ? labels.fo : labels.fa;
+}
+
+function efRenderStep() {
+  var total = efSteps.length;
+  var step  = efSteps[efCurrent];
+
+  $id('ef-prog-label').textContent = (efCurrent + 1) + ' / ' + total;
+  $id('ef-prog-fill').style.width  = (efCurrent / total * 100) + '%';
+
+  var sideEl = $id('ef-side-label');
+  sideEl.textContent = efStepSideLabel(step);
+  sideEl.className   = 'ef-step-side ' + step.side;
+
+  $id('ef-spoke-num').textContent = step.idx + 1;
+  $id('ef-spoke-label').textContent = t('efSpoke');
+
+  var cur = step.side === 'fo' ? tmData.fo[step.idx] : tmData.fa[step.idx];
+  var inp = $id('ef-inp');
+  inp.value     = cur !== null ? tmDisplayValue(cur) : '';
+  inp.className = 'ef-inp ' + step.side;
+  efUpdateKgf();
+
+  $id('ef-back-btn').disabled = (efCurrent === 0);
+  $id('ef-back-label').textContent = t('efBack');
+  var nextBtn = $id('ef-next-btn');
+  nextBtn.textContent = t('efNext');
+  nextBtn.classList.remove('done');
+}
+
+function efUpdateKgf() {
+  var raw  = $id('ef-inp').value.trim();
+  var prev = $id('ef-kgf-preview');
+  if (!raw) { prev.textContent = ''; prev.classList.remove('has-val'); return; }
+  var parsed = tmParseInput(raw);
+  if (parsed === null) { prev.textContent = '—'; prev.classList.remove('has-val'); return; }
+  var kgf = toKgf(parsed);
+  if (kgf !== null) { prev.textContent = kgf + ' kgf'; prev.classList.add('has-val'); }
+  else              { prev.textContent = ''; prev.classList.remove('has-val'); }
+}
+
+function efOnInput() { efUpdateKgf(); }
+function efOnKey(e) {
+  if (e.key === 'Enter')  { e.preventDefault(); efNext(); }
+  if (e.key === 'Escape') { efClose(); }
+}
+
+// Retourne true si valide (ou vide), false si hors plage
+function efCommitCurrent() {
+  var step   = efSteps[efCurrent];
+  var raw    = $id('ef-inp').value.trim();
+  var inp    = $id('ef-inp');
+  var prev   = $id('ef-kgf-preview');
+
+  if (raw === '') {
+    // Champ vide : effacer la valeur existante
+    if (step.side === 'fo') tmData.fo[step.idx] = null;
+    else                     tmData.fa[step.idx] = null;
+    efSyncTableCell(step);
+    tmUpdateCell(step.idx, step.side);
+    tmTryRenderRadar();
+    tmUpdateResultCardState();
+    return true;
+  }
+
+  var parsed = tmParseInput(raw);
+
+  // Valeur hors plage → feedback + restauration + blocage
+  if (parsed !== null && !tmInRange(parsed)) {
+    var range = tmGetRange();
+    if (range) {
+      prev.textContent = tmDisplayValue(range.min) + ' – ' + tmDisplayValue(range.max);
+      prev.classList.add('oor');
+      setTimeout(function() {
+        prev.classList.remove('oor');
+        efUpdateKgf();
+      }, 1800);
+    }
+    inp.classList.add('out-of-range');
+    setTimeout(function() { inp.classList.remove('out-of-range'); }, 400);
+    // Restaurer l'ancienne valeur dans le champ
+    var oldVal = step.side === 'fo' ? tmData.fo[step.idx] : tmData.fa[step.idx];
+    inp.value = oldVal !== null ? tmDisplayValue(oldVal) : '';
+    return false;
+  }
+
+  // Valeur invalide (non parseable) → ignorer, ne pas avancer
+  if (parsed === null) return false;
+
+  if (step.side === 'fo') tmData.fo[step.idx] = parsed;
+  else                     tmData.fa[step.idx] = parsed;
+  inp.value = tmDisplayValue(parsed);
+  efSyncTableCell(step);
+  tmUpdateCell(step.idx, step.side);
+  tmTryRenderRadar();
+  tmUpdateResultCardState();
+  return true;
+}
+
+function efSyncTableCell(step) {
+  var tableInp = document.querySelector('.defl-inp.' + step.side + '[data-idx="' + step.idx + '"]');
+  if (!tableInp) return;
+  var stored = step.side === 'fo' ? tmData.fo[step.idx] : tmData.fa[step.idx];
+  if (stored !== null) { tableInp.value = tmDisplayValue(stored); tableInp.classList.add('has-val'); }
+  else                 { tableInp.value = ''; tableInp.classList.remove('has-val'); }
+}
+
+// Premier step non rempli après le dernier rempli (ou 0 si tout est plein)
+function efFirstUnfilled() {
+  var lastFilled = -1;
+  for (var i = 0; i < efSteps.length; i++) {
+    var s = efSteps[i];
+    if ((s.side === 'fo' ? tmData.fo[s.idx] : tmData.fa[s.idx]) !== null) lastFilled = i;
+  }
+  return (lastFilled + 1 < efSteps.length) ? lastFilled + 1 : 0;
+}
+
+function efNext() {
+  if (!efCommitCurrent()) return; // hors plage ou invalide → ne pas avancer
+  if (efCurrent < efSteps.length - 1) {
+    efCurrent++;
+  } else if (efSideMode === 'fo' || efSideMode === 'fa') {
+    // Basculer sur l'autre nappe
+    efSideMode = efSideMode === 'fo' ? 'fa' : 'fo';
+    efUpdateSwitcher();
+    efBuildSteps();
+    efCurrent = efFirstUnfilled();
+  } else {
+    $id('ef-prog-fill').style.width = '100%';
+    efClose();
+    return;
+  }
+  efRenderStep();
+  $id('ef-inp').focus();
+}
+
+function efBack() {
+  if (efCurrent > 0) { efCurrent--; efRenderStep(); $id('ef-inp').focus(); }
+}
+
+// ── Patch toggleCard ─────────────────────────────────────────────────────────
+(function() {
+  var _orig = window.toggleCard;
+  window.toggleCard = function(bodyId, chevronId) {
+    _orig(bodyId, chevronId);
+    if (bodyId === 'tm-input-card-body') {
+      var bar  = $id('easy-fill-bar');
+      var body = $id('tm-input-card-body');
+      var open = body && body.style.display !== 'none';
+      if (bar) bar.style.display = open ? 'flex' : 'none';
+      if (!open) { var btn=$id('easy-fill-toggle'); if(btn) btn.setAttribute('aria-checked','false'); }
+    }
+  };
+})();
 </script>
 </body>
 </html>
