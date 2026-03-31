@@ -4846,7 +4846,11 @@ function tmBuildTable() {
     return;
   }
 
-  // Table peuplée — laisser la card fermée, l'utilisateur l'ouvre manuellement
+  // Table peuplée — ouvrir la card automatiquement
+  if (body) { body.style.display = ''; }
+  if (chev) { chev.style.transform = 'rotate(180deg)'; }
+  const efBar = $id('easy-fill-bar');
+  if (efBar) efBar.style.display = 'flex';
 
   const perSide = Math.floor(nb / 2);
   while (tmData.fo.length < perSide) tmData.fo.push(null);
