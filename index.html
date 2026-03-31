@@ -5572,8 +5572,9 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 
     <div class="ef-input-row">
       <input class="ef-inp" id="ef-inp" type="text" inputmode="decimal"
+        enterkeyhint="done"
         autocomplete="off" autocorrect="off" spellcheck="false" placeholder="—"
-        oninput="efOnInput()" onkeydown="efOnKey(event)">
+        oninput="efOnInput()" onkeydown="efOnKey(event)" onkeyup="efOnKey(event)" onfocus="efOnFocus()">
       <div class="ef-kgf-preview" id="ef-kgf-preview"></div>
     </div>
 
@@ -5690,12 +5691,10 @@ function efRepositionModal() {
   if (!modal || !modal.classList.contains('show')) return;
   var vv = window.visualViewport;
   if (!vv) return;
-  // Centre vertical dans la zone visible (hors clavier)
-  var visibleTop    = vv.offsetTop;
-  var visibleHeight = vv.height;
-  var topPx = visibleTop + visibleHeight * 0.42; // légèrement au-dessus du centre
+  // Colle la modale en haut de la zone visible, avec une petite marge
+  var topPx = vv.offsetTop + 16;
   modal.style.top       = topPx + 'px';
-  modal.style.transform = 'translateX(-50%) scale(1)';
+  modal.style.transform = 'translateX(-50%)';
 }
 
 function efResetModalPos() {
@@ -5704,6 +5703,11 @@ function efResetModalPos() {
     modal.style.top       = '50%';
     modal.style.transform = 'translate(-50%,-50%) scale(1)';
   }
+}
+
+// Déclencher le repositionnement dès l'ouverture du focus clavier
+function efOnFocus() {
+  setTimeout(efRepositionModal, 120);
 }
 
 if (window.visualViewport) {
@@ -5756,9 +5760,16 @@ function efUpdateKgf() {
 }
 
 function efOnInput() { efUpdateKgf(); }
+var _efEnterLock = false;
 function efOnKey(e) {
-  if (e.key === 'Enter')  { e.preventDefault(); efNext(); }
-  if (e.key === 'Escape') { efClose(); }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (_efEnterLock) return;
+    _efEnterLock = true;
+    setTimeout(function() { _efEnterLock = false; }, 300);
+    efNext();
+  }
+  if (e.key === 'Escape' && e.type === 'keydown') { efClose(); }
 }
 
 // Retourne true si valide (ou vide), false si hors plage
