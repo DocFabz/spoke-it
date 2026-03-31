@@ -504,17 +504,17 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ef-overlay.show { display:block; opacity:1 }
 
 .ef-modal {
-  position:fixed; top:50%; left:50%;
-  transform:translate(-50%,-50%) scale(.97);
+  position:fixed; top:5%; left:50%;
+  transform:translateX(-50%);
   z-index:9995;
   background:var(--card); border:1px solid var(--border-s);
   border-radius:var(--r); padding:1.5rem 1.4rem 1.3rem;
   box-shadow:0 20px 72px rgba(0,0,0,.6);
   width:92%; max-width:340px;
   display:none; flex-direction:column; gap:1.1rem;
-  opacity:0; transition:opacity .2s, transform .2s, top .15s ease-out;
+  opacity:0; transition:opacity .2s, transform .2s;
 }
-.ef-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+.ef-modal.show { display:flex; opacity:1; transform:translateX(-50%) scale(1) }
 
 .ef-header { display:flex; align-items:center; justify-content:space-between; gap:.6rem }
 .ef-title {
@@ -581,13 +581,13 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 
 .ef-btn-row { display:flex; gap:.5rem; align-items:center; justify-content:center }
 .ef-back-btn {
-  background:transparent; border:1px solid var(--border);
-  border-radius:var(--rs); color:var(--text3);
+  background:transparent; border:1px solid var(--border-s);
+  border-radius:var(--rs); color:var(--text2);
   font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500;
-  padding:.55rem .85rem; cursor:pointer; transition:all .2s;
+  padding:.55rem 1.3rem; cursor:pointer; transition:all .2s;
   display:flex; align-items:center; gap:.35rem;
 }
-.ef-back-btn:hover { border-color:var(--border-s); color:var(--text2) }
+.ef-back-btn:hover { border-color:var(--border-s); color:var(--text) }
 .ef-back-btn:disabled { opacity:.3; cursor:default; pointer-events:none }
 
 .ef-next-btn {
@@ -596,7 +596,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500;
   padding:.55rem 1.3rem; cursor:pointer; transition:all .2s;
 }
-.ef-next-btn:hover { border-color:rgba(126,200,227,.4); color:var(--accent) }
+.ef-next-btn:hover { border-color:var(--border-s); color:var(--text) }
 
 /* ── Easy Fill : switcher compact (écran de saisie) ──────────────────────── */
 /* Dual-color spans dans le bouton both — fo=warm, fa=accent */
@@ -5572,9 +5572,8 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 
     <div class="ef-input-row">
       <input class="ef-inp" id="ef-inp" type="text" inputmode="decimal"
-        enterkeyhint="done"
         autocomplete="off" autocorrect="off" spellcheck="false" placeholder="—"
-        oninput="efOnInput()" onkeydown="efOnKey(event)" onkeyup="efOnKey(event)" onfocus="efOnFocus()">
+        oninput="efOnInput()" onkeydown="efOnKey(event)">
       <div class="ef-kgf-preview" id="ef-kgf-preview"></div>
     </div>
 
@@ -5668,7 +5667,6 @@ function efSwitchSide(mode) {
 function efClose() {
   $id('ef-overlay').classList.remove('show');
   $id('ef-modal').classList.remove('show');
-  efResetModalPos();
   var btn = $id('easy-fill-toggle');
   if (btn) btn.setAttribute('aria-checked', 'false');
 }
@@ -5683,36 +5681,6 @@ function efToggle() {
     btn.setAttribute('aria-checked', 'false');
     efClose();
   }
-}
-
-// ── Repositionner la modale au-dessus du clavier virtuel ─────────────────────
-function efRepositionModal() {
-  var modal = $id('ef-modal');
-  if (!modal || !modal.classList.contains('show')) return;
-  var vv = window.visualViewport;
-  if (!vv) return;
-  // Colle la modale en haut de la zone visible, avec une petite marge
-  var topPx = vv.offsetTop + 16;
-  modal.style.top       = topPx + 'px';
-  modal.style.transform = 'translateX(-50%)';
-}
-
-function efResetModalPos() {
-  var modal = $id('ef-modal');
-  if (modal) {
-    modal.style.top       = '50%';
-    modal.style.transform = 'translate(-50%,-50%) scale(1)';
-  }
-}
-
-// Déclencher le repositionnement dès l'ouverture du focus clavier
-function efOnFocus() {
-  setTimeout(efRepositionModal, 120);
-}
-
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', efRepositionModal);
-  window.visualViewport.addEventListener('scroll', efRepositionModal);
 }
 
 // ── Rendu d'un step ─────────────────────────────────────────────────────────
@@ -5760,16 +5728,9 @@ function efUpdateKgf() {
 }
 
 function efOnInput() { efUpdateKgf(); }
-var _efEnterLock = false;
 function efOnKey(e) {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    if (_efEnterLock) return;
-    _efEnterLock = true;
-    setTimeout(function() { _efEnterLock = false; }, 300);
-    efNext();
-  }
-  if (e.key === 'Escape' && e.type === 'keydown') { efClose(); }
+  if (e.key === 'Enter')  { e.preventDefault(); efNext(); }
+  if (e.key === 'Escape') { efClose(); }
 }
 
 // Retourne true si valide (ou vide), false si hors plage
