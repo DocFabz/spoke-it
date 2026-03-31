@@ -1,11 +1,13 @@
 {
-  "name": "Sit",
-  "short_name": "Sit",
+  "name": "Spoke It",
+  "short_name": "Spoke It",
+  "description": "Spoke length calculator for bicycle wheels",
   "icons": [
-    { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
   ],
-  "theme_color": "#0d1f2d",
-  "background_color": "#0d1f2d",
-  "display": "standalone"
+  "theme_color": "#181c24",
+  "background_color": "#181c24",
+  "display": "standalone",
+  "start_url": "."
 }
