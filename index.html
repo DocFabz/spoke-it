@@ -821,6 +821,35 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 }
 .ef-numpad-key.key-enter:active { background:rgba(126,200,227,.18); transform:scale(.97) }
 
+/* ── Easy Fill : mode paysage (touch) — modale + clavier côte à côte ────── */
+@media (orientation: landscape) and (max-height: 600px) {
+  .ef-modal.landscape {
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    border-radius: var(--r) 0 0 var(--r) !important;
+    max-height: 96vh;
+    overflow-y: auto;
+  }
+  #ef-numpad.landscape {
+    border-top: 1px solid var(--border-s) !important;
+    border-left: none !important;
+    border-radius: 0 var(--r) var(--r) 0 !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    width: auto !important;
+    padding: .5rem .9rem .9rem !important;
+  }
+  #ef-numpad.landscape .ef-numpad {
+    max-width: 200px;
+    padding: .3rem 0 .1rem;
+  }
+  #ef-numpad.landscape .ef-numpad-key {
+    padding: .45rem .2rem;
+    font-size: .95rem;
+  }
+}
+
 /* ── Cache toast ──────────────────────────────────────────────────────────── */
 .cache-toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid rgba(232,146,124,.35); border-radius:var(--rs); padding:.55rem 1.1rem; font-family:'DM Sans',sans-serif; font-size:.67rem; color:var(--warm2); z-index:10000; pointer-events:none; opacity:0; transition:opacity .3s; white-space:nowrap; margin-bottom:env(safe-area-inset-bottom, 0px) }
 .cache-toast.show { opacity:1 }
@@ -5710,7 +5739,7 @@ function efOpen() {
   $id('ef-sw-both-first').textContent  = efShortLabel('fo');
   $id('ef-sw-both-second').textContent = efShortLabel('fa');
   efUpdateSwitcher();
-  // Adapter le border-radius de la modale selon le device
+  // border-radius : desktop = coins complets, touch portrait = plat en bas (paysage géré par .landscape)
   $id('ef-modal').style.borderRadius = isTouch ? 'var(--r) var(--r) 0 0' : 'var(--r)';
   $id('ef-overlay').classList.add('show');
   $id('ef-modal').classList.add('show');
@@ -5920,18 +5949,56 @@ function efShowNumpad() {
   var numpad = $id('ef-numpad');
   var modal  = $id('ef-modal');
   numpad.style.display = 'block';
-  function positionNumpad() {
-    numpad.style.top = modal.getBoundingClientRect().bottom + 'px';
+
+  function isLandscape() {
+    return window.innerWidth > window.innerHeight && window.innerHeight <= 600;
   }
+
+  function positionNumpad() {
+    var modalRect = modal.getBoundingClientRect();
+    if (isLandscape()) {
+      // Paysage : clavier à droite de la modale, centré verticalement
+      modal.classList.add('landscape');
+      numpad.classList.add('landscape');
+      // Aligner le haut du clavier sur le haut de la modale, centré en Y
+      numpad.style.left   = modalRect.right + 'px';
+      numpad.style.top    = modalRect.top + 'px';
+      numpad.style.height = modalRect.height + 'px';
+      numpad.style.display = 'flex';
+      numpad.style.alignItems = 'center';
+    } else {
+      // Portrait : clavier sous la modale
+      modal.classList.remove('landscape');
+      numpad.classList.remove('landscape');
+      numpad.style.left   = '';
+      numpad.style.height = '';
+      numpad.style.display = 'block';
+      numpad.style.alignItems = '';
+      numpad.style.top = modalRect.bottom + 'px';
+    }
+  }
+
   positionNumpad();
   numpad._posTimer = setInterval(positionNumpad, 200);
+  // Écouter les changements d'orientation
+  numpad._orientHandler = positionNumpad;
+  window.addEventListener('orientationchange', numpad._orientHandler);
+  window.addEventListener('resize', numpad._orientHandler);
   $id('ef-numpad-enter').textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
 }
 
 function efHideNumpad() {
   var numpad = $id('ef-numpad');
-  if (numpad._posTimer) { clearInterval(numpad._posTimer); numpad._posTimer = null; }
-  numpad.style.display = 'none';
+  if (numpad._posTimer)      { clearInterval(numpad._posTimer); numpad._posTimer = null; }
+  if (numpad._orientHandler) {
+    window.removeEventListener('orientationchange', numpad._orientHandler);
+    window.removeEventListener('resize', numpad._orientHandler);
+    numpad._orientHandler = null;
+  }
+  numpad.classList.remove('landscape');
+  $id('ef-modal').classList.remove('landscape');
+  // Reset inline styles posés dynamiquement
+  numpad.style.cssText = '';
 }
 
 function efNumpadKey(char) {
