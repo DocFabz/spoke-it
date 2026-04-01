@@ -549,34 +549,30 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   flex-direction:row;
   max-width:680px;
   max-height:90vh;
-  top:50%; left:50%;
 }
 #ef-wrapper.landscape .ef-modal {
   border-bottom:1px solid var(--border-s);
   border-right:none;
   border-radius:var(--r) 0 0 var(--r);
-  flex:1; overflow-y:auto;
+  flex:1 1 50%; overflow-y:auto;
 }
 #ef-wrapper.landscape #ef-numpad {
   border-top:1px solid var(--border-s);
   border-left:none;
   border-radius:0 var(--r) var(--r) 0;
   padding:.6rem .9rem;
-  display:flex; align-items:center;
-  flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  flex:1 1 50%;
 }
 #ef-wrapper.landscape .ef-numpad {
-  max-width:190px;
+  width:100%;
+  max-width:none;
   padding:0;
 }
 #ef-wrapper.landscape .ef-numpad-key {
   padding:.42rem .2rem;
   font-size:.95rem;
 }
-
-.ef-modal.show { opacity:1 } /* compat ancienne ref — no-op désormais */
-
-
 
 .ef-header { display:flex; align-items:center; justify-content:space-between; gap:.6rem }
 .ef-title {
