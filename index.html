@@ -738,12 +738,11 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .wf-pill:hover { border-color:var(--border-s); color:var(--text2) }
 .wf-pill.active { border-color:rgba(126,200,227,.5); color:var(--accent); background:rgba(126,200,227,.07) }
 
-/* ── Charte personnalisée button ──────────────────────────────────────────────────── */
-.tm-conv-btn, .tm-custom-btn { display:inline-flex; align-items:center; gap:.3rem; padding:.18rem .65rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.65rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:border-color .2s, color .2s, background .2s }
-.tm-conv-btn.locked { pointer-events:none; cursor:not-allowed }
-.tm-custom-btn.locked { pointer-events:none; opacity:.35 }
-.tm-conv-btn.lit, .tm-custom-btn.lit { border-color:rgba(126,200,227,.5); color:var(--accent); background:rgba(126,200,227,.07) }
-.tm-conv-btn svg, .tm-custom-btn svg { width:11px; height:11px; flex-shrink:0 }
+/* ── Bouton déclencheur chartes ───────────────────────────────────────────────────── */
+.tm-conv-btn { display:inline-flex; align-items:center; gap:.3rem; padding:.18rem .65rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.65rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:border-color .2s, color .2s, background .2s }
+.tm-conv-btn.lit { border-color:rgba(126,200,227,.5); color:var(--accent); background:rgba(126,200,227,.07) }
+#tm-charts-popup .picker-btn.locked { opacity:.38; pointer-events:none; cursor:not-allowed }
+#tm-charts-popup .picker-btn.lit { border-color:rgba(126,200,227,.4); color:var(--accent2); background:rgba(126,200,227,.05) }
 
 /* ── Charte personnalisée modal ──────────────────────────────────────────────────── */
 .cc-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
@@ -1517,24 +1516,27 @@ input[type=number] { -moz-appearance:textfield }
       </div>
     </div>
 
-    <!-- Boutons charte de conversion + charte personnalisée -->
-    <div style="margin-bottom:1rem;margin-top:-.5rem;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
-      <button class="tm-conv-btn locked" id="tm-conv-btn" onclick="tmOpenConvTable()">
+    <!-- Bouton chartes (picker) -->
+    <div style="margin-bottom:1rem;margin-top:-.5rem;position:relative" id="tm-charts-picker-wrap">
+      <button class="tm-conv-btn" id="tm-charts-picker-btn" onclick="tmChartsPickerToggle()" style="border-radius:var(--rs);padding:.45rem .85rem;gap:.45rem;">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="2" width="13" height="12" rx="1.5"/><line x1="1.5" y1="5.5" x2="14.5" y2="5.5"/><line x1="1.5" y1="9" x2="14.5" y2="9"/><line x1="6" y1="5.5" x2="6" y2="14"/><line x1="11" y1="5.5" x2="11" y2="14"/></svg>
-        <span data-i18n="tmConvBtn">Charte de conversion</span>
+        <span data-i18n="tmChartsBtn">Chartes</span>
+        <svg id="tm-charts-chevron" viewBox="0 0 10 7" fill="none" stroke="currentColor" stroke-width="1.4" style="width:8px;height:8px;transition:transform .2s;flex-shrink:0"><path d="M1 1l4 4 4-4"/></svg>
       </button>
-      <span class="tip-wrap">
-        <span class="tip-icon">?</span>
-        <span class="tip-box" data-i18n="tmConvTip">Charte de Tension Appliquée</span>
-      </span>
-      <button class="tm-custom-btn" id="cc-open-btn" onclick="ccOpen()">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><line x1="8" y1="5" x2="8" y2="11"/><line x1="5" y1="8" x2="11" y2="8"/></svg>
-        <span data-i18n="ccCreateBtn">Charte Perso</span>
-      </button>
-      <span class="tip-wrap">
-        <span class="tip-icon">?</span>
-        <span class="tip-box" data-i18n="ccTip">Créer une charte personnalisée</span>
-      </span>
+      <div class="picker-popup" id="tm-charts-popup" style="left:0;transform:none;min-width:210px">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:.15rem">
+          <button onclick="tmChartsPickerClose()" style="background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--text3);font-size:.8rem;cursor:pointer;padding:.2rem .45rem;line-height:1;transition:all .2s" onmouseover="this.style.borderColor='rgba(232,146,124,.6)';this.style.color='var(--warm)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">✕</button>
+        </div>
+        <button class="picker-btn locked" id="tm-conv-btn" onclick="tmChartsPickerClose();tmOpenConvTable()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="width:13px;height:13px;flex-shrink:0"><rect x="1.5" y="2" width="13" height="12" rx="1.5"/><line x1="1.5" y1="5.5" x2="14.5" y2="5.5"/><line x1="1.5" y1="9" x2="14.5" y2="9"/><line x1="6" y1="5.5" x2="6" y2="14"/><line x1="11" y1="5.5" x2="11" y2="14"/></svg>
+          <span data-i18n="tmConvBtn">Charte de conversion</span>
+        </button>
+        <button class="picker-btn" id="cc-open-btn" onclick="tmChartsPickerClose();ccOpen()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:13px;height:13px;flex-shrink:0"><circle cx="8" cy="8" r="6.5"/><line x1="8" y1="5" x2="8" y2="11"/><line x1="5" y1="8" x2="11" y2="8"/></svg>
+          <span data-i18n="ccCreateBtn">Charte Perso</span>
+        </button>
+      </div>
+      <div class="picker-overlay" id="tm-charts-overlay" onclick="tmChartsPickerClose()"></div>
     </div>
 
     <!-- Nb rayons -->
@@ -1845,6 +1847,7 @@ const i18n = {
     tmSpokeSelectPlaceholder:'—',
     tmTensioPlaceholder:'—',
     tmWarnAerolite2:'⚠ Valeurs valables UNIQUEMENT avec le Tensiomètre Aerolite II',
+    tmChartsBtn:'Chartes',
     tmConvBtn:'Charte de conversion',
     tmConvTitle:'Charte de conversion',
     tmConvReading:'Lecture',
@@ -1853,9 +1856,7 @@ const i18n = {
     tmWFTipOld:'Version précédente des Tension Charts par WF',
     tmDTTipStd:'Tensiomètre DT Swiss standard',
     tmDTTipAel2:'Tables spécifiques au Tensiomètre Aerolite II',
-    tmConvTip:'Charte de Tension Appliquée',
     ccCreateBtn:'Charte Perso',
-    ccTip:'Créer une charte personnalisée',
     ccTitle:'Charte personnalisée',
     ccStepTensio:'Tensiomètre',
     ccStepName:'Nom du rayon',
@@ -1946,6 +1947,7 @@ const i18n = {
     tmSpokeSelectPlaceholder:'—',
     tmTensioPlaceholder:'—',
     tmWarnAerolite2:'⚠ Values valid ONLY with the Aerolite II Tensiometer',
+    tmChartsBtn:'Charts',
     tmConvBtn:'Conversion chart',
     tmConvTitle:'Conversion chart',
     tmConvReading:'Reading',
@@ -1954,9 +1956,7 @@ const i18n = {
     tmWFTipOld:'Previous version of WF Tension Charts',
     tmDTTipStd:'Standard DT Swiss tensiometer',
     tmDTTipAel2:'Tables specific to the Aerolite II Tensiometer',
-    tmConvTip:'Applied Tension Chart',
     ccCreateBtn:'Custom chart',
-    ccTip:'Create a custom chart',
     ccTitle:'Custom chart',
     ccStepTensio:'Tensiometer',
     ccStepName:'Spoke name',
@@ -3158,6 +3158,7 @@ function openPicker() {
 function closePicker() {
   $id('picker-overlay').classList.remove('show');
   $id('picker-popup').classList.remove('show');
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
 }
 
 function openSaveMgr() {
@@ -3683,6 +3684,7 @@ function ctClose() {
   $id('ct-overlay').classList.remove('show');
   $id('ct-modal').classList.remove('show');
   document.body.style.overflow = '';
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
 }
 
 // ── Sauvegarder le nouveau tensiomètre ──────────────────────────────────────
@@ -3775,6 +3777,7 @@ function closeEraseMgr() {
   $id('erasemgr-overlay').classList.remove('show');
   $id('erasemgr-modal').classList.remove('show');
   document.body.style.overflow = '';
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
 }
 function renderEraseMgr(openKeys) {
   const body = $id('erasemgr-body');
@@ -4224,19 +4227,55 @@ function tmClearSpoke() {
   tmOnSpokeChange();
 }
 
+// ── Picker chartes (toggle + fermeture) ─────────────────────────────────────
+function tmChartsPickerToggle() {
+  const popup   = $id('tm-charts-popup');
+  const overlay = $id('tm-charts-overlay');
+  const chevron = $id('tm-charts-chevron');
+  const isOpen  = popup.classList.contains('show');
+  if (isOpen) {
+    popup.classList.remove('show');
+    overlay.classList.remove('show');
+    if (chevron) chevron.style.transform = '';
+  } else {
+    popup.classList.add('show');
+    overlay.classList.add('show');
+    if (chevron) chevron.style.transform = 'rotate(180deg)';
+  }
+}
+function tmChartsPickerClose() {
+  const popup   = $id('tm-charts-popup');
+  const overlay = $id('tm-charts-overlay');
+  const chevron = $id('tm-charts-chevron');
+  if (popup)   popup.classList.remove('show');
+  if (overlay) overlay.classList.remove('show');
+  if (chevron) chevron.style.transform = '';
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+}
+
 // ── Bouton charte de conversion : actif/désactivé ────────────────────────────
 function tmUpdateConvBtn() {
+  const hasSpoke = !!tmSpokeKey;
+  const hasTensio = !!tmType;
+
+  // Item "Charte de conversion" dans le picker
   const btn = $id('tm-conv-btn');
   if (btn) {
-    const hasSpoke = !!tmSpokeKey;
     btn.classList.toggle('locked', !hasSpoke);
     btn.classList.toggle('lit', hasSpoke);
   }
-  // Charte personnalisée : s'allume quand un tensiomètre est sélectionné
+
+  // Item "Charte perso" dans le picker
   const ccBtn = $id('cc-open-btn');
   if (ccBtn) {
     ccBtn.classList.remove('locked');
-    ccBtn.classList.toggle('lit', !!tmType);
+    ccBtn.classList.toggle('lit', hasTensio);
+  }
+
+  // Bouton déclencheur : allumé si au moins un item est actif
+  const triggerBtn = $id('tm-charts-picker-btn');
+  if (triggerBtn) {
+    triggerBtn.classList.toggle('lit', hasSpoke || hasTensio);
   }
 }
 
@@ -4286,12 +4325,16 @@ function tmCloseConvTable() {
   $id('tm-conv-overlay').classList.remove('show');
   $id('tm-conv-modal').classList.remove('show');
   document.body.style.overflow = '';
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
 }
 
 // Fermer la modale avec Escape
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && $id('tm-conv-modal').classList.contains('show')) {
     tmCloseConvTable();
+  }
+  if (e.key === 'Escape' && $id('tm-charts-popup') && $id('tm-charts-popup').classList.contains('show')) {
+    tmChartsPickerClose();
   }
   if (e.key === 'Escape' && $id('cc-modal').classList.contains('show')) {
     ccClose();
@@ -4392,6 +4435,7 @@ function ccClose() {
   $id('cc-overlay').classList.remove('show');
   $id('cc-modal').classList.remove('show');
   document.body.style.overflow = '';
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
   // Réinitialiser le champ nom
   const nameInp = $id('cc-name');
   if (nameInp) { nameInp.readOnly = false; nameInp.style.opacity = ''; }
@@ -5013,6 +5057,7 @@ function tmBuildTable() {
       });
 
       inp.addEventListener('blur', function() {
+        if (this._escapingBlur) { this._escapingBlur = false; return; }
         const raw = this.value.trim();
         let parsed = null;
 
@@ -5058,9 +5103,12 @@ function tmBuildTable() {
 
       inp.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
+          e.preventDefault();
           const prev = side === 'fo' ? tmPrevFo[idx] : tmPrevFa[idx];
           this.value = prev !== null ? tmDisplayValue(prev) : '';
+          this._escapingBlur = true;
           this.blur();
+          document.activeElement && document.activeElement.blur();
         }
         if (e.key === 'Enter') {
           // Valider avant d'avancer : si vide ou valide → passer, sinon rester
