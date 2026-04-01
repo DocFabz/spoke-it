@@ -4156,6 +4156,8 @@ function tmClearTensio() {
   if (efBtn) efBtn.setAttribute('aria-checked', 'false');
   const clearBtn = $id('tm-clear-tensio');
   if (clearBtn) clearBtn.classList.add('inactive');
+  const clearSpoke = $id('tm-clear-spoke');
+  if (clearSpoke) clearSpoke.classList.add('inactive');
 }
 
 function setDTSub(sub) {
