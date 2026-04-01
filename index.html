@@ -504,11 +504,11 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ef-overlay.show { display:block; opacity:1 }
 
 .ef-modal {
-  position:fixed; top:5%; left:50%;
+  position:fixed; top:3%; left:50%;
   transform:translateX(-50%);
   z-index:9995;
   background:var(--card); border:1px solid var(--border-s);
-  border-radius:var(--r); padding:1.5rem 1.4rem 1.3rem;
+  border-radius:var(--r) var(--r) 0 0; padding:1.5rem 1.4rem 1.3rem;
   box-shadow:0 20px 72px rgba(0,0,0,.6);
   width:92%; max-width:340px;
   display:none; flex-direction:column; gap:1.1rem;
@@ -767,6 +767,59 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ct-section-sep { font-size:.58rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--text3); padding-top:.3rem; border-top:1px solid var(--border); margin-top:.2rem }
 /* Custom tensiometer options in dropdowns */
 .tm-tensio-custom { color:var(--accent) !important; font-weight:500 }
+
+/* ── Easy Fill : clavier numérique ────────────────────────────────────────── */
+#ef-numpad {
+  position:fixed; left:50%; transform:translateX(-50%);
+  z-index:9996; width:92%; max-width:340px;
+  background:var(--card); border:1px solid var(--border-s);
+  border-top:none; border-radius:0 0 var(--r) var(--r);
+  padding:.5rem 1.4rem .9rem;
+  box-shadow:0 20px 72px rgba(0,0,0,.6);
+  display:none;
+}
+.ef-numpad {
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:.35rem;
+  padding:.5rem 0 .2rem;
+  width:100%;
+  max-width:260px;
+  margin:0 auto;
+}
+.ef-numpad-key {
+  background:var(--card-alt);
+  border:1px solid var(--border-s);
+  border-radius:var(--rs);
+  color:var(--text);
+  font-family:'DM Mono',monospace;
+  font-size:1.1rem;
+  font-weight:400;
+  padding:.65rem .3rem;
+  cursor:pointer;
+  transition:background .12s, border-color .14s, transform .08s;
+  text-align:center;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  line-height:1;
+}
+.ef-numpad-key:active { background:rgba(126,200,227,.13); border-color:rgba(126,200,227,.4); transform:scale(.94) }
+.ef-numpad-key.key-dot  { font-size:.95rem }
+.ef-numpad-key.key-del  { font-size:.85rem; color:var(--text2) }
+.ef-numpad-key.key-del:active { background:rgba(232,146,124,.12); border-color:rgba(232,146,124,.4) }
+.ef-numpad-key.key-enter {
+  grid-column:span 3;
+  background:rgba(126,200,227,.07);
+  border-color:rgba(126,200,227,.3);
+  color:var(--accent);
+  font-family:'DM Sans',sans-serif;
+  font-size:.8rem;
+  font-weight:600;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  padding:.6rem;
+}
+.ef-numpad-key.key-enter:active { background:rgba(126,200,227,.18); transform:scale(.97) }
 
 /* ── Cache toast ──────────────────────────────────────────────────────────── */
 .cache-toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid rgba(232,146,124,.35); border-radius:var(--rs); padding:.55rem 1.1rem; font-family:'DM Sans',sans-serif; font-size:.67rem; color:var(--warm2); z-index:10000; pointer-events:none; opacity:0; transition:opacity .3s; white-space:nowrap; margin-bottom:env(safe-area-inset-bottom, 0px) }
@@ -5575,9 +5628,9 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
     </div>
 
     <div class="ef-input-row">
-      <input class="ef-inp" id="ef-inp" type="text" inputmode="decimal"
+      <input class="ef-inp" id="ef-inp" type="text"
         autocomplete="off" autocorrect="off" spellcheck="false" placeholder="—"
-        oninput="efOnInput()" onkeydown="efOnKey(event)">
+        oninput="efUpdateKgf()" onkeydown="efOnKey(event)">
       <div class="ef-kgf-preview" id="ef-kgf-preview"></div>
     </div>
 
@@ -5590,6 +5643,25 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
     </div>
 
   </div><!-- /ef-screen-fill -->
+</div>
+
+<!-- ── Clavier numérique Easy Fill (positionné sous la modale) ── -->
+<div id="ef-numpad">
+  <div class="ef-numpad">
+    <button class="ef-numpad-key" onclick="efNumpadKey('7')">7</button>
+    <button class="ef-numpad-key" onclick="efNumpadKey('8')">8</button>
+    <button class="ef-numpad-key" onclick="efNumpadKey('9')">9</button>
+    <button class="ef-numpad-key" onclick="efNumpadKey('4')">4</button>
+    <button class="ef-numpad-key" onclick="efNumpadKey('5')">5</button>
+    <button class="ef-numpad-key" onclick="efNumpadKey('6')">6</button>
+    <button class="ef-numpad-key" onclick="efNumpadKey('1')">1</button>
+    <button class="ef-numpad-key" onclick="efNumpadKey('2')">2</button>
+    <button class="ef-numpad-key" onclick="efNumpadKey('3')">3</button>
+    <button class="ef-numpad-key key-dot" onclick="efNumpadKey('.')">.</button>
+    <button class="ef-numpad-key" onclick="efNumpadKey('0')">0</button>
+    <button class="ef-numpad-key key-del" onclick="efNumpadDel()">⌫</button>
+    <button class="ef-numpad-key key-enter" onclick="efNext()" id="ef-numpad-enter">Entrée ↵</button>
+  </div>
 </div>
 
 <script>
@@ -5628,6 +5700,7 @@ function efBuildSteps() {
 
 // ── Ouverture de la modale ──────────────────────────────────────────────────
 function efOpen() {
+  var isTouch = efIsTouchDevice();
   efSideMode = 'fo';
   efBuildSteps();
   if (!efSteps.length) return;
@@ -5637,10 +5710,14 @@ function efOpen() {
   $id('ef-sw-both-first').textContent  = efShortLabel('fo');
   $id('ef-sw-both-second').textContent = efShortLabel('fa');
   efUpdateSwitcher();
+  // Adapter le border-radius de la modale selon le device
+  $id('ef-modal').style.borderRadius = isTouch ? 'var(--r) var(--r) 0 0' : 'var(--r)';
   $id('ef-overlay').classList.add('show');
   $id('ef-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
   efRenderStep();
-  setTimeout(function() { var i = $id('ef-inp'); if (i) i.focus(); }, 80);
+  efShowNumpad(); // gère readonly/inputmode et affiche le clavier si touch
+  if (!isTouch) setTimeout(function() { $id('ef-inp').focus(); }, 80);
 }
 
 // Label court : NDS ou DS selon la roue
@@ -5665,12 +5742,13 @@ function efSwitchSide(mode) {
   if (!efSteps.length) { efClose(); return; }
   efCurrent = efFirstUnfilled();
   efRenderStep();
-  $id('ef-inp').focus();
 }
 
 function efClose() {
   $id('ef-overlay').classList.remove('show');
   $id('ef-modal').classList.remove('show');
+  efHideNumpad();
+  document.body.style.overflow = '';
   var btn = $id('easy-fill-toggle');
   if (btn) btn.setAttribute('aria-checked', 'false');
 }
@@ -5687,21 +5765,16 @@ function efToggle() {
   }
 }
 
-// ── Rendu d'un step ─────────────────────────────────────────────────────────
-function efStepSideLabel(step) {
-  var labels = efGetLabels();
-  return step.side === 'fo' ? labels.fo : labels.fa;
-}
-
 function efRenderStep() {
-  var total = efSteps.length;
-  var step  = efSteps[efCurrent];
+  var total  = efSteps.length;
+  var step   = efSteps[efCurrent];
+  var labels = efGetLabels();
 
   $id('ef-prog-label').textContent = (efCurrent + 1) + ' / ' + total;
   $id('ef-prog-fill').style.width  = (efCurrent / total * 100) + '%';
 
   var sideEl = $id('ef-side-label');
-  sideEl.textContent = efStepSideLabel(step);
+  sideEl.textContent = step.side === 'fo' ? labels.fo : labels.fa;
   sideEl.className   = 'ef-step-side ' + step.side;
 
   $id('ef-spoke-num').textContent = step.idx + 1;
@@ -5731,7 +5804,6 @@ function efUpdateKgf() {
   else              { prev.textContent = ''; prev.classList.remove('has-val'); }
 }
 
-function efOnInput() { efUpdateKgf(); }
 function efOnKey(e) {
   if (e.key === 'Enter')  { e.preventDefault(); efNext(); }
   if (e.key === 'Escape') { efClose(); }
@@ -5823,11 +5895,58 @@ function efNext() {
     return;
   }
   efRenderStep();
-  $id('ef-inp').focus();
 }
 
 function efBack() {
-  if (efCurrent > 0) { efCurrent--; efRenderStep(); $id('ef-inp').focus(); }
+  if (efCurrent > 0) { efCurrent--; efRenderStep(); }
+}
+
+// ── Clavier numérique ────────────────────────────────────────────────────────
+function efIsTouchDevice() {
+  return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+}
+
+function efShowNumpad() {
+  var inp = $id('ef-inp');
+  if (!efIsTouchDevice()) {
+    // Desktop : rétablir le clavier natif
+    inp.removeAttribute('readonly');
+    inp.setAttribute('inputmode', 'decimal');
+    return;
+  }
+  // Mobile/tablette : bloquer le clavier natif, afficher le clavier custom
+  inp.setAttribute('readonly', '');
+  inp.setAttribute('inputmode', 'none');
+  var numpad = $id('ef-numpad');
+  var modal  = $id('ef-modal');
+  numpad.style.display = 'block';
+  function positionNumpad() {
+    numpad.style.top = modal.getBoundingClientRect().bottom + 'px';
+  }
+  positionNumpad();
+  numpad._posTimer = setInterval(positionNumpad, 200);
+  $id('ef-numpad-enter').textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
+}
+
+function efHideNumpad() {
+  var numpad = $id('ef-numpad');
+  if (numpad._posTimer) { clearInterval(numpad._posTimer); numpad._posTimer = null; }
+  numpad.style.display = 'none';
+}
+
+function efNumpadKey(char) {
+  var inp = $id('ef-inp');
+  var val = inp.value;
+  if (char === '.' && val.indexOf('.') !== -1) return; // un seul point décimal
+  if (char !== '.' && val === '0') { inp.value = char; efUpdateKgf(); return; } // pas de zéro en tête
+  inp.value = val + char;
+  efUpdateKgf();
+}
+
+function efNumpadDel() {
+  var inp = $id('ef-inp');
+  inp.value = inp.value.slice(0, -1);
+  efUpdateKgf();
 }
 
 // ── Patch toggleCard ─────────────────────────────────────────────────────────
