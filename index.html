@@ -1000,6 +1000,37 @@ input[type=number] { -moz-appearance:textfield }
   </div>
 </header>
 
+<!-- ── Modale Atelier ── -->
+<div class="ateliermgr-overlay" id="ateliermgr-overlay" onclick="closeAtelierMgr()"></div>
+<div class="ateliermgr-modal" id="ateliermgr-modal">
+  <div class="ateliermgr-header">
+    <span class="ateliermgr-title" data-i18n="atelierTitle">Atelier</span>
+    <button class="ateliermgr-close" onclick="closeAtelierMgr()">✕</button>
+  </div>
+  <div class="ateliermgr-field">
+    <span class="ateliermgr-label" data-i18n="atelierName">Atelier</span>
+    <div class="ateliermgr-inp-wrap">
+      <input class="ateliermgr-inp" id="atelier-name" type="text" maxlength="60" autocomplete="off">
+      <button class="ateliermgr-clear" onclick="atelierClear('atelier-name')">✕</button>
+    </div>
+  </div>
+  <div class="ateliermgr-field">
+    <span class="ateliermgr-label">Email</span>
+    <div class="ateliermgr-inp-wrap">
+      <input class="ateliermgr-inp" id="atelier-email" type="email" maxlength="80" autocomplete="off">
+      <button class="ateliermgr-clear" onclick="atelierClear('atelier-email')">✕</button>
+    </div>
+  </div>
+  <div class="ateliermgr-field">
+    <span class="ateliermgr-label">Instagram</span>
+    <div class="ateliermgr-inp-wrap">
+      <input class="ateliermgr-inp" id="atelier-insta" type="text" maxlength="60" autocomplete="off" placeholder="@">
+      <button class="ateliermgr-clear" onclick="atelierClear('atelier-insta')">✕</button>
+    </div>
+  </div>
+  <button class="ateliermgr-save" onclick="saveAtelierInfo()" data-i18n="saveOk">OK</button>
+</div>
+
 <!-- ── Save manager modal ── -->
 <div class="savemgr-overlay" id="savemgr-overlay" onclick="closeSaveMgr()"></div>
 <div class="savemgr-modal" id="savemgr-modal">
@@ -1462,37 +1493,6 @@ input[type=number] { -moz-appearance:textfield }
   </div>
 
 <!-- ── Modale saisie taille rayon ── -->
-<!-- ── Modale Atelier ── -->
-<div class="ateliermgr-overlay" id="ateliermgr-overlay" onclick="closeAtelierMgr()"></div>
-<div class="ateliermgr-modal" id="ateliermgr-modal">
-  <div class="ateliermgr-header">
-    <span class="ateliermgr-title" data-i18n="atelierTitle">Atelier</span>
-    <button class="ateliermgr-close" onclick="closeAtelierMgr()">✕</button>
-  </div>
-  <div class="ateliermgr-field">
-    <span class="ateliermgr-label" data-i18n="atelierName">Atelier</span>
-    <div class="ateliermgr-inp-wrap">
-      <input class="ateliermgr-inp" id="atelier-name" type="text" maxlength="60" autocomplete="off">
-      <button class="ateliermgr-clear" onclick="atelierClear('atelier-name')">✕</button>
-    </div>
-  </div>
-  <div class="ateliermgr-field">
-    <span class="ateliermgr-label">Email</span>
-    <div class="ateliermgr-inp-wrap">
-      <input class="ateliermgr-inp" id="atelier-email" type="email" maxlength="80" autocomplete="off">
-      <button class="ateliermgr-clear" onclick="atelierClear('atelier-email')">✕</button>
-    </div>
-  </div>
-  <div class="ateliermgr-field">
-    <span class="ateliermgr-label">Instagram</span>
-    <div class="ateliermgr-inp-wrap">
-      <input class="ateliermgr-inp" id="atelier-insta" type="text" maxlength="60" autocomplete="off" placeholder="@">
-      <button class="ateliermgr-clear" onclick="atelierClear('atelier-insta')">✕</button>
-    </div>
-  </div>
-  <button class="ateliermgr-save" onclick="saveAtelierInfo()" data-i18n="saveOk">OK</button>
-</div>
-
 <div class="slen-overlay" id="slen-overlay" onclick="slenClose()"></div>
 <div class="slen-modal" id="slen-modal">
   <div class="slen-header">
@@ -3193,6 +3193,8 @@ function slenClose() {
   $id('slen-overlay').classList.remove('show');
   $id('slen-modal').classList.remove('show');
   _slenSide = null;
+  // Rendre le focus au body pour éviter tout scroll natif
+  if (document.activeElement) document.activeElement.blur();
 }
 
 function slenConfirm() {
