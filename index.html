@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-GEY79L24TV"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -107,6 +108,25 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 
 .save-mgr-btn { background:transparent; border:1px solid var(--border-s); border-radius:20px; color:var(--text3); padding:.28rem .9rem; cursor:pointer; transition:all .2s; display:inline-flex; align-items:center; justify-content:center; line-height:1 }
 .save-mgr-btn:hover { border-color:var(--accent); color:var(--accent) }
+
+/* ── Modale Atelier ─────────────────────────────────────────────────────────── */
+.ateliermgr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
+.ateliermgr-overlay.show { display:block; opacity:1 }
+.ateliermgr-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:360px; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
+.ateliermgr-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+.ateliermgr-header { display:flex; align-items:center; justify-content:space-between }
+.ateliermgr-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
+.ateliermgr-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
+.ateliermgr-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+.ateliermgr-field { display:flex; flex-direction:column; gap:.35rem }
+.ateliermgr-label { font-size:.6rem; font-weight:500; letter-spacing:.12em; text-transform:uppercase; color:var(--text3) }
+.ateliermgr-inp-wrap { display:flex; align-items:center; gap:.4rem }
+.ateliermgr-inp { flex:1; font-family:'DM Mono',monospace; font-size:.85rem; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text); padding:.5rem .75rem; outline:none; transition:border-color .2s }
+.ateliermgr-inp:focus { border-color:rgba(126,200,227,.4) }
+.ateliermgr-clear { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.72rem; cursor:pointer; padding:.28rem .5rem; line-height:1; transition:all .2s; flex-shrink:0 }
+.ateliermgr-clear:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+.ateliermgr-save { background:transparent; border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:500; padding:.6rem 1rem; cursor:pointer; transition:all .22s; text-align:center }
+.ateliermgr-save:hover { border-color:rgba(126,200,227,.5); color:var(--accent2); background:rgba(126,200,227,.05) }
 
 /* ── Save manager modal ── */
 .savemgr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
@@ -350,6 +370,29 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .sum-row  { display:flex; justify-content:space-between; align-items:baseline; padding:.38rem 0; border-bottom:1px solid var(--border) }
 .sum-lbl  { font-size:.6rem; font-weight:500; letter-spacing:.12em; text-transform:uppercase; color:var(--text3) }
 .sum-val  { font-family:'DM Mono',monospace; font-size:.8rem; color:var(--text) }
+.sum-val-btn { font-family:'DM Mono',monospace; font-size:.8rem; background:none; border:none; padding:0; cursor:pointer; display:inline-flex; align-items:baseline; gap:.35rem; transition:opacity .15s }
+.sum-val-btn:hover { opacity:.75 }
+.sum-val-btn svg { width:10px; height:10px; stroke:currentColor; stroke-width:1.6; fill:none; flex-shrink:0; align-self:center; opacity:.55 }
+/* ── Modale saisie rayon ── */
+.slen-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(4px); z-index:9984; opacity:0; transition:opacity .2s; display:none }
+.slen-overlay.show { display:block; opacity:1 }
+.slen-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9985; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:88%; max-width:300px; display:none; flex-direction:column; gap:.85rem; opacity:0; transition:opacity .2s, transform .2s }
+.slen-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+.slen-header { display:flex; align-items:center; justify-content:space-between }
+.slen-title { font-size:.6rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase }
+.slen-title.warm   { color:var(--warm) }
+.slen-title.accent { color:var(--accent) }
+.slen-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.22rem .48rem; line-height:1; transition:all .2s }
+.slen-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+.slen-inp-wrap { display:flex; align-items:center; gap:.5rem }
+.slen-inp { flex:1; font-family:'DM Mono',monospace; font-size:1.15rem; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text); padding:.55rem .8rem; outline:none; transition:border-color .2s; -moz-appearance:textfield }
+.slen-inp::-webkit-inner-spin-button, .slen-inp::-webkit-outer-spin-button { -webkit-appearance:none }
+.slen-inp:focus { border-color:rgba(126,200,227,.4) }
+.slen-inp.warm:focus { border-color:rgba(232,146,124,.4) }
+.slen-unit { font-family:'DM Mono',monospace; font-size:.75rem; color:var(--text3) }
+.slen-ok { background:transparent; border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.8rem; font-weight:500; padding:.55rem 1.1rem; cursor:pointer; transition:all .2s; white-space:nowrap }
+.slen-ok:hover { border-color:rgba(126,200,227,.5); color:var(--accent2) }
+.slen-inp.shake { animation:shake .35s ease; border-color:rgba(240,128,128,.7) !important; }
 
 /* ── Defl cell layout ─────────────────────────────────────────────────── */
 .defl-cell { display:flex; flex-direction:column; align-items:center; gap:.08rem }
@@ -934,6 +977,11 @@ input[type=number] { -moz-appearance:textfield }
   </div>
   <div class="hline"></div>
   <div class="header-actions" style="position:relative">
+    <button class="save-mgr-btn" onclick="openAtelierMgr()" id="atelier-mgr-btn" title="Atelier">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+      </svg>
+    </button>
     <button id="lang-btn" onclick="toggleLang()" class="lang-btn">EN</button>
     <button class="save-mgr-btn" onclick="openPicker()" id="save-mgr-btn">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -1413,6 +1461,51 @@ input[type=number] { -moz-appearance:textfield }
     </div>
   </div>
 
+<!-- ── Modale saisie taille rayon ── -->
+<!-- ── Modale Atelier ── -->
+<div class="ateliermgr-overlay" id="ateliermgr-overlay" onclick="closeAtelierMgr()"></div>
+<div class="ateliermgr-modal" id="ateliermgr-modal">
+  <div class="ateliermgr-header">
+    <span class="ateliermgr-title" data-i18n="atelierTitle">Atelier</span>
+    <button class="ateliermgr-close" onclick="closeAtelierMgr()">✕</button>
+  </div>
+  <div class="ateliermgr-field">
+    <span class="ateliermgr-label" data-i18n="atelierName">Atelier</span>
+    <div class="ateliermgr-inp-wrap">
+      <input class="ateliermgr-inp" id="atelier-name" type="text" maxlength="60" autocomplete="off">
+      <button class="ateliermgr-clear" onclick="atelierClear('atelier-name')">✕</button>
+    </div>
+  </div>
+  <div class="ateliermgr-field">
+    <span class="ateliermgr-label">Email</span>
+    <div class="ateliermgr-inp-wrap">
+      <input class="ateliermgr-inp" id="atelier-email" type="email" maxlength="80" autocomplete="off">
+      <button class="ateliermgr-clear" onclick="atelierClear('atelier-email')">✕</button>
+    </div>
+  </div>
+  <div class="ateliermgr-field">
+    <span class="ateliermgr-label">Instagram</span>
+    <div class="ateliermgr-inp-wrap">
+      <input class="ateliermgr-inp" id="atelier-insta" type="text" maxlength="60" autocomplete="off" placeholder="@">
+      <button class="ateliermgr-clear" onclick="atelierClear('atelier-insta')">✕</button>
+    </div>
+  </div>
+  <button class="ateliermgr-save" onclick="saveAtelierInfo()" data-i18n="saveOk">OK</button>
+</div>
+
+<div class="slen-overlay" id="slen-overlay" onclick="slenClose()"></div>
+<div class="slen-modal" id="slen-modal">
+  <div class="slen-header">
+    <span class="slen-title" id="slen-title"></span>
+    <button class="slen-close" onclick="slenClose()">✕</button>
+  </div>
+  <div class="slen-inp-wrap">
+    <input class="slen-inp" id="slen-inp" type="number" step="1" inputmode="numeric">
+    <span class="slen-unit">mm</span>
+    <button class="slen-ok" onclick="slenConfirm()">OK</button>
+  </div>
+</div>
+
 </div><!-- /.wrap -->
 </div><!-- /#calc-module -->
 
@@ -1619,7 +1712,16 @@ input[type=number] { -moz-appearance:textfield }
     </div>
 
     <div id="tm-result-card-body" style="display:none;margin-top:.75rem">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:.5rem">
+    <div style="display:flex;justify-content:flex-end;gap:.4rem;margin-bottom:.5rem">
+      <button class="tm-screenshot-btn" id="tm-pdf-btn" onclick="tmExportPdf(event)" title="Export PDF">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="9" y1="13" x2="15" y2="13"/>
+          <line x1="9" y1="17" x2="13" y2="17"/>
+          <line x1="9" y1="9" x2="10" y2="9"/>
+        </svg>
+      </button>
       <button class="tm-screenshot-btn" id="tm-screenshot-btn" onclick="tmScreenshot(event)" title="Screenshot">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -1881,7 +1983,8 @@ const i18n = {
     ctMyTensios:'★ MES TENSIOS',
     pickerBackup:'Backup manager',
     pickerDataMgr:'Data manager',
-    eraseMgrTitle:'Supprimer des données',
+    atelierTitle:'Atelier',
+    atelierName:'Atelier',
     eraseMgrWheels:'Roues',
     eraseMgrCustomTensios:'Tensiomètres perso',
     eraseMgrCustomSpokes:'Rayons perso',
@@ -1981,6 +2084,8 @@ const i18n = {
     ctMyTensios:'★ MY TENSIOS',
     pickerBackup:'Backup manager',
     pickerDataMgr:'Data manager',
+    atelierTitle:'Workshop',
+    atelierName:'Workshop',
     eraseMgrTitle:'Delete data',
     eraseMgrWheels:'Wheels',
     eraseMgrCustomTensios:'Custom tensiometers',
@@ -2946,8 +3051,11 @@ function calc() {
   $id('m-fa').innerHTML = `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFaDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFaDisplay.toFixed(1)} kgf</strong></div>`;
 
   const sl = sa ? `${sd}×${sa} mm` : `${sd} mm`;
-  summaryData = { erd: erd.toFixed(1), wtype, n, h, cross, crossFo, crossFa, diffMode, isSP, sl, asym, ratio };
-  renderSummary(); $id('summary-wrap').classList.add('show');
+  // Conserver les longueurs saisies manuellement si elles existent
+  summaryData = { erd: erd.toFixed(1), wtype, n, h, cross, crossFo, crossFa, diffMode, isSP, sl, asym, ratio, lenFo: null, lenFa: null };
+  $id('sum-card-body').style.display = 'none'; $id('sum-card-chevron').style.transform = '';
+  $id('summary-wrap').classList.add('show');
+  renderSummary();
 
   // Roue arrière : card fo (orange) à droite | Roue avant : card fo (orange) à gauche
   const rg = document.querySelector('.rg'), rcFo = document.querySelector('.rc.fo'), rcFa = document.querySelector('.rc.fa');
@@ -2992,11 +3100,32 @@ function renderSummary() {
   function item(lbl, val, color) {
     return `<div class="sum-row"><span class="sum-lbl">${lbl}</span><span class="sum-val"${color ? ' style="color:'+color+'"' : ''}>${val}</span></div>`;
   }
+  function itemClickable(lbl, id, val, colorVar, side) {
+    const pencil = `<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+    const display = (val !== undefined && val !== null) ? val + ' mm' : '— mm';
+    return `<div class="sum-row"><span class="sum-lbl">${lbl}</span><button class="sum-val-btn" style="color:${colorVar}" onclick="slenOpen('${side}')">${display} ${pencil}</button></div>`;
+  }
+  // Orange toujours au-dessus, bleu en dessous
+  // fo=orange : gauche (avant) / droite (arrière)
+  // fa=bleu   : droite (avant) / gauche (arrière)
+  const isAvant = d.wtype === 'avant';
+  const orangeLbl = isAvant
+    ? (lang === 'fr' ? 'Taille rayon gauche' : 'Left spoke length')
+    : (lang === 'fr' ? 'Taille rayon droit'  : 'Right spoke length');
+  const blueLbl = isAvant
+    ? (lang === 'fr' ? 'Taille rayon droit'  : 'Right spoke length')
+    : (lang === 'fr' ? 'Taille rayon gauche' : 'Left spoke length');
+  const orangeSide = isAvant ? 'left' : 'right';
+  const blueSide   = isAvant ? 'right' : 'left';
+  const orangeLen  = d.lenFo; // fo = toujours orange
+  const blueLen    = d.lenFa; // fa = toujours bleu
   $id('summary').innerHTML =
     item(t('wheelLabel'),   d.wtype === 'avant' ? t('frontLabel') : t('rearLabel')) +
     item('ERD',             d.erd + ' mm') +
     item(t('spokeCount'),   d.n + ' (' + d.h + t('perSide') + ')') +
     item(t('crossLabel'),   cl) +
+    itemClickable(orangeLbl, orangeSide, orangeLen, 'var(--warm2)',   orangeSide) +
+    itemClickable(blueLbl,   blueSide,   blueLen,   'var(--accent2)', blueSide) +
     item(t('hubType'),      d.isSP ? 'Straightpull' : 'J-Bend') +
     item(t('spokeSection2'), d.sl) +
     item(t('rimAsym2'),     (d.asym > 0 ? '+' : '') + d.asym + ' mm') +
@@ -3028,6 +3157,109 @@ function renderArb(side) {
 }
 
 function toggleEven(side) { evenMode[side] = !evenMode[side]; $id('arb-even-'+side).classList.toggle('active', evenMode[side]); renderArb(side); }
+
+// ── Modale saisie taille rayon ──────────────────────────────────────────────────
+let _slenSide = null; // 'left' ou 'right'
+
+function slenGetCalc(isOrange) {
+  // Lire la valeur calculée directement depuis le DOM — toujours à jour même après chargement config
+  const raw = parseFloat(isOrange ? $id('r-fo').textContent : $id('r-fa').textContent);
+  return isNaN(raw) ? null : Math.floor(raw);
+}
+
+function slenOpen(side) {
+  if (!summaryData) return;
+  _slenSide = side;
+  const d = summaryData;
+  const isAvant = d.wtype === 'avant';
+  const isOrange = (side === 'left') ? isAvant : !isAvant;
+  const val  = isOrange ? d.lenFo : d.lenFa;
+  const calc = slenGetCalc(isOrange);
+  const lbl = side === 'left'
+    ? (lang === 'fr' ? 'Rayon gauche' : 'Left spoke')
+    : (lang === 'fr' ? 'Rayon droit'  : 'Right spoke');
+  const titleEl = $id('slen-title');
+  const inpEl   = $id('slen-inp');
+  titleEl.textContent = lbl;
+  titleEl.className   = 'slen-title ' + (isOrange ? 'warm' : 'accent');
+  inpEl.className     = 'slen-inp '   + (isOrange ? 'warm' : '');
+  inpEl.value = (val !== null && val !== undefined) ? val : '';
+  $id('slen-overlay').classList.add('show');
+  $id('slen-modal').classList.add('show');
+  setTimeout(() => inpEl.focus(), 80);
+}
+
+function slenClose() {
+  $id('slen-overlay').classList.remove('show');
+  $id('slen-modal').classList.remove('show');
+  _slenSide = null;
+}
+
+function slenConfirm() {
+  if (!summaryData || !_slenSide) return;
+  const raw = parseFloat($id('slen-inp').value);
+  const d = summaryData;
+  const isAvant = d.wtype === 'avant';
+  const isOrange = (_slenSide === 'left') ? isAvant : !isAvant;
+  const calc = slenGetCalc(isOrange);
+  if (isNaN(raw) || raw <= 0 || !Number.isInteger(raw) || (calc !== null && (raw < calc - 2 || raw > calc + 2))) {
+    $id('slen-inp').classList.add('shake');
+    setTimeout(() => $id('slen-inp').classList.remove('shake'), 400);
+    return;
+  }
+  if (isOrange) d.lenFo = String(raw); else d.lenFa = String(raw);
+  slenClose();
+  renderSummary();
+}
+
+// Fermer sur Entrée / Escape depuis l'input
+document.addEventListener('keydown', function(e) {
+  if (!$id('slen-modal').classList.contains('show')) return;
+  if (e.key === 'Enter')  { e.preventDefault(); slenConfirm(); }
+  if (e.key === 'Escape') { e.preventDefault(); slenClose(); }
+});
+
+// ── Modale Atelier ───────────────────────────────────────────────────────────
+const LS_ATELIER = 'spokeit_atelier';
+
+function loadAtelierInfo() {
+  try { return JSON.parse(localStorage.getItem(LS_ATELIER)) || {}; } catch(e) { return {}; }
+}
+
+function openAtelierMgr() {
+  const info = loadAtelierInfo();
+  $id('atelier-name').value  = info.name  || '';
+  $id('atelier-email').value = info.email || '';
+  $id('atelier-insta').value = info.insta || '';
+  $id('ateliermgr-overlay').classList.add('show');
+  $id('ateliermgr-modal').classList.add('show');
+  setTimeout(() => $id('atelier-name').focus(), 80);
+}
+
+function closeAtelierMgr() {
+  $id('ateliermgr-overlay').classList.remove('show');
+  $id('ateliermgr-modal').classList.remove('show');
+}
+
+function atelierClear(id) {
+  $id(id).value = '';
+  $id(id).focus();
+}
+
+function saveAtelierInfo() {
+  const info = {
+    name:  $id('atelier-name').value.trim(),
+    email: $id('atelier-email').value.trim(),
+    insta: $id('atelier-insta').value.trim()
+  };
+  localStorage.setItem(LS_ATELIER, JSON.stringify(info));
+  closeAtelierMgr();
+}
+
+document.addEventListener('keydown', function(e) {
+  if (!$id('ateliermgr-modal').classList.contains('show')) return;
+  if (e.key === 'Escape') { e.preventDefault(); closeAtelierMgr(); }
+});
 
 // ── Card toggles ──────────────────────────────────────────────────────────────
 function toggleCard(bodyId, chevronId) {
@@ -5437,6 +5669,339 @@ function drawHexIcon(ctx, cx, cy, r, color) {
 }
 
 // ── Screenshot diagramme de tension ──────────────────────────────────────────
+async function tmExportPdf(e) {
+  if (e) e.stopPropagation();
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) { alert('jsPDF not loaded'); return; }
+
+  const radar   = document.getElementById('tm-radar');
+  const statsEl = document.getElementById('tm-stats');
+  if (!radar) return;
+
+  // ── Collecte des données ──────────────────────────────────────────────────
+  const now        = new Date();
+  const dateStr    = now.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', { day:'2-digit', month:'long', year:'numeric' });
+  const wheelName  = (_loadedConfigName[wtype]) || '';
+  const wheelLabel = wtype === 'arriere' ? t('rearLabel') : t('frontLabel');
+  const sd         = summaryData;
+
+  const labelFo = document.getElementById('rtag-fo')?.textContent.trim() || 'DS';
+  const labelFa = document.getElementById('rtag-fa')?.textContent.trim() || 'NDS';
+  const calcFo  = document.getElementById('r-fo')?.textContent.trim() || '—';
+  const calcFa  = document.getElementById('r-fa')?.textContent.trim() || '—';
+  const retFo   = (sd && sd.lenFo) ? sd.lenFo + ' mm' : '—';
+  const retFa   = (sd && sd.lenFa) ? sd.lenFa + ' mm' : '—';
+  const legFo   = document.getElementById('radar-leg-fo')?.textContent.trim() || 'DS';
+  const legFa   = document.getElementById('radar-leg-fa')?.textContent.trim() || 'NDS';
+
+  const cfgRows = [];
+  if (sd) {
+    const crossStr = (c) => c === 0 ? t('radial') : c + '×';
+    let cl;
+    if (sd.diffMode) {
+      const isArr = sd.wtype === 'arriere';
+      cl = (isArr?'DS':'NDS') + ' ' + crossStr(sd.crossFo) + ' / ' + (isArr?'NDS':'DS') + ' ' + crossStr(sd.crossFa);
+    } else { cl = crossStr(sd.cross); }
+    cfgRows.push([t('wheelLabel'), wheelLabel + (wheelName ? '  —  ' + sanitize(wheelName) : '')]);
+    cfgRows.push(['ERD',           sd.erd + ' mm']);
+    cfgRows.push([t('spokeCount'), sd.n + ' (' + sd.h + t('perSide') + ')']);
+    cfgRows.push([t('crossLabel'), cl]);
+  }
+
+  const statBlocks = [];
+  statsEl && statsEl.querySelectorAll('.tm-stat').forEach(card => {
+    const label = card.querySelector('.tm-stat-label');
+    const entries = [];
+    card.querySelectorAll('.tm-stat-row').forEach(row => {
+      entries.push({
+        key: (row.querySelector('span:first-child') || {}).textContent?.trim() || '',
+        val: (row.querySelector('strong')           || {}).textContent?.trim() || ''
+      });
+    });
+    statBlocks.push({ label: label?.textContent.trim() || '', isFo: label?.classList.contains('fo'), entries });
+  });
+
+  // ── Setup jsPDF ───────────────────────────────────────────────────────────
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  function sanitize(str) {
+    if (!str) return '';
+    var map = { 'É':'E','é':'e','è':'e','ê':'e','à':'a','â':'a','ô':'o','û':'u','î':'i','ï':'i','ç':'c','→':'->','Δ':'D','±':'+/-' };
+    return str.replace(/[Ééèêàâôûîïç→Δ±]/g, function(c) { return map[c] || c; });
+  }
+
+  function getElongation(id) {
+    const el = document.getElementById(id);
+    if (!el) return null;
+    const ev = el.querySelector('.ev');
+    return ev ? sanitize(ev.textContent.trim()) : null;
+  }
+
+  const eloFo = getElongation('m-fo');
+  const eloFa = getElongation('m-fa');
+
+  const PW = 210, PH = 297, ML = 14, MR = 14, MT = 14, CW = PW - ML - MR;
+  let Y = MT;
+
+  const C_TEXT    = [30,  40,  55];
+  const C_TEXT2   = [90, 105, 120];
+  const C_TEXT3   = [150, 165, 175];
+  const C_ACCENT  = [60, 160, 200];
+  const C_WARM    = [210, 110,  85];
+  const C_BORDER  = [220, 228, 235];
+  const C_CARD    = [248, 250, 252];
+  const C_CARD_FO = [255, 248, 245];
+  const C_CARD_FA = [245, 250, 255];
+
+  // Fond blanc
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, PW, PH, 'F');
+
+  // ── Header ────────────────────────────────────────────────────────────────
+  const atelierInfo = loadAtelierInfo();
+  const hasAtelier  = atelierInfo.name || atelierInfo.email || atelierInfo.insta;
+
+  const HP      = 5;
+  const headerH = 22;
+  const colSplit = ML + CW * 0.52;
+  const iconS   = 3.0;
+  const lineH   = 6.5;
+
+  doc.setDrawColor(...C_BORDER);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(ML, Y, CW, headerH, 2, 2, 'S');
+
+  if (hasAtelier && (atelierInfo.email || atelierInfo.insta)) {
+    doc.setDrawColor(...C_BORDER);
+    doc.setLineWidth(0.3);
+    doc.line(colSplit, Y + HP, colSplit, Y + headerH - HP);
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(...C_ACCENT);
+  doc.text((hasAtelier && atelierInfo.name) ? sanitize(atelierInfo.name) : 'SPOKE IT', ML + HP, Y + headerH / 2 + 3);
+
+  const coordLines = [];
+  if (hasAtelier && atelierInfo.email) coordLines.push({ type: 'email', text: sanitize(atelierInfo.email) });
+  if (hasAtelier && atelierInfo.insta)  coordLines.push({ type: 'insta', text: sanitize(atelierInfo.insta) });
+
+  let cy = Y + (headerH - coordLines.length * lineH) / 2 + lineH * 0.7;
+  const cx = colSplit + HP;
+
+  coordLines.forEach(({ type, text }) => {
+    const iy = cy - iconS * 0.72;
+    doc.setDrawColor(...C_ACCENT);
+    doc.setLineWidth(0.35);
+    if (type === 'email') {
+      doc.rect(cx, iy, iconS, iconS * 0.72, 'S');
+      doc.line(cx, iy, cx + iconS / 2, iy + iconS * 0.4);
+      doc.line(cx + iconS, iy, cx + iconS / 2, iy + iconS * 0.4);
+    } else {
+      doc.roundedRect(cx, iy, iconS, iconS, 0.8, 0.8, 'S');
+      doc.circle(cx + iconS / 2, iy + iconS / 2, iconS * 0.27, 'S');
+      doc.setFillColor(...C_ACCENT);
+      doc.circle(cx + iconS * 0.78, iy + iconS * 0.22, iconS * 0.08, 'F');
+    }
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...C_TEXT);
+    doc.text(text, cx + iconS + 2.5, cy);
+    cy += lineH;
+  });
+
+  Y += headerH + 9;
+
+  // ── Configuration ─────────────────────────────────────────────────────────
+  if (cfgRows.length) {
+    cfgRows.forEach(([lbl, val]) => {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...C_TEXT2);
+      doc.text(sanitize(lbl), ML + 2, Y);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...C_TEXT);
+      doc.text(sanitize(val), PW - MR, Y, { align: 'right' });
+      doc.setDrawColor(...C_BORDER);
+      doc.setLineWidth(0.2);
+      doc.line(ML + 2, Y + 1.5, PW - MR, Y + 1.5);
+      Y += 7;
+    });
+    Y += 3;
+  }
+
+  // ── Longueurs de rayons ───────────────────────────────────────────────────
+  Y += 5;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(...C_ACCENT);
+  doc.text(lang === 'fr' ? 'LONGUEURS DE RAYONS' : 'SPOKE LENGTHS', ML, Y);
+  Y += 4;
+
+  const isAvantPdf = wtype === 'avant';
+  const halfW = (CW - 4) / 2;
+  const cardR = 2;
+
+  function drawLenCard(x, label, calc, ret, isOrange, elo) {
+    const C_FILL   = isOrange ? C_CARD_FO : C_CARD_FA;
+    const C_STROKE = isOrange ? C_WARM    : C_ACCENT;
+    const C_COLOR  = isOrange ? C_WARM    : C_ACCENT;
+    const cH = elo ? 30 : 24;
+    doc.setFillColor(...C_FILL);
+    doc.setDrawColor(...C_STROKE);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(x, Y, halfW, cH, cardR, cardR, 'FD');
+    doc.setFillColor(...C_COLOR);
+    doc.roundedRect(x, Y, 2, cH, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...C_COLOR);
+    doc.text(sanitize(label).toUpperCase(), x + 5, Y + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...C_TEXT2);
+    doc.text(lang === 'fr' ? 'Calculee' : 'Calculated', x + 5, Y + 11);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...C_TEXT);
+    doc.text(calc + ' mm', x + halfW - 3, Y + 11, { align: 'right' });
+    if (elo) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(...C_TEXT3);
+      doc.text((lang === 'fr' ? 'Elong. est.' : 'Est. stretch') + '  ' + elo, x + halfW - 3, Y + 17, { align: 'right' });
+    }
+    const retY = elo ? Y + 23 : Y + 19;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...C_TEXT2);
+    doc.text(lang === 'fr' ? 'Retenue' : 'Selected', x + 5, retY);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...C_COLOR);
+    doc.text(ret, x + halfW - 3, retY, { align: 'right' });
+  }
+
+  const xLeft  = ML;
+  const xRight = ML + halfW + 4;
+  if (isAvantPdf) {
+    drawLenCard(xLeft,  labelFo, calcFo, retFo, true,  eloFo);
+    drawLenCard(xRight, labelFa, calcFa, retFa, false, eloFa);
+  } else {
+    drawLenCard(xLeft,  labelFa, calcFa, retFa, false, eloFa);
+    drawLenCard(xRight, labelFo, calcFo, retFo, true,  eloFo);
+  }
+  Y += (eloFo || eloFa ? 30 : 24) + 4;
+
+  // ── Diagramme de tension ──────────────────────────────────────────────────
+  Y += 5;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(...C_ACCENT);
+  doc.text(lang === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', ML, Y);
+  Y += 3;
+
+  const radarDataUrl = radar.toDataURL('image/png');
+  const radarRatio   = radar.height / radar.width;
+  const radarSize    = 70;
+  const radarImgH    = radarSize * radarRatio;
+  const radarCardH   = radarImgH + 14;
+  const radarX       = ML + (CW - radarSize) / 2;
+
+  doc.setFillColor(...C_CARD);
+  doc.setDrawColor(...C_BORDER);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(ML, Y, CW, radarCardH, 3, 3, 'FD');
+  doc.addImage(radarDataUrl, 'PNG', radarX, Y + 3, radarSize, radarImgH);
+
+  // Légende centrée
+  const legY   = Y + radarCardH - 7;
+  const legMid = ML + CW / 2;
+  const legPad = 4;
+  const leftLegLabel  = isAvantPdf ? sanitize(legFo) : sanitize(legFa);
+  const rightLegLabel = isAvantPdf ? sanitize(legFa) : sanitize(legFo);
+  const C_LEFT  = isAvantPdf ? C_WARM : C_ACCENT;
+  const C_RIGHT = isAvantPdf ? C_ACCENT : C_WARM;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setFillColor(...C_LEFT);
+  doc.circle(legMid - legPad - 1.5, legY, 1.5, 'F');
+  doc.setTextColor(...C_TEXT2);
+  doc.text(leftLegLabel, legMid - legPad - 4.5, legY + 0.5, { align: 'right' });
+  doc.setFillColor(...C_RIGHT);
+  doc.circle(legMid + legPad + 1.5, legY, 1.5, 'F');
+  doc.text(rightLegLabel, legMid + legPad + 4.5, legY + 0.5);
+  Y += radarCardH + 4;
+
+  // ── Données de tension ────────────────────────────────────────────────────
+  if (statBlocks.length) {
+    Y += 5;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...C_ACCENT);
+    doc.text(lang === 'fr' ? 'DONNEES DE TENSION' : 'TENSION DATA', ML, Y);
+    Y += 4;
+
+    const bGap  = 4;
+    const bW    = (CW - bGap) / 2;
+    const rowH  = 7;
+    const PAD_B = 5;
+
+    function drawStatBlock(block, bx) {
+      const warm = block.isFo;
+      const bH   = PAD_B + 7 + block.entries.length * rowH + PAD_B;
+      doc.setFillColor(...(warm ? C_CARD_FO : C_CARD_FA));
+      doc.setDrawColor(...(warm ? C_WARM : C_ACCENT));
+      doc.setLineWidth(0.35);
+      doc.roundedRect(bx, Y, bW, bH, 2, 2, 'FD');
+      doc.setFillColor(...(warm ? C_WARM : C_ACCENT));
+      doc.roundedRect(bx, Y, 2, bH, 1, 1, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      doc.setTextColor(...(warm ? C_WARM : C_ACCENT));
+      doc.text(sanitize(block.label).toUpperCase(), bx + 5, Y + PAD_B + 1);
+      block.entries.forEach((row, ri) => {
+        const ry = Y + PAD_B + 7 + ri * rowH;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(...C_TEXT2);
+        doc.text(sanitize(row.key), bx + 5, ry);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...C_TEXT);
+        doc.text(sanitize(row.val), bx + bW - 4, ry, { align: 'right' });
+      });
+      return bH;
+    }
+
+    let maxH = 0;
+    statBlocks.forEach((block, bi) => {
+      const bx = bi === 0 ? ML : ML + bW + bGap;
+      const bH = drawStatBlock(block, bx);
+      if (bH > maxH) maxH = bH;
+    });
+    Y += maxH + 4;
+  }
+
+  // ── Footer ────────────────────────────────────────────────────────────────
+  doc.setDrawColor(...C_BORDER);
+  doc.setLineWidth(0.3);
+  doc.line(ML, PH - 10, PW - MR, PH - 10);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...C_TEXT3);
+  doc.text(dateStr, ML, PH - 6);
+  doc.text(lang === 'fr' ? 'Genere par Spoke It' : 'Generated by Spoke It', PW - MR, PH - 6, { align: 'right' });
+
+  // ── Export ────────────────────────────────────────────────────────────────
+  const filename = wheelName
+    ? 'spoke-it-' + wheelName.replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.pdf'
+    : 'spoke-it-' + (wtype === 'arriere' ? 'rear' : 'front') + '.pdf';
+  doc.save(filename);
+
+  const btn = document.getElementById('tm-pdf-btn');
+  if (btn) { btn.classList.add('flash'); setTimeout(() => btn.classList.remove('flash'), 800); }
+}
+
 async function tmScreenshot(e) {
   if (e) e.stopPropagation();
 
