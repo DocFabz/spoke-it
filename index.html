@@ -419,6 +419,12 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 
 /* Grille de saisie des déflections */
 .tm-grid-wrap    { overflow-x:auto; border-radius:var(--rs); border:1px solid var(--border) }
+.tm-tbody-scroll { overflow-y:scroll; position:relative; scroll-behavior:smooth; scrollbar-width:none; -ms-overflow-style:none }
+.tm-tbody-scroll::-webkit-scrollbar { display:none }
+#tm-table { border-bottom:none; border-radius:var(--rs) var(--rs) 0 0 }
+#tm-table-body { border-radius:0 0 var(--rs) var(--rs) }
+#tm-table-body td { border-bottom:1px solid rgba(255,255,255,.035) }
+#tm-table-body tr:last-child td { border-bottom:none }
 .tm-table        { width:100%; border-collapse:collapse; table-layout:fixed; font-family:'DM Mono',monospace; font-size:.82rem; min-width:300px }
 .tm-table th     { padding:.55rem .6rem; font-family:'DM Sans',sans-serif; font-size:.6rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; text-align:center; border-bottom:1px solid var(--border) }
 .tm-table th.th-rayon { background:rgba(126,200,227,.06); color:var(--accent); border-right:1px solid rgba(126,200,227,.1) }
@@ -1575,7 +1581,7 @@ input[type=number] { -moz-appearance:textfield }
 
     <div id="tm-input-card-body" style="display:none;margin-top:.75rem">
     <div class="tm-grid-wrap">
-      <table class="tm-table" id="tm-table">
+      <table class="tm-table" id="tm-table" style="border-bottom:none">
         <colgroup>
           <col style="width:2.8rem">
           <col style="width:50%">
@@ -1600,8 +1606,17 @@ input[type=number] { -moz-appearance:textfield }
             </th>
           </tr>
         </thead>
-        <tbody id="tm-tbody"></tbody>
       </table>
+      <div class="tm-tbody-scroll" id="tm-tbody-scroll">
+        <table class="tm-table" id="tm-table-body">
+          <colgroup>
+            <col style="width:2.8rem">
+            <col style="width:50%">
+            <col style="width:50%">
+          </colgroup>
+          <tbody id="tm-tbody"></tbody>
+        </table>
+      </div>
     </div>
     </div>
 
@@ -4974,6 +4989,8 @@ function tmUpdateHint() {
 function tmBuildTable() {
   tmUpdateBadges();
   const nb = parseInt($id('nb-rayons').value) || 0;
+  const scroll = $id('tm-tbody-scroll');
+  if (scroll) { scroll.style.height = ''; scroll.scrollTop = 0; }
   const tbody = $id('tm-tbody');
   tbody.innerHTML = '';
 
@@ -5054,6 +5071,7 @@ function tmBuildTable() {
         const cur = side === 'fo' ? tmData.fo[idx] : tmData.fa[idx];
         if (side === 'fo') tmPrevFo[idx] = cur; else tmPrevFa[idx] = cur;
         this.select();
+        tmScrollToRow(tr);
       });
 
       inp.addEventListener('blur', function() {
@@ -5128,6 +5146,54 @@ function tmBuildTable() {
       });
     });
   }
+
+  // Initialiser la hauteur du rouleau après construction complète
+  setTimeout(tmInitScrollHeight, 0);
+}
+
+// ── Rouleau : scroll la fenêtre de 5 lignes vers la ligne active ──────────────
+var TM_VISIBLE_ROWS = 3;
+function tmScrollToRow(tr) {
+  var scroll = $id('tm-tbody-scroll');
+  var tbody  = $id('tm-tbody');
+  if (!scroll || !tbody) return;
+  var rows = Array.from(tbody.querySelectorAll('tr'));
+  var total = rows.length;
+  if (total <= TM_VISIBLE_ROWS) return;
+  var idx  = rows.indexOf(tr);
+  if (idx < 0) return;
+
+  // Hauteur d'une ligne (toutes identiques)
+  var rowH = tr.offsetHeight || 36;
+  var visH = rowH * TM_VISIBLE_ROWS;
+
+  // S'assurer que le conteneur a la bonne hauteur fixe
+  scroll.style.height = visH + 'px';
+
+  // Fenêtre : centrer autour de idx, collée aux bords
+  var total = rows.length;
+  var half  = Math.floor(TM_VISIBLE_ROWS / 2);
+  var start = idx - half;
+  if (start < 0) start = 0;
+  if (start + TM_VISIBLE_ROWS > total) start = Math.max(0, total - TM_VISIBLE_ROWS);
+
+  scroll.scrollTo({ top: start * rowH, behavior: 'smooth' });
+}
+
+function tmInitScrollHeight() {
+  var scroll = $id('tm-tbody-scroll');
+  var tbody  = $id('tm-tbody');
+  if (!scroll || !tbody) return;
+  var firstRow = tbody.querySelector('tr');
+  if (!firstRow) return;
+  var rowH = firstRow.offsetHeight || 36;
+  var total = tbody.querySelectorAll('tr').length;
+  if (total <= TM_VISIBLE_ROWS) {
+    // Pas besoin de rouleau, montrer tout
+    scroll.style.height = '';
+    return;
+  }
+  scroll.style.height = (rowH * TM_VISIBLE_ROWS) + 'px';
 }
 
 function tmUpdateCell(idx, side) {
@@ -5177,6 +5243,7 @@ function tmResetSide(col) {
 
   tmTryRenderRadar();
   tmUpdateResultCardState();
+  tmInitScrollHeight();
 }
 
 function tmSetCV(pct) {
