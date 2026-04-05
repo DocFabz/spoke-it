@@ -4234,6 +4234,12 @@ function tmOnSpokeChange() {
   tmUpdateConvBtn();
   const clearSpoke = $id('tm-clear-spoke');
   if (clearSpoke) clearSpoke.classList.toggle('inactive', !tmSpokeKey);
+  if (tmSpokeKey) {
+    setTimeout(function() {
+      var card = $id('tm-input-card');
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  }
 }
 
 function tmClearSpoke() {
