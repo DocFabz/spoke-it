@@ -123,8 +123,8 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .ateliermgr-inp-wrap { display:flex; align-items:center; gap:.4rem }
 .ateliermgr-inp { flex:1; font-family:'DM Mono',monospace; font-size:.85rem; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text); padding:.5rem .75rem; outline:none; transition:border-color .2s }
 .ateliermgr-inp:focus { border-color:rgba(126,200,227,.4) }
-.ateliermgr-clear { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.72rem; cursor:pointer; padding:.28rem .5rem; line-height:1; transition:all .2s; flex-shrink:0 }
-.ateliermgr-clear:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+.ateliermgr-clear { background:none; border:none; color:var(--text3); font-size:.72rem; cursor:pointer; padding:.28rem .5rem; line-height:1; transition:all .2s; flex-shrink:0 }
+.ateliermgr-clear:hover { color:var(--warm) }
 .ateliermgr-save { background:transparent; border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:500; padding:.6rem 1rem; cursor:pointer; transition:all .22s; text-align:center }
 .ateliermgr-save:hover { border-color:rgba(126,200,227,.5); color:var(--accent2); background:rgba(126,200,227,.05) }
 
@@ -274,7 +274,8 @@ select option             { background:#161b27 }
 
 /* ── Differential cross toggle ─────────────────────────────────────────────── */
 .diff-toggle-wrap  { display:flex; align-items:center; gap:.45rem; flex-shrink:0 }
-.diff-toggle-label { font-size:.6rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--text3) }
+.diff-toggle-label { font-size:.6rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--text3); transition:color .22s }
+.diff-toggle-wrap:has(.diff-toggle[aria-checked="true"]) .diff-toggle-label { color:var(--accent) }
 #easy-fill-bar .diff-toggle-label { color:var(--accent) }
 .diff-toggle       { position:relative; width:28px; height:16px; border-radius:8px; border:1px solid var(--border-s); background:var(--inp); cursor:pointer; transition:background .22s, border-color .22s; padding:0; flex-shrink:0 }
 .diff-toggle[aria-checked="true"]  { background:rgba(126,200,227,.25); border-color:rgba(126,200,227,.5) }
@@ -363,8 +364,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .rrow     { display:flex; justify-content:space-between; align-items:baseline; font-size:.72rem; color:var(--text2) }
 .rrow strong { font-family:'DM Mono',monospace; font-weight:400; font-size:.77rem; color:var(--text) }
 .ev       { font-family:'DM Mono',monospace; font-weight:500; color:var(--success); font-size:.8rem }
-.rc-tap   { position:absolute; top:.7rem; right:.7rem; width:18px; height:18px; opacity:.2; transition:opacity .2s }
-.rc:hover .rc-tap { opacity:.4 }
+.rc-tap   { position:absolute; bottom:.7rem; right:.7rem; width:18px; height:18px; opacity:.65; transition:opacity .2s }
+.rc:hover .rc-tap { opacity:1 }
 
 /* ── Summary items ────────────────────────────────────────────────────── */
 .sum-row  { display:flex; justify-content:space-between; align-items:baseline; padding:.38rem 0; border-bottom:1px solid var(--border) }
@@ -1010,8 +1011,8 @@ input[type=number] { -moz-appearance:textfield }
   <div class="ateliermgr-field">
     <span class="ateliermgr-label" data-i18n="atelierName">Atelier</span>
     <div class="ateliermgr-inp-wrap">
-      <input class="ateliermgr-inp" id="atelier-name" type="text" maxlength="60" autocomplete="off">
-      <button class="ateliermgr-clear" onclick="atelierClear('atelier-name')">✕</button>
+      <input class="ateliermgr-inp" id="atelier-shop" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <button class="ateliermgr-clear" onclick="atelierClear('atelier-shop')">✕</button>
     </div>
   </div>
   <div class="ateliermgr-field">
@@ -1024,7 +1025,7 @@ input[type=number] { -moz-appearance:textfield }
   <div class="ateliermgr-field">
     <span class="ateliermgr-label">Instagram</span>
     <div class="ateliermgr-inp-wrap">
-      <input class="ateliermgr-inp" id="atelier-insta" type="text" maxlength="60" autocomplete="off" placeholder="@">
+      <input class="ateliermgr-inp" id="atelier-insta" type="text" maxlength="60" autocomplete="off">
       <button class="ateliermgr-clear" onclick="atelierClear('atelier-insta')">✕</button>
     </div>
   </div>
@@ -3230,12 +3231,12 @@ function loadAtelierInfo() {
 
 function openAtelierMgr() {
   const info = loadAtelierInfo();
-  $id('atelier-name').value  = info.name  || '';
+  $id('atelier-shop').value  = info.name  || '';
   $id('atelier-email').value = info.email || '';
   $id('atelier-insta').value = info.insta || '';
   $id('ateliermgr-overlay').classList.add('show');
   $id('ateliermgr-modal').classList.add('show');
-  setTimeout(() => $id('atelier-name').focus(), 80);
+  setTimeout(() => $id('atelier-shop').focus(), 80);
 }
 
 function closeAtelierMgr() {
@@ -3250,7 +3251,7 @@ function atelierClear(id) {
 
 function saveAtelierInfo() {
   const info = {
-    name:  $id('atelier-name').value.trim(),
+    name:  $id('atelier-shop').value.trim(),
     email: $id('atelier-email').value.trim(),
     insta: $id('atelier-insta').value.trim()
   };
@@ -5779,10 +5780,16 @@ async function tmExportPdf(e) {
     doc.line(colSplit, Y + HP, colSplit, Y + headerH - HP);
   }
 
+  if (hasAtelier && atelierInfo.name) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...C_TEXT3);
+    doc.text('Wheelbuilt with love by', ML + HP, Y + headerH / 2 - 2);
+  }
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(...C_ACCENT);
-  doc.text((hasAtelier && atelierInfo.name) ? sanitize(atelierInfo.name) : 'SPOKE IT', ML + HP, Y + headerH / 2 + 3);
+  doc.text((hasAtelier && atelierInfo.name) ? sanitize(atelierInfo.name) : 'SPOKE IT', ML + HP, Y + headerH / 2 + 4.5);
 
   const coordLines = [];
   if (hasAtelier && atelierInfo.email) coordLines.push({ type: 'email', text: sanitize(atelierInfo.email) });
