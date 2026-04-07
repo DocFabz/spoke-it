@@ -12,7 +12,11 @@
   gtag('config', 'G-GEY79L24TV');
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Spoke It</title>
+<title>Spoke It — Bicycle wheel spoke length calculator & tension meter</title>
+
+<meta name="description" content="Spoke It : calculateur de longueur de rayons et tensiomètre pour roues de vélo. Saisissez vos mesures de moyeu et jante, analysez la tension rayon par rayon. Gratuit, sans inscription, fonctionne sur mobile.">
+
+<meta name="keywords" content="calculateur rayons vélo, longueur rayon, tensiomètre roue vélo, spoke length calculator, bicycle wheel tension, rayonnage roue, wheelbuilding, wheelbuiding, wheelbuilding app, rayonnage, hub, rim, flange, lacing, wheel building, wheel truing">
 
 <!-- Favicon & App Icons -->
 <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -43,8 +47,9 @@
 <meta name="msapplication-TileColor" content="#181c24">
 
 <!-- Open Graph / Social (Instagram, Messenger, Facebook, WhatsApp) -->
-<meta property="og:title" content="Spoke It">
-<meta property="og:description" content="Spoke length calculator for bicycle wheels">
+<meta property="og:url" content="https://docfabz.github.io/spoke-it/">
+<meta property="og:title" content="Spoke It — Bicycle wheel spoke length calculator & tension meter">
+<meta property="og:description" content="Spoke It : calculateur de longueur de rayons et tensiomètre pour roues de vélo. Gratuit, sans inscription, fonctionne sur mobile.">
 <meta property="og:image" content="https://docfabz.github.io/Spoke-It/og-image-1200x1200.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="1200">
@@ -6457,8 +6462,6 @@ function efRenderStep() {
   inp.value     = cur !== null ? tmDisplayValue(cur) : '';
   inp.className = 'ef-inp ' + step.side;
   efUpdateKgf();
-  // Pré-sélectionner la valeur existante pour faciliter la resaisie
-  if (cur !== null) { setTimeout(function() { inp.select(); }, 30); }
 
   $id('ef-back-btn').disabled = (efCurrent === 0);
   $id('ef-back-label').textContent = t('efBack');
@@ -6553,26 +6556,11 @@ function efFirstUnfilled() {
   return (lastFilled + 1 < efSteps.length) ? lastFilled + 1 : 0;
 }
 
-function efAllFilled() {
-  var nb      = parseInt($id('nb-rayons').value) || 0;
-  var perSide = Math.floor(nb / 2);
-  for (var i = 0; i < perSide; i++) {
-    if (tmData.fo[i] === null || tmData.fa[i] === null) return false;
-  }
-  return perSide > 0;
-}
-
 function efNext() {
   if (!efCommitCurrent()) return; // hors plage ou invalide → ne pas avancer
   if (efCurrent < efSteps.length - 1) {
     efCurrent++;
   } else if (efSideMode === 'fo' || efSideMode === 'fa') {
-    // Vérifier si toutes les colonnes sont remplies avant de basculer
-    if (efAllFilled()) {
-      $id('ef-prog-fill').style.width = '100%';
-      efClose();
-      return;
-    }
     // Basculer sur l'autre nappe
     efSideMode = efSideMode === 'fo' ? 'fa' : 'fo';
     efUpdateSwitcher();
