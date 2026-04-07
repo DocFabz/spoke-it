@@ -5706,8 +5706,8 @@ async function tmExportPdf(e) {
 
   const labelFo = document.getElementById('rtag-fo')?.textContent.trim() || 'DS';
   const labelFa = document.getElementById('rtag-fa')?.textContent.trim() || 'NDS';
-  const calcFo  = document.getElementById('r-fo')?.textContent.trim() || '—';
-  const calcFa  = document.getElementById('r-fa')?.textContent.trim() || '—';
+  const calcFo  = sd ? (document.getElementById('r-fo')?.textContent.trim() || '—') : '—';
+  const calcFa  = sd ? (document.getElementById('r-fa')?.textContent.trim() || '—') : '—';
   const retFo   = (sd && sd.lenFo) ? sd.lenFo + ' mm' : '—';
   const retFa   = (sd && sd.lenFa) ? sd.lenFa + ' mm' : '—';
   const legFo   = document.getElementById('radar-leg-fo')?.textContent.trim() || 'DS';
@@ -5756,8 +5756,8 @@ async function tmExportPdf(e) {
     return ev ? sanitize(ev.textContent.trim()) : null;
   }
 
-  const eloFo = getElongation('m-fo');
-  const eloFa = getElongation('m-fa');
+  const eloFo = sd ? getElongation('m-fo') : null;
+  const eloFa = sd ? getElongation('m-fa') : null;
 
   const PW = 210, PH = 297, ML = 14, MR = 14, MT = 14, CW = PW - ML - MR;
   let Y = MT;
