@@ -3139,7 +3139,7 @@ function buildArb(side, exactLen, elongation) { arbData[side] = { exactLen, elon
 
 function renderArb(side) {
   const d = arbData[side], onlyEven = evenMode[side];
-  const base = Math.floor(d.exactLen), sizes = [base-1, base, base+1];
+  const base = Math.round(d.exactLen - d.elongation), sizes = [base-1, base, base+1];
   const deltas = sizes.map(s => (s + d.elongation) - d.exactLen);
   let minAbs = Infinity;
   sizes.forEach((s, i) => { if (onlyEven && s%2!==0) return; if (Math.abs(deltas[i]) < minAbs) minAbs = Math.abs(deltas[i]); });
