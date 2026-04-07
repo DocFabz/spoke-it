@@ -6674,11 +6674,27 @@ function efFirstUnfilled() {
   return (lastFilled + 1 < efSteps.length) ? lastFilled + 1 : 0;
 }
 
+// Vérifie si toutes les colonnes fo et fa sont entièrement remplies
+function efAllFilled() {
+  var nb      = parseInt($id('nb-rayons').value) || 0;
+  var perSide = Math.floor(nb / 2);
+  for (var i = 0; i < perSide; i++) {
+    if (tmData.fo[i] === null || tmData.fa[i] === null) return false;
+  }
+  return perSide > 0;
+}
+
 function efNext() {
   if (!efCommitCurrent()) return; // hors plage ou invalide → ne pas avancer
   if (efCurrent < efSteps.length - 1) {
     efCurrent++;
   } else if (efSideMode === 'fo' || efSideMode === 'fa') {
+    // Vérifier si toutes les colonnes sont remplies avant de basculer
+    if (efAllFilled()) {
+      $id('ef-prog-fill').style.width = '100%';
+      efClose();
+      return;
+    }
     // Basculer sur l'autre nappe
     efSideMode = efSideMode === 'fo' ? 'fa' : 'fo';
     efUpdateSwitcher();
