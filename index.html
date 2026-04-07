@@ -2480,7 +2480,7 @@ function applyState(s) {
 
     // Reconstruire la table — cards fermées, spoke verrouillé si config chargée
     tmBuildTable();
-    tmHideResult();
+    tmShowDiagramIfData();
     // Mémoriser et verrouiller le couple tensio/rayon chargé
     if (tmSpokeKey) {
       _tmLoadedType  = tmType;
@@ -2490,10 +2490,6 @@ function applyState(s) {
       _tmLoadedType  = null;
       _tmLoadedSpoke = null;
     }
-    // Fermer la card measured deflections (body fermé, header visible)
-    const icBody = $id('tm-input-card-body'), icChev = $id('tm-input-card-chevron');
-    if (icBody) icBody.style.display = 'none';
-    if (icChev) icChev.style.transform = '';
   }
 
   _applyingState = false;
@@ -4303,15 +4299,12 @@ function tmOnNbChange() {
 // ── Changement type de roue depuis le module tension ─────────────────────────
 function tmSetWheel(type) {
   if (wtype === type) return;
-  // Utiliser la fonction existante du calculateur
+  // setWheel → switchTo → applyState restaure les données propres à cette roue depuis saved[wh]
   setWheel(type);
-  // setWheel met à jour wtype et les boutons du calculateur — on resync les nôtres
   tmSyncWheelButtons();
   tmUpdateBadges();
-  // Réinitialiser la saisie (la polarité DS/NDS change)
-  tmResetData();
   tmBuildTable();
-  tmHideResult();
+  tmShowDiagramIfData();
 }
 
 // ── Shared: save snapshot, switch key, restore or reset, refresh UI ─────
@@ -5119,6 +5112,20 @@ function ccSave() {
 }
 
 // ── tmInit ───────────────────────────────────────────────────────────────────
+
+// Ouvre la card diagramme et la rend si données présentes, sinon cache le résultat
+function tmShowDiagramIfData() {
+  if (tmSpokeKey && tmHasData()) {
+    const rcBody = $id('tm-result-card-body');
+    const rcChev = $id('tm-result-card-chevron');
+    if (rcBody) rcBody.style.display = 'block';
+    if (rcChev) rcChev.style.transform = 'rotate(180deg)';
+    tmTryRenderRadar();
+  } else {
+    tmHideResult();
+  }
+}
+
 function tmInit() {
   tmUpdateBadges();
   tmPopulateSpokeSelect();
@@ -5127,9 +5134,7 @@ function tmInit() {
   if (!hasTbody || tmHasData()) {
     tmBuildTable();
   }
-  if (tmSpokeKey && tmHasData()) {
-    tmTryRenderRadar();
-  }
+  tmShowDiagramIfData();
 }
 
 // ── tmUpdateBadges ─────────────────────────────────────────────────────────
@@ -5232,9 +5237,15 @@ function tmBuildTable() {
     return;
   }
 
-  // Table peuplée — ouvrir la card automatiquement
-  if (body) { body.style.display = ''; }
-  if (chev) { chev.style.transform = 'rotate(180deg)'; }
+  // Table peuplée — ouvrir la card déflexions seulement si pas encore de données
+  // Si des données existent déjà, garder la card fermée et laisser tmTryRenderRadar ouvrir le diagramme
+  if (!tmHasData()) {
+    if (body) { body.style.display = ''; }
+    if (chev) { chev.style.transform = 'rotate(180deg)'; }
+  } else {
+    if (body) { body.style.display = 'none'; }
+    if (chev) { chev.style.transform = ''; }
+  }
   const efBar = $id('easy-fill-bar');
   if (efBar) efBar.style.display = 'flex';
 
@@ -5915,36 +5926,143 @@ async function tmExportPdf(e) {
   doc.text(lang === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', ML, Y);
   Y += 3;
 
+  // ── Collecte des kgf par rayon ──────────────────────────────────────────────
+  const nb      = parseInt(document.getElementById('nb-rayons').value) || 0;
+  const perSide = Math.floor(nb / 2);
+
+  // Roue avant : fo(warm)=NDS=gauche, fa(accent)=DS=droite
+  // Roue arrière : fa(accent)=NDS=gauche, fo(warm)=DS=droite
+  const leftSide  = isAvantPdf ? 'fo' : 'fa';
+  const rightSide = isAvantPdf ? 'fa' : 'fo';
+  const C_NDS     = isAvantPdf ? C_WARM   : C_ACCENT;
+  const C_DS      = isAvantPdf ? C_ACCENT : C_WARM;
+  const C_NDS_BG  = isAvantPdf ? C_CARD_FO : C_CARD_FA;
+  const C_DS_BG   = isAvantPdf ? C_CARD_FA : C_CARD_FO;
+  const C_NDS_VAL = C_NDS.map((v, i) => Math.min(255, Math.max(0, v + (i === 2 ? 10 : -20))));
+  const C_DS_VAL  = C_DS.map((v, i)  => Math.min(255, Math.max(0, v + (i === 0 ? 10 : -10))));
+  const ndsLabel  = sanitize(isAvantPdf ? legFo : legFa);
+  const dsLabel   = sanitize(isAvantPdf ? legFa : legFo);
+
+  const leftKgfs  = tmData[leftSide].slice(0, perSide).map(v => toKgf(v));
+  const rightKgfs = tmData[rightSide].slice(0, perSide).map(v => toKgf(v));
+
+  // ── Calcul des hauteurs ──────────────────────────────────────────────────────
+  const STAT_ROW_H = 7;
+  const STAT_PAD   = 5;
+  const STAT_GAP   = 4;
+  const statBlocksH = statBlocks.length
+    ? 5 + 4 + statBlocks.reduce((acc, b) => Math.max(acc, STAT_PAD * 2 + 7 + b.entries.length * STAT_ROW_H), 0) + 4
+    : 0;
+
+  const spPadT    = 8;
+  const spPadB    = 4;
+  const spHeaderH = 7;
+  const spRowH    = 5.2;
+
+  const maxCardH   = PH - Y - 14 - statBlocksH;  // 14 = footer
+  const radarColW  = Math.round(CW * 0.52);
+  const spokeColW  = CW - radarColW - 3;
+  const spokeColX  = ML + radarColW + 3;
+
   const radarDataUrl = radar.toDataURL('image/png');
   const radarRatio   = radar.height / radar.width;
-  const radarSize    = 70;
+  const radarSize    = Math.min(radarColW - 10, 68);
   const radarImgH    = radarSize * radarRatio;
-  const radarCardH   = radarImgH + 14;
-  const radarX       = ML + (CW - radarSize) / 2;
+  const legH         = 10;
+  const radarMinH    = radarImgH + legH + 8;
+  const spokeListH   = spPadT + spHeaderH + perSide * spRowH + spPadB;
 
+  const radarCardH = Math.min(maxCardH, Math.max(radarMinH, spokeListH));
+  const availRowH  = radarCardH - spPadT - spHeaderH - spPadB;
+  const dynRowH    = perSide > 0 ? Math.min(spRowH, availRowH / perSide) : spRowH;
+  const dynFontS   = Math.max(5.0, Math.min(7, dynRowH * 1.25));
+
+  // ── Card globale ─────────────────────────────────────────────────────────────
   doc.setFillColor(...C_CARD);
   doc.setDrawColor(...C_BORDER);
   doc.setLineWidth(0.3);
   doc.roundedRect(ML, Y, CW, radarCardH, 3, 3, 'FD');
-  doc.addImage(radarDataUrl, 'PNG', radarX, Y + 3, radarSize, radarImgH);
 
-  // Légende centrée
-  const legY   = Y + radarCardH - 7;
-  const legMid = ML + CW / 2;
+  // ── Colonne gauche : radar + légende ─────────────────────────────────────────
+  const radarX = ML + (radarColW - radarSize) / 2;
+  const radarY = Y + (radarCardH - radarImgH - legH) / 2;
+  doc.addImage(radarDataUrl, 'PNG', radarX, radarY, radarSize, radarImgH);
+
+  const legY2  = radarY + radarImgH + 5;
+  const legMid = ML + radarColW / 2;
   const legPad = 4;
-  const leftLegLabel  = isAvantPdf ? sanitize(legFo) : sanitize(legFa);
-  const rightLegLabel = isAvantPdf ? sanitize(legFa) : sanitize(legFo);
-  const C_LEFT  = isAvantPdf ? C_WARM : C_ACCENT;
-  const C_RIGHT = isAvantPdf ? C_ACCENT : C_WARM;
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setFillColor(...C_LEFT);
-  doc.circle(legMid - legPad - 1.5, legY, 1.5, 'F');
+  doc.setFontSize(7);
+  doc.setFillColor(...C_NDS);
+  doc.circle(legMid - legPad - 1.5, legY2, 1.5, 'F');
   doc.setTextColor(...C_TEXT2);
-  doc.text(leftLegLabel, legMid - legPad - 4.5, legY + 0.5, { align: 'right' });
-  doc.setFillColor(...C_RIGHT);
-  doc.circle(legMid + legPad + 1.5, legY, 1.5, 'F');
-  doc.text(rightLegLabel, legMid + legPad + 4.5, legY + 0.5);
+  doc.text(ndsLabel, legMid - legPad - 4.5, legY2 + 0.5, { align: 'right' });
+  doc.setFillColor(...C_DS);
+  doc.circle(legMid + legPad + 1.5, legY2, 1.5, 'F');
+  doc.text(dsLabel, legMid + legPad + 4.5, legY2 + 0.5);
+
+  // Séparateur vertical
+  doc.setDrawColor(...C_BORDER);
+  doc.setLineWidth(0.25);
+  doc.line(ML + radarColW + 1.5, Y + 4, ML + radarColW + 1.5, Y + radarCardH - 4);
+
+  // ── Colonne droite : rayons NDS | DS ─────────────────────────────────────────
+  const subGap = 2;
+  const subW   = (spokeColW - subGap) / 2;
+  const xNDS   = spokeColX;
+  const xDS    = spokeColX + subW + subGap;
+  const hY2    = Y + spPadT;
+
+  // En-tête NDS
+  doc.setFillColor(...C_NDS_BG);
+  doc.roundedRect(xNDS, hY2 - 3, subW, spHeaderH, 1, 1, 'F');
+  doc.setFillColor(...C_NDS);
+  doc.roundedRect(xNDS, hY2 - 3, 1.5, spHeaderH, 0.5, 0.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6);
+  doc.setTextColor(...C_NDS);
+  doc.text(ndsLabel, xNDS + subW / 2 + 1, hY2 + 1, { align: 'center' });
+
+  // En-tête DS
+  doc.setFillColor(...C_DS_BG);
+  doc.roundedRect(xDS, hY2 - 3, subW, spHeaderH, 1, 1, 'F');
+  doc.setFillColor(...C_DS);
+  doc.roundedRect(xDS, hY2 - 3, 1.5, spHeaderH, 0.5, 0.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6);
+  doc.setTextColor(...C_DS);
+  doc.text(dsLabel, xDS + subW / 2 + 1, hY2 + 1, { align: 'center' });
+
+  // Lignes de rayons
+  let rowY = Y + spPadT + spHeaderH + 1;
+  for (let i = 0; i < perSide; i++) {
+    const rowBg  = i % 2 === 0 ? [245, 248, 252] : [255, 255, 255];
+    const kgfNDS = leftKgfs[i];
+    const kgfDS  = rightKgfs[i];
+    const numStr = String(i + 1);
+    const ndsStr = kgfNDS !== null ? kgfNDS + ' kg' : '—';
+    const dsStr  = kgfDS  !== null ? kgfDS  + ' kg' : '—';
+
+    doc.setFillColor(...rowBg);
+    doc.rect(xNDS, rowY - dynRowH * 0.7, subW, dynRowH, 'F');
+    doc.rect(xDS,  rowY - dynRowH * 0.7, subW, dynRowH, 'F');
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(dynFontS * 0.85);
+    doc.setTextColor(...C_TEXT3);
+    doc.text(numStr, xNDS + 2.5, rowY);
+    doc.text(numStr, xDS  + 2.5, rowY);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(dynFontS);
+    doc.setTextColor(...(kgfNDS !== null ? C_NDS_VAL : C_TEXT3));
+    doc.text(ndsStr, xNDS + subW - 1.5, rowY, { align: 'right' });
+    doc.setTextColor(...(kgfDS !== null ? C_DS_VAL : C_TEXT3));
+    doc.text(dsStr,  xDS  + subW - 1.5, rowY, { align: 'right' });
+
+    rowY += dynRowH;
+  }
+
   Y += radarCardH + 4;
 
   // ── Données de tension ────────────────────────────────────────────────────
@@ -5956,10 +6074,10 @@ async function tmExportPdf(e) {
     doc.text(lang === 'fr' ? 'DONNEES DE TENSION' : 'TENSION DATA', ML, Y);
     Y += 4;
 
-    const bGap  = 4;
+    const bGap  = STAT_GAP;
     const bW    = (CW - bGap) / 2;
-    const rowH  = 7;
-    const PAD_B = 5;
+    const rowH  = STAT_ROW_H;
+    const PAD_B = STAT_PAD;
 
     function drawStatBlock(block, bx) {
       const warm = block.isFo;
