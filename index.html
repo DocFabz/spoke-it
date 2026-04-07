@@ -6457,6 +6457,8 @@ function efRenderStep() {
   inp.value     = cur !== null ? tmDisplayValue(cur) : '';
   inp.className = 'ef-inp ' + step.side;
   efUpdateKgf();
+  // Pré-sélectionner la valeur existante pour faciliter la resaisie
+  if (cur !== null) { setTimeout(function() { inp.select(); }, 30); }
 
   $id('ef-back-btn').disabled = (efCurrent === 0);
   $id('ef-back-label').textContent = t('efBack');
@@ -6551,11 +6553,26 @@ function efFirstUnfilled() {
   return (lastFilled + 1 < efSteps.length) ? lastFilled + 1 : 0;
 }
 
+function efAllFilled() {
+  var nb      = parseInt($id('nb-rayons').value) || 0;
+  var perSide = Math.floor(nb / 2);
+  for (var i = 0; i < perSide; i++) {
+    if (tmData.fo[i] === null || tmData.fa[i] === null) return false;
+  }
+  return perSide > 0;
+}
+
 function efNext() {
   if (!efCommitCurrent()) return; // hors plage ou invalide → ne pas avancer
   if (efCurrent < efSteps.length - 1) {
     efCurrent++;
   } else if (efSideMode === 'fo' || efSideMode === 'fa') {
+    // Vérifier si toutes les colonnes sont remplies avant de basculer
+    if (efAllFilled()) {
+      $id('ef-prog-fill').style.width = '100%';
+      efClose();
+      return;
+    }
     // Basculer sur l'autre nappe
     efSideMode = efSideMode === 'fo' ? 'fa' : 'fo';
     efUpdateSwitcher();
