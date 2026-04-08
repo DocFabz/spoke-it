@@ -444,6 +444,15 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-screenshot-btn:hover { border-color: var(--accent); color: var(--accent) }
 .tm-screenshot-btn.flash { border-color: var(--success); color: var(--success) }
 
+.tm-play-mode-btn {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .7rem 1rem; width: 100%; text-align: left;
+  background: transparent; border: 1px solid var(--border-s); border-radius: var(--rs);
+  color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: .82rem; font-weight: 500;
+  cursor: pointer; transition: all .22s;
+}
+.tm-play-mode-btn:hover { border-color: rgba(126,200,227,.45); color: var(--accent); background: rgba(126,200,227,.04) }
+
 /* ── Module Tension ─────────────────────────────────────────────────────────── */
 .module-nav     { display:flex; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); padding:3px; gap:3px; max-width:880px; margin:0 auto 1.2rem; width:100% }
 .module-nav-btn { flex:1; padding:.6rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500; cursor:pointer; transition:all .3s cubic-bezier(.22,1,.36,1); display:flex; align-items:center; justify-content:center; gap:.4rem; letter-spacing:0; text-transform:uppercase; position:relative; overflow:hidden }
@@ -1717,26 +1726,69 @@ input[type=number] { -moz-appearance:textfield }
       <em id="tm-result-card-chevron" class="chevron">&#8964;</em>
     </div>
 
-    <div id="tm-result-card-body" style="display:none;margin-top:.75rem">
-    <div style="display:flex;justify-content:flex-end;gap:.4rem;margin-bottom:.5rem">
-      <button class="tm-screenshot-btn" id="tm-pdf-btn" onclick="tmExportPdf(event)" title="Export PDF">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="9" y1="13" x2="15" y2="13"/>
-          <line x1="9" y1="17" x2="13" y2="17"/>
-          <line x1="9" y1="9" x2="10" y2="9"/>
-        </svg>
+    <!-- ── Barre Play + icônes ── -->
+    <div id="tm-play-bar" style="display:none;align-items:center;justify-content:space-between;margin-top:.55rem">
+      <button id="tm-play-btn" onclick="tmOpenPlayModal()" title="Animer les points" class="tm-screenshot-btn" style="gap:.42rem;padding:.32rem .75rem;border-radius:20px;font-family:'DM Sans',sans-serif;font-size:.68rem;font-weight:500;letter-spacing:.1em">
+        <svg id="tm-play-icon" width="11" height="11" viewBox="0 0 12 12" fill="currentColor"><polygon points="2,1 11,6 2,11"/></svg>
+        <span id="tm-play-label">Play</span>
       </button>
-      <button class="tm-screenshot-btn" id="tm-screenshot-btn" onclick="tmScreenshot(event)" title="Screenshot">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-          <circle cx="12" cy="13" r="4"/>
-        </svg>
-      </button>
+      <div style="display:flex;gap:.4rem">
+        <button class="tm-screenshot-btn" id="tm-pdf-btn" onclick="tmExportPdf(event)" title="Export PDF">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/>
+            <line x1="9" y1="17" x2="13" y2="17"/>
+            <line x1="9" y1="9" x2="10" y2="9"/>
+          </svg>
+        </button>
+        <button class="tm-screenshot-btn" id="tm-screenshot-btn" onclick="tmScreenshot(event)" title="Screenshot">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </button>
+      </div>
     </div>
+
+    <!-- ── Modale choix du mode d'animation ── -->
+    <div id="tm-play-overlay" onclick="tmClosePlayModal()" style="position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:9990;display:none;opacity:0;transition:opacity .2s"></div>
+    <div id="tm-play-modal" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.97);z-index:9991;background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:1.4rem 1.4rem 1.1rem;box-shadow:0 16px 64px rgba(0,0,0,.55);width:88%;max-width:300px;display:none;flex-direction:column;gap:.75rem;opacity:0;transition:opacity .2s,transform .2s">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)">Animation</div>
+        <button onclick="tmClosePlayModal()" class="ateliermgr-close">✕</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.4rem">
+        <button id="tm-play-mode-fo"   onclick="tmStartPlay('fo')"   class="tm-play-mode-btn">
+          <span style="width:8px;height:8px;border-radius:50%;background:rgba(232,146,124,.9);flex-shrink:0;display:inline-block"></span>
+          <span id="tm-play-fo-label">DS</span>
+        </button>
+        <button id="tm-play-mode-fa"   onclick="tmStartPlay('fa')"   class="tm-play-mode-btn">
+          <span style="width:8px;height:8px;border-radius:50%;background:rgba(126,200,227,.9);flex-shrink:0;display:inline-block"></span>
+          <span id="tm-play-fa-label">NDS</span>
+        </button>
+        <button id="tm-play-mode-both" onclick="tmStartPlay('both')" class="tm-play-mode-btn">
+          <span style="display:inline-flex;gap:3px;flex-shrink:0">
+            <span style="width:8px;height:8px;border-radius:50%;background:rgba(232,146,124,.9);display:inline-block"></span>
+            <span style="width:8px;height:8px;border-radius:50%;background:rgba(126,200,227,.9);display:inline-block"></span>
+          </span>
+          <span id="tm-play-both-label">DS + NDS</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="tm-result-card-body" style="display:none;margin-top:.75rem">
     <div class="radar-wrap">
       <canvas class="radar-canvas" id="tm-radar"></canvas>
+    </div>
+
+    <!-- Étiquettes animation Play : hors du canvas, hauteur fixe pour éviter tout décalage -->
+    <div id="tm-anim-display" style="height:3.8rem;display:flex;align-items:center;justify-content:center;margin:.4rem 0 0;pointer-events:none;visibility:hidden">
+      <div id="tm-anim-inner" style="display:flex;flex-direction:column;align-items:center;gap:.18rem">
+        <div id="tm-anim-title" style="font-size:.56rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;font-family:'DM Mono',monospace;color:var(--text3)">—</div>
+        <div id="tm-anim-val"   style="font-family:'DM Mono',monospace;font-size:1.35rem;font-weight:500;line-height:1">—</div>
+        <div id="tm-anim-idx"  style="font-size:.58rem;font-family:'DM Mono',monospace;color:var(--text3)">—</div>
+      </div>
     </div>
 
     <div class="radar-legend">
@@ -3289,6 +3341,7 @@ function toggleTmResultCard() {
   body.style.display = open ? 'none' : 'block';
   chev.style.transform = open ? '' : 'rotate(180deg)';
   if (!open) tmTryRenderRadar();
+  if (open) { tmStopAnimation(); tmUpdateResultCardState(); } // stopper l'animation si on ferme
 }
 function toggleArbCard() {
   const body = $id('arb-card-body'), chevron = $id('arb-card-chevron'), wrap = $id('arb-wrap');
@@ -5391,7 +5444,15 @@ function tmUpdateCell(idx, side) {
 function tmUpdateResultCardState() {
   const card = $id('tm-result-card');
   if (!card) return;
-  card.classList.toggle('tm-card-no-data', !tmHasData());
+  const hasData = tmHasData();
+  card.classList.toggle('tm-card-no-data', !hasData);
+  // Afficher le bouton Play uniquement si la card body est ouverte et qu'il y a des données
+  const playBar  = $id('tm-play-bar');
+  const cardBody = $id('tm-result-card-body');
+  if (playBar) {
+    const bodyOpen = cardBody && cardBody.style.display !== 'none';
+    playBar.style.display = (hasData && bodyOpen) ? 'flex' : 'none';
+  }
 }
 
 function tmHideResult() {
@@ -5400,6 +5461,7 @@ function tmHideResult() {
   if (body) body.style.display = 'none';
   if (chev) chev.style.transform = '';
   tmHighlightOn = false;
+  if (typeof tmStopAnimation === 'function') tmStopAnimation();
   const btn = $id('tm-hl-btn');
   if (btn) btn.classList.remove('active');
   document.querySelectorAll('.defl-inp, .defl-result').forEach(el => {
@@ -5535,10 +5597,10 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
   const ctx    = canvas.getContext('2d');
   const dpr    = window.devicePixelRatio || 1;
 
-  // Hide canvas to read wrapper's natural width
-  canvas.style.display = 'none';
-  const size = Math.min(canvas.parentElement.clientWidth, 440);
-  canvas.style.display = 'block';
+  // Lire la largeur du wrapper SANS masquer le canvas (évite le décalage de layout)
+  const wrapper = canvas.parentElement;
+  const wrapperW = wrapper ? wrapper.getBoundingClientRect().width : 440;
+  const size = Math.min(wrapperW || canvas.width / dpr, 440);
 
   // Force exact square
   canvas.style.width  = size + 'px';
@@ -6821,6 +6883,215 @@ function efNumpadDel() {
       if (!open) { var btn=$id('easy-fill-toggle'); if(btn) btn.setAttribute('aria-checked','false'); }
     }
   };
+})();
+
+// ── Animation Play — Diagramme de tension ────────────────────────────────────
+(function() {
+  var tmAnimTimer   = null;
+  var tmAnimRunning = false;
+  var tmAnimStep    = 0;
+
+  // ── Modale choix du mode ────────────────────────────────────────────────────
+  window.tmOpenPlayModal = function() {
+    if (tmAnimRunning) { tmStopAnimation(); return; }
+    // Mettre à jour les labels selon la légende courante
+    var legFo = $id('radar-leg-fo');
+    var legFa = $id('radar-leg-fa');
+    var lFo = $id('tm-play-fo-label');
+    var lFa = $id('tm-play-fa-label');
+    var lBoth = $id('tm-play-both-label');
+    if (lFo && legFo) lFo.textContent = legFo.textContent;
+    if (lFa && legFa) lFa.textContent = legFa.textContent;
+    if (lBoth && legFo && legFa) lBoth.textContent = legFo.textContent + ' + ' + legFa.textContent;
+    // Afficher overlay + modale
+    var ov = $id('tm-play-overlay');
+    var mo = $id('tm-play-modal');
+    if (ov) { ov.style.display = 'block'; setTimeout(function(){ ov.style.opacity='1'; }, 10); }
+    if (mo) { mo.style.display = 'flex'; setTimeout(function(){ mo.style.opacity='1'; mo.style.transform='translate(-50%,-50%) scale(1)'; }, 10); }
+  };
+
+  window.tmClosePlayModal = function() {
+    var ov = $id('tm-play-overlay');
+    var mo = $id('tm-play-modal');
+    if (ov) { ov.style.opacity='0'; setTimeout(function(){ ov.style.display='none'; }, 220); }
+    if (mo) { mo.style.opacity='0'; mo.style.transform='translate(-50%,-50%) scale(.97)'; setTimeout(function(){ mo.style.display='none'; }, 220); }
+  };
+
+  window.tmStartPlay = function(mode) {
+    tmClosePlayModal();
+    setTimeout(function() { tmPlayAnimation(mode); }, 230);
+  };
+
+  // ── tmStopAnimation ─────────────────────────────────────────────────────────
+  window.tmStopAnimation = function() {
+    if (tmAnimTimer) {
+      if (typeof tmAnimTimer === 'object' && tmAnimTimer.cancel) tmAnimTimer.cancel();
+      else clearTimeout(tmAnimTimer);
+      tmAnimTimer = null;
+    }
+    tmAnimRunning = false;
+    tmAnimStep    = 0;
+    var lbl = $id('tm-play-label');
+    var ico = $id('tm-play-icon');
+    var btn = $id('tm-play-btn');
+    if (lbl) lbl.textContent = 'Play';
+    if (ico) ico.innerHTML   = '<polygon points="2,1 11,6 2,11"/>';
+    if (btn) btn.onclick = function(){ tmOpenPlayModal(); };
+    var disp = $id('tm-anim-display');
+    if (disp) disp.style.visibility = 'hidden';
+    tmTryRenderRadar();
+  };
+
+  // ── Affichage centré sous le radar ─────────────────────────────────────────
+  function tmShowSingle(foKgfs, faKgfs, spokeIdx, subStep, perSide) {
+    var disp  = $id('tm-anim-display');
+    var title = $id('tm-anim-title');
+    var val   = $id('tm-anim-val');
+    var idx   = $id('tm-anim-idx');
+    if (!disp) return;
+
+    var spokeLabel = (lang === 'fr') ? 'Rayon' : 'Spoke';
+    var isFo = (subStep === 0);
+    var legEl = $id(isFo ? 'radar-leg-fo' : 'radar-leg-fa');
+    var label = legEl ? legEl.textContent : (isFo ? 'Nappe Forte' : 'Nappe Faible');
+    var kgfV  = isFo ? foKgfs[spokeIdx] : faKgfs[spokeIdx];
+    var color = isFo ? 'rgba(232,146,124,.95)' : 'rgba(126,200,227,.95)';
+    var colorDim = isFo ? 'rgba(232,146,124,.55)' : 'rgba(126,200,227,.55)';
+
+    disp.style.visibility = 'visible';
+    if (title) { title.textContent = label; title.style.color = colorDim; }
+    if (val)   { val.textContent   = kgfV !== null ? kgfV + ' kg' : '—'; val.style.color = color; }
+    if (idx)   {
+      idx.textContent = spokeLabel + ' ' + (spokeIdx + 1) + ' / ' + perSide;
+      idx.style.color = 'var(--text3)';
+    }
+  }
+
+  // ── Séquence : fo puis fa pour chaque rayon ──────────────────────────────
+  var STEP_MS = 1100;
+  var FADE_MS = 280;
+
+  function tmEase(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+
+  function tmRunStepSeq(foKgfs, faKgfs, sequence) {
+    if (!tmAnimRunning) return;
+    if (tmAnimStep >= sequence.length) { tmStopAnimation(); return; }
+
+    var item     = sequence[tmAnimStep];
+    var spokeIdx = item.spokeIdx;
+    var isFo     = (item.side === 'fo');
+    var subStep  = isFo ? 0 : 1;
+    var val      = isFo ? foKgfs[spokeIdx] : faKgfs[spokeIdx];
+    var color    = isFo ? [232,146,124] : [126,200,227];
+    var perSide  = foKgfs.length;
+
+    // Géométrie du point
+    var canvas      = $id('tm-radar');
+    var dpr         = window.devicePixelRatio || 1;
+    var size        = parseFloat(canvas.style.width) || (canvas.width / dpr);
+    var cx = size/2, cy = size/2, R = size*0.38;
+    var N           = foKgfs.length * 2;
+    var aStep       = (2*Math.PI)/N;
+    var allVals     = foKgfs.concat(faKgfs).filter(function(v){return v!==null;});
+    var scaleMax    = Math.ceil(Math.max.apply(null,allVals)/20)*20||20;
+    var angleOffset = isFo ? 0 : 1;
+    var a   = (spokeIdx*2 + angleOffset)*aStep - Math.PI/2;
+    var rr  = val !== null ? (val/scaleMax)*R : 0;
+    var px  = cx + rr*Math.cos(a);
+    var py  = cy + rr*Math.sin(a);
+
+    var startTime = null;
+    var rafId     = null;
+
+    function tmDrawFrame(alpha) {
+      tmDrawRadar(foKgfs, faKgfs, null);
+      if (val === null) return;
+      var ctx = canvas.getContext('2d');
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      var glowA = 'rgba('+color[0]+','+color[1]+','+color[2]+','+(0.45*alpha)+')';
+      var grad = ctx.createRadialGradient(px,py,2,px,py,18);
+      grad.addColorStop(0, glowA);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.beginPath(); ctx.arc(px,py,18,0,2*Math.PI);
+      ctx.fillStyle = grad; ctx.fill();
+      ctx.beginPath(); ctx.arc(px,py,7,0,2*Math.PI);
+      ctx.fillStyle = 'rgba('+color[0]+','+color[1]+','+color[2]+',1)';
+      ctx.fill();
+      ctx.beginPath(); ctx.arc(px,py,7,0,2*Math.PI);
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.restore();
+    }
+
+    function tmAnimLabel(alpha) {
+      var disp  = $id('tm-anim-display');
+      var inner = $id('tm-anim-inner');
+      if (disp)  disp.style.visibility = 'visible';
+      if (inner) inner.style.opacity   = alpha;
+    }
+
+    tmShowSingle(foKgfs, faKgfs, spokeIdx, subStep, perSide);
+
+    function frame(ts) {
+      if (!tmAnimRunning) return;
+      if (!startTime) startTime = ts;
+      var elapsed   = ts - startTime;
+      var progress  = Math.min(elapsed / STEP_MS, 1);
+      var fadeRatio = FADE_MS / STEP_MS;
+      var alpha;
+      if (progress < fadeRatio)          { alpha = tmEase(progress / fadeRatio); }
+      else if (progress > 1 - fadeRatio) { alpha = tmEase((1 - progress) / fadeRatio); }
+      else                               { alpha = 1; }
+      tmDrawFrame(alpha);
+      tmAnimLabel(alpha);
+      if (progress < 1) {
+        rafId = requestAnimationFrame(frame);
+      } else {
+        tmAnimStep++;
+        tmAnimTimer = setTimeout(function() {
+          tmRunStepSeq(foKgfs, faKgfs, sequence);
+        }, 80);
+      }
+    }
+
+    tmAnimTimer = { cancel: function() { if (rafId) cancelAnimationFrame(rafId); } };
+    rafId = requestAnimationFrame(frame);
+  }
+
+  // ── Bouton Play / Stop ──────────────────────────────────────────────────────
+  window.tmPlayAnimation = function(mode) {
+    if (tmAnimRunning) { tmStopAnimation(); return; }
+
+    var nb = parseInt($id('nb-rayons').value) || 0;
+    var perSide = Math.floor(nb / 2);
+    if (perSide < 1) return;
+
+    var foKgfs = tmData.fo.slice(0, perSide).map(function(v) { return toKgf(v); });
+    var faKgfs = tmData.fa.slice(0, perSide).map(function(v) { return toKgf(v); });
+    var allVals = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
+    if (!allVals.length) return;
+
+    var sequence = [];
+    for (var i = 0; i < perSide; i++) {
+      if (mode === 'fo')      { sequence.push({spokeIdx:i, side:'fo'}); }
+      else if (mode === 'fa') { sequence.push({spokeIdx:i, side:'fa'}); }
+      else                    { sequence.push({spokeIdx:i, side:'fo'}); sequence.push({spokeIdx:i, side:'fa'}); }
+    }
+
+    tmAnimRunning = true;
+    tmAnimStep    = 0;
+
+    var lbl = $id('tm-play-label');
+    var ico = $id('tm-play-icon');
+    var btn = $id('tm-play-btn');
+    if (lbl) lbl.textContent = 'Stop';
+    if (ico) ico.innerHTML   = '<rect x="2" y="1" width="3" height="10"/><rect x="7" y="1" width="3" height="10"/>';
+    if (btn) btn.onclick = function() { tmStopAnimation(); };
+
+    tmRunStepSeq(foKgfs, faKgfs, sequence);
+  };
+
 })();
 </script>
 </body>
