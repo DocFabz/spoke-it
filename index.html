@@ -5788,54 +5788,75 @@ async function tmExportPdf(e) {
   const iconS   = 3.0;
   const lineH   = 6.5;
 
+  // ── Header redesign : brand bar colorée ──────────────────────────────────
+  const brandBarW = 4;
+  const headerPadL = brandBarW + 7;
+
+  // Fond du header
+  doc.setFillColor(...C_CARD);
   doc.setDrawColor(...C_BORDER);
   doc.setLineWidth(0.4);
-  doc.roundedRect(ML, Y, CW, headerH, 2, 2, 'S');
+  doc.roundedRect(ML, Y, CW, headerH, 2, 2, 'FD');
 
-  if (hasAtelier && (atelierInfo.email || atelierInfo.insta)) {
-    doc.setDrawColor(...C_BORDER);
-    doc.setLineWidth(0.3);
-    doc.line(colSplit, Y + HP, colSplit, Y + headerH - HP);
-  }
+  // Bande colorée gauche (brand bar) — gris
+  doc.setFillColor(...C_TEXT2);
+  doc.roundedRect(ML, Y, brandBarW, headerH, 2, 2, 'F');
+  doc.rect(ML + 2, Y, brandBarW - 2, headerH, 'F'); // carré pour le côté droit de la barre
 
   if (hasAtelier && atelierInfo.name) {
+    // Sous-titre discret
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
+    doc.setFontSize(6.5);
     doc.setTextColor(...C_TEXT3);
-    doc.text('Wheelbuilt with love by', ML + HP, Y + headerH / 2 - 2);
+    doc.text('WHEELBUILT BY', ML + headerPadL, Y + 7);
+    // Nom de l'atelier en grand
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...C_TEXT2);
+    doc.text(sanitize(atelierInfo.name).toUpperCase(), ML + headerPadL, Y + 14);
+  } else {
+    // Pas d'atelier : afficher SPOKE IT centré verticalement
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(...C_ACCENT);
+    doc.text('SPOKE IT', ML + headerPadL, Y + headerH / 2 + 2);
   }
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(...C_ACCENT);
-  doc.text((hasAtelier && atelierInfo.name) ? sanitize(atelierInfo.name) : 'SPOKE IT', ML + HP, Y + headerH / 2 + 4.5);
 
+  // Contacts à droite
   const coordLines = [];
   if (hasAtelier && atelierInfo.email) coordLines.push({ type: 'email', text: sanitize(atelierInfo.email) });
   if (hasAtelier && atelierInfo.insta)  coordLines.push({ type: 'insta', text: sanitize(atelierInfo.insta) });
 
-  let cy = Y + (headerH - coordLines.length * lineH) / 2 + lineH * 0.7;
-  const cx = colSplit + HP;
+  if (coordLines.length) {
+    // Séparateur vertical
+    doc.setDrawColor(...C_BORDER);
+    doc.setLineWidth(0.3);
+    doc.line(colSplit, Y + HP, colSplit, Y + headerH - HP);
 
-  coordLines.forEach(({ type, text }) => {
-    const iy = cy - iconS * 0.72;
-    doc.setDrawColor(...C_ACCENT);
-    doc.setLineWidth(0.35);
-    if (type === 'email') {
-      doc.rect(cx, iy, iconS, iconS * 0.72, 'S');
-      doc.line(cx, iy, cx + iconS / 2, iy + iconS * 0.4);
-      doc.line(cx + iconS, iy, cx + iconS / 2, iy + iconS * 0.4);
-    } else {
-      doc.roundedRect(cx, iy, iconS, iconS, 0.8, 0.8, 'S');
-      doc.circle(cx + iconS / 2, iy + iconS / 2, iconS * 0.27, 'S');
-      doc.setFillColor(...C_ACCENT);
-      doc.circle(cx + iconS * 0.78, iy + iconS * 0.22, iconS * 0.08, 'F');
-    }
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(...C_TEXT);
-    doc.text(text, cx + iconS + 2.5, cy);
-    cy += lineH;
-  });
+    let cy = Y + (headerH - coordLines.length * lineH) / 2 + lineH * 0.7;
+    const cx = colSplit + HP;
+
+    coordLines.forEach(({ type, text }) => {
+      const iy = cy - iconS * 0.72;
+      doc.setDrawColor(...C_TEXT3);
+      doc.setFillColor(...C_TEXT3);
+      doc.setLineWidth(0.35);
+      if (type === 'email') {
+        doc.rect(cx, iy, iconS, iconS * 0.72, 'S');
+        doc.line(cx, iy, cx + iconS / 2, iy + iconS * 0.4);
+        doc.line(cx + iconS, iy, cx + iconS / 2, iy + iconS * 0.4);
+      } else {
+        doc.roundedRect(cx, iy, iconS, iconS, 0.8, 0.8, 'S');
+        doc.circle(cx + iconS / 2, iy + iconS / 2, iconS * 0.27, 'S');
+        doc.circle(cx + iconS * 0.78, iy + iconS * 0.22, iconS * 0.08, 'F');
+      }
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...C_TEXT2);
+      doc.text(text, cx + iconS + 2.5, cy);
+      cy += lineH;
+    });
+  }
 
   Y += headerH + 9;
 
