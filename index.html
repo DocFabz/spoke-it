@@ -101,6 +101,13 @@ body {
 header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .brand        { font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:.18em; text-transform:uppercase; color:var(--text) }
 .brand em     { font-style:normal; color:var(--accent) }
+.brand-letter { display:inline-block; animation:letter-glow 0.6s ease calc(var(--i, 0) * 0.12s) both }
+.brand-letter-space { width:.25em }
+@keyframes letter-glow {
+  0%   { color:var(--text3); text-shadow:none }
+  40%  { color:#fff; text-shadow:0 0 18px rgba(126,200,227,.95), 0 0 40px rgba(126,200,227,.55), 0 0 80px rgba(126,200,227,.25) }
+  100% { color:inherit; text-shadow:none }
+}
 .sub          { font-family:'DM Mono',monospace; font-size:.67rem; font-weight:300; color:var(--text3); letter-spacing:.2em; margin-top:.1rem }
 .insta-link   { display:inline-flex; align-items:center; gap:.35rem; color:var(--text3); text-decoration:none; letter-spacing:.15em; transition:color .2s }
 .insta-link:hover { color:var(--accent) }
@@ -978,7 +985,7 @@ input[type=number] { -moz-appearance:textfield }
 <body>
 
 <header>
-  <div class="brand">Spoke <em>It</em></div>
+  <div class="brand"><span class="brand-letter" style="--i:0">S</span><span class="brand-letter" style="--i:1">p</span><span class="brand-letter" style="--i:2">o</span><span class="brand-letter" style="--i:3">k</span><span class="brand-letter" style="--i:4">e</span><span class="brand-letter brand-letter-space"> </span><em><span class="brand-letter" style="--i:5">I</span><span class="brand-letter" style="--i:6">t</span></em></div>
   <div class="sub">
     by
     <a href="https://www.instagram.com/Docfab21" target="_blank" rel="noopener noreferrer" class="insta-link">
