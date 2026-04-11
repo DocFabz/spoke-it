@@ -324,6 +324,32 @@ select option             { background:#161b27 }
 .tip-box[data-pos="bottom"]::after { bottom:100%; left:var(--arrow-left, 50%); transform:translateX(-50%); border-bottom-color:#0e1420 }
 .tip-box.visible { opacity:1; pointer-events:auto }
 
+
+/* ── Modale options PDF tension ─────────────────────────────────────────────── */
+.pdfopt-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
+.pdfopt-overlay.show { display:block; opacity:1 }
+.pdfopt-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; display:none; flex-direction:column; gap:1rem; opacity:0; transition:opacity .2s, transform .2s }
+.pdfopt-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+.pdfopt-header { display:flex; align-items:center; justify-content:space-between }
+.pdfopt-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
+.pdfopt-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
+.pdfopt-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+.pdfopt-desc { font-size:.71rem; color:var(--text3); line-height:1.5 }
+.pdfopt-options { display:flex; flex-direction:column; gap:.55rem }
+.pdfopt-row { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; padding:.65rem .85rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); transition:border-color .2s }
+.pdfopt-row:hover { border-color:var(--border-s) }
+.pdfopt-row-info { display:flex; flex-direction:column; gap:.18rem; flex:1 }
+.pdfopt-row-label { font-size:.78rem; font-weight:500; color:var(--text) }
+.pdfopt-toggle { position:relative; width:36px; height:20px; flex-shrink:0; margin-top:.1rem }
+.pdfopt-toggle input { opacity:0; width:0; height:0; position:absolute }
+.pdfopt-slider { position:absolute; inset:0; border-radius:20px; background:var(--inp); border:1px solid var(--border-s); cursor:pointer; transition:background .22s, border-color .22s }
+.pdfopt-slider::before { content:''; position:absolute; width:14px; height:14px; border-radius:50%; background:var(--text3); top:2px; left:2px; transition:transform .22s, background .22s }
+.pdfopt-toggle input:checked + .pdfopt-slider { background:rgba(126,200,227,.18); border-color:rgba(126,200,227,.45) }
+.pdfopt-toggle input:checked + .pdfopt-slider::before { transform:translateX(16px); background:var(--accent) }
+.pdfopt-generate { background:transparent; border:1px solid rgba(126,200,227,.4); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.84rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; padding:.75rem 1rem; cursor:pointer; transition:all .22s; text-align:center }
+.pdfopt-generate:hover { border-color:rgba(126,200,227,.75); background:rgba(126,200,227,.07) }
+.pdfopt-generate:active { transform:scale(.98) }
+
 /* ── Tension display ───────────────────────────────────────────────────────── */
 .faible-display               { background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); color:var(--text2); font-family:'DM Mono',monospace; font-size:.85rem; font-weight:300; padding:.55rem .9rem; width:100%; height:2.35rem; box-sizing:border-box; display:flex; align-items:center; transition:background .2s, border-color .2s, color .2s }
 .faible-display.has-val-accent { background:var(--inp); border-color:rgba(126,200,227,.4); color:var(--text) }
@@ -1740,7 +1766,7 @@ input[type=number] { -moz-appearance:textfield }
         <span id="tm-play-label">Play</span>
       </button>
       <div style="display:flex;gap:.4rem">
-        <button class="tm-screenshot-btn" id="tm-pdf-btn" onclick="tmExportPdf(event)" title="Export PDF">
+        <button class="tm-screenshot-btn" id="tm-pdf-btn" onclick="openPdfOptModal(event)" title="Export PDF">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
@@ -2062,8 +2088,14 @@ const i18n = {
     efLabel:'Easy Fill',
 
     efSpoke:'Rayon',
-    efBack:'← Retour',
-    efNext:'Suivant →',
+    efBack:'\u2190 Retour',
+    efNext:'Suivant \u2192',
+    pdfoptTitle:'Options PDF',
+    pdfoptDesc:'Choisissez les \u00e9l\u00e9ments \u00e0 inclure dans le PDF.',
+    pdfoptDiagram:'Diagramme de tension',
+    pdfoptValues:'Valeurs de tension',
+    pdfoptStats:'Donn\u00e9es de tension',
+    pdfoptGenerate:'G\u00e9n\u00e9rer le PDF',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -2164,8 +2196,14 @@ const i18n = {
     efLabel:'Easy Fill',
 
     efSpoke:'Spoke',
-    efBack:'← Back',
-    efNext:'Next →',
+    efBack:'\u2190 Back',
+    efNext:'Next \u2192',
+    pdfoptTitle:'PDF Options',
+    pdfoptDesc:'Choose which elements to include in the PDF.',
+    pdfoptDiagram:'Tension diagram',
+    pdfoptValues:'Tension values',
+    pdfoptStats:'Tension data',
+    pdfoptGenerate:'Generate PDF',
   }
 };
 
@@ -6227,6 +6265,467 @@ async function tmExportPdf(e) {
   if (btn) { btn.classList.add('flash'); setTimeout(() => btn.classList.remove('flash'), 800); }
 }
 
+// ── Export PDF avec options (appelé depuis la modale) ─────────────────────────
+async function tmExportPdfWithOpts(opts) {
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) { alert('jsPDF not loaded'); return; }
+
+  const radar   = document.getElementById('tm-radar');
+  const statsEl = document.getElementById('tm-stats');
+  if (!radar) return;
+
+  // ── Collecte des données ──────────────────────────────────────────────────
+  const now        = new Date();
+  const dateStr    = now.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', { day:'2-digit', month:'long', year:'numeric' });
+  const wheelName  = (_loadedConfigName[wtype]) || '';
+  const wheelLabel = wtype === 'arriere' ? t('rearLabel') : t('frontLabel');
+  const sd         = summaryData;
+
+  const labelFo = document.getElementById('rtag-fo')?.textContent.trim() || 'DS';
+  const labelFa = document.getElementById('rtag-fa')?.textContent.trim() || 'NDS';
+  const calcFo  = sd ? (document.getElementById('r-fo')?.textContent.trim() || '—') : '—';
+  const calcFa  = sd ? (document.getElementById('r-fa')?.textContent.trim() || '—') : '—';
+  const retFo   = (sd && sd.lenFo) ? sd.lenFo + ' mm' : '—';
+  const retFa   = (sd && sd.lenFa) ? sd.lenFa + ' mm' : '—';
+  const legFo   = document.getElementById('radar-leg-fo')?.textContent.trim() || 'DS';
+  const legFa   = document.getElementById('radar-leg-fa')?.textContent.trim() || 'NDS';
+
+  const cfgRows = [];
+  if (sd) {
+    const crossStr = (c) => c === 0 ? t('radial') : c + '×';
+    let cl;
+    if (sd.diffMode) {
+      const isArr = sd.wtype === 'arriere';
+      cl = (isArr?'DS':'NDS') + ' ' + crossStr(sd.crossFo) + ' / ' + (isArr?'NDS':'DS') + ' ' + crossStr(sd.crossFa);
+    } else { cl = crossStr(sd.cross); }
+    cfgRows.push([t('wheelLabel'), wheelLabel + (wheelName ? '  —  ' + sanitize(wheelName) : '')]);
+    cfgRows.push(['ERD',           sd.erd + ' mm']);
+    cfgRows.push([t('spokeCount'), sd.n + ' (' + sd.h + t('perSide') + ')']);
+    cfgRows.push([t('crossLabel'), cl]);
+  }
+
+  const statBlocks = [];
+  statsEl && statsEl.querySelectorAll('.tm-stat').forEach(card => {
+    const label = card.querySelector('.tm-stat-label');
+    const entries = [];
+    card.querySelectorAll('.tm-stat-row').forEach(row => {
+      entries.push({
+        key: (row.querySelector('span:first-child') || {}).textContent?.trim() || '',
+        val: (row.querySelector('strong')           || {}).textContent?.trim() || ''
+      });
+    });
+    statBlocks.push({ label: label?.textContent.trim() || '', isFo: label?.classList.contains('fo'), entries });
+  });
+
+  // ── Setup jsPDF ───────────────────────────────────────────────────────────
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', putOnlyUsedFonts: true });
+
+  function sanitize(str) {
+    if (!str) return '';
+    var map = { '→':'->','Δ':'D','±':'+/-' };
+    return str.replace(/[→Δ±]/g, function(c) { return map[c] || c; });
+  }
+
+  function getElongation(id) {
+    const el = document.getElementById(id);
+    if (!el) return null;
+    const ev = el.querySelector('.ev');
+    return ev ? sanitize(ev.textContent.trim()) : null;
+  }
+
+  const eloFo = sd ? getElongation('m-fo') : null;
+  const eloFa = sd ? getElongation('m-fa') : null;
+
+  const PW = 210, PH = 297, ML = 14, MR = 14, MT = 14, CW = PW - ML - MR;
+  let Y = MT;
+
+  const C_TEXT    = [30,  40,  55];
+  const C_TEXT2   = [90, 105, 120];
+  const C_TEXT3   = [150, 165, 175];
+  const C_ACCENT  = [60, 160, 200];
+  const C_WARM    = [210, 110,  85];
+  const C_BORDER  = [220, 228, 235];
+  const C_CARD    = [248, 250, 252];
+  const C_CARD_FO = [255, 248, 245];
+  const C_CARD_FA = [245, 250, 255];
+
+  // Fond blanc
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, PW, PH, 'F');
+
+  // ── Header ────────────────────────────────────────────────────────────────
+  const atelierInfo = loadAtelierInfo();
+  const hasAtelier  = atelierInfo.name || atelierInfo.email || atelierInfo.insta;
+
+  const HP      = 5;
+  const headerH = 22;
+  const colSplit = ML + CW * 0.52;
+  const iconS   = 3.0;
+  const lineH   = 6.5;
+
+  const brandBarW  = 4;
+  const headerPadL = brandBarW + 7;
+
+  doc.setFillColor(...C_CARD);
+  doc.setDrawColor(...C_BORDER);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(ML, Y, CW, headerH, 2, 2, 'FD');
+  doc.setFillColor(...C_TEXT2);
+  doc.roundedRect(ML, Y, brandBarW, headerH, 2, 2, 'F');
+  doc.rect(ML + 2, Y, brandBarW - 2, headerH, 'F');
+
+  if (hasAtelier && atelierInfo.name) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(...C_TEXT3);
+    doc.text('WHEELBUILT BY', ML + headerPadL, Y + 7);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...C_TEXT2);
+    doc.text(sanitize(atelierInfo.name).toUpperCase(), ML + headerPadL, Y + 14);
+  } else {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(...C_ACCENT);
+    doc.text('SPOKE IT', ML + headerPadL, Y + headerH / 2 + 2);
+  }
+
+  const coordLines = [];
+  if (hasAtelier && atelierInfo.email) coordLines.push({ type: 'email', text: sanitize(atelierInfo.email) });
+  if (hasAtelier && atelierInfo.insta)  coordLines.push({ type: 'insta', text: sanitize(atelierInfo.insta) });
+
+  if (coordLines.length) {
+    doc.setDrawColor(...C_BORDER);
+    doc.setLineWidth(0.3);
+    doc.line(colSplit, Y + HP, colSplit, Y + headerH - HP);
+    let cy = Y + (headerH - coordLines.length * lineH) / 2 + lineH * 0.7;
+    const cx = colSplit + HP;
+    coordLines.forEach(({ type, text }) => {
+      const iy = cy - iconS * 0.72;
+      doc.setDrawColor(...C_TEXT3);
+      doc.setFillColor(...C_TEXT3);
+      doc.setLineWidth(0.35);
+      if (type === 'email') {
+        doc.rect(cx, iy, iconS, iconS * 0.72, 'S');
+        doc.line(cx, iy, cx + iconS / 2, iy + iconS * 0.4);
+        doc.line(cx + iconS, iy, cx + iconS / 2, iy + iconS * 0.4);
+      } else {
+        doc.roundedRect(cx, iy, iconS, iconS, 0.8, 0.8, 'S');
+        doc.circle(cx + iconS / 2, iy + iconS / 2, iconS * 0.27, 'S');
+        doc.circle(cx + iconS * 0.78, iy + iconS * 0.22, iconS * 0.08, 'F');
+      }
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...C_TEXT2);
+      doc.text(text, cx + iconS + 2.5, cy);
+      cy += lineH;
+    });
+  }
+
+  Y += headerH + 9;
+
+  // ── Configuration ─────────────────────────────────────────────────────────
+  if (cfgRows.length) {
+    cfgRows.forEach(([lbl, val]) => {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...C_TEXT2);
+      doc.text(sanitize(lbl), ML + 2, Y);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...C_TEXT);
+      doc.text(sanitize(val), PW - MR, Y, { align: 'right' });
+      doc.setDrawColor(...C_BORDER);
+      doc.setLineWidth(0.2);
+      doc.line(ML + 2, Y + 1.5, PW - MR, Y + 1.5);
+      Y += 7;
+    });
+    Y += 3;
+  }
+
+  // ── Longueurs de rayons ───────────────────────────────────────────────────
+  Y += 5;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(...C_ACCENT);
+  doc.text(lang === 'fr' ? 'LONGUEURS DE RAYONS' : 'SPOKE LENGTHS', ML, Y);
+  Y += 4;
+
+  const isAvantPdf = wtype === 'avant';
+  const halfW = (CW - 4) / 2;
+  const cardR = 2;
+
+  function drawLenCard(x, label, calc, ret, isOrange, elo) {
+    const C_FILL   = isOrange ? C_CARD_FO : C_CARD_FA;
+    const C_STROKE = isOrange ? C_WARM    : C_ACCENT;
+    const C_COLOR  = isOrange ? C_WARM    : C_ACCENT;
+    const cH = elo ? 30 : 24;
+    doc.setFillColor(...C_FILL);
+    doc.setDrawColor(...C_STROKE);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(x, Y, halfW, cH, cardR, cardR, 'FD');
+    doc.setFillColor(...C_COLOR);
+    doc.roundedRect(x, Y, 2, cH, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...C_COLOR);
+    doc.text(sanitize(label).toUpperCase(), x + 5, Y + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...C_TEXT2);
+    doc.text(lang === 'fr' ? 'Calculée' : 'Calculated', x + 5, Y + 11);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...C_TEXT);
+    doc.text(calc + ' mm', x + halfW - 3, Y + 11, { align: 'right' });
+    if (elo) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(...C_TEXT3);
+      doc.text((lang === 'fr' ? 'Elong. est.' : 'Est. stretch') + '  ' + elo, x + halfW - 3, Y + 17, { align: 'right' });
+    }
+    const retY = elo ? Y + 23 : Y + 19;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...C_TEXT2);
+    doc.text(lang === 'fr' ? 'Retenue' : 'Selected', x + 5, retY);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...C_COLOR);
+    doc.text(ret, x + halfW - 3, retY, { align: 'right' });
+  }
+
+  const xLeft  = ML;
+  const xRight = ML + halfW + 4;
+  if (isAvantPdf) {
+    drawLenCard(xLeft,  labelFo, calcFo, retFo, true,  eloFo);
+    drawLenCard(xRight, labelFa, calcFa, retFa, false, eloFa);
+  } else {
+    drawLenCard(xLeft,  labelFa, calcFa, retFa, false, eloFa);
+    drawLenCard(xRight, labelFo, calcFo, retFo, true,  eloFo);
+  }
+  Y += (eloFo || eloFa ? 30 : 24) + 4;
+
+  // ── Diagramme de tension ──────────────────────────────────────────────────
+  if (opts.diagram) {
+    Y += 5;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...C_ACCENT);
+    doc.text(lang === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', ML, Y);
+    Y += 3;
+
+    const nb      = parseInt(document.getElementById('nb-rayons').value) || 0;
+    const perSide = Math.floor(nb / 2);
+
+    const leftSide  = isAvantPdf ? 'fo' : 'fa';
+    const rightSide = isAvantPdf ? 'fa' : 'fo';
+    const C_NDS     = isAvantPdf ? C_WARM   : C_ACCENT;
+    const C_DS      = isAvantPdf ? C_ACCENT : C_WARM;
+    const C_NDS_BG  = isAvantPdf ? C_CARD_FO : C_CARD_FA;
+    const C_DS_BG   = isAvantPdf ? C_CARD_FA : C_CARD_FO;
+    const C_NDS_VAL = C_NDS.map((v, i) => Math.min(255, Math.max(0, v + (i === 2 ? 10 : -20))));
+    const C_DS_VAL  = C_DS.map((v, i)  => Math.min(255, Math.max(0, v + (i === 0 ? 10 : -10))));
+    const ndsLabel  = sanitize(isAvantPdf ? legFo : legFa);
+    const dsLabel   = sanitize(isAvantPdf ? legFa : legFo);
+
+    const leftKgfs  = tmData[leftSide].slice(0, perSide).map(v => toKgf(v));
+    const rightKgfs = tmData[rightSide].slice(0, perSide).map(v => toKgf(v));
+
+    const STAT_ROW_H2 = 7;
+    const STAT_PAD2   = 5;
+    const statBlocksH2 = (opts.stats && statBlocks.length)
+      ? 5 + 4 + statBlocks.reduce((acc, b) => Math.max(acc, STAT_PAD2 * 2 + 7 + b.entries.length * STAT_ROW_H2), 0) + 4
+      : 0;
+
+    const spPadT    = 8;
+    const spPadB    = 4;
+    const spHeaderH = 7;
+    const spRowH    = 5.2;
+
+    const maxCardH  = PH - Y - 14 - statBlocksH2;
+
+    // Si valeurs désactivées : radar prend toute la largeur
+    const showValues = opts.values;
+    const radarColW  = showValues ? Math.round(CW * 0.52) : CW;
+    const spokeColW  = showValues ? CW - radarColW - 3 : 0;
+    const spokeColX  = ML + radarColW + 3;
+
+    const radarDataUrl = radar.toDataURL('image/png');
+    const radarRatio   = radar.height / radar.width;
+    const radarSize    = Math.min(radarColW - (showValues ? 10 : 20), 68);
+    const radarImgH    = radarSize * radarRatio;
+    const legH         = 10;
+    const radarMinH    = radarImgH + legH + 8;
+    const spokeListH   = showValues ? spPadT + spHeaderH + perSide * spRowH + spPadB : radarMinH;
+
+    const radarCardH = Math.min(maxCardH, Math.max(radarMinH, spokeListH));
+    const availRowH  = radarCardH - spPadT - spHeaderH - spPadB;
+    const dynRowH    = perSide > 0 ? Math.min(spRowH, availRowH / perSide) : spRowH;
+    const dynFontS   = Math.max(5.0, Math.min(7, dynRowH * 1.25));
+
+    // Card globale
+    doc.setFillColor(...C_CARD);
+    doc.setDrawColor(...C_BORDER);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(ML, Y, CW, radarCardH, 3, 3, 'FD');
+
+    // Radar + légende
+    const radarX = ML + (radarColW - radarSize) / 2;
+    const radarY = Y + (radarCardH - radarImgH - legH) / 2;
+    doc.addImage(radarDataUrl, 'PNG', radarX, radarY, radarSize, radarImgH);
+
+    const legY2  = radarY + radarImgH + 5;
+    const legMid = ML + radarColW / 2;
+    const legPad = 4;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setFillColor(...C_NDS);
+    doc.circle(legMid - legPad - 1.5, legY2, 1.5, 'F');
+    doc.setTextColor(...C_TEXT2);
+    doc.text(ndsLabel, legMid - legPad - 4.5, legY2 + 0.5, { align: 'right' });
+    doc.setFillColor(...C_DS);
+    doc.circle(legMid + legPad + 1.5, legY2, 1.5, 'F');
+    doc.text(dsLabel, legMid + legPad + 4.5, legY2 + 0.5);
+
+    if (showValues) {
+      // Séparateur vertical
+      doc.setDrawColor(...C_BORDER);
+      doc.setLineWidth(0.25);
+      doc.line(ML + radarColW + 1.5, Y + 4, ML + radarColW + 1.5, Y + radarCardH - 4);
+
+      // Colonnes NDS | DS
+      const subGap = 2;
+      const subW   = (spokeColW - subGap) / 2;
+      const xNDS   = spokeColX;
+      const xDS    = spokeColX + subW + subGap;
+      const hY2    = Y + spPadT;
+
+      // En-tête NDS
+      doc.setFillColor(...C_NDS_BG);
+      doc.roundedRect(xNDS, hY2 - 3, subW, spHeaderH, 1, 1, 'F');
+      doc.setFillColor(...C_NDS);
+      doc.roundedRect(xNDS, hY2 - 3, 1.5, spHeaderH, 0.5, 0.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6);
+      doc.setTextColor(...C_NDS);
+      doc.text(ndsLabel, xNDS + subW / 2 + 1, hY2 + 1, { align: 'center' });
+
+      // En-tête DS
+      doc.setFillColor(...C_DS_BG);
+      doc.roundedRect(xDS, hY2 - 3, subW, spHeaderH, 1, 1, 'F');
+      doc.setFillColor(...C_DS);
+      doc.roundedRect(xDS, hY2 - 3, 1.5, spHeaderH, 0.5, 0.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6);
+      doc.setTextColor(...C_DS);
+      doc.text(dsLabel, xDS + subW / 2 + 1, hY2 + 1, { align: 'center' });
+
+      // Lignes de rayons
+      let rowY = Y + spPadT + spHeaderH + 1;
+      for (let i = 0; i < perSide; i++) {
+        const rowBg  = i % 2 === 0 ? [245, 248, 252] : [255, 255, 255];
+        const kgfNDS = leftKgfs[i];
+        const kgfDS  = rightKgfs[i];
+        const numStr = String(i + 1);
+        const ndsStr = kgfNDS !== null ? kgfNDS + ' kg' : '—';
+        const dsStr  = kgfDS  !== null ? kgfDS  + ' kg' : '—';
+
+        doc.setFillColor(...rowBg);
+        doc.rect(xNDS, rowY - dynRowH * 0.7, subW, dynRowH, 'F');
+        doc.rect(xDS,  rowY - dynRowH * 0.7, subW, dynRowH, 'F');
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(dynFontS * 0.85);
+        doc.setTextColor(...C_TEXT3);
+        doc.text(numStr, xNDS + 2.5, rowY);
+        doc.text(numStr, xDS  + 2.5, rowY);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(dynFontS);
+        doc.setTextColor(...(kgfNDS !== null ? C_NDS_VAL : C_TEXT3));
+        doc.text(ndsStr, xNDS + subW - 1.5, rowY, { align: 'right' });
+        doc.setTextColor(...(kgfDS !== null ? C_DS_VAL : C_TEXT3));
+        doc.text(dsStr,  xDS  + subW - 1.5, rowY, { align: 'right' });
+
+        rowY += dynRowH;
+      }
+    }
+
+    Y += radarCardH + 4;
+  }
+
+  // ── Données de tension ────────────────────────────────────────────────────
+  if (opts.stats && statBlocks.length) {
+    const STAT_ROW_H = 7;
+    const STAT_PAD   = 5;
+    const STAT_GAP   = 4;
+    Y += 5;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...C_ACCENT);
+    doc.text(lang === 'fr' ? 'DONNÉES DE TENSION' : 'TENSION DATA', ML, Y);
+    Y += 4;
+
+    const bGap  = STAT_GAP;
+    const bW    = (CW - bGap) / 2;
+    const rowH  = STAT_ROW_H;
+    const PAD_B = STAT_PAD;
+
+    function drawStatBlock2(block, bx) {
+      const warm = block.isFo;
+      const bH   = PAD_B + 7 + block.entries.length * rowH + PAD_B;
+      doc.setFillColor(...(warm ? C_CARD_FO : C_CARD_FA));
+      doc.setDrawColor(...(warm ? C_WARM : C_ACCENT));
+      doc.setLineWidth(0.35);
+      doc.roundedRect(bx, Y, bW, bH, 2, 2, 'FD');
+      doc.setFillColor(...(warm ? C_WARM : C_ACCENT));
+      doc.roundedRect(bx, Y, 2, bH, 1, 1, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      doc.setTextColor(...(warm ? C_WARM : C_ACCENT));
+      doc.text(sanitize(block.label).toUpperCase(), bx + 5, Y + PAD_B + 1);
+      block.entries.forEach((row, ri) => {
+        const ry = Y + PAD_B + 7 + ri * rowH;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(...C_TEXT2);
+        doc.text(sanitize(row.key), bx + 5, ry);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...C_TEXT);
+        doc.text(sanitize(row.val), bx + bW - 4, ry, { align: 'right' });
+      });
+      return bH;
+    }
+
+    let maxH = 0;
+    statBlocks.forEach((block, bi) => {
+      const bx = bi === 0 ? ML : ML + bW + bGap;
+      const bH = drawStatBlock2(block, bx);
+      if (bH > maxH) maxH = bH;
+    });
+    Y += maxH + 4;
+  }
+
+  // ── Footer ────────────────────────────────────────────────────────────────
+  doc.setDrawColor(...C_BORDER);
+  doc.setLineWidth(0.3);
+  doc.line(ML, PH - 10, PW - MR, PH - 10);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...C_TEXT3);
+  doc.text(dateStr, ML, PH - 6);
+  doc.text(lang === 'fr' ? 'Généré par Spoke It' : 'Generated by Spoke It', PW - MR, PH - 6, { align: 'right' });
+
+  // ── Export ────────────────────────────────────────────────────────────────
+  const filename = wheelName
+    ? 'spoke-it-' + wheelName.replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.pdf'
+    : 'spoke-it-' + (wtype === 'arriere' ? 'rear' : 'front') + '.pdf';
+  doc.save(filename);
+
+  const btn2 = document.getElementById('tm-pdf-btn');
+  if (btn2) { btn2.classList.add('flash'); setTimeout(() => btn2.classList.remove('flash'), 800); }
+}
+
 async function tmScreenshot(e) {
   if (e) e.stopPropagation();
 
@@ -7101,6 +7600,103 @@ function efNumpadDel() {
   };
 
 })();
+</script>
+
+<!-- ── Modale options PDF tension ─────────────────────────────────────────── -->
+<div class="pdfopt-overlay" id="pdfopt-overlay" onclick="closePdfOptModal()"></div>
+<div class="pdfopt-modal" id="pdfopt-modal" role="dialog" aria-modal="true">
+  <div class="pdfopt-header">
+    <span class="pdfopt-title">Options PDF</span>
+    <button class="pdfopt-close" onclick="closePdfOptModal()">✕</button>
+  </div>
+  <p class="pdfopt-desc">Choisissez les éléments à inclure dans le PDF.</p>
+  <div class="pdfopt-options">
+    <!-- Option 1 : Diagramme de tension -->
+    <div class="pdfopt-row" id="pdfopt-row-diagram">
+      <div class="pdfopt-row-info">
+        <span class="pdfopt-row-label" id="pdfopt-lbl-diagram">Diagramme de tension</span>
+      </div>
+      <label class="pdfopt-toggle">
+        <input type="checkbox" id="pdfopt-diagram" checked onchange="onPdfOptDiagramChange()">
+        <span class="pdfopt-slider"></span>
+      </label>
+    </div>
+    <!-- Option 2 : Valeurs de tension (sous-option) -->
+    <div class="pdfopt-row" id="pdfopt-row-values">
+      <div class="pdfopt-row-info">
+        <span class="pdfopt-row-label" id="pdfopt-lbl-values">Valeurs de tension</span>
+      </div>
+      <label class="pdfopt-toggle" id="pdfopt-toggle-values">
+        <input type="checkbox" id="pdfopt-values" checked>
+        <span class="pdfopt-slider"></span>
+      </label>
+    </div>
+    <!-- Option 3 : Données de tension -->
+    <div class="pdfopt-row">
+      <div class="pdfopt-row-info">
+        <span class="pdfopt-row-label" id="pdfopt-lbl-stats">Données de tension</span>
+      </div>
+      <label class="pdfopt-toggle">
+        <input type="checkbox" id="pdfopt-stats" checked>
+        <span class="pdfopt-slider"></span>
+      </label>
+    </div>
+  </div>
+  <button class="pdfopt-generate" onclick="tmGeneratePdfFromModal()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:.4rem"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <span id="pdfopt-lbl-generate">Générer le PDF</span>
+  </button>
+</div>
+
+<script>
+// ── Modale options PDF ─────────────────────────────────────────────────────────
+function openPdfOptModal(e) {
+  if (e) e.stopPropagation();
+  // Mettre à jour les labels selon la langue courante
+  var L = typeof lang !== 'undefined' ? lang : 'fr';
+  var tr = typeof i18n !== 'undefined' && i18n[L] ? i18n[L] : {};
+  var el;
+  el = document.getElementById('pdfopt-lbl-diagram');   if (el) el.textContent = tr.pdfoptDiagram   || 'Diagramme de tension';
+  el = document.getElementById('pdfopt-lbl-values');    if (el) el.textContent = tr.pdfoptValues    || 'Valeurs de tension';
+  el = document.getElementById('pdfopt-lbl-stats');     if (el) el.textContent = tr.pdfoptStats     || 'Données de tension';
+  el = document.getElementById('pdfopt-lbl-generate');  if (el) el.textContent = tr.pdfoptGenerate  || 'Générer le PDF';
+  var title = document.querySelector('#pdfopt-modal .pdfopt-title'); if (title) title.textContent = tr.pdfoptTitle || 'Options PDF';
+  var desc  = document.querySelector('#pdfopt-modal .pdfopt-desc');  if (desc)  desc.textContent  = tr.pdfoptDesc  || 'Choisissez les éléments à inclure dans le PDF.';
+  // Réinitialiser l'état
+  document.getElementById('pdfopt-diagram').checked = true;
+  document.getElementById('pdfopt-values').checked  = true;
+  document.getElementById('pdfopt-stats').checked   = true;
+  onPdfOptDiagramChange();
+  document.getElementById('pdfopt-overlay').classList.add('show');
+  document.getElementById('pdfopt-modal').classList.add('show');
+}
+function closePdfOptModal() {
+  document.getElementById('pdfopt-overlay').classList.remove('show');
+  document.getElementById('pdfopt-modal').classList.remove('show');
+}
+function onPdfOptDiagramChange() {
+  var diagramOn    = document.getElementById('pdfopt-diagram').checked;
+  var toggleValues = document.getElementById('pdfopt-toggle-values');
+  var rowValues    = document.getElementById('pdfopt-row-values');
+  if (!diagramOn) {
+    document.getElementById('pdfopt-values').checked = false;
+    if (toggleValues) { toggleValues.style.opacity = '.4'; toggleValues.style.pointerEvents = 'none'; }
+    if (rowValues)    { rowValues.style.opacity = '.4';    rowValues.style.pointerEvents    = 'none'; }
+  } else {
+    document.getElementById('pdfopt-values').checked = true;
+    if (toggleValues) { toggleValues.style.opacity = '';   toggleValues.style.pointerEvents = ''; }
+    if (rowValues)    { rowValues.style.opacity = '';      rowValues.style.pointerEvents    = ''; }
+  }
+}
+function tmGeneratePdfFromModal() {
+  var opts = {
+    diagram: document.getElementById('pdfopt-diagram').checked,
+    values:  document.getElementById('pdfopt-values').checked,
+    stats:   document.getElementById('pdfopt-stats').checked
+  };
+  closePdfOptModal();
+  tmExportPdfWithOpts(opts);
+}
 </script>
 </body>
 </html>
