@@ -4450,13 +4450,13 @@ function tmOnNbChange() {
 // ── Changement type de roue depuis le module tension ─────────────────────────
 function tmSetWheel(type) {
   if (wtype === type) return;
-  // setWheel → switchTo → applyState restaure les données propres à cette roue depuis saved[wh]
+  if (typeof diagSaveWheel === 'function') diagSaveWheel(wtype);
   setWheel(type);
   tmSyncWheelButtons();
   tmUpdateBadges();
   tmBuildTable();
   tmShowDiagramIfData();
-  if (typeof diagClearData === 'function') diagClearData();
+  if (typeof diagRestoreWheel === 'function') diagRestoreWheel(type);
 }
 
 // ── Shared: save snapshot, switch key, restore or reset, refresh UI ─────
@@ -7609,6 +7609,28 @@ function diagClearData() {
   var wheel = document.getElementById('diag-wheel');
   if (obs)   { obs.value = ''; }
   if (wheel) { wheel.value = ''; wheel.readOnly = false; wheel.style.opacity = ''; wheel.style.cursor = ''; }
+  diagStore = { avant: null, arriere: null };
+}
+
+// ── Store diagnostic par roue (comme saved[wtype]) ───────────────────────────
+var diagStore = { avant: null, arriere: null };
+
+function diagSaveWheel(wh) {
+  var obs   = document.getElementById('diag-obs');
+  var wheel = document.getElementById('diag-wheel');
+  diagStore[wh] = {
+    obs:   obs   ? obs.value   : '',
+    wheel: wheel ? wheel.value : ''
+  };
+}
+
+function diagRestoreWheel(wh) {
+  var s = diagStore[wh];
+  if (!s) return;
+  var obs   = document.getElementById('diag-obs');
+  var wheel = document.getElementById('diag-wheel');
+  if (obs)   obs.value   = s.obs;
+  if (wheel) wheel.value = s.wheel;
 }
 
 
