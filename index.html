@@ -372,6 +372,9 @@ select option             { background:#161b27 }
 .diag-inp::placeholder { color:var(--text3); opacity:.75 }
 .diag-inp[readonly] { opacity:.6; cursor:default }
 .diag-actions { display:flex; gap:.55rem }
+.diag-inp-wrap { display:flex; align-items:center; gap:.4rem }
+.diag-clear-btn { background:none; border:none; color:var(--text3); font-size:.72rem; cursor:pointer; padding:.28rem .4rem; line-height:1; transition:color .2s; flex-shrink:0 }
+.diag-clear-btn:hover { color:var(--warm) }
 .diag-btn-print { flex:1; background:transparent; border:1px solid rgba(126,200,227,.4); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; padding:.7rem 1rem; cursor:pointer; transition:all .22s; display:flex; align-items:center; justify-content:center; gap:.45rem }
 .diag-btn-print:hover { border-color:rgba(126,200,227,.75); background:rgba(126,200,227,.07) }
 .diag-btn-print:active { transform:scale(.98) }
@@ -6296,6 +6299,10 @@ async function tmExportPdfWithOpts(opts) {
     : 'spoke-it-' + (wtype === 'arriere' ? 'rear' : 'front') + '.pdf';
   doc.save(filename);
 
+  const icBody2 = $id('tm-input-card-body'), icChev2 = $id('tm-input-card-chevron');
+  if (icBody2) icBody2.style.display = 'none';
+  if (icChev2) icChev2.style.transform = '';
+
   const btn2 = document.getElementById('tm-pdf-btn');
   if (btn2) { btn2.classList.add('flash'); setTimeout(() => btn2.classList.remove('flash'), 800); }
 }
@@ -7195,11 +7202,17 @@ function efNumpadDel() {
   <div class="diag-fields">
     <div class="diag-field">
       <div class="diag-field-label" id="diag-wheel-label">Roue</div>
-      <input class="diag-inp" type="text" id="diag-wheel" autocomplete="off">
+      <div class="diag-inp-wrap">
+        <input class="diag-inp" type="text" id="diag-wheel" autocomplete="off">
+        <button class="diag-clear-btn" onclick="diagClearField('diag-wheel')" title="Effacer">✕</button>
+      </div>
     </div>
     <div class="diag-field">
       <div class="diag-field-label" id="diag-obs-label">Observations</div>
-      <textarea class="diag-textarea" id="diag-obs" rows="4" maxlength="600" oninput="diagLimitLines(this,4)"></textarea>
+      <div class="diag-inp-wrap" style="align-items:flex-start">
+        <textarea class="diag-textarea" id="diag-obs" rows="4" maxlength="600" oninput="diagLimitLines(this,4)"></textarea>
+        <button class="diag-clear-btn" onclick="diagClearField('diag-obs')" title="Effacer" style="margin-top:.3rem">✕</button>
+      </div>
     </div>
   </div>
 
@@ -7585,6 +7598,21 @@ async function diagGeneratePdf() {
 
   var btn = document.getElementById('tm-diag-btn');
   if (btn) { btn.classList.add('flash'); setTimeout(function() { btn.classList.remove('flash'); }, 800); }
+}
+
+function diagClearField(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.value = '';
+  if (id === 'diag-wheel') {
+    el.readOnly = false;
+    el.style.opacity = '';
+    el.style.cursor  = '';
+    var L  = typeof lang !== 'undefined' ? lang : 'fr';
+    var tr = typeof i18n !== 'undefined' && i18n[L] ? i18n[L] : {};
+    el.placeholder = tr.diagWheelPlaceholder || (L === 'fr' ? 'Nom de la roue…' : 'Wheel name…');
+  }
+  el.focus();
 }
 
 function diagLimitLines(ta, maxLines) {
