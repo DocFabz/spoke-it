@@ -5485,11 +5485,13 @@ function tmBuildTable() {
         }
 
         if (parsed === null) {
-          // Vide, invalide ou hors plage → restaurer
+          // Vide, invalide ou hors plage → restaurer depuis prev, ou depuis tmData si prev absent
           const prev = side === 'fo' ? tmPrevFo[idx] : tmPrevFa[idx];
-          if (prev !== null && prev !== undefined) {
-            this.value = tmDisplayValue(prev);
-            if (side === 'fo') tmData.fo[idx] = prev; else tmData.fa[idx] = prev;
+          const cur  = side === 'fo' ? tmData.fo[idx] : tmData.fa[idx];
+          const restore = (prev !== null && prev !== undefined) ? prev : cur;
+          if (restore !== null && restore !== undefined) {
+            this.value = tmDisplayValue(restore);
+            if (side === 'fo') tmData.fo[idx] = restore; else tmData.fa[idx] = restore;
             this.classList.add('has-val');
           } else {
             this.value = '';
@@ -7232,16 +7234,26 @@ function openDiagModal(e) {
   // Placeholder observations (ne touche pas à la valeur existante)
   var obsTA = document.getElementById('diag-obs');
   if (obsTA) obsTA.placeholder = tr.diagObsPlaceholder || (L === 'fr' ? 'Observations du wheelbuilder…' : 'Wheelbuilder observations…');
-  // Champ Roue : pré-remplir seulement si le champ est encore vide
+  // Champ Roue : pré-remplir si config chargée, sinon conserver la valeur saisie
   var wheelInp = document.getElementById('diag-wheel');
-  if (wheelInp && wheelInp.value === '') {
+  if (wheelInp) {
     var loaded = (typeof _loadedConfigName !== 'undefined' && typeof wtype !== 'undefined')
       ? (_loadedConfigName[wtype] || '') : '';
-    wheelInp.value    = loaded;
-    wheelInp.readOnly = !!loaded;
-    wheelInp.style.opacity = loaded ? '.65' : '';
-    wheelInp.style.cursor  = loaded ? 'default' : '';
-    wheelInp.placeholder   = loaded ? '' : (tr.diagWheelPlaceholder || (L === 'fr' ? 'Nom de la roue…' : 'Wheel name…'));
+    if (loaded) {
+      // Roue chargée : toujours réappliquer (iOS peut perdre l'affichage readOnly)
+      wheelInp.value    = loaded;
+      wheelInp.readOnly = true;
+      wheelInp.style.opacity = '.65';
+      wheelInp.style.cursor  = 'default';
+      wheelInp.placeholder   = '';
+    } else if (wheelInp.value === '') {
+      // Pas de roue chargée et champ vide : appliquer le placeholder
+      wheelInp.readOnly = false;
+      wheelInp.style.opacity = '';
+      wheelInp.style.cursor  = '';
+      wheelInp.placeholder   = tr.diagWheelPlaceholder || (L === 'fr' ? 'Nom de la roue…' : 'Wheel name…');
+    }
+    // Si l'utilisateur a saisi quelque chose manuellement → ne pas toucher
   }
   document.getElementById('diag-overlay').classList.add('show');
   document.getElementById('diag-modal').classList.add('show');
