@@ -3511,6 +3511,7 @@ function loadConfig(idx) {
   $id('btn-arriere').classList.toggle('active', wh==='arriere'); $id('btn-arriere').classList.toggle('w', wh==='arriere');
   applyState(cfg.state);
   saved[wh] = JSON.parse(JSON.stringify(cfg.state));
+  if (typeof diagClearData === 'function') diagClearData();
   ['configs-body','save-card-body','arb-card-body','sum-card-body'].forEach(id => { $id(id).style.display = 'none'; });
   ['configs-chevron','save-card-chevron','arb-card-chevron','sum-card-chevron'].forEach(id => { $id(id).style.transform = ''; });
   resetScrollFlags();
@@ -7237,26 +7238,16 @@ function openDiagModal(e) {
   // Placeholder observations (ne touche pas à la valeur existante)
   var obsTA = document.getElementById('diag-obs');
   if (obsTA) obsTA.placeholder = tr.diagObsPlaceholder || (L === 'fr' ? 'Observations du wheelbuilder…' : 'Wheelbuilder observations…');
-  // Champ Roue : pré-remplir si config chargée, sinon conserver la valeur saisie
+  // Champ Roue : pré-remplir seulement si le champ est vide
   var wheelInp = document.getElementById('diag-wheel');
-  if (wheelInp) {
+  if (wheelInp && wheelInp.value === '') {
     var loaded = (typeof _loadedConfigName !== 'undefined' && typeof wtype !== 'undefined')
       ? (_loadedConfigName[wtype] || '') : '';
-    if (loaded) {
-      // Roue chargée : toujours réappliquer (iOS peut perdre l'affichage readOnly)
-      wheelInp.value    = loaded;
-      wheelInp.readOnly = true;
-      wheelInp.style.opacity = '.65';
-      wheelInp.style.cursor  = 'default';
-      wheelInp.placeholder   = '';
-    } else if (wheelInp.value === '') {
-      // Pas de roue chargée et champ vide : appliquer le placeholder
-      wheelInp.readOnly = false;
-      wheelInp.style.opacity = '';
-      wheelInp.style.cursor  = '';
-      wheelInp.placeholder   = tr.diagWheelPlaceholder || (L === 'fr' ? 'Nom de la roue…' : 'Wheel name…');
-    }
-    // Si l'utilisateur a saisi quelque chose manuellement → ne pas toucher
+    wheelInp.value       = loaded;
+    wheelInp.readOnly    = !!loaded;
+    wheelInp.style.opacity = loaded ? '.65' : '';
+    wheelInp.style.cursor  = loaded ? 'default' : '';
+    wheelInp.placeholder   = loaded ? '' : (tr.diagWheelPlaceholder || (L === 'fr' ? 'Nom de la roue…' : 'Wheel name…'));
   }
   document.getElementById('diag-overlay').classList.add('show');
   document.getElementById('diag-modal').classList.add('show');
