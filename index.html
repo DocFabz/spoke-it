@@ -6298,8 +6298,6 @@ async function tmExportPdfWithOpts(opts) {
     ? 'spoke-it-' + wheelName.replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.pdf'
     : 'spoke-it-' + (wtype === 'arriere' ? 'rear' : 'front') + '.pdf';
   doc.save(filename);
-
-  // Reconstruire la table depuis tmData pour garantir l'affichage sur iOS
   tmBuildTable();
 
   const btn2 = document.getElementById('tm-pdf-btn');
@@ -7586,10 +7584,7 @@ async function diagGeneratePdf() {
     ? 'spoke-it-diagnostic-' + wheelName.replace(/[^a-z0-9]/gi,'-').toLowerCase() + '.pdf'
     : 'spoke-it-diagnostic.pdf';
   doc.save(filename);
-
-  // Reconstruire la table depuis tmData pour garantir l'affichage sur iOS
   tmBuildTable();
-
   closeDiagModal();
 
   var btn = document.getElementById('tm-diag-btn');
