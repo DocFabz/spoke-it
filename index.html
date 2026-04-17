@@ -5452,12 +5452,18 @@ function tmBuildTable() {
       inp.addEventListener('focus', function() {
         const cur = side === 'fo' ? tmData.fo[idx] : tmData.fa[idx];
         if (side === 'fo') tmPrevFo[idx] = cur; else tmPrevFa[idx] = cur;
+        this._valueAtFocus = this.value;
         this.select();
       });
 
       inp.addEventListener('blur', function() {
         if (this._escapingBlur) { this._escapingBlur = false; return; }
+        // Blur sans focus préalable (parasite iOS) : valeur inchangée → ignorer
+        if (this._valueAtFocus === undefined) return;
         const raw = this.value.trim();
+        // Si la valeur n'a pas changé depuis le focus, rien à faire
+        if (this.value === this._valueAtFocus) { this._valueAtFocus = undefined; return; }
+        this._valueAtFocus = undefined;
         let parsed = null;
 
         if (raw !== '') {
@@ -5481,9 +5487,13 @@ function tmBuildTable() {
         if (parsed === null) {
           // Vide, invalide ou hors plage → restaurer
           const prev = side === 'fo' ? tmPrevFo[idx] : tmPrevFa[idx];
-          if (prev !== null && prev !== undefined) {
-            this.value = tmDisplayValue(prev);
-            if (side === 'fo') tmData.fo[idx] = prev; else tmData.fa[idx] = prev;
+          const cur  = side === 'fo' ? tmData.fo[idx]  : tmData.fa[idx];
+          // Sur iOS, prev peut être null si le focus n'a jamais été déclenché normalement.
+          // On tombe en fallback sur tmData qui, lui, est toujours fiable.
+          const restore = (prev !== null && prev !== undefined) ? prev : cur;
+          if (restore !== null && restore !== undefined) {
+            this.value = tmDisplayValue(restore);
+            if (side === 'fo') tmData.fo[idx] = restore; else tmData.fa[idx] = restore;
             this.classList.add('has-val');
           } else {
             this.value = '';
