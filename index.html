@@ -7235,10 +7235,12 @@ function openDiagModal(e) {
   el = document.getElementById('diag-wheel-label');  if (el) el.textContent = tr.diagWheelLabel || (L === 'fr' ? 'Roue' : 'Wheel');
   el = document.getElementById('diag-obs-label');    if (el) el.textContent = tr.diagObsLabel   || 'Observations';
   el = document.getElementById('diag-print-label');  if (el) el.textContent = tr.diagPdfBtn     || (L === 'fr' ? 'Générer le PDF' : 'Generate PDF');
-  // Placeholder observations (ne touche pas à la valeur existante)
+  // Placeholder observations
   var obsTA = document.getElementById('diag-obs');
   if (obsTA) obsTA.placeholder = tr.diagObsPlaceholder || (L === 'fr' ? 'Observations du wheelbuilder…' : 'Wheelbuilder observations…');
-  // Champ Roue : pré-remplir seulement si le champ est vide
+  // Restaurer depuis le store de la roue courante
+  if (typeof diagRestoreWheel === 'function') diagRestoreWheel(wtype);
+  // Champ Roue : si toujours vide après restauration, pré-remplir depuis config chargée
   var wheelInp = document.getElementById('diag-wheel');
   if (wheelInp && wheelInp.value === '') {
     var loaded = (typeof _loadedConfigName !== 'undefined' && typeof wtype !== 'undefined')
@@ -7254,6 +7256,7 @@ function openDiagModal(e) {
 }
 
 function closeDiagModal() {
+  if (typeof diagSaveWheel === 'function') diagSaveWheel(wtype);
   document.getElementById('diag-overlay').classList.remove('show');
   document.getElementById('diag-modal').classList.remove('show');
 }
@@ -7609,18 +7612,18 @@ function diagClearData() {
   var wheel = document.getElementById('diag-wheel');
   if (obs)   { obs.value = ''; }
   if (wheel) { wheel.value = ''; wheel.readOnly = false; wheel.style.opacity = ''; wheel.style.cursor = ''; }
-  diagStore = { avant: null, arriere: null };
+  diagStore = { avant: { wheel:'', obs:'' }, arriere: { wheel:'', obs:'' } };
 }
 
-// ── Store diagnostic par roue (comme saved[wtype]) ───────────────────────────
-var diagStore = { avant: null, arriere: null };
+// ── Store diagnostic par roue ─────────────────────────────────────────────────
+var diagStore = { avant: { wheel:'', obs:'' }, arriere: { wheel:'', obs:'' } };
 
 function diagSaveWheel(wh) {
   var obs   = document.getElementById('diag-obs');
   var wheel = document.getElementById('diag-wheel');
   diagStore[wh] = {
-    obs:   obs   ? obs.value   : '',
-    wheel: wheel ? wheel.value : ''
+    wheel: wheel ? wheel.value : '',
+    obs:   obs   ? obs.value   : ''
   };
 }
 
