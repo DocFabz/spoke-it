@@ -2288,7 +2288,6 @@ function flashWheelCard(configName) {
 // ── Loaded config name badge ──────────────────────────────────────────────────
 function markModified() {
   if (Date.now() - _lastLoadTime < 500) return;
-  if (window._diagPdfGenerating) return;
   if (_loadedConfigName[wtype]) {
     // Première modification = nouvelle roue : reset complet du module tension
     tmClearTensio();
@@ -5401,8 +5400,14 @@ function tmBuildTable() {
   const perSide = Math.floor(nb / 2);
   while (tmData.fo.length < perSide) tmData.fo.push(null);
   while (tmData.fa.length < perSide) tmData.fa.push(null);
-  while (tmPrevFo.length < perSide)  tmPrevFo.push(null);
-  while (tmPrevFa.length < perSide)  tmPrevFa.push(null);
+  // Synchroniser tmPrev avec tmData : garantit que le blur handler peut toujours restaurer
+  while (tmPrevFo.length < perSide) tmPrevFo.push(tmData.fo[tmPrevFo.length]);
+  while (tmPrevFa.length < perSide) tmPrevFa.push(tmData.fa[tmPrevFa.length]);
+  // Mettre à jour les valeurs existantes si tmData a changé
+  for (let i = 0; i < perSide; i++) {
+    if (tmData.fo[i] !== null) tmPrevFo[i] = tmData.fo[i];
+    if (tmData.fa[i] !== null) tmPrevFa[i] = tmData.fa[i];
+  }
 
   const isFront = wtype === 'avant';
 
@@ -7563,16 +7568,8 @@ async function diagGeneratePdf() {
   var filename = wheelName
     ? 'spoke-it-diagnostic-' + wheelName.replace(/[^a-z0-9]/gi,'-').toLowerCase() + '.pdf'
     : 'spoke-it-diagnostic.pdf';
-
-  // Protéger les données de tension pendant et après la génération (iOS déclenche des events parasites)
-  window._diagPdfGenerating = true;
   doc.save(filename);
-  // Sauvegarder dans le store pour restauration si besoin
-  if (typeof tmSaveToStore === 'function' && typeof tmHasData === 'function' && tmHasData()) {
-    tmSaveToStore();
-  }
   closeDiagModal();
-  setTimeout(function() { window._diagPdfGenerating = false; }, 1500);
 
   var btn = document.getElementById('tm-diag-btn');
   if (btn) { btn.classList.add('flash'); setTimeout(function() { btn.classList.remove('flash'); }, 800); }
