@@ -2288,6 +2288,7 @@ function flashWheelCard(configName) {
 // ── Loaded config name badge ──────────────────────────────────────────────────
 function markModified() {
   if (Date.now() - _lastLoadTime < 500) return;
+  if (window._diagPdfGenerating) return;
   if (_loadedConfigName[wtype]) {
     // Première modification = nouvelle roue : reset complet du module tension
     tmClearTensio();
@@ -5935,7 +5936,6 @@ async function tmExportPdfWithOpts(opts) {
 
   // ── Header ────────────────────────────────────────────────────────────────
   const atelierInfo = loadAtelierInfo();
-  const hasAtelier  = atelierInfo.name || atelierInfo.email || atelierInfo.insta;
 
   const HP      = 5;
   const headerH = 22;
@@ -5954,29 +5954,19 @@ async function tmExportPdfWithOpts(opts) {
   doc.roundedRect(ML, Y, brandBarW, headerH, 2, 2, 'F');
   doc.rect(ML + 2, Y, brandBarW - 2, headerH, 'F');
 
-  if (hasAtelier && atelierInfo.name) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.5);
-    doc.setTextColor(...C_TEXT3);
-    doc.text('WHEELBUILT BY', ML + headerPadL, Y + 7);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(...C_TEXT2);
-    doc.text(sanitize(atelierInfo.name).toUpperCase(), ML + headerPadL, Y + 14);
-  } else {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.5);
-    doc.setTextColor(...C_TEXT3);
-    doc.text('WHEELBUILT BY', ML + headerPadL, Y + 7);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(...C_TEXT2);
-    doc.text('SPOKE IT', ML + headerPadL, Y + 14);
-  }
+  const workshopNameMain = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(...C_TEXT3);
+  doc.text('WHEELBUILT BY', ML + headerPadL, Y + 7);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(...C_TEXT2);
+  doc.text(sanitize(workshopNameMain).toUpperCase(), ML + headerPadL, Y + 14);
 
   const coordLines = [];
-  if (hasAtelier && atelierInfo.email) coordLines.push({ type: 'email', text: sanitize(atelierInfo.email) });
-  if (hasAtelier && atelierInfo.insta)  coordLines.push({ type: 'insta', text: sanitize(atelierInfo.insta) });
+  if (atelierInfo.email) coordLines.push({ type: 'email', text: sanitize(atelierInfo.email) });
+  if (atelierInfo.insta)  coordLines.push({ type: 'insta', text: sanitize(atelierInfo.insta) });
 
   if (coordLines.length) {
     doc.setDrawColor(...C_BORDER);
@@ -7228,25 +7218,25 @@ function openDiagModal(e) {
   if (e) e.stopPropagation();
   var L  = typeof lang !== 'undefined' ? lang : 'fr';
   var tr = typeof i18n !== 'undefined' && i18n[L] ? i18n[L] : {};
-  // Labels
+  // Labels (toujours mis à jour pour la langue)
   var el;
   el = document.getElementById('diag-modal-title');  if (el) el.textContent = tr.diagTitle      || 'Spoke It Diagnostic';
   el = document.getElementById('diag-wheel-label');  if (el) el.textContent = tr.diagWheelLabel || (L === 'fr' ? 'Roue' : 'Wheel');
   el = document.getElementById('diag-obs-label');    if (el) el.textContent = tr.diagObsLabel   || 'Observations';
   el = document.getElementById('diag-print-label');  if (el) el.textContent = tr.diagPdfBtn     || (L === 'fr' ? 'Générer le PDF' : 'Generate PDF');
-  // Placeholders
+  // Placeholder observations (ne touche pas à la valeur existante)
   var obsTA = document.getElementById('diag-obs');
   if (obsTA) obsTA.placeholder = tr.diagObsPlaceholder || (L === 'fr' ? 'Observations du wheelbuilder…' : 'Wheelbuilder observations…');
-  // Champ Roue : pré-remplir si config chargée, sinon vide et éditable
+  // Champ Roue : pré-remplir seulement si le champ est encore vide
   var wheelInp = document.getElementById('diag-wheel');
-  if (wheelInp) {
+  if (wheelInp && wheelInp.value === '') {
     var loaded = (typeof _loadedConfigName !== 'undefined' && typeof wtype !== 'undefined')
       ? (_loadedConfigName[wtype] || '') : '';
     wheelInp.value    = loaded;
     wheelInp.readOnly = !!loaded;
-    wheelInp.style.opacity     = loaded ? '.65' : '';
-    wheelInp.style.cursor      = loaded ? 'default' : '';
-    wheelInp.placeholder       = loaded ? '' : (tr.diagWheelPlaceholder || (L === 'fr' ? 'Nom de la roue…' : 'Wheel name…'));
+    wheelInp.style.opacity = loaded ? '.65' : '';
+    wheelInp.style.cursor  = loaded ? 'default' : '';
+    wheelInp.placeholder   = loaded ? '' : (tr.diagWheelPlaceholder || (L === 'fr' ? 'Nom de la roue…' : 'Wheel name…'));
   }
   document.getElementById('diag-overlay').classList.add('show');
   document.getElementById('diag-modal').classList.add('show');
@@ -7573,8 +7563,16 @@ async function diagGeneratePdf() {
   var filename = wheelName
     ? 'spoke-it-diagnostic-' + wheelName.replace(/[^a-z0-9]/gi,'-').toLowerCase() + '.pdf'
     : 'spoke-it-diagnostic.pdf';
+
+  // Protéger les données de tension pendant et après la génération (iOS déclenche des events parasites)
+  window._diagPdfGenerating = true;
   doc.save(filename);
+  // Sauvegarder dans le store pour restauration si besoin
+  if (typeof tmSaveToStore === 'function' && typeof tmHasData === 'function' && tmHasData()) {
+    tmSaveToStore();
+  }
   closeDiagModal();
+  setTimeout(function() { window._diagPdfGenerating = false; }, 1500);
 
   var btn = document.getElementById('tm-diag-btn');
   if (btn) { btn.classList.add('flash'); setTimeout(function() { btn.classList.remove('flash'); }, 800); }
