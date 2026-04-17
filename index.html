@@ -6299,9 +6299,8 @@ async function tmExportPdfWithOpts(opts) {
     : 'spoke-it-' + (wtype === 'arriere' ? 'rear' : 'front') + '.pdf';
   doc.save(filename);
 
-  const icBody2 = $id('tm-input-card-body'), icChev2 = $id('tm-input-card-chevron');
-  if (icBody2) icBody2.style.display = 'none';
-  if (icChev2) icChev2.style.transform = '';
+  // Reconstruire la table depuis tmData pour garantir l'affichage sur iOS
+  tmBuildTable();
 
   const btn2 = document.getElementById('tm-pdf-btn');
   if (btn2) { btn2.classList.add('flash'); setTimeout(() => btn2.classList.remove('flash'), 800); }
@@ -6969,8 +6968,6 @@ function efNumpadDel() {
       var open = body && body.style.display !== 'none';
       if (bar) bar.style.display = open ? 'flex' : 'none';
       if (!open) { var btn=$id('easy-fill-toggle'); if(btn) btn.setAttribute('aria-checked','false'); }
-      // Reconstruire la table à l'ouverture pour garantir l'affichage des valeurs
-      if (open) tmBuildTable();
     }
   };
 })();
@@ -7590,11 +7587,8 @@ async function diagGeneratePdf() {
     : 'spoke-it-diagnostic.pdf';
   doc.save(filename);
 
-  // Fermer la card des déflections — les events parasites iOS n'affecteront pas des inputs cachés
-  var icBody = document.getElementById('tm-input-card-body');
-  var icChev = document.getElementById('tm-input-card-chevron');
-  if (icBody) icBody.style.display = 'none';
-  if (icChev) icChev.style.transform = '';
+  // Reconstruire la table depuis tmData pour garantir l'affichage sur iOS
+  tmBuildTable();
 
   closeDiagModal();
 
