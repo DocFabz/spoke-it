@@ -5446,14 +5446,6 @@ function tmBuildTable() {
 
     tbody.appendChild(tr);
 
-    // iOS Safari ne rend pas toujours le value posé via innerHTML — forcer via .value
-    tr.querySelectorAll('.defl-inp').forEach(inp => {
-      const s = inp.dataset.side;
-      const j = parseInt(inp.dataset.idx);
-      const v = s === 'fo' ? tmData.fo[j] : tmData.fa[j];
-      if (v !== null && v !== undefined) inp.value = tmDisplayValue(v);
-    });
-
     tr.querySelectorAll('.defl-inp').forEach(inp => {
       const idx  = parseInt(inp.dataset.idx);
       const side = inp.dataset.side;
@@ -5536,6 +5528,16 @@ function tmBuildTable() {
       });
     });
   }
+
+  // iOS Safari : forcer les valeurs après le rendu complet du DOM
+  requestAnimationFrame(function() {
+    document.querySelectorAll('#tm-tbody .defl-inp').forEach(function(inp) {
+      var s = inp.dataset.side;
+      var j = parseInt(inp.dataset.idx);
+      var v = s === 'fo' ? tmData.fo[j] : tmData.fa[j];
+      if (v !== null && v !== undefined) inp.value = tmDisplayValue(v);
+    });
+  });
 }
 
 function tmUpdateCell(idx, side) {
