@@ -4433,6 +4433,10 @@ function tmSyncWheelButtons() {
 // ── Changement nb rayons depuis le module tension ─────────────────────────────
 function tmOnNbChange() {
   const val = $id('tm-nb-select').value;
+  if (val === ($id('nb-rayons').value || '')) {
+    // Valeur inchangée → event parasite iOS, ignorer
+    return;
+  }
   // Sync vers le calculateur
   $id('nb-rayons').value = val;
   // Déclencher l'event du calculateur pour mettre à jour son état
@@ -7217,6 +7221,8 @@ function efNumpadDel() {
 
 function openDiagModal(e) {
   if (e) e.stopPropagation();
+  // Sauvegarder tmData dans le store avant ouverture — protège contre tout reset parasite iOS
+  if (tmActiveKey && tmHasData()) tmSaveToStore();
   var L  = typeof lang !== 'undefined' ? lang : 'fr';
   var tr = typeof i18n !== 'undefined' && i18n[L] ? i18n[L] : {};
   // Labels (toujours mis à jour pour la langue)
