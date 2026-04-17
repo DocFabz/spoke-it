@@ -5528,16 +5528,6 @@ function tmBuildTable() {
       });
     });
   }
-
-  // iOS Safari : forcer les valeurs après le rendu complet du DOM
-  requestAnimationFrame(function() {
-    document.querySelectorAll('#tm-tbody .defl-inp').forEach(function(inp) {
-      var s = inp.dataset.side;
-      var j = parseInt(inp.dataset.idx);
-      var v = s === 'fo' ? tmData.fo[j] : tmData.fa[j];
-      if (v !== null && v !== undefined) inp.value = tmDisplayValue(v);
-    });
-  });
 }
 
 function tmUpdateCell(idx, side) {
@@ -7260,8 +7250,6 @@ function openDiagModal(e) {
   }
   document.getElementById('diag-overlay').classList.add('show');
   document.getElementById('diag-modal').classList.add('show');
-  // Restaurer depuis le cache dédié si disponible
-  diagRestoreSession();
 }
 
 function closeDiagModal() {
@@ -7587,13 +7575,13 @@ async function diagGeneratePdf() {
     : 'spoke-it-diagnostic.pdf';
   doc.save(filename);
 
-  // Sauvegarder dans le cache diagnostic dédié (indépendant des configs calculateur)
-  diagSaveSession(wheelName);
+  // Fermer la card des déflections — les events parasites iOS n'affecteront pas des inputs cachés
+  var icBody = document.getElementById('tm-input-card-body');
+  var icChev = document.getElementById('tm-input-card-chevron');
+  if (icBody) icBody.style.display = 'none';
+  if (icChev) icChev.style.transform = '';
 
   closeDiagModal();
-
-  // Restaurer les données après fermeture — laisse iOS finir ses events parasites
-  setTimeout(function() { diagRestoreSession(); }, 300);
 
   var btn = document.getElementById('tm-diag-btn');
   if (btn) { btn.classList.add('flash'); setTimeout(function() { btn.classList.remove('flash'); }, 800); }
@@ -7606,59 +7594,11 @@ function diagLimitLines(ta, maxLines) {
   }
 }
 
-// ── Cache diagnostic dédié ────────────────────────────────────────────────────
-var DIAG_LS_KEY = 'spokeit_diag_session';
-
-function diagSaveSession(wheelName) {
-  try {
-    var session = {
-      wheel: wheelName || '',
-      obs:   (document.getElementById('diag-obs') || {}).value || '',
-      tmDataFo: tmData.fo.slice(),
-      tmDataFa: tmData.fa.slice(),
-      tmType:    tmType,
-      tmSpokeKey: tmSpokeKey,
-      wtype:     wtype,
-      ts:        Date.now()
-    };
-    localStorage.setItem(DIAG_LS_KEY, JSON.stringify(session));
-  } catch(e) {}
-}
-
-function diagRestoreSession() {
-  try {
-    var raw = localStorage.getItem(DIAG_LS_KEY);
-    if (!raw) return;
-    var s = JSON.parse(raw);
-    if (s.wtype !== wtype) return;
-    if (s.tmType !== tmType || s.tmSpokeKey !== tmSpokeKey) return;
-    // Restaurer tmData et tmPrev
-    if (s.tmDataFo && s.tmDataFo.length) { tmData.fo = s.tmDataFo.slice(); tmPrevFo = s.tmDataFo.slice(); }
-    if (s.tmDataFa && s.tmDataFa.length) { tmData.fa = s.tmDataFa.slice(); tmPrevFa = s.tmDataFa.slice(); }
-    // Forcer les valeurs directement sur les inputs existants — sans reconstruire le DOM
-    document.querySelectorAll('#tm-tbody .defl-inp').forEach(function(inp) {
-      var side = inp.dataset.side;
-      var idx  = parseInt(inp.dataset.idx);
-      var v = side === 'fo' ? tmData.fo[idx] : tmData.fa[idx];
-      if (v !== null && v !== undefined) {
-        inp.value = tmDisplayValue(v);
-        inp.classList.add('has-val');
-      }
-    });
-    // Restaurer les champs de la modale
-    var wheelInp = document.getElementById('diag-wheel');
-    var obsTA    = document.getElementById('diag-obs');
-    if (wheelInp && s.wheel && wheelInp.value === '') wheelInp.value = s.wheel;
-    if (obsTA    && s.obs)  obsTA.value = s.obs;
-  } catch(e) {}
-}
-
 function diagClearData() {
   var obs   = document.getElementById('diag-obs');
   var wheel = document.getElementById('diag-wheel');
   if (obs)   { obs.value = ''; }
   if (wheel) { wheel.value = ''; wheel.readOnly = false; wheel.style.opacity = ''; wheel.style.cursor = ''; }
-  try { localStorage.removeItem(DIAG_LS_KEY); } catch(e) {}
 }
 
 
