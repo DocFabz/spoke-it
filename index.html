@@ -5400,14 +5400,8 @@ function tmBuildTable() {
   const perSide = Math.floor(nb / 2);
   while (tmData.fo.length < perSide) tmData.fo.push(null);
   while (tmData.fa.length < perSide) tmData.fa.push(null);
-  // Synchroniser tmPrev avec tmData : garantit que le blur handler peut toujours restaurer
-  while (tmPrevFo.length < perSide) tmPrevFo.push(tmData.fo[tmPrevFo.length]);
-  while (tmPrevFa.length < perSide) tmPrevFa.push(tmData.fa[tmPrevFa.length]);
-  // Mettre à jour les valeurs existantes si tmData a changé
-  for (let i = 0; i < perSide; i++) {
-    if (tmData.fo[i] !== null) tmPrevFo[i] = tmData.fo[i];
-    if (tmData.fa[i] !== null) tmPrevFa[i] = tmData.fa[i];
-  }
+  while (tmPrevFo.length < perSide)  tmPrevFo.push(null);
+  while (tmPrevFa.length < perSide)  tmPrevFa.push(null);
 
   const isFront = wtype === 'avant';
 
@@ -5485,13 +5479,11 @@ function tmBuildTable() {
         }
 
         if (parsed === null) {
-          // Vide, invalide ou hors plage → restaurer depuis prev, ou depuis tmData si prev absent
+          // Vide, invalide ou hors plage → restaurer
           const prev = side === 'fo' ? tmPrevFo[idx] : tmPrevFa[idx];
-          const cur  = side === 'fo' ? tmData.fo[idx] : tmData.fa[idx];
-          const restore = (prev !== null && prev !== undefined) ? prev : cur;
-          if (restore !== null && restore !== undefined) {
-            this.value = tmDisplayValue(restore);
-            if (side === 'fo') tmData.fo[idx] = restore; else tmData.fa[idx] = restore;
+          if (prev !== null && prev !== undefined) {
+            this.value = tmDisplayValue(prev);
+            if (side === 'fo') tmData.fo[idx] = prev; else tmData.fa[idx] = prev;
             this.classList.add('has-val');
           } else {
             this.value = '';
@@ -7223,6 +7215,12 @@ function efNumpadDel() {
 
 function openDiagModal(e) {
   if (e) e.stopPropagation();
+  // Snapshot complet des données tension — même traitement qu'une roue sauvegardée
+  tmPrevFo = tmData.fo.slice();
+  tmPrevFa = tmData.fa.slice();
+  if (typeof tmSaveToStore === 'function' && typeof tmActiveKey !== 'undefined' && tmActiveKey) {
+    tmSaveToStore();
+  }
   var L  = typeof lang !== 'undefined' ? lang : 'fr';
   var tr = typeof i18n !== 'undefined' && i18n[L] ? i18n[L] : {};
   // Labels (toujours mis à jour pour la langue)
