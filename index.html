@@ -7590,6 +7590,9 @@ async function diagGeneratePdf() {
 
   closeDiagModal();
 
+  // Restaurer les données après fermeture — laisse iOS finir ses events parasites
+  setTimeout(function() { diagRestoreSession(); }, 300);
+
   var btn = document.getElementById('tm-diag-btn');
   if (btn) { btn.classList.add('flash'); setTimeout(function() { btn.classList.remove('flash'); }, 800); }
 }
