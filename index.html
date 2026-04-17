@@ -7630,20 +7630,21 @@ function diagRestoreSession() {
     var raw = localStorage.getItem(DIAG_LS_KEY);
     if (!raw) return;
     var s = JSON.parse(raw);
-    // Restaurer seulement si même type de roue et même tensiomètre/rayon
     if (s.wtype !== wtype) return;
     if (s.tmType !== tmType || s.tmSpokeKey !== tmSpokeKey) return;
-    // Restaurer les données tension
-    if (s.tmDataFo && s.tmDataFo.length) {
-      tmData.fo = s.tmDataFo.slice();
-      tmPrevFo  = s.tmDataFo.slice();
-    }
-    if (s.tmDataFa && s.tmDataFa.length) {
-      tmData.fa = s.tmDataFa.slice();
-      tmPrevFa  = s.tmDataFa.slice();
-    }
-    tmBuildTable();
-    if (tmHasData()) tmTryRenderRadar();
+    // Restaurer tmData et tmPrev
+    if (s.tmDataFo && s.tmDataFo.length) { tmData.fo = s.tmDataFo.slice(); tmPrevFo = s.tmDataFo.slice(); }
+    if (s.tmDataFa && s.tmDataFa.length) { tmData.fa = s.tmDataFa.slice(); tmPrevFa = s.tmDataFa.slice(); }
+    // Forcer les valeurs directement sur les inputs existants — sans reconstruire le DOM
+    document.querySelectorAll('#tm-tbody .defl-inp').forEach(function(inp) {
+      var side = inp.dataset.side;
+      var idx  = parseInt(inp.dataset.idx);
+      var v = side === 'fo' ? tmData.fo[idx] : tmData.fa[idx];
+      if (v !== null && v !== undefined) {
+        inp.value = tmDisplayValue(v);
+        inp.classList.add('has-val');
+      }
+    });
     // Restaurer les champs de la modale
     var wheelInp = document.getElementById('diag-wheel');
     var obsTA    = document.getElementById('diag-obs');
