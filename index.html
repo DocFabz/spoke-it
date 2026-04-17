@@ -6969,6 +6969,8 @@ function efNumpadDel() {
       var open = body && body.style.display !== 'none';
       if (bar) bar.style.display = open ? 'flex' : 'none';
       if (!open) { var btn=$id('easy-fill-toggle'); if(btn) btn.setAttribute('aria-checked','false'); }
+      // Reconstruire la table à l'ouverture pour garantir l'affichage des valeurs
+      if (open) tmBuildTable();
     }
   };
 })();
