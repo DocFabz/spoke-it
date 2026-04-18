@@ -7975,32 +7975,47 @@ function hrUpdateButtons() {
   }
 }
 
-// ── Hook into updateCalcBtn to keep buttons in sync ─────────────────────────
-(function() {
-  var _origUpdateCalcBtn = typeof updateCalcBtn === 'function' ? updateCalcBtn : null;
-  // We patch after DOM ready – use MutationObserver trick or just call periodically on input events
-  // Instead, we'll add hrUpdateButtons() calls inline in our modal functions and
-  // attach input event listeners after DOM is ready.
-  document.addEventListener('DOMContentLoaded', function() {
-    hrUpdateButtons();
-  });
-  // Also run immediately in case DOM is already ready
-  hrUpdateButtons();
-})();
 
 // Flag pour éviter d'effacer les badges pendant hrApply
 var _hrApplying = false;
 
-// Patch updateCalcBtn to also call hrUpdateButtons and clear badges on user edit
+// Patch updateCalcBtn to also call hrUpdateButtons
 var _hrOrigUpdateCalcBtn = window.updateCalcBtn;
 window.updateCalcBtn = function() {
   if (_hrOrigUpdateCalcBtn) _hrOrigUpdateCalcBtn.apply(this, arguments);
   hrUpdateButtons();
-  if (!_hrApplying) {
-    hrClearLoadedHub();
-    hrClearLoadedRim();
-  }
 };
+
+// Listeners ciblés : effacer badge hub si modif hub, badge rim si modif rim
+(function() {
+  var hubIds = ['nb-rayons','pcd-left','pcd-right','offset-left','offset-right','diam-trou','sp-so-left','sp-so-right'];
+  var rimIds = ['erd-direct','nsd-val','ecrou-type','asym'];
+
+  function onHubEdit() { if (!_hrApplying) hrClearLoadedHub(); }
+  function onRimEdit()  { if (!_hrApplying) hrClearLoadedRim(); }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    hrUpdateButtons();
+    hubIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) { el.addEventListener('input', onHubEdit); el.addEventListener('change', onHubEdit); }
+    });
+    rimIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) { el.addEventListener('input', onRimEdit); el.addEventListener('change', onRimEdit); }
+    });
+    // Boutons hub type (j-bend / straightpull)
+    ['btn-hub-jbend','btn-hub-sp'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('click', function() { if (!_hrApplying) hrClearLoadedHub(); });
+    });
+    // Boutons mode ERD
+    ['btn-erd-direct','btn-erd-nsd'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('click', function() { if (!_hrApplying) hrClearLoadedRim(); });
+    });
+  });
+})();
 
 // ── Current modal type ('hub' or 'rim') ──────────────────────────────────────
 var _hrModalType = 'hub';
@@ -8045,6 +8060,8 @@ function confirmHrSave() {
   else arr.unshift(entry);
   hrPersist(type, arr);
   closeHrSaveModal();
+  if (type === 'hub') hrSetLoadedHub(name);
+  else hrSetLoadedRim(name);
   hrUpdateButtons();
   if (typeof showCacheToast === 'function') showCacheToast();
 }
@@ -8260,14 +8277,6 @@ function hrClearLoadedRim() {
   var badge = document.getElementById('rim-loaded-name');
   if (badge) badge.classList.remove('show');
 }
-
-// Patch markModified to also clear hub/rim badges
-var _hrOrigMarkModified = window.markModified;
-window.markModified = function() {
-  if (_hrOrigMarkModified) _hrOrigMarkModified.apply(this, arguments);
-  hrClearLoadedHub();
-  hrClearLoadedRim();
-};
 </script>
 </body>
 </html>
