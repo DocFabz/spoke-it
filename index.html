@@ -189,6 +189,60 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .erasemgr-item-btn { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
 .erasemgr-item-btn:hover { color:var(--warm) }
 
+/* ── Hub/Rim quick save/load icon buttons ──────────────────────────────────── */
+.card-icon-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text3);
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .2s;
+  flex-shrink: 0;
+  padding: 0;
+}
+.card-icon-btn:hover { border-color: var(--border-s); color: var(--text2) }
+.card-icon-btn.active { border-color: rgba(126,200,227,.5); color: var(--accent) }
+.card-icon-btn.has-data { border-color: rgba(126,200,227,.4); color: var(--accent) }
+.card-icon-btn:disabled { opacity: .3; cursor: default; pointer-events: none }
+
+/* ── Hub/Rim save modal ─────────────────────────────────────────────────────── */
+.hr-save-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
+.hr-save-overlay.show { display:block; opacity:1 }
+.hr-save-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; display:none; flex-direction:column; gap:.85rem; opacity:0; transition:opacity .2s, transform .2s }
+.hr-save-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+.hr-save-header { display:flex; align-items:center; justify-content:space-between }
+.hr-save-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
+.hr-save-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
+.hr-save-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+.hr-save-inp-row { display:flex; gap:.4rem }
+.hr-save-inp { flex:1; font-family:'DM Mono',monospace; font-size:.85rem; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text); padding:.5rem .75rem; outline:none; transition:border-color .2s }
+.hr-save-inp:focus { border-color:rgba(126,200,227,.4) }
+.hr-save-btn { background:transparent; border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:500; padding:.5rem .9rem; cursor:pointer; transition:all .22s; white-space:nowrap }
+.hr-save-btn:hover { border-color:rgba(126,200,227,.5); color:var(--accent2); background:rgba(126,200,227,.05) }
+.hr-save-feedback { font-size:.67rem; color:#f08080; min-height:.85rem }
+
+/* ── Hub/Rim load modal ─────────────────────────────────────────────────────── */
+.hr-load-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
+.hr-load-overlay.show { display:block; opacity:1 }
+.hr-load-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:360px; display:none; flex-direction:column; gap:.75rem; opacity:0; transition:opacity .2s, transform .2s; max-height:80vh }
+.hr-load-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+.hr-load-header { display:flex; align-items:center; justify-content:space-between; flex-shrink:0 }
+.hr-load-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
+.hr-load-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
+.hr-load-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+.hr-load-list { display:flex; flex-direction:column; gap:.35rem; overflow-y:auto; flex:1 }
+.hr-load-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; transition:all .2s }
+.hr-load-item:hover { border-color:var(--border-s); background:rgba(126,200,227,.03) }
+.hr-load-item-name { flex:1; font-family:'DM Mono',monospace; font-size:.78rem; color:var(--accent2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.hr-load-item-del { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; padding:.1rem .25rem; transition:color .2s; flex-shrink:0 }
+.hr-load-item-del:hover { color:var(--warm) }
+.hr-load-empty { font-size:.72rem; color:var(--text3); font-style:italic; text-align:center; padding:.5rem }
+
 /* ── Layout ────────────────────────────────────────────────────────────────── */
 .wrap { max-width:880px; margin:0 auto; padding:0 1.2rem 4rem; display:flex; flex-direction:column; gap:1rem }
 
@@ -820,21 +874,10 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 
 /* ── Loaded config name ────────────────────────────────────────────────────── */
 .cfg-loaded-name {
-  display:none; align-items:center; gap:.35rem;
-  padding:.22rem .65rem;
-  background:rgba(126,200,227,.06); border:1px solid rgba(126,200,227,.22);
-  border-radius:20px;
-  animation:fu .35s cubic-bezier(.22,1,.36,1);
+  display:none; align-items:center; gap:.3rem;
 }
 .cfg-loaded-name.show { display:inline-flex }
-.cfg-loaded-name.flash { animation:badge-flash 1.4s ease forwards }
-@keyframes badge-flash {
-  0%   { border-color:rgba(126,200,227,.9); box-shadow:0 0 0 2px rgba(126,200,227,.25); background:rgba(126,200,227,.18) }
-  70%  { border-color:rgba(126,200,227,.5); box-shadow:0 0 0 1px rgba(126,200,227,.1);  background:rgba(126,200,227,.1) }
-  100% { border-color:rgba(126,200,227,.22); box-shadow:none; background:rgba(126,200,227,.06) }
-}
-.cfg-loaded-icon { width:11px; height:11px; flex-shrink:0; color:var(--accent); opacity:.85 }
-.cfg-loaded-text { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:400; color:var(--accent); letter-spacing:.08em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:220px }
+.cfg-loaded-text { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:400; color:#fff; letter-spacing:.06em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px }
 
 /* ── Conversion table modal ────────────────────────────────────────────────── */
 .tm-conv-overlay  { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
@@ -1164,9 +1207,6 @@ input[type=number] { -moz-appearance:textfield }
       </svg>
       <div class="clabel" data-i18n="wheelType">Type de roue</div>
       <div class="cfg-loaded-name" id="cfg-loaded-name">
-        <svg class="cfg-loaded-icon" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M1.5 4.5 Q1.5 3 3 3 L5 3 L6 4.5 L10.5 4.5 Q12 4.5 12 6 L12 10 Q12 11.5 10.5 11.5 L3 11.5 Q1.5 11.5 1.5 10 Z"/>
-        </svg>
         <span class="cfg-loaded-text" id="cfg-loaded-text"></span>
       </div>
     </div>
@@ -1195,6 +1235,25 @@ input[type=number] { -moz-appearance:textfield }
         <circle cx="20" cy="10" r=".7" fill="currentColor" stroke="none"/>
       </svg>
       <div class="clabel" data-i18n="hub">Moyeu</div>
+      <div class="cfg-loaded-name" id="hub-loaded-name">
+        <span class="cfg-loaded-text" id="hub-loaded-text"></span>
+      </div>
+      <div style="display:flex;gap:.35rem;margin-left:auto">
+        <button class="card-icon-btn" id="hub-load-btn" onclick="openHrLoadModal('hub')" title="Charger un moyeu" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </button>
+        <button class="card-icon-btn" id="hub-save-btn" onclick="openHrSaveModal('hub')" title="Enregistrer ce moyeu" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <div class="prow">
@@ -1290,6 +1349,25 @@ input[type=number] { -moz-appearance:textfield }
         <circle cx="12" cy="12" r="10"/>
       </svg>
       <div class="clabel" data-i18n="rim">Jante</div>
+      <div class="cfg-loaded-name" id="rim-loaded-name">
+        <span class="cfg-loaded-text" id="rim-loaded-text"></span>
+      </div>
+      <div style="display:flex;gap:.35rem;margin-left:auto">
+        <button class="card-icon-btn" id="rim-load-btn" onclick="openHrLoadModal('rim')" title="Charger une jante" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </button>
+        <button class="card-icon-btn" id="rim-save-btn" onclick="openHrSaveModal('rim')" title="Enregistrer cette jante" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <div class="prow">
@@ -1608,9 +1686,6 @@ input[type=number] { -moz-appearance:textfield }
       </svg>
       <div class="clabel" data-i18n="wheelType">Type de roue</div>
       <div class="cfg-loaded-name" id="tm-cfg-loaded-name">
-        <svg class="cfg-loaded-icon" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M1.5 4.5 Q1.5 3 3 3 L5 3 L6 4.5 L10.5 4.5 Q12 4.5 12 6 L12 10 Q12 11.5 10.5 11.5 L3 11.5 Q1.5 11.5 1.5 10 Z"/>
-        </svg>
         <span class="cfg-loaded-text" id="tm-cfg-loaded-text"></span>
       </div>
     </div>
@@ -2007,6 +2082,31 @@ input[type=number] { -moz-appearance:textfield }
 
 <div class="cache-toast" id="cache-toast"></div>
 
+<!-- ── Hub/Rim Save Modal ── -->
+<div class="hr-save-overlay" id="hr-save-overlay" onclick="closeHrSaveModal()"></div>
+<div class="hr-save-modal" id="hr-save-modal" onclick="event.stopPropagation()">
+  <div class="hr-save-header">
+    <div class="hr-save-title" id="hr-save-title">Enregistrer le moyeu</div>
+    <button class="hr-save-close" onclick="closeHrSaveModal()">✕</button>
+  </div>
+  <div class="hr-save-inp-row">
+    <input class="hr-save-inp" id="hr-save-inp" type="text" placeholder="Nom…" maxlength="60" autocomplete="off"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();confirmHrSave()}">
+    <button class="hr-save-btn" onclick="confirmHrSave()">OK</button>
+  </div>
+  <div class="hr-save-feedback" id="hr-save-feedback"></div>
+</div>
+
+<!-- ── Hub/Rim Load Modal ── -->
+<div class="hr-load-overlay" id="hr-load-overlay" onclick="closeHrLoadModal()"></div>
+<div class="hr-load-modal" id="hr-load-modal" onclick="event.stopPropagation()">
+  <div class="hr-load-header">
+    <div class="hr-load-title" id="hr-load-title">Charger un moyeu</div>
+    <button class="hr-load-close" onclick="closeHrLoadModal()">✕</button>
+  </div>
+  <div class="hr-load-list" id="hr-load-list"></div>
+</div>
+
 <!-- ── Erase manager modal ── -->
 <div class="erasemgr-overlay" id="erasemgr-overlay" onclick="closeEraseMgr()"></div>
 <div class="erasemgr-modal" id="erasemgr-modal" onclick="event.stopPropagation()">
@@ -2272,14 +2372,6 @@ function flashWheelCard(configName) {
     _lastLoadTime = Date.now();
   }
   _refreshLoadedBadges();
-  ['cfg-loaded-name', 'tm-cfg-loaded-name'].forEach(id => {
-    const b = $id(id);
-    if (b && b.classList.contains('show') && configName) {
-      b.classList.remove('flash');
-      void b.offsetWidth;
-      b.classList.add('flash');
-    }
-  });
   _flashTimer = setTimeout(() => {
     card.style.borderColor = '';
     card.style.boxShadow   = '';
@@ -3562,7 +3654,9 @@ function exportConfigs() {
     spokeit: true, v: 2,
     configs:       loadConfigs(),
     customCharts:  ccLoadAll(),
-    customTensios: ctLoadAll()
+    customTensios: ctLoadAll(),
+    savedHubs:     hrLoadAll('hub'),
+    savedRims:     hrLoadAll('rim')
   };
   const now = new Date();
   const date = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
@@ -3610,6 +3704,24 @@ function importConfigs(event) {
         persistConfigs(existing);
       }
 
+      if (Array.isArray(data.savedHubs)) {
+        const existing = hrLoadAll('hub');
+        data.savedHubs.forEach(entry => {
+          const idx = existing.findIndex(h => h.name.toLowerCase() === entry.name.toLowerCase());
+          if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
+        });
+        hrPersist('hub', existing);
+      }
+
+      if (Array.isArray(data.savedRims)) {
+        const existing = hrLoadAll('rim');
+        data.savedRims.forEach(entry => {
+          const idx = existing.findIndex(r => r.name.toLowerCase() === entry.name.toLowerCase());
+          if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
+        });
+        hrPersist('rim', existing);
+      }
+
       // ── 2. Tout rafraîchir en une seule passe ──
       ctInjectAll();
       ccInjectAll();
@@ -3619,6 +3731,7 @@ function importConfigs(event) {
       if (typeof ctRenderList === 'function') ctRenderList();
       if (typeof ccRenderExisting === 'function') ccRenderExisting();
       renderConfigsList(); showConfigsPanel();
+      hrUpdateButtons();
 
       fb.style.color = 'var(--success)'; fb.textContent = t('importSuccess');
       setTimeout(() => { fb.textContent = ''; }, 3500);
@@ -7731,6 +7844,423 @@ function tmGeneratePdfFromModal() {
   closePdfOptModal();
   tmExportPdfWithOpts(opts);
 }
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// HUB / RIM QUICK SAVE-LOAD
+// ══════════════════════════════════════════════════════════════════════════════
+
+const LS_HUBS = 'spokeit_saved_hubs';
+const LS_RIMS = 'spokeit_saved_rims';
+
+function hrLoadAll(type) {
+  try { return JSON.parse(localStorage.getItem(type === 'hub' ? LS_HUBS : LS_RIMS)) || []; } catch(e) { return []; }
+}
+function hrPersist(type, arr) {
+  localStorage.setItem(type === 'hub' ? LS_HUBS : LS_RIMS, JSON.stringify(arr));
+}
+
+// ── Read hub data from form ───────────────────────────────────────────────────
+function hrReadHub() {
+  return {
+    hubType:     hubType,
+    nbRayons:    document.getElementById('nb-rayons').value,
+    diamTrou:    document.getElementById('diam-trou').value,
+    pcdLeft:     document.getElementById('pcd-left').value,
+    pcdRight:    document.getElementById('pcd-right').value,
+    offsetLeft:  document.getElementById('offset-left').value,
+    offsetRight: document.getElementById('offset-right').value,
+    soLeft:      document.getElementById('sp-so-left').value,
+    soRight:     document.getElementById('sp-so-right').value,
+  };
+}
+
+// ── Read rim data from form ───────────────────────────────────────────────────
+function hrReadRim() {
+  return {
+    erdMode:      typeof erdMode !== 'undefined' ? erdMode : 'direct',
+    erdDirect:    document.getElementById('erd-direct').value,
+    nsdVal:       document.getElementById('nsd-val').value,
+    ecrouType:    document.getElementById('ecrou-type').value,
+    erdNsdResult: document.getElementById('erd-nsd-result').value,
+    asym:         document.getElementById('asym').value,
+  };
+}
+
+// ── Apply hub data to form ───────────────────────────────────────────────────
+function hrApplyHub(d) {
+  if (!d) return;
+  _hrApplying = true;
+  if (d.hubType) { hubType = d.hubType; hubTypeByWheel[wtype] = d.hubType; setHubType(d.hubType, true); }
+  document.getElementById('nb-rayons').value    = d.nbRayons    || '';
+  document.getElementById('diam-trou').value    = d.diamTrou    || '2.55';
+  document.getElementById('pcd-left').value     = d.pcdLeft     || '';
+  document.getElementById('pcd-right').value    = d.pcdRight    || '';
+  document.getElementById('offset-left').value  = d.offsetLeft  || '';
+  document.getElementById('offset-right').value = d.offsetRight || '';
+  document.getElementById('sp-so-left').value   = d.soLeft      || '';
+  document.getElementById('sp-so-right').value  = d.soRight     || '';
+  onTension();
+  updateAsymField();
+  checkOffsetCoherence();
+  updateCalcBtn();
+  _hrApplying = false;
+}
+
+// ── Apply rim data to form ───────────────────────────────────────────────────
+function hrApplyRim(d) {
+  if (!d) return;
+  _hrApplying = true;
+  var mode = d.erdMode || 'direct';
+  if (typeof setErdMode === 'function') setErdMode(mode);
+  document.getElementById('erd-direct').value    = d.erdDirect    || '';
+  document.getElementById('nsd-val').value       = d.nsdVal       || '';
+  document.getElementById('ecrou-type').value    = d.ecrouType    || '';
+  document.getElementById('erd-nsd-result').value= d.erdNsdResult || '';
+  document.getElementById('asym').value          = d.asym         || '0';
+  if (mode === 'nsd' && typeof calcNsd === 'function') calcNsd();
+  updateCalcBtn();
+  _hrApplying = false;
+}
+
+// ── Check if hub is complete (sans spoke section) ────────────────────────────
+function hrIsHubComplete() {
+  var nbR = parseInt(document.getElementById('nb-rayons').value);
+  var pL  = parseFloat(document.getElementById('pcd-left').value);
+  var pR  = parseFloat(document.getElementById('pcd-right').value);
+  var oL  = parseFloat(document.getElementById('offset-left').value);
+  var oR  = parseFloat(document.getElementById('offset-right').value);
+  var dtOk = hubType === 'straightpull' || !isNaN(parseFloat(document.getElementById('diam-trou').value));
+  var soOk = hubType !== 'straightpull' ||
+             (document.getElementById('sp-so-left').value !== '' && document.getElementById('sp-so-right').value !== '');
+  return !!nbR && !isNaN(pL) && pL > 0 && !isNaN(pR) && pR > 0 &&
+         !isNaN(oL) && !isNaN(oR) && dtOk && soOk;
+}
+
+// ── Check if rim is complete ─────────────────────────────────────────────────
+function hrIsRimComplete() {
+  var erd = typeof getERD === 'function' ? getERD() : NaN;
+  return !isNaN(erd) && erd > 0;
+}
+
+// ── Update button states ─────────────────────────────────────────────────────
+function hrUpdateButtons() {
+  var hubOk  = hrIsHubComplete();
+  var rimOk  = hrIsRimComplete();
+  var hubs   = hrLoadAll('hub');
+  var rims   = hrLoadAll('rim');
+
+  var hubSaveBtn = document.getElementById('hub-save-btn');
+  var hubLoadBtn = document.getElementById('hub-load-btn');
+  var rimSaveBtn = document.getElementById('rim-save-btn');
+  var rimLoadBtn = document.getElementById('rim-load-btn');
+
+  if (hubSaveBtn) {
+    hubSaveBtn.disabled = !hubOk;
+    hubSaveBtn.classList.toggle('active', hubOk);
+  }
+  if (hubLoadBtn) {
+    hubLoadBtn.disabled = hubs.length === 0;
+    hubLoadBtn.classList.toggle('has-data', hubs.length > 0);
+  }
+  if (rimSaveBtn) {
+    rimSaveBtn.disabled = !rimOk;
+    rimSaveBtn.classList.toggle('active', rimOk);
+  }
+  if (rimLoadBtn) {
+    rimLoadBtn.disabled = rims.length === 0;
+    rimLoadBtn.classList.toggle('has-data', rims.length > 0);
+  }
+}
+
+// ── Hook into updateCalcBtn to keep buttons in sync ─────────────────────────
+(function() {
+  var _origUpdateCalcBtn = typeof updateCalcBtn === 'function' ? updateCalcBtn : null;
+  // We patch after DOM ready – use MutationObserver trick or just call periodically on input events
+  // Instead, we'll add hrUpdateButtons() calls inline in our modal functions and
+  // attach input event listeners after DOM is ready.
+  document.addEventListener('DOMContentLoaded', function() {
+    hrUpdateButtons();
+  });
+  // Also run immediately in case DOM is already ready
+  hrUpdateButtons();
+})();
+
+// Flag pour éviter d'effacer les badges pendant hrApply
+var _hrApplying = false;
+
+// Patch updateCalcBtn to also call hrUpdateButtons and clear badges on user edit
+var _hrOrigUpdateCalcBtn = window.updateCalcBtn;
+window.updateCalcBtn = function() {
+  if (_hrOrigUpdateCalcBtn) _hrOrigUpdateCalcBtn.apply(this, arguments);
+  hrUpdateButtons();
+  if (!_hrApplying) {
+    hrClearLoadedHub();
+    hrClearLoadedRim();
+  }
+};
+
+// ── Current modal type ('hub' or 'rim') ──────────────────────────────────────
+var _hrModalType = 'hub';
+
+// ── Open save modal ──────────────────────────────────────────────────────────
+function openHrSaveModal(type) {
+  _hrModalType = type;
+  var titleEl = document.getElementById('hr-save-title');
+  var inp     = document.getElementById('hr-save-inp');
+  var fb      = document.getElementById('hr-save-feedback');
+  var isHub   = type === 'hub';
+  if (titleEl) titleEl.textContent = isHub
+    ? (lang === 'fr' ? 'Enregistrer le moyeu' : 'Save hub')
+    : (lang === 'fr' ? 'Enregistrer la jante' : 'Save rim');
+  if (inp) { inp.value = ''; }
+  if (fb)  { fb.textContent = ''; }
+  document.getElementById('hr-save-overlay').classList.add('show');
+  document.getElementById('hr-save-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  setTimeout(function() { if (inp) inp.focus(); }, 180);
+}
+
+function closeHrSaveModal() {
+  document.getElementById('hr-save-overlay').classList.remove('show');
+  document.getElementById('hr-save-modal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function confirmHrSave() {
+  var fb   = document.getElementById('hr-save-feedback');
+  var name = (document.getElementById('hr-save-inp').value || '').trim();
+  if (!name) {
+    fb.textContent = lang === 'fr' ? 'Veuillez saisir un nom.' : 'Please enter a name.';
+    return;
+  }
+  var type = _hrModalType;
+  var data = type === 'hub' ? hrReadHub() : hrReadRim();
+  var arr  = hrLoadAll(type);
+  var existing = arr.findIndex(function(e) { return e.name.toLowerCase() === name.toLowerCase(); });
+  var entry = { name: name, data: data, ts: Date.now() };
+  if (existing >= 0) arr.splice(existing, 1, entry);
+  else arr.unshift(entry);
+  hrPersist(type, arr);
+  closeHrSaveModal();
+  hrUpdateButtons();
+  if (typeof showCacheToast === 'function') showCacheToast();
+}
+
+// ── Open load modal ──────────────────────────────────────────────────────────
+function openHrLoadModal(type) {
+  _hrModalType = type;
+  var titleEl = document.getElementById('hr-load-title');
+  var isHub   = type === 'hub';
+  if (titleEl) titleEl.textContent = isHub
+    ? (lang === 'fr' ? 'Charger un moyeu' : 'Load hub')
+    : (lang === 'fr' ? 'Charger une jante' : 'Load rim');
+  hrRenderLoadList(type);
+  document.getElementById('hr-load-overlay').classList.add('show');
+  document.getElementById('hr-load-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeHrLoadModal() {
+  document.getElementById('hr-load-overlay').classList.remove('show');
+  document.getElementById('hr-load-modal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function hrRenderLoadList(type) {
+  var list = document.getElementById('hr-load-list');
+  if (!list) return;
+  var arr = hrLoadAll(type);
+  if (arr.length === 0) {
+    list.innerHTML = '<div class="hr-load-empty">' +
+      (lang === 'fr' ? 'Aucun enregistrement.' : 'No saved items.') + '</div>';
+    return;
+  }
+  list.innerHTML = '';
+  arr.forEach(function(entry, idx) {
+    var item = document.createElement('div');
+    item.className = 'hr-load-item';
+
+    var nameEl = document.createElement('div');
+    nameEl.className = 'hr-load-item-name';
+    nameEl.textContent = entry.name;
+
+    var delBtn = document.createElement('button');
+    delBtn.className = 'hr-load-item-del';
+    delBtn.textContent = '×';
+    delBtn.title = lang === 'fr' ? 'Supprimer' : 'Delete';
+    delBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var a = hrLoadAll(type);
+      a.splice(idx, 1);
+      hrPersist(type, a);
+      hrRenderLoadList(type);
+      hrUpdateButtons();
+      if (typeof renderEraseMgr === 'function') {
+        var openKeys = Array.from(document.querySelectorAll('.erasemgr-acc-body.open')).map(function(el) { return el.dataset.key; });
+        renderEraseMgr(openKeys);
+      }
+    });
+
+    item.appendChild(nameEl);
+    item.appendChild(delBtn);
+    item.addEventListener('click', function() {
+      if (type === 'hub') { hrApplyHub(entry.data); hrSetLoadedHub(entry.name); }
+      else { hrApplyRim(entry.data); hrSetLoadedRim(entry.name); }
+      closeHrLoadModal();
+    });
+
+    list.appendChild(item);
+  });
+}
+
+// ── Keyboard close ───────────────────────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    if (document.getElementById('hr-save-modal').classList.contains('show')) { e.preventDefault(); closeHrSaveModal(); }
+    if (document.getElementById('hr-load-modal').classList.contains('show')) { e.preventDefault(); closeHrLoadModal(); }
+  }
+});
+
+// ── Hook into renderEraseMgr to include hubs and rims ────────────────────────
+var _hrOrigRenderEraseMgr = window.renderEraseMgr;
+window.renderEraseMgr = function(openKeys) {
+  if (_hrOrigRenderEraseMgr) _hrOrigRenderEraseMgr.apply(this, arguments);
+
+  // Append hub and rim sections to the erasemgr body
+  var body = document.getElementById('erasemgr-body');
+  if (!body) return;
+  var acc = body.querySelector('.erasemgr-acc');
+  if (!acc) return;
+
+  // Remove old hub/rim sections if re-rendering
+  ['erasemgr-hub-section', 'erasemgr-rim-section'].forEach(function(id) {
+    var old = document.getElementById(id);
+    if (old) old.remove();
+  });
+
+  function makeEraseMgrItem(name, onDel) {
+    var div = document.createElement('div');
+    div.className = 'erasemgr-item';
+    var info = document.createElement('div');
+    info.className = 'erasemgr-item-info';
+    var nameEl = document.createElement('div');
+    nameEl.className = 'erasemgr-item-name';
+    nameEl.textContent = name;
+    info.appendChild(nameEl);
+    var btn = document.createElement('button');
+    btn.className = 'erasemgr-item-btn';
+    btn.textContent = typeof t === 'function' ? t('eraseMgrDel') : '×';
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var ok = Array.from(document.querySelectorAll('.erasemgr-acc-body.open')).map(function(el) { return el.dataset.key; });
+      onDel();
+      window.renderEraseMgr(ok);
+    });
+    div.appendChild(info);
+    div.appendChild(btn);
+    return div;
+  }
+
+  function makeAccSection(labelKey, labelFallback, items, openKeys, sectionId) {
+    var wrap = document.createElement('div');
+    wrap.id = sectionId;
+    var empty = items.length === 0;
+    var head  = document.createElement('div');
+    head.className = 'erasemgr-acc-head' + (empty ? ' disabled' : '');
+    var label = document.createElement('span');
+    label.className = 'erasemgr-acc-label';
+    label.textContent = (labelKey.startsWith('__')) ? labelFallback : (typeof t === 'function' ? (t(labelKey) || labelFallback) : labelFallback);
+    var count = document.createElement('span');
+    count.className = 'erasemgr-acc-count';
+    count.textContent = items.length;
+    var chev = document.createElement('span');
+    chev.className = 'erasemgr-acc-chevron';
+    chev.textContent = '›';
+    head.appendChild(label); head.appendChild(count); head.appendChild(chev);
+    wrap.appendChild(head);
+    var bodyEl = document.createElement('div');
+    bodyEl.className = 'erasemgr-acc-body';
+    bodyEl.dataset.key = labelKey;
+    if (openKeys && openKeys.includes(labelKey)) {
+      bodyEl.classList.add('open');
+      chev.style.transform = 'rotate(90deg)';
+    }
+    items.forEach(function(el) { bodyEl.appendChild(el); });
+    wrap.appendChild(bodyEl);
+    if (!empty) {
+      head.addEventListener('click', function() {
+        var open = bodyEl.classList.toggle('open');
+        chev.style.transform = open ? 'rotate(90deg)' : '';
+      });
+    }
+    return wrap;
+  }
+
+  var hubs = hrLoadAll('hub');
+  var hubItems = hubs.map(function(entry, idx) {
+    return makeEraseMgrItem(entry.name, function() {
+      var a = hrLoadAll('hub');
+      a.splice(idx, 1);
+      hrPersist('hub', a);
+      hrUpdateButtons();
+    });
+  });
+  acc.appendChild(makeAccSection('__hubs__', lang === 'fr' ? 'Moyeux' : 'Hubs', hubItems, openKeys, 'erasemgr-hub-section'));
+
+  var rims = hrLoadAll('rim');
+  var rimItems = rims.map(function(entry, idx) {
+    return makeEraseMgrItem(entry.name, function() {
+      var a = hrLoadAll('rim');
+      a.splice(idx, 1);
+      hrPersist('rim', a);
+      hrUpdateButtons();
+    });
+  });
+  acc.appendChild(makeAccSection('__rims__', lang === 'fr' ? 'Jantes' : 'Rims', rimItems, openKeys, 'erasemgr-rim-section'));
+};
+
+// ── Hub/Rim loaded name badges ───────────────────────────────────────────────
+var _loadedHubName = null;
+var _loadedRimName = null;
+
+function _setHrBadge(badgeId, textId, name) {
+  var badge = document.getElementById(badgeId);
+  var text  = document.getElementById(textId);
+  if (!badge || !text) return;
+  if (!name) { badge.classList.remove('show'); return; }
+  text.textContent = name;
+  badge.classList.add('show');
+}
+
+function hrSetLoadedHub(name) {
+  _loadedHubName = name || null;
+  _setHrBadge('hub-loaded-name', 'hub-loaded-text', _loadedHubName);
+}
+function hrClearLoadedHub() {
+  _loadedHubName = null;
+  var badge = document.getElementById('hub-loaded-name');
+  if (badge) badge.classList.remove('show');
+}
+
+function hrSetLoadedRim(name) {
+  _loadedRimName = name || null;
+  _setHrBadge('rim-loaded-name', 'rim-loaded-text', _loadedRimName);
+}
+function hrClearLoadedRim() {
+  _loadedRimName = null;
+  var badge = document.getElementById('rim-loaded-name');
+  if (badge) badge.classList.remove('show');
+}
+
+// Patch markModified to also clear hub/rim badges
+var _hrOrigMarkModified = window.markModified;
+window.markModified = function() {
+  if (_hrOrigMarkModified) _hrOrigMarkModified.apply(this, arguments);
+  hrClearLoadedHub();
+  hrClearLoadedRim();
+};
 </script>
 </body>
 </html>
