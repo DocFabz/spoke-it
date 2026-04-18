@@ -7864,6 +7864,7 @@ function hrPersist(type, arr) {
 // ── Read hub data from form ───────────────────────────────────────────────────
 function hrReadHub() {
   return {
+    wtype:       wtype,
     hubType:     hubType,
     nbRayons:    document.getElementById('nb-rayons').value,
     diamTrou:    document.getElementById('diam-trou').value,
@@ -7948,7 +7949,7 @@ function hrIsRimComplete() {
 function hrUpdateButtons() {
   var hubOk  = hrIsHubComplete();
   var rimOk  = hrIsRimComplete();
-  var hubs   = hrLoadAll('hub');
+  var hubs   = hrLoadAll('hub').filter(function(e) { return (e.data && e.data.wtype ? e.data.wtype : 'avant') === wtype; });
   var rims   = hrLoadAll('rim');
 
   var hubSaveBtn = document.getElementById('hub-save-btn');
@@ -8072,6 +8073,12 @@ function hrRenderLoadList(type) {
   var list = document.getElementById('hr-load-list');
   if (!list) return;
   var arr = hrLoadAll(type);
+
+  // Pour les hubs, filtrer par roue courante
+  if (type === 'hub') {
+    arr = arr.filter(function(e) { return (e.data && e.data.wtype ? e.data.wtype : 'avant') === wtype; });
+  }
+
   if (arr.length === 0) {
     list.innerHTML = '<div class="hr-load-empty">' +
       (lang === 'fr' ? 'Aucun enregistrement.' : 'No saved items.') + '</div>';
