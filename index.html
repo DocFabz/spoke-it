@@ -3746,6 +3746,9 @@ $id('nb-rayons').addEventListener('change', function() {
   // Sync le sélecteur tension ; si c'est lui qui a déclenché l'event, les valeurs sont déjà identiques
   if (sel && sel.value !== this.value) {
     sel.value = this.value;
+    tmResetData();
+    tmBuildTable();
+    tmHideResult();
     diagClearData();
   }
 });
