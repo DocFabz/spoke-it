@@ -7241,17 +7241,10 @@ function openDiagModal(e) {
   if (obsTA) obsTA.placeholder = tr.diagObsPlaceholder || (L === 'fr' ? 'Observations du wheelbuilder…' : 'Wheelbuilder observations…');
   // Restaurer depuis le store de la roue courante
   if (typeof diagRestoreWheel === 'function') diagRestoreWheel(wtype);
-  // Champ Roue : si toujours vide après restauration, pré-remplir depuis config chargée
+  // Placeholder du champ Roue
   var wheelInp = document.getElementById('diag-wheel');
-  if (wheelInp && wheelInp.value === '') {
-    var loaded = (typeof _loadedConfigName !== 'undefined' && typeof wtype !== 'undefined')
-      ? (_loadedConfigName[wtype] || '') : '';
-    wheelInp.value       = loaded;
-    wheelInp.readOnly    = !!loaded;
-    wheelInp.style.opacity = loaded ? '.65' : '';
-    wheelInp.style.cursor  = loaded ? 'default' : '';
-    wheelInp.placeholder   = loaded ? '' : (tr.diagWheelPlaceholder || (L === 'fr' ? 'Nom de la roue…' : 'Wheel name…'));
-    if (typeof diagSaveWheel === 'function') diagSaveWheel(wtype);
+  if (wheelInp) {
+    wheelInp.placeholder = tr.diagWheelPlaceholder || (L === 'fr' ? 'Nom de la roue…' : 'Wheel name…');
   }
   document.getElementById('diag-overlay').classList.add('show');
   document.getElementById('diag-modal').classList.add('show');
@@ -7591,14 +7584,6 @@ function diagClearField(id) {
   var el = document.getElementById(id);
   if (!el) return;
   el.value = '';
-  if (id === 'diag-wheel') {
-    el.readOnly = false;
-    el.style.opacity = '';
-    el.style.cursor  = '';
-    var L  = typeof lang !== 'undefined' ? lang : 'fr';
-    var tr = typeof i18n !== 'undefined' && i18n[L] ? i18n[L] : {};
-    el.placeholder = tr.diagWheelPlaceholder || (L === 'fr' ? 'Nom de la roue…' : 'Wheel name…');
-  }
   el.focus();
   var wh = typeof wtype !== 'undefined' ? wtype : 'avant';
   diagSaveWheel(wh);
@@ -7615,7 +7600,7 @@ function diagClearData() {
   var obs   = document.getElementById('diag-obs');
   var wheel = document.getElementById('diag-wheel');
   if (obs)   { obs.value = ''; }
-  if (wheel) { wheel.value = ''; wheel.readOnly = false; wheel.style.opacity = ''; wheel.style.cursor = ''; }
+  if (wheel) { wheel.value = ''; }
   var wh = typeof wtype !== 'undefined' ? wtype : 'avant';
   diagStore[wh] = { wheel: '', obs: '' };
 }
@@ -7632,14 +7617,13 @@ function diagSaveWheel(wh) {
   };
 }
 
-
 function diagRestoreWheel(wh) {
   var s = diagStore[wh];
   if (!s) return;
   var obs   = document.getElementById('diag-obs');
   var wheel = document.getElementById('diag-wheel');
   if (obs)   obs.value   = s.obs;
-  if (wheel) wheel.value = s.wheel;
+  if (wheel) wheel.value = s.wheel || (_loadedConfigName && _loadedConfigName[wh]) || '';
 }
 
 
