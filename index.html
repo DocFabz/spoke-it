@@ -7201,14 +7201,14 @@ function efNumpadDel() {
     <div class="diag-field">
       <div class="diag-field-label" id="diag-wheel-label">Roue</div>
       <div class="diag-inp-wrap">
-        <input class="diag-inp" type="text" id="diag-wheel" autocomplete="off" oninput="diagStoreUpdate()">
+        <input class="diag-inp" type="text" id="diag-wheel" autocomplete="off" oninput="diagSaveWheel(wtype)">
         <button class="diag-clear-btn" onclick="diagClearField('diag-wheel')" title="Effacer">✕</button>
       </div>
     </div>
     <div class="diag-field">
       <div class="diag-field-label" id="diag-obs-label">Observations</div>
       <div class="diag-inp-wrap" style="align-items:flex-start">
-        <textarea class="diag-textarea" id="diag-obs" rows="4" maxlength="600" oninput="diagLimitLines(this,4);diagStoreUpdate()"></textarea>
+        <textarea class="diag-textarea" id="diag-obs" rows="4" maxlength="600" oninput="diagLimitLines(this,4);diagSaveWheel(wtype)"></textarea>
         <button class="diag-clear-btn" onclick="diagClearField('diag-obs')" title="Effacer" style="margin-top:.3rem">✕</button>
       </div>
     </div>
@@ -7598,7 +7598,8 @@ function diagClearField(id) {
     el.placeholder = tr.diagWheelPlaceholder || (L === 'fr' ? 'Nom de la roue…' : 'Wheel name…');
   }
   el.focus();
-  if (typeof diagStoreUpdate === 'function') diagStoreUpdate();
+  var wh = typeof wtype !== 'undefined' ? wtype : 'avant';
+  diagSaveWheel(wh);
 }
 
 function diagLimitLines(ta, maxLines) {
@@ -7613,7 +7614,8 @@ function diagClearData() {
   var wheel = document.getElementById('diag-wheel');
   if (obs)   { obs.value = ''; }
   if (wheel) { wheel.value = ''; wheel.readOnly = false; wheel.style.opacity = ''; wheel.style.cursor = ''; }
-  diagStore = { avant: { wheel:'', obs:'' }, arriere: { wheel:'', obs:'' } };
+  var wh = typeof wtype !== 'undefined' ? wtype : 'avant';
+  diagStore[wh] = { wheel: '', obs: '' };
 }
 
 // ── Store diagnostic par roue ─────────────────────────────────────────────────
@@ -7628,14 +7630,6 @@ function diagSaveWheel(wh) {
   };
 }
 
-function diagStoreUpdate() {
-  var wh    = typeof wtype !== 'undefined' ? wtype : 'avant';
-  var obs   = document.getElementById('diag-obs');
-  var wheel = document.getElementById('diag-wheel');
-  if (!diagStore[wh]) diagStore[wh] = { wheel:'', obs:'' };
-  if (obs)   diagStore[wh].obs   = obs.value;
-  if (wheel) diagStore[wh].wheel = wheel.value;
-}
 
 function diagRestoreWheel(wh) {
   var s = diagStore[wh];
