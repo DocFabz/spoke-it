@@ -2699,7 +2699,7 @@ function clearFormSilent() {
   Object.keys(tmStore).forEach(k => delete tmStore[k]);
   tmClearTensio();
   $id('tm-nb-select').value = '';
-  if (typeof diagClearData === 'function') diagClearData();
+  diagClearData();
 }
 
 function clearForm() {
@@ -2726,7 +2726,7 @@ function switchTo(wh) {
 
 function setWheel(wh) {
   const isNew = wh !== wtype;
-  if (isNew && typeof diagSaveWheel === 'function') diagSaveWheel(wtype);
+  if (isNew) diagSaveWheel(wtype);
   switchTo(wh);
   renderConfigsList();
   closeConfigsCardIfOpen();
@@ -3512,7 +3512,7 @@ function loadConfig(idx) {
   $id('btn-arriere').classList.toggle('active', wh==='arriere'); $id('btn-arriere').classList.toggle('w', wh==='arriere');
   applyState(cfg.state);
   saved[wh] = JSON.parse(JSON.stringify(cfg.state));
-  if (typeof diagClearData === 'function') diagClearData();
+  diagClearData();
   ['configs-body','save-card-body','arb-card-body','sum-card-body'].forEach(id => { $id(id).style.display = 'none'; });
   ['configs-chevron','save-card-chevron','arb-card-chevron','sum-card-chevron'].forEach(id => { $id(id).style.transform = ''; });
   resetScrollFlags();
@@ -3744,10 +3744,10 @@ document.querySelectorAll('#tension-module input, #tension-module select').forEa
 // ── Sync nb rayons calc → module tension ──────────────────────────────────────
 $id('nb-rayons').addEventListener('change', function() {
   const sel = $id('tm-nb-select');
-  // Si c'est tmOnNbChange qui a déclenché cet event, il gère diagClearData lui-même
+  // Sync le sélecteur tension ; si c'est lui qui a déclenché l'event, les valeurs sont déjà identiques
   if (sel && sel.value !== this.value) {
     sel.value = this.value;
-    if (typeof diagClearData === 'function') diagClearData();
+    diagClearData();
   }
 });
 
@@ -4450,19 +4450,19 @@ function tmOnNbChange() {
   tmResetData();
   tmBuildTable();
   tmHideResult();
-  if (typeof diagClearData === 'function') diagClearData();
+  diagClearData();
 }
 
 // ── Changement type de roue depuis le module tension ─────────────────────────
 function tmSetWheel(type) {
   if (wtype === type) return;
-  if (typeof diagSaveWheel === 'function') diagSaveWheel(wtype);
+  diagSaveWheel(wtype);
   setWheel(type);
   tmSyncWheelButtons();
   tmUpdateBadges();
   tmBuildTable();
   tmShowDiagramIfData();
-  if (typeof diagRestoreWheel === 'function') diagRestoreWheel(type);
+  diagRestoreWheel(type);
 }
 
 // ── Shared: save snapshot, switch key, restore or reset, refresh UI ─────
@@ -7245,7 +7245,7 @@ function openDiagModal(e) {
   var obsTA = document.getElementById('diag-obs');
   if (obsTA) obsTA.placeholder = tr.diagObsPlaceholder || (L === 'fr' ? 'Observations du wheelbuilder…' : 'Wheelbuilder observations…');
   // Restaurer depuis le store de la roue courante
-  if (typeof diagRestoreWheel === 'function') diagRestoreWheel(wtype);
+  diagRestoreWheel(wtype);
   // Placeholder du champ Roue
   var wheelInp = document.getElementById('diag-wheel');
   if (wheelInp) {
@@ -7256,7 +7256,7 @@ function openDiagModal(e) {
 }
 
 function closeDiagModal() {
-  if (typeof diagSaveWheel === 'function') diagSaveWheel(wtype);
+  diagSaveWheel(wtype);
   document.getElementById('diag-overlay').classList.remove('show');
   document.getElementById('diag-modal').classList.remove('show');
 }
