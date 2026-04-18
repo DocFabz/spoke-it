@@ -2726,6 +2726,7 @@ function switchTo(wh) {
 
 function setWheel(wh) {
   const isNew = wh !== wtype;
+  if (isNew && typeof diagSaveWheel === 'function') diagSaveWheel(wtype);
   switchTo(wh);
   renderConfigsList();
   closeConfigsCardIfOpen();
@@ -7250,6 +7251,7 @@ function openDiagModal(e) {
     wheelInp.style.opacity = loaded ? '.65' : '';
     wheelInp.style.cursor  = loaded ? 'default' : '';
     wheelInp.placeholder   = loaded ? '' : (tr.diagWheelPlaceholder || (L === 'fr' ? 'Nom de la roue…' : 'Wheel name…'));
+    if (typeof diagSaveWheel === 'function') diagSaveWheel(wtype);
   }
   document.getElementById('diag-overlay').classList.add('show');
   document.getElementById('diag-modal').classList.add('show');
