@@ -2398,6 +2398,8 @@ function _refreshLoadedBadges() {
   // Verrouiller/déverrouiller les boutons hub type
   $id('btn-hub-jbend').classList.toggle('locked', !!name && hubType !== 'jbend');
   $id('btn-hub-sp').classList.toggle('locked', !!name && hubType !== 'straightpull');
+  // Badges hub et rim (per-wheel)
+  if (typeof hrRefreshBadges === 'function') hrRefreshBadges();
 }
 
 function _setBadge(badgeId, textId, name) {
@@ -8246,8 +8248,8 @@ window.renderEraseMgr = function(openKeys) {
 };
 
 // ── Hub/Rim loaded name badges ───────────────────────────────────────────────
-var _loadedHubName = null;
-var _loadedRimName = null;
+var _loadedHubName = { avant: null, arriere: null };
+var _loadedRimName = { avant: null, arriere: null };
 
 function _setHrBadge(badgeId, textId, name) {
   var badge = document.getElementById(badgeId);
@@ -8258,24 +8260,27 @@ function _setHrBadge(badgeId, textId, name) {
   badge.classList.add('show');
 }
 
+function hrRefreshBadges() {
+  _setHrBadge('hub-loaded-name', 'hub-loaded-text', _loadedHubName[wtype]);
+  _setHrBadge('rim-loaded-name', 'rim-loaded-text', _loadedRimName[wtype]);
+}
+
 function hrSetLoadedHub(name) {
-  _loadedHubName = name || null;
-  _setHrBadge('hub-loaded-name', 'hub-loaded-text', _loadedHubName);
+  _loadedHubName[wtype] = name || null;
+  hrRefreshBadges();
 }
 function hrClearLoadedHub() {
-  _loadedHubName = null;
-  var badge = document.getElementById('hub-loaded-name');
-  if (badge) badge.classList.remove('show');
+  _loadedHubName[wtype] = null;
+  hrRefreshBadges();
 }
 
 function hrSetLoadedRim(name) {
-  _loadedRimName = name || null;
-  _setHrBadge('rim-loaded-name', 'rim-loaded-text', _loadedRimName);
+  _loadedRimName[wtype] = name || null;
+  hrRefreshBadges();
 }
 function hrClearLoadedRim() {
-  _loadedRimName = null;
-  var badge = document.getElementById('rim-loaded-name');
-  if (badge) badge.classList.remove('show');
+  _loadedRimName[wtype] = null;
+  hrRefreshBadges();
 }
 </script>
 </body>
