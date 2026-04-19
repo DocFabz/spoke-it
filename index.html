@@ -496,6 +496,11 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .sum-val-btn { font-family:'DM Mono',monospace; font-size:.8rem; background:none; border:none; padding:0; cursor:pointer; display:inline-flex; align-items:baseline; gap:.35rem; transition:opacity .15s }
 .sum-val-btn:hover { opacity:.75 }
 .sum-val-btn svg { width:10px; height:10px; stroke:currentColor; stroke-width:1.6; fill:none; flex-shrink:0; align-self:center; opacity:.55 }
+@keyframes sum-blink {
+  0%, 100% { opacity:1 }
+  50%       { opacity:.2 }
+}
+.sum-val-btn.blink { animation:sum-blink 2s ease-in-out infinite }
 /* ── Modale saisie rayon ── */
 .slen-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(4px); z-index:9984; opacity:0; transition:opacity .2s; display:none }
 .slen-overlay.show { display:block; opacity:1 }
@@ -559,6 +564,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   flex-shrink: 0;
 }
 .tm-screenshot-btn:hover { border-color: var(--accent); color: var(--accent) }
+.tm-screenshot-btn:active { opacity:.75 }
 .tm-screenshot-btn.flash { border-color: var(--success); color: var(--success) }
 
 .tm-play-mode-btn {
@@ -3350,7 +3356,8 @@ function renderSummary() {
   function itemClickable(lbl, id, val, colorVar, side) {
     const pencil = `<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
     const display = (val !== undefined && val !== null) ? val + ' mm' : '— mm';
-    return `<div class="sum-row"><span class="sum-lbl">${lbl}</span><button class="sum-val-btn" style="color:${colorVar}" onclick="slenOpen('${side}')">${display} ${pencil}</button></div>`;
+    const blinkCls = (val === undefined || val === null) ? ' blink' : '';
+    return `<div class="sum-row"><span class="sum-lbl">${lbl}</span><button class="sum-val-btn${blinkCls}" style="color:${colorVar}" onclick="slenOpen('${side}')">${display} ${pencil}</button></div>`;
   }
   // Orange toujours au-dessus, bleu en dessous
   // fo=orange : gauche (avant) / droite (arrière)
