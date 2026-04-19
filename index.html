@@ -550,10 +550,10 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 
 /* ── Screenshot button ─────────────────────────────────────────────────────── */
 .tm-screenshot-btn {
-  background: transparent;
-  border: 1px solid var(--border-s);
+  background: rgba(126,200,227,.12);
+  border: 1px solid rgba(126,200,227,.45);
   border-radius: var(--rs);
-  color: var(--text3);
+  color: var(--accent);
   cursor: pointer;
   padding: .25rem .45rem;
   line-height: 1;
@@ -563,7 +563,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   transition: all .2s;
   flex-shrink: 0;
 }
-.tm-screenshot-btn:hover { border-color: var(--accent); color: var(--accent) }
 .tm-screenshot-btn:active { opacity:.75 }
 .tm-screenshot-btn.flash { border-color: var(--success); color: var(--success) }
 
