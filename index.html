@@ -1982,7 +1982,10 @@ input[type=number] { -moz-appearance:textfield }
       <button class="tm-conv-close" onclick="tmCloseConvTable()">✕</button>
     </div>
     <div class="tm-conv-spoke" id="tm-conv-spoke-label"></div>
-    <div class="tm-conv-scroll">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:.6rem">
+      <button id="tm-conv-view-btn" onclick="tmConvToggleView()" style="background:rgba(126,200,227,.12);border:1px solid rgba(126,200,227,.45);border-radius:20px;color:var(--accent);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;padding:.22rem .75rem;cursor:pointer;transition:all .2s"></button>
+    </div>
+    <div class="tm-conv-scroll" id="tm-conv-table-wrap">
       <table class="tm-conv-table">
         <thead>
           <tr>
@@ -1992,6 +1995,9 @@ input[type=number] { -moz-appearance:textfield }
         </thead>
         <tbody id="tm-conv-tbody"></tbody>
       </table>
+    </div>
+    <div id="tm-conv-curve-wrap" style="display:none;padding:.4rem 0">
+      <canvas id="tm-conv-canvas" style="display:block;width:100%;border-radius:var(--rs)"></canvas>
     </div>
   </div>
 
@@ -2184,6 +2190,8 @@ const i18n = {
     tmConvBtn:'Charte de conversion',
     tmConvTitle:'Charte de conversion',
     tmConvReading:'Lecture',
+    tmConvCurve:'Courbe',
+    tmConvTable:'Tableau',
     tmConvTensio:'Tensiomètre',
     tmWFTipNew:'Dernières mises à jour des Tension Charts par WF',
     tmWFTipOld:'Version précédente des Tension Charts par WF',
@@ -2298,6 +2306,8 @@ const i18n = {
     tmConvBtn:'Conversion chart',
     tmConvTitle:'Conversion chart',
     tmConvReading:'Reading',
+    tmConvCurve:'Curve',
+    tmConvTable:'Table',
     tmConvTensio:'Tensiometer',
     tmWFTipNew:'Latest Tension Charts update by WF',
     tmWFTipOld:'Previous version of WF Tension Charts',
@@ -4831,10 +4841,184 @@ function tmOpenConvTable() {
     tbody.appendChild(tr);
   });
 
+  // Stocker les points pour la courbe + reset état
+  _tmConvPts = pts;
+  _tmConvShowCurve = false;
+  const viewBtn = document.getElementById('tm-conv-view-btn');
+  if (viewBtn) {
+    viewBtn.textContent = t('tmConvCurve');
+    viewBtn.style.borderColor = 'rgba(126,200,227,.45)';
+    viewBtn.style.color = 'var(--accent)';
+  }
+  const tableWrap = document.getElementById('tm-conv-table-wrap');
+  const curveWrap = document.getElementById('tm-conv-curve-wrap');
+  if (tableWrap) tableWrap.style.display = '';
+  if (curveWrap) curveWrap.style.display = 'none';
+
   // Afficher
   $id('tm-conv-overlay').classList.add('show');
   $id('tm-conv-modal').classList.add('show');
   document.body.style.overflow = 'hidden';
+}
+
+// ── Toggle table / courbe ────────────────────────────────────────────────────
+let _tmConvShowCurve = false;
+let _tmConvPts = [];
+
+function tmConvToggleView() {
+  _tmConvShowCurve = !_tmConvShowCurve;
+  const btn       = document.getElementById('tm-conv-view-btn');
+  const tableWrap = document.getElementById('tm-conv-table-wrap');
+  const curveWrap = document.getElementById('tm-conv-curve-wrap');
+  if (_tmConvShowCurve) {
+    tableWrap.style.display = 'none';
+    curveWrap.style.display = 'block';
+    btn.textContent         = t('tmConvTable');
+    btn.style.borderColor   = 'rgba(126,200,227,.45)';
+    btn.style.color         = 'var(--accent)';
+    tmDrawConvCurve(_tmConvPts);
+  } else {
+    tableWrap.style.display = '';
+    curveWrap.style.display = 'none';
+    btn.textContent         = t('tmConvCurve');
+    btn.style.borderColor   = 'rgba(126,200,227,.45)';
+    btn.style.color         = 'var(--accent)';
+  }
+}
+
+function tmDrawConvCurve(pts) {
+  const canvas = document.getElementById('tm-conv-canvas');
+  if (!canvas || !pts || pts.length < 2) return;
+  const dpr  = window.devicePixelRatio || 1;
+  const wrap = document.getElementById('tm-conv-curve-wrap');
+  const W    = wrap.getBoundingClientRect().width || 300;
+  const H    = Math.round(W * 0.65);
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width  = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { t:24, r:24, b:48, l:56 };
+  const gW  = W - pad.l - pad.r;
+  const gH  = H - pad.t - pad.b;
+
+  // Données — pts = [[reading, kgf], ...]
+  const readings = pts.map(p => p[0]);
+  const kgfs     = pts.map(p => p[1] !== null ? p[1] : 0);
+  const minR = Math.min(...readings), maxR = Math.max(...readings);
+  const maxK = Math.ceil(Math.max(...kgfs) / 20) * 20 || 160;
+
+  const xPos = r => pad.l + (r - minR) / (maxR - minR) * gW;
+  const yPos = k => pad.t + gH - k / maxK * gH;
+  const fontSize = Math.round(W * 0.031);
+
+  // Grille horizontale + labels Y
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth   = 1;
+  ctx.font        = fontSize + "px 'DM Mono',monospace";
+  ctx.fillStyle   = 'rgba(150,170,190,0.55)';
+  ctx.textAlign   = 'right';
+  ctx.textBaseline = 'middle';
+  for (let k = 0; k <= maxK; k += maxK / 4) {
+    ctx.beginPath();
+    ctx.moveTo(pad.l, yPos(k));
+    ctx.lineTo(pad.l + gW, yPos(k));
+    ctx.stroke();
+    ctx.fillText(k, pad.l - 10, yPos(k));
+  }
+
+  // Label Y vertical
+  ctx.save();
+  ctx.translate(12, pad.t + gH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle    = 'rgba(150,170,190,0.5)';
+  ctx.font         = fontSize + "px 'DM Sans',sans-serif";
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('kgf', 0, 0);
+  ctx.restore();
+
+  // Reset transform après rotate
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // Ticks X — espacement minimum anti-collision
+  ctx.font         = fontSize + "px 'DM Mono',monospace";
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'top';
+  const minSpacing = fontSize * 3.5;
+  let lastTickX    = -Infinity;
+  for (let ti = 0; ti < readings.length; ti++) {
+    const rv = readings[ti];
+    const tx = xPos(rv);
+    const isFirst = ti === 0;
+    const isLast  = ti === readings.length - 1;
+    if (!isFirst && !isLast && tx - lastTickX < minSpacing) continue;
+    if (isLast && tx - lastTickX < minSpacing) {
+      ctx.clearRect(lastTickX - minSpacing / 2, pad.t + gH + 6, minSpacing, fontSize + 4);
+    }
+    ctx.fillStyle = 'rgba(150,170,190,0.55)';
+    ctx.fillText(rv, tx, pad.t + gH + 10);
+    lastTickX = tx;
+  }
+
+  // Label X
+  ctx.fillStyle    = 'rgba(150,170,190,0.5)';
+  ctx.font         = fontSize + "px 'DM Sans',sans-serif";
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(t('tmConvReading'), pad.l + gW / 2, H - 2);
+
+  // Points valides uniquement
+  const valid = pts.filter(p => p[1] !== null);
+  if (valid.length < 2) return;
+
+  // Gradient sous la courbe
+  const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + gH);
+  grad.addColorStop(0, 'rgba(126,200,227,0.18)');
+  grad.addColorStop(1, 'rgba(126,200,227,0.01)');
+
+  // Catmull-Rom → Bézier
+  function catmullPath() {
+    ctx.moveTo(xPos(valid[0][0]), yPos(valid[0][1]));
+    for (let i = 0; i < valid.length - 1; i++) {
+      const p0 = valid[Math.max(i - 1, 0)];
+      const p1 = valid[i];
+      const p2 = valid[i + 1];
+      const p3 = valid[Math.min(i + 2, valid.length - 1)];
+      const cp1x = xPos(p1[0]) + (xPos(p2[0]) - xPos(p0[0])) / 6;
+      const cp1y = yPos(p1[1]) + (yPos(p2[1]) - yPos(p0[1])) / 6;
+      const cp2x = xPos(p2[0]) - (xPos(p3[0]) - xPos(p1[0])) / 6;
+      const cp2y = yPos(p2[1]) - (yPos(p3[1]) - yPos(p1[1])) / 6;
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, xPos(p2[0]), yPos(p2[1]));
+    }
+  }
+
+  // Fill
+  ctx.beginPath();
+  catmullPath();
+  ctx.lineTo(xPos(valid[valid.length - 1][0]), pad.t + gH);
+  ctx.lineTo(xPos(valid[0][0]), pad.t + gH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Trait
+  ctx.beginPath();
+  catmullPath();
+  ctx.strokeStyle = 'rgba(126,200,227,0.85)';
+  ctx.lineWidth   = 2;
+  ctx.stroke();
+
+  // Points
+  valid.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(xPos(p[0]), yPos(p[1]), 3, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(126,200,227,0.9)';
+    ctx.fill();
+  });
 }
 
 // ── Fermer la modale ────────────────────────────────────────────────────────
