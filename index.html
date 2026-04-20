@@ -6192,6 +6192,16 @@ function tmLinearOpen() {
   if (headLeft)  { headLeft.textContent  = t('nonDriveSide'); headLeft.style.color  = leftColor; }
   if (headRight) { headRight.textContent = t('driveSide');    headRight.style.color = rightColor; }
 
+  // Moyennes par colonne sous les headers
+  var lVals = leftKgfs.filter(function(v)  { return v !== null; });
+  var rVals = rightKgfs.filter(function(v) { return v !== null; });
+  var avgL = lVals.length ? lVals.reduce(function(a,b){return a+b;},0) / lVals.length : null;
+  var avgR = rVals.length ? rVals.reduce(function(a,b){return a+b;},0) / rVals.length : null;
+  var avgLeftEl  = document.getElementById('tm-gauge-avg-left');
+  var avgRightEl = document.getElementById('tm-gauge-avg-right');
+  if (avgLeftEl)  { avgLeftEl.textContent  = avgL !== null ? ('∅ ' + Math.round(avgL)  + ' kgf') : ''; avgLeftEl.style.color  = leftColor; }
+  if (avgRightEl) { avgRightEl.textContent = avgR !== null ? ('∅ ' + Math.round(avgR) + ' kgf') : ''; avgRightEl.style.color = rightColor; }
+
   var modal = document.getElementById('tm-linear-modal');
   modal.querySelector('[data-i18n="tmLinearTitle"]').textContent = t('tmLinearTitle');
 
@@ -6257,13 +6267,15 @@ function tmLinearDraw(leftKgfs, rightKgfs, leftColor, rightColor, leftTrack, rig
     fill.style.width      = pct + '%';
     fill.style.background = barColor;
 
-    // Curseur moyenne propre à la colonne
-    var avgPct = Math.max(2, Math.min(98, Math.round(((avgV - minV * 0.85) / range) * 100)));
-    var cursor = document.createElement('div');
-    cursor.style.cssText = 'position:absolute;top:-3px;bottom:-3px;width:2px;border-radius:1px;background:rgba(255,255,255,0.55);left:' + avgPct + '%;transform:translateX(-50%);pointer-events:none';
+    // Curseur moyenne — uniquement si la valeur est renseignée
+    if (val !== null) {
+      var avgPct = Math.max(2, Math.min(98, Math.round(((avgV - minV * 0.85) / range) * 100)));
+      var cursor = document.createElement('div');
+      cursor.style.cssText = 'position:absolute;top:-3px;bottom:-3px;width:2px;border-radius:1px;background:rgba(255,255,255,0.55);left:' + avgPct + '%;transform:translateX(-50%);pointer-events:none';
+      track.appendChild(cursor);
+    }
 
     track.appendChild(fill);
-    track.appendChild(cursor);
     cell.appendChild(track);
 
     var valEl = document.createElement('div');
@@ -8623,6 +8635,11 @@ function hrClearLoadedRim() {
     <div></div>
     <div class="tm-gauge-header-cell" id="tm-gauge-head-fo" style="color:rgba(232,146,124,.85)">—</div>
     <div class="tm-gauge-header-cell" id="tm-gauge-head-fa" style="color:rgba(126,200,227,.85)">—</div>
+  </div>
+  <div class="tm-gauge-header-row" style="border-bottom:none;padding-bottom:.1rem;margin-top:-.2rem">
+    <div></div>
+    <div class="tm-gauge-header-cell" id="tm-gauge-avg-left"  style="font-size:.52rem;opacity:.75;letter-spacing:.06em;text-transform:none;font-family:'DM Mono',monospace"></div>
+    <div class="tm-gauge-header-cell" id="tm-gauge-avg-right" style="font-size:.52rem;opacity:.75;letter-spacing:.06em;text-transform:none;font-family:'DM Mono',monospace"></div>
   </div>
   <div class="tm-gauge-scroll" id="tm-gauge-body"></div>
 </div>
