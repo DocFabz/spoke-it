@@ -632,7 +632,24 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 
 /* ── Radar chart */
 .radar-wrap      { width:100%; max-width:440px; margin:0 auto }
-.radar-canvas    { display:block; margin:0 auto }
+.radar-canvas    { display:block; margin:0 auto; cursor:pointer }
+
+/* ── Balance des tensions (clic radar) ───────────────────────────────────────── */
+.tm-linear-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9992; opacity:0; transition:opacity .22s; display:none }
+.tm-linear-overlay.show { display:block; opacity:1 }
+.tm-linear-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9993; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.2rem 1.2rem 1rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:94%; max-width:420px; max-height:85vh; display:none; flex-direction:column; gap:.75rem; opacity:0; transition:opacity .2s, transform .2s }
+.tm-linear-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+.tm-linear-header { display:flex; align-items:center; justify-content:space-between; flex-shrink:0 }
+.tm-linear-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
+.tm-gauge-scroll { overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:.38rem; padding-right:.2rem }
+.tm-gauge-row { display:grid; grid-template-columns:1.6rem 1fr 1fr; align-items:center; gap:.45rem 1.2rem }
+.tm-gauge-num { font-family:'DM Mono',monospace; font-size:.58rem; color:var(--text3); text-align:center }
+.tm-gauge-side { display:flex; align-items:center; gap:.3rem }
+.tm-gauge-track { flex:1; height:5px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:visible; min-width:0; position:relative }
+.tm-gauge-fill { height:100%; border-radius:3px; position:relative }
+.tm-gauge-val { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:500; line-height:1; flex-shrink:0 }
+.tm-gauge-header-row { display:grid; grid-template-columns:1.6rem 1fr 1fr; gap:.45rem 1.2rem; padding-bottom:.35rem; border-bottom:1px solid var(--border); flex-shrink:0 }
+.tm-gauge-header-cell { font-family:'DM Sans',sans-serif; font-size:.55rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; text-align:center; color:var(--text3) }
 .radar-legend    { display:flex; gap:1.2rem; justify-content:center; margin-top:.75rem; flex-wrap:wrap }
 .radar-leg-item  { display:flex; align-items:center; gap:.38rem; font-size:.68rem; color:var(--text2); font-family:'DM Sans',sans-serif }
 .radar-leg-dot   { width:10px; height:10px; border-radius:50%; flex-shrink:0 }
@@ -2252,6 +2269,7 @@ const i18n = {
     diagObsLabel:'Observations',
     diagObsPlaceholder:'Observations du wheelbuilder…',
     diagPdfBtn:'Générer le PDF',
+    tmLinearTitle:'Balance des tensions',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -2368,6 +2386,7 @@ const i18n = {
     diagObsLabel:'Observations',
     diagObsPlaceholder:'Wheelbuilder observations…',
     diagPdfBtn:'Generate PDF',
+    tmLinearTitle:'Tension Balance',
   }
 };
 
@@ -6138,6 +6157,120 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
 
 
 // ── Helpers canvas ────────────────────────────────────────────────────────────
+// ── Balance des tensions — clic sur le radar ─────────────────────────────────
+(function() {
+  var canvas = document.getElementById('tm-radar');
+  if (canvas) canvas.addEventListener('click', tmLinearOpen);
+})();
+
+function tmLinearOpen() {
+  var nb = parseInt(document.getElementById('nb-rayons').value) || 0;
+  var perSide = Math.floor(nb / 2);
+  if (perSide < 2) return;
+
+  var foKgfs = tmData.fo.slice(0, perSide).map(function(v) { return toKgf(v); });
+  var faKgfs = tmData.fa.slice(0, perSide).map(function(v) { return toKgf(v); });
+  var allVals = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
+  if (!allVals.length) return;
+
+  // Code couleur :
+  // fo = toujours orange (warm) = NDS sur roue avant, DS sur roue arrière
+  // fa = toujours bleu (accent) = DS sur roue avant, NDS sur roue arrière
+  var isFront = (typeof wtype !== 'undefined' && wtype === 'avant');
+  var foLabel = isFront ? t('nonDriveSide') : t('driveSide');
+  var faLabel = isFront ? t('driveSide')    : t('nonDriveSide');
+
+  var headFo = document.getElementById('tm-gauge-head-fo');
+  var headFa = document.getElementById('tm-gauge-head-fa');
+  if (headFo) { headFo.textContent = foLabel; headFo.style.color = 'rgba(232,146,124,.85)'; }
+  if (headFa) { headFa.textContent = faLabel; headFa.style.color = 'rgba(126,200,227,.85)'; }
+
+  var modal = document.getElementById('tm-linear-modal');
+  modal.querySelector('[data-i18n="tmLinearTitle"]').textContent = t('tmLinearTitle');
+
+  tmLinearDraw(foKgfs, faKgfs);
+
+  document.getElementById('tm-linear-overlay').classList.add('show');
+  modal.classList.add('show');
+}
+
+function tmLinearClose() {
+  document.getElementById('tm-linear-overlay').classList.remove('show');
+  document.getElementById('tm-linear-modal').classList.remove('show');
+}
+
+function tmLinearDraw(foKgfs, faKgfs) {
+  var body = document.getElementById('tm-gauge-body');
+  if (!body) return;
+  body.innerHTML = '';
+
+  var allVals = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
+  if (!allVals.length) return;
+  var maxVal = Math.max.apply(null, allVals);
+  var minVal = Math.min.apply(null, allVals);
+
+  // Moyenne par nappe séparément pour le curseur
+  var foVals = foKgfs.filter(function(v) { return v !== null; });
+  var faVals = faKgfs.filter(function(v) { return v !== null; });
+  var avgFo = foVals.length ? foVals.reduce(function(a,b){return a+b;},0) / foVals.length : 0;
+  var avgFa = faVals.length ? faVals.reduce(function(a,b){return a+b;},0) / faVals.length : 0;
+
+  var nb = foKgfs.length;
+
+  for (var i = 0; i < nb; i++) {
+    var row = document.createElement('div');
+    row.className = 'tm-gauge-row';
+
+    var numEl = document.createElement('div');
+    numEl.className = 'tm-gauge-num';
+    numEl.textContent = i + 1;
+    row.appendChild(numEl);
+
+    // fo = orange, curseur = moyenne fo
+    row.appendChild(makeGaugeCell(foKgfs[i], maxVal, minVal, avgFo,
+      'rgba(232,146,124,0.85)', 'rgba(232,146,124,0.12)'));
+
+    // fa = bleu, curseur = moyenne fa
+    row.appendChild(makeGaugeCell(faKgfs[i], maxVal, minVal, avgFa,
+      'rgba(126,200,227,0.85)', 'rgba(126,200,227,0.10)'));
+
+    body.appendChild(row);
+  }
+
+  function makeGaugeCell(val, maxV, minV, avgV, barColor, trackColor) {
+    var cell  = document.createElement('div');
+    cell.className = 'tm-gauge-side';
+
+    var track = document.createElement('div');
+    track.className = 'tm-gauge-track';
+    track.style.background = trackColor;
+
+    var range = maxV * 1.05 - minV * 0.85;
+    var pct   = val !== null ? Math.max(4, Math.round(((val - minV * 0.85) / range) * 100)) : 0;
+
+    var fill  = document.createElement('div');
+    fill.className = 'tm-gauge-fill';
+    fill.style.width      = pct + '%';
+    fill.style.background = barColor;
+
+    // Curseur moyenne propre à la nappe
+    var avgPct = Math.max(2, Math.min(98, Math.round(((avgV - minV * 0.85) / range) * 100)));
+    var cursor = document.createElement('div');
+    cursor.style.cssText = 'position:absolute;top:-3px;bottom:-3px;width:2px;border-radius:1px;background:rgba(255,255,255,0.55);left:' + avgPct + '%;transform:translateX(-50%);pointer-events:none';
+
+    track.appendChild(fill);
+    track.appendChild(cursor);
+    cell.appendChild(track);
+
+    var valEl = document.createElement('div');
+    valEl.className = 'tm-gauge-val';
+    valEl.style.color = val !== null ? barColor : 'rgba(150,170,190,0.3)';
+    valEl.textContent = val !== null ? Math.round(val) : '—';
+    cell.appendChild(valEl);
+    return cell;
+  }
+}
+
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -8475,5 +8608,20 @@ function hrClearLoadedRim() {
   hrRefreshBadges();
 }
 </script>
+<!-- ── Balance des tensions ───────────────────────────────────────────────── -->
+<div class="tm-linear-overlay" id="tm-linear-overlay" onclick="tmLinearClose()"></div>
+<div class="tm-linear-modal" id="tm-linear-modal">
+  <div class="tm-linear-header">
+    <div class="tm-linear-title" data-i18n="tmLinearTitle">Balance des tensions</div>
+    <button class="ateliermgr-close" onclick="tmLinearClose()">✕</button>
+  </div>
+  <div class="tm-gauge-header-row">
+    <div></div>
+    <div class="tm-gauge-header-cell" id="tm-gauge-head-fo" style="color:rgba(232,146,124,.85)">—</div>
+    <div class="tm-gauge-header-cell" id="tm-gauge-head-fa" style="color:rgba(126,200,227,.85)">—</div>
+  </div>
+  <div class="tm-gauge-scroll" id="tm-gauge-body"></div>
+</div>
+
 </body>
 </html>
