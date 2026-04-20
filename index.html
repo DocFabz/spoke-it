@@ -6173,22 +6173,29 @@ function tmLinearOpen() {
   var allVals = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
   if (!allVals.length) return;
 
-  // Code couleur :
-  // fo = toujours orange (warm) = NDS sur roue avant, DS sur roue arrière
-  // fa = toujours bleu (accent) = DS sur roue avant, NDS sur roue arrière
+  // Code couleur + ordre des colonnes :
+  // fo = orange, fa = bleu — toujours
+  // Roue avant  : fo=NDS=Left,  fa=DS=Right  → col gauche=fo(orange), col droite=fa(bleu)
+  // Roue arrière: fo=DS=Right,  fa=NDS=Left  → col gauche=fa(bleu),   col droite=fo(orange)
   var isFront = (typeof wtype !== 'undefined' && wtype === 'avant');
-  var foLabel = isFront ? t('nonDriveSide') : t('driveSide');
-  var faLabel = isFront ? t('driveSide')    : t('nonDriveSide');
 
-  var headFo = document.getElementById('tm-gauge-head-fo');
-  var headFa = document.getElementById('tm-gauge-head-fa');
-  if (headFo) { headFo.textContent = foLabel; headFo.style.color = 'rgba(232,146,124,.85)'; }
-  if (headFa) { headFa.textContent = faLabel; headFa.style.color = 'rgba(126,200,227,.85)'; }
+  // Colonne gauche = toujours NDS, colonne droite = toujours DS
+  var leftKgfs  = isFront ? foKgfs : faKgfs;
+  var rightKgfs = isFront ? faKgfs : foKgfs;
+  var leftColor  = isFront ? 'rgba(232,146,124,0.85)' : 'rgba(126,200,227,0.85)';
+  var rightColor = isFront ? 'rgba(126,200,227,0.85)' : 'rgba(232,146,124,0.85)';
+  var leftTrack  = isFront ? 'rgba(232,146,124,0.12)' : 'rgba(126,200,227,0.10)';
+  var rightTrack = isFront ? 'rgba(126,200,227,0.10)' : 'rgba(232,146,124,0.12)';
+
+  var headLeft  = document.getElementById('tm-gauge-head-fo');
+  var headRight = document.getElementById('tm-gauge-head-fa');
+  if (headLeft)  { headLeft.textContent  = t('nonDriveSide'); headLeft.style.color  = leftColor; }
+  if (headRight) { headRight.textContent = t('driveSide');    headRight.style.color = rightColor; }
 
   var modal = document.getElementById('tm-linear-modal');
   modal.querySelector('[data-i18n="tmLinearTitle"]').textContent = t('tmLinearTitle');
 
-  tmLinearDraw(foKgfs, faKgfs);
+  tmLinearDraw(leftKgfs, rightKgfs, leftColor, rightColor, leftTrack, rightTrack);
 
   document.getElementById('tm-linear-overlay').classList.add('show');
   modal.classList.add('show');
@@ -6199,23 +6206,23 @@ function tmLinearClose() {
   document.getElementById('tm-linear-modal').classList.remove('show');
 }
 
-function tmLinearDraw(foKgfs, faKgfs) {
+function tmLinearDraw(leftKgfs, rightKgfs, leftColor, rightColor, leftTrack, rightTrack) {
   var body = document.getElementById('tm-gauge-body');
   if (!body) return;
   body.innerHTML = '';
 
-  var allVals = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
+  var allVals = leftKgfs.concat(rightKgfs).filter(function(v) { return v !== null; });
   if (!allVals.length) return;
   var maxVal = Math.max.apply(null, allVals);
   var minVal = Math.min.apply(null, allVals);
 
-  // Moyenne par nappe séparément pour le curseur
-  var foVals = foKgfs.filter(function(v) { return v !== null; });
-  var faVals = faKgfs.filter(function(v) { return v !== null; });
-  var avgFo = foVals.length ? foVals.reduce(function(a,b){return a+b;},0) / foVals.length : 0;
-  var avgFa = faVals.length ? faVals.reduce(function(a,b){return a+b;},0) / faVals.length : 0;
+  // Moyenne par colonne séparément pour le curseur
+  var lVals = leftKgfs.filter(function(v)  { return v !== null; });
+  var rVals = rightKgfs.filter(function(v) { return v !== null; });
+  var avgL = lVals.length ? lVals.reduce(function(a,b){return a+b;},0) / lVals.length : 0;
+  var avgR = rVals.length ? rVals.reduce(function(a,b){return a+b;},0) / rVals.length : 0;
 
-  var nb = foKgfs.length;
+  var nb = leftKgfs.length;
 
   for (var i = 0; i < nb; i++) {
     var row = document.createElement('div');
@@ -6226,13 +6233,10 @@ function tmLinearDraw(foKgfs, faKgfs) {
     numEl.textContent = i + 1;
     row.appendChild(numEl);
 
-    // fo = orange, curseur = moyenne fo
-    row.appendChild(makeGaugeCell(foKgfs[i], maxVal, minVal, avgFo,
-      'rgba(232,146,124,0.85)', 'rgba(232,146,124,0.12)'));
-
-    // fa = bleu, curseur = moyenne fa
-    row.appendChild(makeGaugeCell(faKgfs[i], maxVal, minVal, avgFa,
-      'rgba(126,200,227,0.85)', 'rgba(126,200,227,0.10)'));
+    // Colonne gauche = NDS
+    row.appendChild(makeGaugeCell(leftKgfs[i],  maxVal, minVal, avgL, leftColor,  leftTrack));
+    // Colonne droite = DS
+    row.appendChild(makeGaugeCell(rightKgfs[i], maxVal, minVal, avgR, rightColor, rightTrack));
 
     body.appendChild(row);
   }
@@ -6253,7 +6257,7 @@ function tmLinearDraw(foKgfs, faKgfs) {
     fill.style.width      = pct + '%';
     fill.style.background = barColor;
 
-    // Curseur moyenne propre à la nappe
+    // Curseur moyenne propre à la colonne
     var avgPct = Math.max(2, Math.min(98, Math.round(((avgV - minV * 0.85) / range) * 100)));
     var cursor = document.createElement('div');
     cursor.style.cssText = 'position:absolute;top:-3px;bottom:-3px;width:2px;border-radius:1px;background:rgba(255,255,255,0.55);left:' + avgPct + '%;transform:translateX(-50%);pointer-events:none';
