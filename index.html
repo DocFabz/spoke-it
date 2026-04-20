@@ -2457,6 +2457,7 @@ const hubTypeByWheel = { avant: 'jbend', arriere: 'jbend' }; // hubType indépen
 let tmType = null;
 let tmData = { fo: [], fa: [] };
 let tmPrevFo = [], tmPrevFa = [];
+let tmAvgFo = null, tmAvgFa = null; // moyennes par nappe, mises à jour par tmRenderStats
 // Multi-slot store: preserves data per tensiometer key (wf, pt, dt_standard, dt_aerolite2)
 const tmStore = {};       // { [storeKey]: { spokeKey, fo, fa, prevFo, prevFa } }
 let tmActiveKey = null;   // key of the tensiometer whose data is currently in tmData
@@ -6192,20 +6193,18 @@ function tmLinearOpen() {
   if (headLeft)  { headLeft.textContent  = t('nonDriveSide'); headLeft.style.color  = leftColor; }
   if (headRight) { headRight.textContent = t('driveSide');    headRight.style.color = rightColor; }
 
-  // Moyennes par colonne sous les headers
-  var lVals = leftKgfs.filter(function(v)  { return v !== null; });
-  var rVals = rightKgfs.filter(function(v) { return v !== null; });
-  var avgL = lVals.length ? lVals.reduce(function(a,b){return a+b;},0) / lVals.length : null;
-  var avgR = rVals.length ? rVals.reduce(function(a,b){return a+b;},0) / rVals.length : null;
+  // Moyennes par colonne — lues depuis les globales calculées par tmRenderStats (même valeur que le radar)
+  var avgL = isFront ? tmAvgFo : tmAvgFa;
+  var avgR = isFront ? tmAvgFa : tmAvgFo;
   var avgLeftEl  = document.getElementById('tm-gauge-avg-left');
   var avgRightEl = document.getElementById('tm-gauge-avg-right');
-  if (avgLeftEl)  { avgLeftEl.textContent  = avgL !== null ? ('∅ ' + Math.round(avgL)  + ' kgf') : ''; avgLeftEl.style.color  = leftColor; }
-  if (avgRightEl) { avgRightEl.textContent = avgR !== null ? ('∅ ' + Math.round(avgR) + ' kgf') : ''; avgRightEl.style.color = rightColor; }
+  if (avgLeftEl)  { avgLeftEl.textContent  = avgL !== null ? ('∅ ' + avgL.toFixed(1)  + ' kgf') : ''; avgLeftEl.style.color  = leftColor; }
+  if (avgRightEl) { avgRightEl.textContent = avgR !== null ? ('∅ ' + avgR.toFixed(1) + ' kgf') : ''; avgRightEl.style.color = rightColor; }
 
   var modal = document.getElementById('tm-linear-modal');
   modal.querySelector('[data-i18n="tmLinearTitle"]').textContent = t('tmLinearTitle');
 
-  tmLinearDraw(leftKgfs, rightKgfs, leftColor, rightColor, leftTrack, rightTrack);
+  tmLinearDraw(leftKgfs, rightKgfs, leftColor, rightColor, leftTrack, rightTrack, avgL, avgR);
 
   document.getElementById('tm-linear-overlay').classList.add('show');
   modal.classList.add('show');
@@ -6216,7 +6215,7 @@ function tmLinearClose() {
   document.getElementById('tm-linear-modal').classList.remove('show');
 }
 
-function tmLinearDraw(leftKgfs, rightKgfs, leftColor, rightColor, leftTrack, rightTrack) {
+function tmLinearDraw(leftKgfs, rightKgfs, leftColor, rightColor, leftTrack, rightTrack, avgL, avgR) {
   var body = document.getElementById('tm-gauge-body');
   if (!body) return;
   body.innerHTML = '';
@@ -6225,12 +6224,6 @@ function tmLinearDraw(leftKgfs, rightKgfs, leftColor, rightColor, leftTrack, rig
   if (!allVals.length) return;
   var maxVal = Math.max.apply(null, allVals);
   var minVal = Math.min.apply(null, allVals);
-
-  // Moyenne par colonne séparément pour le curseur
-  var lVals = leftKgfs.filter(function(v)  { return v !== null; });
-  var rVals = rightKgfs.filter(function(v) { return v !== null; });
-  var avgL = lVals.length ? lVals.reduce(function(a,b){return a+b;},0) / lVals.length : 0;
-  var avgR = rVals.length ? rVals.reduce(function(a,b){return a+b;},0) / rVals.length : 0;
 
   var nb = leftKgfs.length;
 
@@ -6973,6 +6966,8 @@ function tmRenderStats(foKgfs, faKgfs) {
   }
 
   const fo = stats(foKgfs), fa = stats(faKgfs);
+  tmAvgFo = fo ? parseFloat(fo.avg) : null;
+  tmAvgFa = fa ? parseFloat(fa.avg) : null;
   const container = $id('tm-stats');
   container.innerHTML = '';
 
