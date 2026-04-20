@@ -6268,14 +6268,13 @@ function tmLinearDraw(leftKgfs, rightKgfs, leftColor, rightColor, leftTrack, rig
     fill.style.background = barColor;
 
     // Curseur moyenne — uniquement si la valeur est renseignée
+    track.appendChild(fill);
     if (val !== null) {
       var avgPct = Math.max(2, Math.min(98, Math.round(((avgV - minV * 0.85) / range) * 100)));
       var cursor = document.createElement('div');
       cursor.style.cssText = 'position:absolute;top:-3px;bottom:-3px;width:2px;border-radius:1px;background:rgba(255,255,255,0.55);left:' + avgPct + '%;transform:translateX(-50%);pointer-events:none';
       track.appendChild(cursor);
     }
-
-    track.appendChild(fill);
     cell.appendChild(track);
 
     var valEl = document.createElement('div');
