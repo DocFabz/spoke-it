@@ -7087,7 +7087,7 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
     <div class="ef-input-row">
       <input class="ef-inp" id="ef-inp" type="text"
         autocomplete="off" autocorrect="off" spellcheck="false" placeholder="—"
-        oninput="efUpdateKgf()" onkeydown="efOnKey(event)">
+        oninput="efUpdateKgf()">
       <div class="ef-kgf-preview" id="ef-kgf-preview"></div>
     </div>
 
@@ -7247,8 +7247,6 @@ function efRenderStep() {
   var nextBtn = $id('ef-next-btn');
   nextBtn.textContent = t('efNext');
   nextBtn.classList.remove('done');
-  // Focus sur le champ à chaque step (visuel en touch, clavier en desktop/BT)
-  setTimeout(function() { var inp = $id('ef-inp'); if (inp) inp.focus(); }, 30);
 }
 
 function efUpdateKgf() {
@@ -7260,11 +7258,6 @@ function efUpdateKgf() {
   var kgf = toKgf(parsed);
   if (kgf !== null) { prev.textContent = kgf + ' kgf'; prev.classList.add('has-val'); }
   else              { prev.textContent = ''; prev.classList.remove('has-val'); }
-}
-
-function efOnKey(e) {
-  if (e.key === 'Enter')  { e.preventDefault(); efNext(); }
-  if (e.key === 'Escape') { efClose(); }
 }
 
 // Retourne true si valide (ou vide), false si hors plage
@@ -7388,32 +7381,23 @@ function efShowNumpad(isTouch) {
   var wrapper = $id('ef-wrapper');
   var inp     = $id('ef-inp');
 
-  // Mettre à jour l'apparence du bouton BT
-  var btBtn = $id('ef-bt-btn');
-  if (btBtn) btBtn.classList.toggle('active', efBtMode);
+  // L'input reste toujours readonly (pas de clavier virtuel dans aucun mode)
+  inp.setAttribute('readonly', '');
+  inp.setAttribute('inputmode', 'none');
 
-  if (!isTouch || efBtMode) {
-    // Desktop ou Bluetooth : clavier natif, wrapper simple sans pavé
+  if (!isTouch) {
+    // Desktop : pavé masqué, listener clavier natif
     wrapper.classList.add('show', 'desktop');
-    inp.removeAttribute('readonly');
-    inp.setAttribute('inputmode', 'decimal');
-    setTimeout(function() { inp.focus(); }, 80);
+    efAttachBtKeyHandler(wrapper);
     return;
   }
 
-  // Touch : bloquer clavier natif, ajouter classe touch
-  inp.setAttribute('readonly', '');
-  inp.setAttribute('inputmode', 'none');
+  // Touch sans BT : pavé custom
   wrapper.classList.add('show', 'touch');
-
-  // Orientation initiale
   efUpdateOrientation();
-
-  // Écouter les changements d'orientation / resize
   wrapper._orientHandler = efUpdateOrientation;
   window.addEventListener('orientationchange', wrapper._orientHandler);
   window.addEventListener('resize', wrapper._orientHandler);
-
   $id('ef-numpad-enter').textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
 }
 
@@ -7426,33 +7410,47 @@ function efUpdateOrientation() {
   }
 }
 
+// ── Listener clavier physique (desktop et mode BT) ───────────────────────────
+function efAttachBtKeyHandler(wrapper) {
+  if (wrapper._btKeyHandler) return; // déjà attaché
+  wrapper._btKeyHandler = function(e) {
+    if (e.key >= '0' && e.key <= '9') { e.preventDefault(); efNumpadKey(e.key); return; }
+    if (e.key === '.' || e.key === ',') { e.preventDefault(); efNumpadKey('.'); return; }
+    if (e.key === 'Backspace')  { e.preventDefault(); efNumpadDel(); return; }
+    if (e.key === 'Enter')      { e.preventDefault(); efNext(); return; }
+    if (e.key === 'Escape')     { e.preventDefault(); efClose(); return; }
+  };
+  document.addEventListener('keydown', wrapper._btKeyHandler);
+}
+
+function efDetachBtKeyHandler(wrapper) {
+  if (!wrapper._btKeyHandler) return;
+  document.removeEventListener('keydown', wrapper._btKeyHandler);
+  wrapper._btKeyHandler = null;
+}
+
 function efToggleBt() {
   efBtMode = !efBtMode;
   var btBtn = $id('ef-bt-btn');
   if (btBtn) { btBtn.classList.toggle('active', efBtMode); btBtn.blur(); }
 
   var wrapper = $id('ef-wrapper');
-  var inp     = $id('ef-inp');
 
   if (efBtMode) {
-    // Passer en mode desktop : désactiver le pavé, activer le clavier natif
+    // Activer BT : masquer le pavé, attacher le listener clavier
     wrapper.classList.remove('touch', 'landscape');
     wrapper.classList.add('desktop');
-    inp.removeAttribute('readonly');
-    inp.setAttribute('inputmode', 'decimal');
-    // Retirer les listeners d'orientation
     if (wrapper._orientHandler) {
       window.removeEventListener('orientationchange', wrapper._orientHandler);
       window.removeEventListener('resize', wrapper._orientHandler);
       wrapper._orientHandler = null;
     }
-    setTimeout(function() { inp.focus(); }, 80);
+    efAttachBtKeyHandler(wrapper);
   } else {
-    // Repasser en mode touch
+    // Désactiver BT : réafficher le pavé, détacher le listener clavier
+    efDetachBtKeyHandler(wrapper);
     wrapper.classList.remove('desktop');
     wrapper.classList.add('touch');
-    inp.setAttribute('readonly', '');
-    inp.setAttribute('inputmode', 'none');
     efUpdateOrientation();
     wrapper._orientHandler = efUpdateOrientation;
     window.addEventListener('orientationchange', wrapper._orientHandler);
@@ -7468,6 +7466,7 @@ function efHideNumpad() {
     window.removeEventListener('resize', wrapper._orientHandler);
     wrapper._orientHandler = null;
   }
+  efDetachBtKeyHandler(wrapper);
   wrapper.classList.remove('show', 'touch', 'desktop', 'landscape');
   // Remettre l'input dans son état neutre, quel que soit le mode qui était actif
   var inp = $id('ef-inp');
