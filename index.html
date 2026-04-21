@@ -786,6 +786,15 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 }
 .ef-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
 
+.ef-bt-btn {
+  background:none; border:1px solid var(--border); border-radius:var(--rs);
+  color:var(--text3); font-size:.75rem; cursor:pointer;
+  padding:.22rem .45rem; line-height:1; transition:all .2s;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+.ef-bt-btn:hover { border-color:rgba(126,200,227,.5); color:var(--accent) }
+.ef-bt-btn.active { border-color:rgba(126,200,227,.6); color:var(--accent); background:rgba(126,200,227,.08) }
+
 .ef-progress-wrap { display:flex; flex-direction:column; gap:.35rem }
 .ef-progress-label {
   font-family:'DM Mono',monospace; font-size:.6rem; color:var(--text3);
@@ -7041,7 +7050,14 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
   <!-- Header -->
   <div class="ef-header">
     <div class="ef-title">Easy Fill</div>
-    <button class="ef-close" onclick="efClose()">✕</button>
+    <div style="display:flex;align-items:center;gap:.4rem">
+      <button class="ef-bt-btn" id="ef-bt-btn" onclick="efToggleBt()" title="Clavier Bluetooth">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/>
+        </svg>
+      </button>
+      <button class="ef-close" onclick="efClose()">✕</button>
+    </div>
   </div>
 
   <!-- ── Écran de saisie pas à pas ── -->
@@ -7112,6 +7128,7 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 var efSteps      = [];
 var efCurrent    = 0;
 var efSideMode   = 'both'; // 'fo' | 'fa' | 'both'
+var efBtMode     = false;  // true = clavier Bluetooth actif (mode desktop forcé)
 
 // Labels lisibles pour fo (fort) et fa (faible) selon wtype
 function efGetLabels() {
@@ -7186,6 +7203,7 @@ function efSwitchSide(mode) {
 function efClose() {
   $id('ef-overlay').classList.remove('show');
   efHideNumpad();
+  efBtMode = false;
   document.body.style.overflow = '';
   var btn = $id('easy-fill-toggle');
   if (btn) btn.setAttribute('aria-checked', 'false');
@@ -7368,8 +7386,12 @@ function efShowNumpad(isTouch) {
   var wrapper = $id('ef-wrapper');
   var inp     = $id('ef-inp');
 
-  if (!isTouch) {
-    // Desktop : clavier natif, wrapper simple sans pavé
+  // Mettre à jour l'apparence du bouton BT
+  var btBtn = $id('ef-bt-btn');
+  if (btBtn) btBtn.classList.toggle('active', efBtMode);
+
+  if (!isTouch || efBtMode) {
+    // Desktop ou Bluetooth : clavier natif, wrapper simple sans pavé
     wrapper.classList.add('show', 'desktop');
     inp.removeAttribute('readonly');
     inp.setAttribute('inputmode', 'decimal');
@@ -7399,6 +7421,41 @@ function efUpdateOrientation() {
     wrapper.classList.add('landscape');
   } else {
     wrapper.classList.remove('landscape');
+  }
+}
+
+function efToggleBt() {
+  efBtMode = !efBtMode;
+  var btBtn = $id('ef-bt-btn');
+  if (btBtn) btBtn.classList.toggle('active', efBtMode);
+
+  var wrapper = $id('ef-wrapper');
+  var inp     = $id('ef-inp');
+
+  if (efBtMode) {
+    // Passer en mode desktop : désactiver le pavé, activer le clavier natif
+    wrapper.classList.remove('touch', 'landscape');
+    wrapper.classList.add('desktop');
+    inp.removeAttribute('readonly');
+    inp.setAttribute('inputmode', 'decimal');
+    // Retirer les listeners d'orientation
+    if (wrapper._orientHandler) {
+      window.removeEventListener('orientationchange', wrapper._orientHandler);
+      window.removeEventListener('resize', wrapper._orientHandler);
+      wrapper._orientHandler = null;
+    }
+    setTimeout(function() { inp.focus(); }, 80);
+  } else {
+    // Repasser en mode touch
+    wrapper.classList.remove('desktop');
+    wrapper.classList.add('touch');
+    inp.setAttribute('readonly', '');
+    inp.setAttribute('inputmode', 'none');
+    efUpdateOrientation();
+    wrapper._orientHandler = efUpdateOrientation;
+    window.addEventListener('orientationchange', wrapper._orientHandler);
+    window.addEventListener('resize', wrapper._orientHandler);
+    $id('ef-numpad-enter').textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
   }
 }
 
