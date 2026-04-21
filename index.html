@@ -648,7 +648,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-gauge-track { flex:1; height:5px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:visible; min-width:0; position:relative }
 .tm-gauge-fill { height:100%; border-radius:3px; position:relative }
 .tm-gauge-val { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:500; line-height:1; flex-shrink:0; width:2.4rem; text-align:right }
-.tm-gauge-header-row { display:grid; grid-template-columns:1.6rem 1fr 1fr; gap:.45rem 1.2rem; padding-bottom:.35rem; border-bottom:1px solid var(--border); flex-shrink:0 }
 .tm-gauge-header-cell { font-family:'DM Sans',sans-serif; font-size:.55rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; text-align:center; color:var(--text3) }
 .tm-gauge-avg-cell { font-size:.52rem; opacity:.75; letter-spacing:.06em; text-transform:none; font-family:'DM Mono',monospace; display:flex; flex-direction:column; align-items:center; gap:.1rem }
 .tm-gauge-avg-dot { position:absolute; top:50%; width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.75); transform:translate(-50%,-50%); pointer-events:none; box-shadow:0 0 3px rgba(0,0,0,0.4) }
@@ -675,10 +674,19 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 
 /* ── Highlight outliers ──────────────────────────────────────────────────── */
 .tm-outlier-bar   { margin-top:1.3rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); padding:.75rem 1.2rem; display:flex; align-items:center; gap:.7rem }
-.tm-outlier-label { font-size:.58rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--text3); white-space:nowrap }
+.tm-outlier-open-btn { background:transparent; border:1px solid var(--border-s); border-radius:20px; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.7rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; padding:.35rem 1rem; cursor:pointer; transition:all .22s }
+.tm-outlier-open-btn:hover { border-color:rgba(126,200,227,.5); color:var(--accent) }
 .tm-cv-select     { width:4.2rem; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); color:var(--accent); font-family:'DM Mono',monospace; font-size:.75rem; font-weight:400; padding:.28rem .4rem; padding-right:1.4rem; cursor:pointer; transition:border-color .2s; appearance:none; -webkit-appearance:none; background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22 fill=%22none%22 stroke=%22%23596778%22 stroke-width=%221.5%22><path d=%22M1 1l5 5 5-5%22/></svg>'); background-repeat:no-repeat; background-position:right .35rem center; background-size:7px }
 .tm-cv-select:focus { outline:none; border-color:rgba(126,200,227,.4) }
 .tm-cv-select option { background:#161b27 }
+.outlier-overlay  { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
+.outlier-overlay.show { display:block; opacity:1 }
+.outlier-modal    { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
+.outlier-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+.outlier-header   { display:flex; align-items:center; justify-content:space-between }
+.outlier-title    { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
+.outlier-desc     { font-size:.72rem; color:var(--text2); line-height:1.5 }
+.outlier-select-row { display:flex; align-items:center; justify-content:center }
 .tm-hl-btn        { margin-left:auto; padding:.35rem 1rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.7rem; font-weight:500; cursor:pointer; transition:all .22s; letter-spacing:.08em; text-transform:uppercase }
 .tm-hl-btn:hover  { border-color:var(--warm2); color:var(--warm2) }
 .tm-hl-btn.active { border-color:rgba(232,146,124,.65); color:var(--warm2); background:rgba(232,146,124,.08); box-shadow:0 0 0 1px rgba(232,146,124,.15) }
@@ -1976,25 +1984,7 @@ input[type=number] { -moz-appearance:textfield }
 
     <!-- ── Contrôle écart-type ── -->
     <div class="tm-outlier-bar" id="tm-outlier-bar">
-      <span class="tm-outlier-label" data-i18n="tmCVMaxLabel">Tolérance</span>
-      <select class="tm-cv-select" id="tm-cv-select" onchange="tmSetCV(parseInt(this.value))">
-        <option value="0">0 %</option>
-        <option value="1">1 %</option>
-        <option value="2">2 %</option>
-        <option value="3">3 %</option>
-        <option value="4">4 %</option>
-        <option value="5" selected>5 %</option>
-        <option value="6">6 %</option>
-        <option value="7">7 %</option>
-        <option value="8">8 %</option>
-        <option value="9">9 %</option>
-        <option value="10">10 %</option>
-        <option value="11">11 %</option>
-        <option value="12">12 %</option>
-        <option value="13">13 %</option>
-        <option value="14">14 %</option>
-        <option value="15">15 %</option>
-      </select>
+      <button class="tm-outlier-open-btn" id="tm-outlier-open-btn" onclick="tmOpenOutlierModal()" data-i18n="tmCVMaxLabel">Seuil outliers</button>
       <button class="tm-hl-btn" id="tm-hl-btn" onclick="tmToggleHighlight()">Highlight</button>
     </div><!-- /tm-outlier-bar -->
     </div>
@@ -2206,7 +2196,9 @@ const i18n = {
     tmSpokeLabel:'Rayon',
     tmRadarTitle:'Diagramme de tension',
     tmAvg:'Moyenne', tmStd:'Écart-type',
-    tmCVMaxLabel:'Tolérance',
+    tmCVMaxLabel:'Seuil outliers',
+    tmOutlierModalTitle:'Seuil de détection',
+    tmOutlierModalDesc:'Définit à partir de quel écart un rayon est considéré comme outlier. Une valeur basse détecte plus de rayons discordants.',
     tmTensioLabel:'Tensiomètre',
     tmReadingKgf:'lecture · kgf',
     tmSpokeSelectPlaceholder:'—',
@@ -2324,7 +2316,9 @@ const i18n = {
     tmSpokeLabel:'Spoke',
     tmRadarTitle:'Tension diagram',
     tmAvg:'Average', tmStd:'Std deviation',
-    tmCVMaxLabel:'Tolerance',
+    tmCVMaxLabel:'Outliers threshold',
+    tmOutlierModalTitle:'Detection threshold',
+    tmOutlierModalDesc:'Sets the deviation from which a spoke is considered an outlier. A lower value detects more discordant spokes.',
     tmReadingKgf:'reading · kgf',
     tmSpokeSelectPlaceholder:'—',
     tmTensioPlaceholder:'—',
@@ -5937,6 +5931,26 @@ function tmResetSide(col) {
   tmUpdateResultCardState();
 }
 
+function tmOpenOutlierModal() {
+  var modal = $id('outlier-modal');
+  var overlay = $id('outlier-overlay');
+  if (!modal || !overlay) return;
+  // Sync i18n
+  var titleEl = modal.querySelector('[data-i18n="tmOutlierModalTitle"]');
+  var descEl  = modal.querySelector('[data-i18n="tmOutlierModalDesc"]');
+  if (titleEl) titleEl.textContent = t('tmOutlierModalTitle');
+  if (descEl)  descEl.textContent  = t('tmOutlierModalDesc');
+  overlay.classList.add('show');
+  modal.classList.add('show');
+}
+
+function tmCloseOutlierModal() {
+  var modal = $id('outlier-modal');
+  var overlay = $id('outlier-overlay');
+  if (modal)   modal.classList.remove('show');
+  if (overlay) overlay.classList.remove('show');
+}
+
 function tmSetCV(pct) {
   tmCVThreshold = pct;
   if (tmHighlightOn) tmApplyHighlight();
@@ -6211,11 +6225,11 @@ function tmLinearOpen() {
   var avgLeftEl  = document.getElementById('tm-gauge-avg-left');
   var avgRightEl = document.getElementById('tm-gauge-avg-right');
   if (avgLeftEl)  {
-    avgLeftEl.innerHTML  = avgL !== null ? ('<span>∅ ' + avgL.toFixed(1) + ' kgf</span><span style="opacity:.6;margin-left:.4em">± ' + cvL.toFixed(1) + ' %</span>') : '';
+    avgLeftEl.innerHTML  = avgL !== null ? ('<span>∅ ' + avgL.toFixed(1) + ' kgf</span>') : '';
     avgLeftEl.style.color  = leftColor;
   }
   if (avgRightEl) {
-    avgRightEl.innerHTML = avgR !== null ? ('<span>∅ ' + avgR.toFixed(1) + ' kgf</span><span style="opacity:.6;margin-left:.4em">± ' + cvR.toFixed(1) + ' %</span>') : '';
+    avgRightEl.innerHTML = avgR !== null ? ('<span>∅ ' + avgR.toFixed(1) + ' kgf</span>') : '';
     avgRightEl.style.color = rightColor;
   }
 
@@ -6223,6 +6237,7 @@ function tmLinearOpen() {
   modal.querySelector('[data-i18n="tmLinearTitle"]').textContent = t('tmLinearTitle');
 
   tmLinearDraw(leftKgfs, rightKgfs, leftColor, rightColor, leftTrack, rightTrack, avgL, avgR);
+  tmDrawSpeedos(cvL, cvR, leftColor, rightColor);
 
   document.getElementById('tm-linear-overlay').classList.add('show');
   modal.classList.add('show');
@@ -6296,6 +6311,117 @@ function tmLinearDraw(leftKgfs, rightKgfs, leftColor, rightColor, leftTrack, rig
     cell.appendChild(valEl);
     return cell;
   }
+}
+
+function tmDrawSpeedos(cvLeft, cvRight, colorLeft, colorRight) {
+  var wrap = document.getElementById('tm-gauge-speedos');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  var maxCV   = 20;
+  var W = 130, H = 80;
+
+  function makeSpeedo(cv, color) {
+    var container = document.createElement('div');
+    container.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:.25rem;flex:1';
+
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('width', '100%');
+
+    var cx = W / 2, cy = H - 14, r = 52;
+
+    // ── Arc de fond ──
+    var bgArc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    bgArc.setAttribute('d', describeArc(cx, cy, r, 180, 0));
+    bgArc.setAttribute('fill', 'none');
+    bgArc.setAttribute('stroke', 'rgba(255,255,255,0.07)');
+    bgArc.setAttribute('stroke-width', '5');
+    bgArc.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(bgArc);
+
+    // ── Arc coloré dégradé (vert → jaune → rouge) via segments ──
+    var steps = 40;
+    for (var i = 0; i < steps; i++) {
+      var t0 = i / steps, t1 = (i + 1) / steps;
+      var a0 = 180 - t0 * 180, a1 = 180 - t1 * 180;
+      var seg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      seg.setAttribute('d', describeArc(cx, cy, r, a0, a1 - 0.5));
+      seg.setAttribute('fill', 'none');
+      seg.setAttribute('stroke', cvGradientColor(t0));
+      seg.setAttribute('stroke-width', '5');
+      svg.appendChild(seg);
+    }
+
+    // ── Aiguille ──
+    if (cv !== null) {
+      var cvClamped   = Math.min(cv, maxCV);
+      var needlePct   = cvClamped / maxCV;
+      var needleAngle = (180 - needlePct * 180) * Math.PI / 180;
+      var nx = cx + (r - 4) * Math.cos(needleAngle);
+      var ny = cy - (r - 4) * Math.sin(needleAngle);
+      var needle = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      needle.setAttribute('x1', cx); needle.setAttribute('y1', cy);
+      needle.setAttribute('x2', nx); needle.setAttribute('y2', ny);
+      needle.setAttribute('stroke', color);
+      needle.setAttribute('stroke-width', '2');
+      needle.setAttribute('stroke-linecap', 'round');
+      svg.appendChild(needle);
+
+      // Pivot central
+      var pivot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      pivot.setAttribute('cx', cx); pivot.setAttribute('cy', cy); pivot.setAttribute('r', '3');
+      pivot.setAttribute('fill', color);
+      svg.appendChild(pivot);
+    }
+
+    // ── Labels 0 et max ──
+    function svgText(x, y, txt, anchor) {
+      var el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      el.setAttribute('x', x); el.setAttribute('y', y);
+      el.setAttribute('text-anchor', anchor);
+      el.setAttribute('font-family', 'DM Mono, monospace');
+      el.setAttribute('font-size', '7');
+      el.setAttribute('fill', 'rgba(150,170,190,0.5)');
+      el.textContent = txt;
+      return el;
+    }
+    svg.appendChild(svgText(cx - r - 2, cy + 10, '0', 'middle'));
+    svg.appendChild(svgText(cx + r + 2, cy + 10, maxCV + '%', 'middle'));
+
+    container.appendChild(svg);
+
+    // ── ± valeur sous le compteur ──
+    var valEl = document.createElement('div');
+    valEl.style.cssText = 'font-family:"DM Mono",monospace;font-size:.68rem;font-weight:500;color:' + color + ';line-height:1';
+    valEl.textContent = cv !== null ? '± ' + cv.toFixed(1) + ' %' : '—';
+    container.appendChild(valEl);
+
+    return container;
+  }
+
+  // Dégradé vert → jaune → rouge selon t ∈ [0,1]
+  function cvGradientColor(t) {
+    if (t < 0.5) {
+      var r2 = Math.round(255 * (t * 2));
+      return 'rgb(' + r2 + ',200,80)';
+    } else {
+      var g = Math.round(200 * (1 - (t - 0.5) * 2));
+      return 'rgb(255,' + g + ',40)';
+    }
+  }
+
+  function describeArc(cx, cy, r, startDeg, endDeg) {
+    var s = startDeg * Math.PI / 180;
+    var e = endDeg   * Math.PI / 180;
+    var x1 = cx + r * Math.cos(s), y1 = cy - r * Math.sin(s);
+    var x2 = cx + r * Math.cos(e), y2 = cy - r * Math.sin(e);
+    var large = (startDeg - endDeg) > 180 ? 1 : 0;
+    return 'M ' + x1 + ' ' + y1 + ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x2 + ' ' + y2;
+  }
+
+  wrap.appendChild(makeSpeedo(cvLeft,  colorLeft));
+  wrap.appendChild(makeSpeedo(cvRight, colorRight));
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -8709,6 +8835,36 @@ function hrClearLoadedRim() {
   hrRefreshBadges();
 }
 </script>
+<!-- ── Modale Seuil Outliers ──────────────────────────────────────────────── -->
+<div class="outlier-overlay" id="outlier-overlay" onclick="tmCloseOutlierModal()"></div>
+<div class="outlier-modal" id="outlier-modal">
+  <div class="outlier-header">
+    <div class="outlier-title" data-i18n="tmOutlierModalTitle">Seuil de détection</div>
+    <button class="ateliermgr-close" onclick="tmCloseOutlierModal()">✕</button>
+  </div>
+  <p class="outlier-desc" data-i18n="tmOutlierModalDesc">Définit à partir de quel écart un rayon est considéré comme outlier. Une valeur basse détecte plus de rayons discordants.</p>
+  <div class="outlier-select-row">
+    <select class="tm-cv-select" id="tm-cv-select" onchange="tmSetCV(parseInt(this.value))">
+      <option value="0">0 %</option>
+      <option value="1">1 %</option>
+      <option value="2">2 %</option>
+      <option value="3">3 %</option>
+      <option value="4">4 %</option>
+      <option value="5" selected>5 %</option>
+      <option value="6">6 %</option>
+      <option value="7">7 %</option>
+      <option value="8">8 %</option>
+      <option value="9">9 %</option>
+      <option value="10">10 %</option>
+      <option value="11">11 %</option>
+      <option value="12">12 %</option>
+      <option value="13">13 %</option>
+      <option value="14">14 %</option>
+      <option value="15">15 %</option>
+    </select>
+  </div>
+</div>
+
 <!-- ── Balance des tensions ───────────────────────────────────────────────── -->
 <div class="tm-linear-overlay" id="tm-linear-overlay" onclick="tmLinearClose()"></div>
 <div class="tm-linear-modal" id="tm-linear-modal">
@@ -8716,17 +8872,30 @@ function hrClearLoadedRim() {
     <div class="tm-linear-title" data-i18n="tmLinearTitle">Balance des tensions</div>
     <button class="ateliermgr-close" onclick="tmLinearClose()">✕</button>
   </div>
-  <div class="tm-gauge-header-row">
+  <div style="display:grid;grid-template-columns:1.6rem 1fr 1fr;gap:.45rem 1.2rem;padding-bottom:.35rem;border-bottom:1px solid var(--border);flex-shrink:0">
     <div></div>
-    <div class="tm-gauge-header-cell" id="tm-gauge-head-fo" style="color:rgba(232,146,124,.85)">—</div>
-    <div class="tm-gauge-header-cell" id="tm-gauge-head-fa" style="color:rgba(126,200,227,.85)">—</div>
+    <div style="display:flex;align-items:center;gap:.3rem">
+      <div style="flex:1" class="tm-gauge-header-cell" id="tm-gauge-head-fo">—</div>
+      <div style="width:2.4rem"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:.3rem">
+      <div style="flex:1" class="tm-gauge-header-cell" id="tm-gauge-head-fa">—</div>
+      <div style="width:2.4rem"></div>
+    </div>
   </div>
-  <div class="tm-gauge-header-row" style="border-bottom:none;padding-bottom:.1rem;margin-top:-.2rem">
+  <div style="display:grid;grid-template-columns:1.6rem 1fr 1fr;gap:.45rem 1.2rem;padding-bottom:.1rem;margin-top:-.2rem;flex-shrink:0">
     <div></div>
-    <div class="tm-gauge-header-cell tm-gauge-avg-cell" id="tm-gauge-avg-left"></div>
-    <div class="tm-gauge-header-cell tm-gauge-avg-cell" id="tm-gauge-avg-right"></div>
+    <div style="display:flex;align-items:center;gap:.3rem">
+      <div style="flex:1" class="tm-gauge-header-cell tm-gauge-avg-cell" id="tm-gauge-avg-left"></div>
+      <div style="width:2.4rem"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:.3rem">
+      <div style="flex:1" class="tm-gauge-header-cell tm-gauge-avg-cell" id="tm-gauge-avg-right"></div>
+      <div style="width:2.4rem"></div>
+    </div>
   </div>
   <div class="tm-gauge-scroll" id="tm-gauge-body"></div>
+  <div id="tm-gauge-speedos" style="display:flex;gap:.75rem;justify-content:center;padding:.6rem 0 .2rem;flex-shrink:0;border-top:1px solid var(--border)"></div>
 </div>
 
 </body>
