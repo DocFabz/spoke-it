@@ -7174,6 +7174,8 @@ function efOpen() {
   document.body.style.overflow = 'hidden';
   efRenderStep();
   efShowNumpad(isTouch);
+  // Focus immédiat sur le champ : active le style visuel en touch, le vrai focus clavier en desktop/BT
+  setTimeout(function() { var inp = $id('ef-inp'); if (inp) inp.focus(); }, 100);
 }
 
 // Label court : NDS ou DS selon la roue
@@ -7247,6 +7249,8 @@ function efRenderStep() {
   var nextBtn = $id('ef-next-btn');
   nextBtn.textContent = t('efNext');
   nextBtn.classList.remove('done');
+  // Focus sur le champ à chaque step (visuel en touch, clavier en desktop/BT)
+  setTimeout(function() { var inp = $id('ef-inp'); if (inp) inp.focus(); }, 30);
 }
 
 function efUpdateKgf() {
