@@ -791,9 +791,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   color:var(--text3); font-size:.75rem; cursor:pointer;
   padding:.22rem .45rem; line-height:1; transition:all .2s;
   display:inline-flex; align-items:center; justify-content:center;
-  -webkit-tap-highlight-color: transparent;
 }
-.ef-bt-btn:hover:not(.active) { border-color:rgba(126,200,227,.5); color:var(--accent) }
+.ef-bt-btn:hover { border-color:rgba(126,200,227,.5); color:var(--accent) }
 .ef-bt-btn:focus { outline:none }
 .ef-bt-btn.active { border-color:rgba(126,200,227,.6); color:var(--accent); background:rgba(126,200,227,.08) }
 
@@ -7435,13 +7434,9 @@ function efSetBtMode(val) {
   efBtMode = val;
   var btBtn = $id('ef-bt-btn');
   if (!btBtn) return;
-  btBtn.classList.toggle('active', efBtMode);
-  if (!efBtMode) {
-    // Forcer le reset visuel — les navigateurs mobiles maintiennent :hover/:active après un tap
-    btBtn.style.color = '';
-    btBtn.style.borderColor = '';
-    btBtn.style.background = '';
-  }
+  setTimeout(function() {
+    btBtn.classList.toggle('active', efBtMode);
+  }, 0);
 }
 
 function efToggleBt() {
