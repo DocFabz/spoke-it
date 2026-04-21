@@ -7434,9 +7434,10 @@ function efDetachBtKeyHandler(wrapper) {
 function efToggleBt() {
   efBtMode = !efBtMode;
   var btBtn = $id('ef-bt-btn');
-  if (btBtn) { btBtn.classList.toggle('active', efBtMode); btBtn.blur(); }
+  if (btBtn) { btBtn.classList.toggle('active', efBtMode); }
 
   var wrapper = $id('ef-wrapper');
+  var isTouch = efIsTouchDevice();
 
   if (efBtMode) {
     // Activer BT : masquer le pavé, attacher le listener clavier
@@ -7448,8 +7449,8 @@ function efToggleBt() {
       wrapper._orientHandler = null;
     }
     efAttachBtKeyHandler(wrapper);
-  } else {
-    // Désactiver BT : réafficher le pavé, détacher le listener clavier
+  } else if (isTouch) {
+    // Désactiver BT sur touch : réafficher le pavé, détacher le listener clavier
     efDetachBtKeyHandler(wrapper);
     wrapper.classList.remove('desktop');
     wrapper.classList.add('touch');
@@ -7459,6 +7460,7 @@ function efToggleBt() {
     window.addEventListener('resize', wrapper._orientHandler);
     $id('ef-numpad-enter').textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
   }
+  // Désactiver BT sur desktop : rien à changer, le listener clavier reste actif
 }
 
 function efHideNumpad() {
