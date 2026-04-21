@@ -7467,6 +7467,12 @@ function efHideNumpad() {
     wrapper._orientHandler = null;
   }
   wrapper.classList.remove('show', 'touch', 'desktop', 'landscape');
+  // Remettre l'input dans son état neutre, quel que soit le mode qui était actif
+  var inp = $id('ef-inp');
+  if (inp) {
+    inp.setAttribute('readonly', '');
+    inp.setAttribute('inputmode', 'none');
+  }
 }
 
 
