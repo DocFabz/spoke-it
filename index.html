@@ -791,10 +791,9 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   color:var(--text3); font-size:.75rem; cursor:pointer;
   padding:.22rem .45rem; line-height:1; transition:all .2s;
   display:inline-flex; align-items:center; justify-content:center;
-  user-select:none;
 }
 .ef-bt-btn:hover { border-color:rgba(126,200,227,.5); color:var(--accent) }
-.ef-bt-btn.active { border-color:rgba(126,200,227,.6); color:var(--accent); background:rgba(126,200,227,.08) }
+.ef-bt-btn[aria-checked="true"] { border-color:rgba(126,200,227,.6); color:var(--accent); background:rgba(126,200,227,.08) }
 
 .ef-progress-wrap { display:flex; flex-direction:column; gap:.35rem }
 .ef-progress-label {
@@ -7052,11 +7051,11 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
   <div class="ef-header">
     <div class="ef-title">Easy Fill</div>
     <div style="display:flex;align-items:center;gap:.4rem">
-      <div class="ef-bt-btn" id="ef-bt-btn" onclick="efToggleBt()" title="Clavier Bluetooth">
+      <button class="ef-bt-btn" id="ef-bt-btn" onclick="efToggleBt()" role="switch" aria-checked="false" title="Clavier Bluetooth">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/>
         </svg>
-      </div>
+      </button>
       <button class="ef-close" onclick="efClose()">✕</button>
     </div>
   </div>
@@ -7433,7 +7432,7 @@ function efDetachBtKeyHandler(wrapper) {
 function efSetBtMode(val) {
   efBtMode = val;
   var btBtn = $id('ef-bt-btn');
-  if (btBtn) btBtn.classList.toggle('active', efBtMode);
+  if (btBtn) btBtn.setAttribute('aria-checked', efBtMode ? 'true' : 'false');
 }
 
 function efToggleBt() {
