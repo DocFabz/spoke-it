@@ -2198,7 +2198,7 @@ const i18n = {
     tmAvg:'Moyenne', tmStd:'Écart-type',
     tmCVMaxLabel:'Seuil outliers',
     tmOutlierModalTitle:'Seuil de détection',
-    tmOutlierModalDesc:'Définit à partir de quel écart un rayon est considéré comme outlier. Une valeur basse détecte plus de rayons discordants.',
+    tmOutlierModalDesc:'Si la dispersion globale de la nappe dépasse ce seuil, les rayons les plus éloignés de la tension médiane sont mis en évidence.',
     tmTensioLabel:'Tensiomètre',
     tmReadingKgf:'lecture · kgf',
     tmSpokeSelectPlaceholder:'—',
@@ -2318,7 +2318,7 @@ const i18n = {
     tmAvg:'Average', tmStd:'Std deviation',
     tmCVMaxLabel:'Outliers threshold',
     tmOutlierModalTitle:'Detection threshold',
-    tmOutlierModalDesc:'Sets the deviation from which a spoke is considered an outlier. A lower value detects more discordant spokes.',
+    tmOutlierModalDesc:'If the overall spread of the nappe exceeds this threshold, the spokes furthest from the median tension are highlighted.',
     tmReadingKgf:'reading · kgf',
     tmSpokeSelectPlaceholder:'—',
     tmTensioPlaceholder:'—',
@@ -8842,7 +8842,7 @@ function hrClearLoadedRim() {
     <div class="outlier-title" data-i18n="tmOutlierModalTitle">Seuil de détection</div>
     <button class="ateliermgr-close" onclick="tmCloseOutlierModal()">✕</button>
   </div>
-  <p class="outlier-desc" data-i18n="tmOutlierModalDesc">Définit à partir de quel écart un rayon est considéré comme outlier. Une valeur basse détecte plus de rayons discordants.</p>
+  <p class="outlier-desc" data-i18n="tmOutlierModalDesc">Si la dispersion globale de la nappe dépasse ce seuil, les rayons les plus éloignés de la tension médiane sont mis en évidence.</p>
   <div class="outlier-select-row">
     <select class="tm-cv-select" id="tm-cv-select" onchange="tmSetCV(parseInt(this.value))">
       <option value="0">0 %</option>
