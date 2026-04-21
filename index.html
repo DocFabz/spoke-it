@@ -647,9 +647,11 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-gauge-side { display:flex; align-items:center; gap:.3rem }
 .tm-gauge-track { flex:1; height:5px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:visible; min-width:0; position:relative }
 .tm-gauge-fill { height:100%; border-radius:3px; position:relative }
-.tm-gauge-val { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:500; line-height:1; flex-shrink:0 }
+.tm-gauge-val { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:500; line-height:1; flex-shrink:0; width:2.4rem; text-align:right }
 .tm-gauge-header-row { display:grid; grid-template-columns:1.6rem 1fr 1fr; gap:.45rem 1.2rem; padding-bottom:.35rem; border-bottom:1px solid var(--border); flex-shrink:0 }
 .tm-gauge-header-cell { font-family:'DM Sans',sans-serif; font-size:.55rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; text-align:center; color:var(--text3) }
+.tm-gauge-avg-cell { font-size:.52rem; opacity:.75; letter-spacing:.06em; text-transform:none; font-family:'DM Mono',monospace; display:flex; flex-direction:column; align-items:center; gap:.1rem }
+.tm-gauge-avg-dot { position:absolute; top:50%; width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.75); transform:translate(-50%,-50%); pointer-events:none; box-shadow:0 0 3px rgba(0,0,0,0.4) }
 .radar-legend    { display:flex; gap:1.2rem; justify-content:center; margin-top:.75rem; flex-wrap:wrap }
 .radar-leg-item  { display:flex; align-items:center; gap:.38rem; font-size:.68rem; color:var(--text2); font-family:'DM Sans',sans-serif }
 .radar-leg-dot   { width:10px; height:10px; border-radius:50%; flex-shrink:0 }
@@ -2458,6 +2460,7 @@ let tmType = null;
 let tmData = { fo: [], fa: [] };
 let tmPrevFo = [], tmPrevFa = [];
 let tmAvgFo = null, tmAvgFa = null; // moyennes par nappe, mises à jour par tmRenderStats
+let tmCvFo  = null, tmCvFa  = null; // CV (±%) par nappe, mises à jour par tmRenderStats
 // Multi-slot store: preserves data per tensiometer key (wf, pt, dt_standard, dt_aerolite2)
 const tmStore = {};       // { [storeKey]: { spokeKey, fo, fa, prevFo, prevFa } }
 let tmActiveKey = null;   // key of the tensiometer whose data is currently in tmData
@@ -6196,10 +6199,18 @@ function tmLinearOpen() {
   // Moyennes par colonne — lues depuis les globales calculées par tmRenderStats (même valeur que le radar)
   var avgL = isFront ? tmAvgFo : tmAvgFa;
   var avgR = isFront ? tmAvgFa : tmAvgFo;
+  var cvL  = isFront ? tmCvFo  : tmCvFa;
+  var cvR  = isFront ? tmCvFa  : tmCvFo;
   var avgLeftEl  = document.getElementById('tm-gauge-avg-left');
   var avgRightEl = document.getElementById('tm-gauge-avg-right');
-  if (avgLeftEl)  { avgLeftEl.textContent  = avgL !== null ? ('∅ ' + avgL.toFixed(1)  + ' kgf') : ''; avgLeftEl.style.color  = leftColor; }
-  if (avgRightEl) { avgRightEl.textContent = avgR !== null ? ('∅ ' + avgR.toFixed(1) + ' kgf') : ''; avgRightEl.style.color = rightColor; }
+  if (avgLeftEl)  {
+    avgLeftEl.innerHTML  = avgL !== null ? ('<span>∅ ' + avgL.toFixed(1) + ' kgf</span><span style="opacity:.6;margin-left:.4em">± ' + cvL.toFixed(1) + ' %</span>') : '';
+    avgLeftEl.style.color  = leftColor;
+  }
+  if (avgRightEl) {
+    avgRightEl.innerHTML = avgR !== null ? ('<span>∅ ' + avgR.toFixed(1) + ' kgf</span><span style="opacity:.6;margin-left:.4em">± ' + cvR.toFixed(1) + ' %</span>') : '';
+    avgRightEl.style.color = rightColor;
+  }
 
   var modal = document.getElementById('tm-linear-modal');
   modal.querySelector('[data-i18n="tmLinearTitle"]').textContent = t('tmLinearTitle');
@@ -6265,7 +6276,8 @@ function tmLinearDraw(leftKgfs, rightKgfs, leftColor, rightColor, leftTrack, rig
     if (val !== null) {
       var avgPct = Math.max(2, Math.min(98, Math.round(((avgV - minV * 0.85) / range) * 100)));
       var cursor = document.createElement('div');
-      cursor.style.cssText = 'position:absolute;top:-3px;bottom:-3px;width:2px;border-radius:1px;background:rgba(255,255,255,0.55);left:' + avgPct + '%;transform:translateX(-50%);pointer-events:none';
+      cursor.className = 'tm-gauge-avg-dot';
+      cursor.style.left = avgPct + '%';
       track.appendChild(cursor);
     }
     cell.appendChild(track);
@@ -6968,6 +6980,8 @@ function tmRenderStats(foKgfs, faKgfs) {
   const fo = stats(foKgfs), fa = stats(faKgfs);
   tmAvgFo = fo ? parseFloat(fo.avg) : null;
   tmAvgFa = fa ? parseFloat(fa.avg) : null;
+  tmCvFo  = fo ? parseFloat(fo.cv)  : null;
+  tmCvFa  = fa ? parseFloat(fa.cv)  : null;
   const container = $id('tm-stats');
   container.innerHTML = '';
 
@@ -8632,8 +8646,8 @@ function hrClearLoadedRim() {
   </div>
   <div class="tm-gauge-header-row" style="border-bottom:none;padding-bottom:.1rem;margin-top:-.2rem">
     <div></div>
-    <div class="tm-gauge-header-cell" id="tm-gauge-avg-left"  style="font-size:.52rem;opacity:.75;letter-spacing:.06em;text-transform:none;font-family:'DM Mono',monospace"></div>
-    <div class="tm-gauge-header-cell" id="tm-gauge-avg-right" style="font-size:.52rem;opacity:.75;letter-spacing:.06em;text-transform:none;font-family:'DM Mono',monospace"></div>
+    <div class="tm-gauge-header-cell tm-gauge-avg-cell" id="tm-gauge-avg-left"></div>
+    <div class="tm-gauge-header-cell tm-gauge-avg-cell" id="tm-gauge-avg-right"></div>
   </div>
   <div class="tm-gauge-scroll" id="tm-gauge-body"></div>
 </div>
