@@ -7205,7 +7205,7 @@ function efSwitchSide(mode) {
 function efClose() {
   $id('ef-overlay').classList.remove('show');
   efHideNumpad();
-  efBtMode = false;
+  efSetBtMode(false);
   document.body.style.overflow = '';
   var btn = $id('easy-fill-toggle');
   if (btn) btn.setAttribute('aria-checked', 'false');
@@ -7431,10 +7431,21 @@ function efDetachBtKeyHandler(wrapper) {
   wrapper._btKeyHandler = null;
 }
 
-function efToggleBt() {
-  efBtMode = !efBtMode;
+function efSetBtMode(val) {
+  efBtMode = val;
   var btBtn = $id('ef-bt-btn');
-  if (btBtn) { btBtn.classList.toggle('active', efBtMode); }
+  if (!btBtn) return;
+  btBtn.classList.toggle('active', efBtMode);
+  if (!efBtMode) {
+    // Forcer le reset visuel — les navigateurs mobiles maintiennent :hover/:active après un tap
+    btBtn.style.color = '';
+    btBtn.style.borderColor = '';
+    btBtn.style.background = '';
+  }
+}
+
+function efToggleBt() {
+  efSetBtMode(!efBtMode);
 
   var wrapper = $id('ef-wrapper');
   var isTouch = efIsTouchDevice();
