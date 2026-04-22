@@ -537,10 +537,12 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .arb-even-btn:hover  { border-color:var(--border-s); color:var(--text2) }
 .arb-even-btn.active { border-color:rgba(126,200,227,.4); color:var(--accent2); background:rgba(126,200,227,.06) }
 .arb-grid          { display:flex; flex-direction:column; gap:.3rem }
-.arb-row           { display:flex; align-items:center; justify-content:space-between; padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--rs); background:var(--card-alt) }
+.arb-row           { display:flex; align-items:center; justify-content:space-between; padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--rs); background:var(--card-alt); cursor:pointer; transition:border-color .18s, background .18s, box-shadow .18s }
+.arb-row:hover     { background:rgba(255,255,255,.04); box-shadow:0 0 0 1px var(--border-s) }
 .arb-row.best-fo  { border-color:var(--warm) }
 .arb-row.best-fa  { border-color:var(--accent) }
-.arb-row.arb-muted { opacity:.25; border-color:transparent }
+.arb-row.arb-muted { opacity:.25; border-color:transparent; pointer-events:none; cursor:default }
+.arb-row.arb-flash { border-color:var(--success) !important; box-shadow:0 0 0 1px var(--success) !important }
 .arb-left          { display:flex; flex-direction:column; align-items:flex-start; gap:.05rem }
 .arb-sz            { font-family:'DM Mono',monospace; font-size:.88rem; font-weight:500; color:var(--text); line-height:1 }
 .arb-unit          { font-family:'DM Mono',monospace; font-size:.58rem; font-weight:300; color:var(--text3) }
@@ -3431,7 +3433,8 @@ function renderArb(side) {
   $id('arb-grid-' + side).innerHTML = sizes.map((sz, i) => {
     const delta = deltas[i];
     let cls = 'arb-row';
-    if (onlyEven && sz%2!==0) cls += ' arb-muted';
+    const isMuted = onlyEven && sz%2!==0;
+    if (isMuted) cls += ' arb-muted';
     else if (Math.abs(delta) <= minAbs + 0.0001) cls += ' best-' + side;
     const rawThreads = delta / 0.45;
     const roundedThreads = Math.round(rawThreads * 2) / 2;
@@ -3439,8 +3442,21 @@ function renderArb(side) {
       ? (Math.abs(roundedThreads) <= 1 ? 'filet' : 'filets')
       : (Math.abs(roundedThreads) <= 1 ? 'thread' : 'threads');
     const threadStr = '≈ ' + (roundedThreads === 0 ? '' : roundedThreads > 0 ? '+' : '') + roundedThreads + ' ' + threadWord;
-    return `<div class="${cls}"><div class="arb-left"><span class="arb-sz">${sz}</span><span class="arb-unit">mm</span></div><div class="arb-right"><span class="arb-delta">${delta>=0?'+':''}${delta.toFixed(2)} mm</span><span class="arb-lbl" style="margin-bottom:.08rem">${t('gapTarget')}</span><span class="arb-lbl" style="color:var(--text2);font-size:.58rem">${threadStr}</span></div></div>`;
+    const clickAttr = isMuted ? '' : ` onclick="applyArbLen('${side}',${sz},this)"`;
+    return `<div class="${cls}"${clickAttr}><div class="arb-left"><span class="arb-sz">${sz}</span><span class="arb-unit">mm</span></div><div class="arb-right"><span class="arb-delta">${delta>=0?'+':''}${delta.toFixed(2)} mm</span><span class="arb-lbl" style="margin-bottom:.08rem">${t('gapTarget')}</span><span class="arb-lbl" style="color:var(--text2);font-size:.58rem">${threadStr}</span></div></div>`;
   }).join('');
+}
+
+function applyArbLen(side, sz, el) {
+  if (!summaryData) return;
+  const d = summaryData;
+  // side here is 'fo' or 'fa' from the arb grid
+  if (side === 'fo') d.lenFo = String(sz);
+  else d.lenFa = String(sz);
+  renderSummary();
+  // Green flash animation
+  el.classList.add('arb-flash');
+  setTimeout(() => el.classList.remove('arb-flash'), 700);
 }
 
 function toggleEven(side) { evenMode[side] = !evenMode[side]; $id('arb-even-'+side).classList.toggle('active', evenMode[side]); renderArb(side); }
