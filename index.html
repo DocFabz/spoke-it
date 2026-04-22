@@ -854,22 +854,23 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 }
 .ef-kgf-preview.has-val { color:var(--text2) }
 
-.ef-btn-row { display:flex; gap:.5rem; align-items:center; justify-content:center }
+.ef-btn-row { display:flex; gap:.5rem; align-items:center; justify-content:center; margin-top:.85rem }
 .ef-back-btn {
-  background:transparent; border:1px solid var(--border-s);
+  flex:1; background:transparent; border:1px solid var(--border-s);
   border-radius:var(--rs); color:var(--text2);
   font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500;
   padding:.55rem 1.3rem; cursor:pointer; transition:all .2s;
-  display:flex; align-items:center; gap:.35rem;
+  touch-action:manipulation;
 }
 .ef-back-btn:hover { border-color:var(--border-s); color:var(--text) }
 .ef-back-btn:disabled { opacity:.3; cursor:default; pointer-events:none }
 
 .ef-next-btn {
-  background:transparent; border:1px solid var(--border-s);
+  flex:1; background:transparent; border:1px solid var(--border-s);
   border-radius:var(--rs); color:var(--text2);
   font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500;
   padding:.55rem 1.3rem; cursor:pointer; transition:all .2s;
+  touch-action:manipulation;
 }
 .ef-next-btn:hover { border-color:var(--border-s); color:var(--text) }
 
@@ -7234,7 +7235,6 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 
     <div class="ef-btn-row">
       <button class="ef-back-btn" id="ef-back-btn" onclick="efBack()" disabled>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         <span id="ef-back-label">←</span>
       </button>
       <button class="ef-next-btn" id="ef-next-btn" onclick="efNext()">Next →</button>
