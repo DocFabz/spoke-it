@@ -538,6 +538,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .arb-grid          { display:flex; flex-direction:column; gap:.3rem }
 .arb-row           { display:flex; align-items:center; justify-content:space-between; padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--rs); background:var(--card-alt); cursor:pointer; touch-action:manipulation; transition:border-color .18s, background .18s, box-shadow .18s }
 .arb-row:hover     { background:rgba(255,255,255,.04); box-shadow:0 0 0 1px var(--border-s) }
+@media (hover: none) { .arb-row:hover { background:var(--card-alt); box-shadow:none } }
 .arb-row.best-fo  { border-color:var(--warm) }
 .arb-row.best-fa  { border-color:var(--accent) }
 .arb-row.arb-muted { opacity:.25; border-color:transparent; pointer-events:none; cursor:default }
