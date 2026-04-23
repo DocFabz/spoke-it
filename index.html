@@ -2500,8 +2500,9 @@ function tmResetData() { tmData = { fo: [], fa: [] }; tmPrevFo = []; tmPrevFa = 
 const saved = { avant: null, arriere: null };
 let currentErrKey = null;
 let summaryData = null;
-let arbData  = { fo: null, fa: null };
-let evenMode = { fo: false, fa: false };
+let arbData     = { fo: null, fa: null };
+let evenMode    = { fo: false, fa: false };
+let arbSelected = { fo: null, fa: null };
 let ccPoints = [];       // [{kgf, reading}] — état charte personnalisée
 let ccInputOrder = null; // null | 'kgf-first' | 'read-first'
 
@@ -3447,7 +3448,7 @@ function renderArb(side) {
       : (Math.abs(roundedThreads) <= 1 ? 'thread' : 'threads');
     const threadStr = '≈ ' + (roundedThreads === 0 ? '' : roundedThreads > 0 ? '+' : '') + roundedThreads + ' ' + threadWord;
     const clickAttr = isMuted ? '' : ` onclick="applyArbLen('${side}',${sz},this)"`;
-    return `<div class="${cls}"${clickAttr}><div class="arb-left"><span class="arb-sz">${sz}</span><span class="arb-unit">mm</span></div><div class="arb-right"><span class="arb-delta">${delta>=0?'+':''}${delta.toFixed(2)} mm</span><span class="arb-lbl" style="margin-bottom:.08rem">${t('gapTarget')}</span><span class="arb-lbl" style="color:var(--text2);font-size:.58rem">${threadStr}</span></div></div>`;
+    return `<div class="${cls}"${clickAttr}><div class="arb-left"><span class="arb-sz">${sz}</span><span class="arb-unit">mm</span>${arbSelected[side] === sz ? '<span style="color:var(--success);font-size:.7rem;line-height:1">✓</span>' : ''}</div><div class="arb-right"><span class="arb-delta">${delta>=0?'+':''}${delta.toFixed(2)} mm</span><span class="arb-lbl" style="margin-bottom:.08rem">${t('gapTarget')}</span><span class="arb-lbl" style="color:var(--text2);font-size:.58rem">${threadStr}</span></div></div>`;
   }).join('');
 }
 
@@ -3458,9 +3459,10 @@ function applyArbLen(side, sz, el) {
   if (side === 'fo') d.lenFo = String(sz);
   else d.lenFa = String(sz);
   renderSummary();
-  // Green flash animation
-  el.classList.add('arb-flash');
-  setTimeout(() => el.classList.remove('arb-flash'), 700);
+  arbSelected[side] = sz; renderArb(side);
+  // Green flash on the newly rendered element
+  const newEl = [...$id('arb-grid-' + side).querySelectorAll('.arb-row')].find(r => parseInt(r.querySelector('.arb-sz').textContent) === sz);
+  if (newEl) { newEl.classList.add('arb-flash'); setTimeout(() => newEl.classList.remove('arb-flash'), 700); }
 }
 
 function toggleEven(side) { evenMode[side] = !evenMode[side]; $id('arb-even-'+side).classList.toggle('active', evenMode[side]); renderArb(side); }
