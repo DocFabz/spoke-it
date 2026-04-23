@@ -495,6 +495,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .sum-val  { font-family:'DM Mono',monospace; font-size:.8rem; color:var(--text) }
 .sum-val-btn { font-family:'DM Mono',monospace; font-size:.8rem; background:none; border:none; padding:0; cursor:pointer; touch-action:manipulation; display:inline-flex; align-items:baseline; gap:.35rem; transition:opacity .15s }
 .sum-val-btn:hover { opacity:.75 }
+.sum-val-btn:active { opacity:1 }
+@media (hover: none) { .sum-val-btn:hover { opacity:1 } }
 .sum-val-btn svg { width:10px; height:10px; stroke:currentColor; stroke-width:1.6; fill:none; flex-shrink:0; align-self:center; opacity:.55 }
 @keyframes sum-blink {
   0%, 100% { opacity:1 }
