@@ -802,7 +802,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   display:inline-flex; align-items:center; justify-content:center;
 }
 
-.ef-progress-wrap { display:flex; flex-direction:column; gap:.35rem }
+.ef-progress-wrap { display:flex; flex-direction:column; gap:.55rem }
 .ef-progress-label {
   font-family:'DM Mono',monospace; font-size:.6rem; color:var(--text3);
   letter-spacing:.08em; text-align:center;
@@ -816,7 +816,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 }
 
 .ef-step-info {
-  text-align:center;
+  text-align:center; margin-top:.35rem;
 }
 .ef-step-side {
   font-size:.58rem; font-weight:600; letter-spacing:.18em;
@@ -832,7 +832,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   font-size:.75rem; font-weight:400; color:var(--text2); margin-left:.15rem;
 }
 
-.ef-input-row { display:flex; flex-direction:column; gap:.5rem; align-items:center }
+.ef-input-row { display:flex; flex-direction:column; gap:1.1rem; align-items:center; margin-top:.35rem }
 .ef-inp {
   width:100%; max-width:180px;
   background:var(--inp); border:1px solid var(--border-s);
@@ -851,7 +851,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   font-family:'DM Mono',monospace; font-size:.75rem; font-weight:300;
   color:var(--text3); min-height:1.1rem; transition:color .2s;
 }
-.ef-kgf-preview.has-val { color:var(--text2) }
+.ef-kgf-preview.has-val.fo { color:var(--warm) }
+.ef-kgf-preview.has-val.fa { color:var(--accent) }
 
 .ef-btn-row { display:flex; gap:.5rem; align-items:center; justify-content:center; margin-top:.85rem }
 .ef-back-btn {
@@ -7396,12 +7397,13 @@ function efRenderStep() {
 function efUpdateKgf() {
   var raw  = $id('ef-inp').value.trim();
   var prev = $id('ef-kgf-preview');
-  if (!raw) { prev.textContent = ''; prev.classList.remove('has-val'); return; }
+  var side = efSteps && efSteps[efCurrent] ? efSteps[efCurrent].side : '';
+  if (!raw) { prev.textContent = ''; prev.className = 'ef-kgf-preview'; return; }
   var parsed = tmParseInput(raw);
-  if (parsed === null) { prev.textContent = '—'; prev.classList.remove('has-val'); return; }
+  if (parsed === null) { prev.textContent = '—'; prev.className = 'ef-kgf-preview'; return; }
   var kgf = toKgf(parsed);
-  if (kgf !== null) { prev.textContent = kgf + ' kgf'; prev.classList.add('has-val'); }
-  else              { prev.textContent = ''; prev.classList.remove('has-val'); }
+  if (kgf !== null) { prev.textContent = kgf + ' kgf'; prev.className = 'ef-kgf-preview has-val ' + side; }
+  else              { prev.textContent = ''; prev.className = 'ef-kgf-preview'; }
 }
 
 // Retourne true si valide (ou vide), false si hors plage
