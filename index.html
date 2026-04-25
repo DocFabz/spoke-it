@@ -9064,7 +9064,7 @@ function _snapRenum(snaps) {
 function _snapSetLabel(num) {
   const lbl = $id('tm-snap-label'), lblTxt = $id('tm-snap-label-text');
   if (!lbl || !lblTxt) return;
-  if (num > 1) { lblTxt.textContent = 'Snapshot ' + num; lbl.classList.add('show'); }
+  if (num >= 1) { lblTxt.textContent = 'Snapshot ' + num; lbl.classList.add('show'); }
   else { lbl.classList.remove('show'); }
 }
 
@@ -9092,8 +9092,6 @@ function snapSave() {
   const { cfg, idx, configs } = _snapFindCurrentConfig();
   if (!cfg) return;
   const snaps = cfg.snapshots || [];
-  // Snapshot 1 auto si absent
-  if (snaps.length === 0) snaps.push(_snapMakeEntry(1));
   // Quota : supprimer le plus ancien (index 1 après tri) si plein
   if (snaps.length >= SNAP_MAX) {
     snaps.sort((a, b) => a.ts - b.ts);
@@ -9207,14 +9205,14 @@ function snapRefreshBtn() {
   const btn = $id('tm-snap-open-btn');
   const { cfg } = _snapFindCurrentConfig();
   const snaps = cfg && cfg.snapshots ? cfg.snapshots : [];
-  const has = snaps.length > 0;
+  const canOpen = !!cfg && tmHasData();
   if (btn) {
-    btn.disabled = !has;
-    btn.style.borderColor = has ? 'rgba(126,200,227,.6)' : '';
-    btn.style.color       = has ? 'var(--accent)' : '';
-    btn.style.background  = has ? 'rgba(126,200,227,.08)' : '';
+    btn.disabled          = !canOpen;
+    btn.style.borderColor = canOpen ? 'rgba(126,200,227,.6)' : '';
+    btn.style.color       = canOpen ? 'var(--accent)' : '';
+    btn.style.background  = canOpen ? 'rgba(126,200,227,.08)' : '';
   }
-  if (!has) _snapSetLabel(0);
+  if (!snaps.length) _snapSetLabel(0);
 }
 </script>
 
