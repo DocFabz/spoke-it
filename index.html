@@ -565,6 +565,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   transition: all .2s;
   flex-shrink: 0;
 }
+.tm-screenshot-btn:disabled { opacity:.35; background:transparent; border-color:var(--border); color:var(--text3); cursor:default; pointer-events:none }
 .tm-screenshot-btn:active { opacity:.75 }
 .tm-screenshot-btn.flash { border-color: var(--success); color: var(--success) }
 
@@ -599,8 +600,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:500;
   padding:.5rem .9rem; cursor:pointer; touch-action:manipulation; transition:all .22s; white-space:nowrap;
 }
-.snap-save-btn:hover { border-color:rgba(126,200,227,.5); color:var(--accent2); background:rgba(126,200,227,.05) }
-.snap-feedback { font-size:.67rem; min-height:.85rem; color:#f08080; flex-shrink:0 }
+@media (hover: hover) { .snap-save-btn:hover { border-color:rgba(126,200,227,.5); color:var(--accent2); background:rgba(126,200,227,.05) } }
+
 .snap-divider { height:1px; background:var(--border); flex-shrink:0 }
 .snap-list { display:flex; flex-direction:column; gap:.35rem }
 .snap-empty { font-size:.72rem; color:var(--text3); text-align:center; padding:.6rem 0; font-style:italic }
@@ -608,19 +609,14 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   display:flex; align-items:center; gap:.5rem;
   padding:.5rem .75rem; background:var(--card-alt);
   border:1px solid var(--border); border-radius:var(--rs);
-  transition:border-color .18s;
+  cursor:pointer; touch-action:manipulation; transition:border-color .18s, background .18s;
 }
-.snap-item-latest { }
+@media (hover: hover) { .snap-item:hover { border-color:var(--border-s); background:rgba(126,200,227,.03) } }
+
 .snap-item-info { flex:1; display:flex; flex-direction:column; gap:.12rem; overflow:hidden; min-width:0 }
 .snap-item-label { font-family:'DM Mono',monospace; font-size:.75rem; color:var(--accent2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
 .snap-item-meta { font-size:.58rem; color:var(--text3) }
 .snap-item-actions { display:flex; gap:.3rem; flex-shrink:0 }
-.snap-load-btn {
-  background:transparent; border:1px solid var(--border-s); border-radius:var(--rs);
-  color:var(--text2); font-family:'DM Mono',monospace; font-size:.6rem; letter-spacing:.1em;
-  padding:.2rem .6rem; cursor:pointer; touch-action:manipulation; transition:all .2s; white-space:nowrap; text-transform:uppercase;
-}
-.snap-load-btn:hover { border-color:var(--accent); color:var(--accent) }
 .snap-del-btn { background:transparent; border:none; color:var(--text3); font-size:.95rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
 .snap-del-btn:hover { color:#f08080 }
 
@@ -954,12 +950,10 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 
 /* ── Configs ───────────────────────────────────────────────────────────────── */
 .cfg-list       { display:flex; flex-direction:column; gap:.4rem; margin-top:1.1rem }
-.cfg-item       { display:flex; align-items:center; gap:.5rem; padding:.6rem .9rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); transition:border-color .2s }
-.cfg-item:hover { border-color:var(--border-s) }
+.cfg-item       { display:flex; align-items:center; gap:.5rem; padding:.6rem .9rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; touch-action:manipulation; transition:border-color .2s, background .2s }
+@media (hover: hover) { .cfg-item:hover { border-color:var(--border-s); background:rgba(126,200,227,.03) } }
 .cfg-name       { flex:1; font-size:.82rem; color:var(--text); font-weight:400; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
 .cfg-meta       { font-family:'DM Mono',monospace; font-size:.63rem; color:var(--text3); white-space:nowrap; margin-right:.3rem }
-.cfg-load       { background:transparent; border:1px solid var(--border); border-radius:20px; color:var(--text2); font-family:'DM Mono',monospace; font-size:.6rem; letter-spacing:.1em; padding:.2rem .6rem; cursor:pointer; transition:all .2s; text-transform:uppercase }
-.cfg-load:hover { border-color:var(--accent); color:var(--accent) }
 .cfg-del        { background:transparent; border:none; color:var(--text3); font-size:.95rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
 .cfg-del:hover  { color:#f08080 }
 
@@ -1953,6 +1947,9 @@ input[type=number] { -moz-appearance:textfield }
         <polygon points="12,7 16.5,10 16.5,14 12,17 7.5,14 7.5,10"/>
       </svg>
       <div class="clabel" data-i18n="tmRadarTitle">Diagramme de tension</div>
+      <div class="cfg-loaded-name" id="tm-snap-label">
+        <span class="cfg-loaded-text" id="tm-snap-label-text"></span>
+      </div>
       <em id="tm-result-card-chevron" class="chevron">&#8964;</em>
     </div>
 
@@ -2332,12 +2329,7 @@ const i18n = {
     snapTitle:'Snapshots de tension',
     snapBtn:'Snapshots',
     snapSaveBtn:'Enregistrer',
-    snapLoadBtn:'Charger',
     snapEmpty:'Aucun snapshot enregistré.',
-    snapErrNoData:'Aucune donnée de tension à enregistrer.',
-    snapErrNoConfig:'Sauvegardez d\'abord une configuration.',
-    snapOf:'sur',
-    snapLoaded:'Snapshot chargé.',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -2460,12 +2452,7 @@ const i18n = {
     snapTitle:'Tension Snapshots',
     snapBtn:'Snapshots',
     snapSaveBtn:'Save',
-    snapLoadBtn:'Load',
     snapEmpty:'No snapshots saved yet.',
-    snapErrNoData:'No tension data to save.',
-    snapErrNoConfig:'Save a configuration first.',
-    snapOf:'of',
-    snapLoaded:'Snapshot loaded.',
   }
 };
 
@@ -2485,6 +2472,7 @@ function flashWheelCard(configName) {
     _lastLoadTime = Date.now();
   }
   _refreshLoadedBadges();
+  snapRefreshBtn();
   _flashTimer = setTimeout(() => {
     card.style.borderColor = '';
     card.style.boxShadow   = '';
@@ -2539,7 +2527,7 @@ let tmPrevFo = [], tmPrevFa = [];
 let tmAvgFo = null, tmAvgFa = null; // moyennes par nappe, mises à jour par tmRenderStats
 let tmCvFo  = null, tmCvFa  = null; // CV (±%) par nappe, mises à jour par tmRenderStats
 // Numéro du dernier snapshot chargé (pour le liseret bleu)
-let _snapLoadedNum = null;
+
 // Multi-slot store: preserves data per tensiometer key (wf, pt, dt_standard, dt_aerolite2)
 const tmStore = {};       // { [storeKey]: { spokeKey, fo, fa, prevFo, prevFa } }
 let tmActiveKey = null;   // key of the tensiometer whose data is currently in tmData
@@ -3501,7 +3489,7 @@ function renderSummary() {
 }
 
 // ── Arbitrage ─────────────────────────────────────────────────────────────────
-function buildArb(side, exactLen, elongation) { arbData[side] = { exactLen, elongation }; renderArb(side); }
+function buildArb(side, exactLen, elongation) { arbData[side] = { exactLen, elongation }; arbSelected[side] = null; renderArb(side); }
 
 function renderArb(side) {
   const d = arbData[side], onlyEven = evenMode[side];
@@ -3721,22 +3709,18 @@ function saveConfig() {
   if (!name) { fb.textContent = t('saveError'); fb.style.color = '#f08080'; return; }
   const state = readState(); state.wtype = wtype;
   const configs = loadConfigs();
-  // Remplacer si même nom, sinon insérer en tête
   const existIdx = configs.findIndex(c => c.name === name && (c.state.wtype || 'avant') === wtype);
-  // Préserver les snapshots existants si on écrase une config du même nom
-  const existingSnapshots = (existIdx >= 0 && configs[existIdx].snapshots) ? configs[existIdx].snapshots : undefined;
   const entry = { name, metaKey: wtype === 'avant' ? 'frontLabel' : 'rearLabel', state, ts: Date.now() };
-  if (existingSnapshots) {
+  // Préserver les snapshots existants ; créer snapshot 1 si absent et données présentes
+  const existingSnapshots = existIdx >= 0 ? (configs[existIdx].snapshots || []) : [];
+  if (existingSnapshots.length > 0) {
+    if (!existingSnapshots.some(s => s.num === 1) && tmHasData()) {
+      existingSnapshots.unshift(_snapMakeEntry(0));
+      _snapRenum(existingSnapshots);
+    }
     entry.snapshots = existingSnapshots;
   } else if (tmHasData()) {
-    // Première sauvegarde avec données de tension → SNAPSHOT 1 automatique
-    entry.snapshots = [{
-      num: 1, ts: Date.now(),
-      fo: tmData.fo.slice(), fa: tmData.fa.slice(),
-      tmType: tmType || null, tmSpokeKey: tmSpokeKey || null,
-      tmDTSub: tmDTSub || 'standard', tmWFSub: tmWFSub || 'new',
-      tensioLabel: _snapTensioLabel(tmType, tmDTSub, tmWFSub),
-    }];
+    entry.snapshots = [_snapMakeEntry(1)];
   }
   if (existIdx >= 0) configs.splice(existIdx, 1, entry);
   else configs.unshift(entry);
@@ -3763,7 +3747,6 @@ function loadConfig(idx) {
   resetScrollFlags();
   const top = document.querySelector('header').getBoundingClientRect().bottom + window.pageYOffset - 30; window.scrollTo({ top, behavior: 'smooth' });
   flashWheelCard(cfg.name);
-  _snapLoadedNum = null;
 }
 
 function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -3774,10 +3757,10 @@ function renderConfigsList() {
   if (filtered.length === 0) { hideConfigsPanel(); return; }
   showConfigsPanel();
   list.innerHTML = filtered.map(({ cfg, i }) =>
-    `<div class="cfg-item"><span class="cfg-name">${escHtml(cfg.name)}</span>`
+    `<div class="cfg-item" onclick="loadConfig(${i})">`
+    + `<span class="cfg-name">${escHtml(cfg.name)}</span>`
     + (cfg.metaKey ? `<span class="cfg-meta">${t(cfg.metaKey)}</span>` : '')
-    + `<button class="cfg-load" onclick="loadConfig(${i})">${t('loadBtn')}</button>`
-    + `<button class="cfg-del" onclick="deleteConfig(${i})" title="Supprimer">×</button></div>`
+    + `<button class="cfg-del" onclick="event.stopPropagation();deleteConfig(${i})" title="Supprimer">×</button></div>`
   ).join('');
 }
 
@@ -5735,12 +5718,12 @@ function tmShowDiagramIfData() {
 function tmInit() {
   tmUpdateBadges();
   tmPopulateSpokeSelect();
-  // Reconstruire la table seulement si on a des données à afficher, ou si la table est vide
   const hasTbody = $id('tm-tbody').querySelectorAll('tr').length > 0;
   if (!hasTbody || tmHasData()) {
     tmBuildTable();
   }
   tmShowDiagramIfData();
+  snapRefreshBtn();
 }
 
 // ── tmUpdateBadges ─────────────────────────────────────────────────────────
@@ -5956,6 +5939,7 @@ function tmBuildTable() {
         tmUpdateCell(idx, side);
         tmTryRenderRadar();
         tmUpdateResultCardState();
+        _snapSetLabel(0);
       });
 
       inp.addEventListener('keydown', function(e) {
@@ -6043,6 +6027,7 @@ function tmResetSide(col) {
 
   tmTryRenderRadar();
   tmUpdateResultCardState();
+  _snapSetLabel(0);
 }
 
 function tmOpenOutlierModal() {
@@ -9034,21 +9019,19 @@ function hrClearLoadedRim() {
     <button class="snap-close" onclick="snapClose()">✕</button>
   </div>
   <div class="snap-save-row">
-    <button class="snap-save-btn" style="width:100%;justify-content:center" onclick="snapSave()" data-i18n="snapSaveBtn">Enregistrer un snapshot</button>
+    <button class="snap-save-btn" style="width:100%;justify-content:center" onclick="snapSave()" data-i18n="snapSaveBtn">Enregistrer</button>
   </div>
-  <div class="snap-feedback" id="snap-feedback"></div>
   <div class="snap-divider"></div>
   <div class="snap-list" id="snap-list"></div>
 </div>
 
 <script>
 // ── Snapshots de tension ──────────────────────────────────────────────────────
-// Stockage : entry.snapshots = [{ label, ts, fo, fa, tmType, tmSpokeKey }, ...]
-// Max SNAP_MAX par config. Rétrocompat totale : champ absent = []
+// 5 snapshots max (1→5). Le snapshot 1 est créé automatiquement.
+// Renumérotation après suppression. Champ absent = [] (rétrocompat).
 
-const SNAP_MAX = 4;
+const SNAP_MAX = 5;
 
-// Résout le nom lisible du tensiomètre actif
 function _snapTensioLabel(type, dtSub, wfSub) {
   if (!type) return null;
   if (type.startsWith('ct_')) return type.replace(/^ct_/, '★ ');
@@ -9058,15 +9041,35 @@ function _snapTensioLabel(type, dtSub, wfSub) {
     dt_standard: 'DT SWISS STD', dt_aerolite2: 'DT SWISS AEL2',
     pk: 'P&KLIE', un: 'UNIOR 1752',
   };
-  // Construire la clé composée si nécessaire
   const key = type === 'wf' ? 'wf_' + (wfSub || 'new')
             : type === 'dt' ? 'dt_' + (dtSub || 'standard')
             : type;
   return map[key] || type.toUpperCase();
 }
 
+function _snapMakeEntry(num) {
+  return {
+    num, ts: Date.now(),
+    fo: tmData.fo.slice(), fa: tmData.fa.slice(),
+    tmType: tmType || null, tmSpokeKey: tmSpokeKey || null,
+    tmDTSub: tmDTSub || 'standard', tmWFSub: tmWFSub || 'new',
+    tensioLabel: _snapTensioLabel(tmType, tmDTSub, tmWFSub),
+  };
+}
+
+function _snapRenum(snaps) {
+  snaps.sort((a, b) => a.ts - b.ts).forEach((s, i) => { s.num = i + 1; });
+}
+
+function _snapSetLabel(num) {
+  const lbl = $id('tm-snap-label'), lblTxt = $id('tm-snap-label-text');
+  if (!lbl || !lblTxt) return;
+  if (num > 1) { lblTxt.textContent = 'Snapshot ' + num; lbl.classList.add('show'); }
+  else { lbl.classList.remove('show'); }
+}
+
 function snapOpen() {
-  $id('snap-feedback').textContent = '';
+  snapRefreshBtn();
   snapRenderList();
   $id('snap-overlay').classList.add('show');
   $id('snap-modal').classList.add('show');
@@ -9075,13 +9078,6 @@ function snapOpen() {
 function snapClose() {
   $id('snap-overlay').classList.remove('show');
   $id('snap-modal').classList.remove('show');
-}
-
-function _snapFeedback(msg, isErr) {
-  const fb = $id('snap-feedback');
-  if (!fb) return;
-  fb.textContent = msg;
-  fb.style.color = isErr ? '#f08080' : 'var(--success)';
 }
 
 function _snapFindCurrentConfig() {
@@ -9093,25 +9089,25 @@ function _snapFindCurrentConfig() {
 }
 
 function snapSave() {
-  if (!tmHasData()) { _snapFeedback(t('snapErrNoData'), true); return; }
   const { cfg, idx, configs } = _snapFindCurrentConfig();
-  if (!cfg) { _snapFeedback(t('snapErrNoConfig'), true); return; }
+  if (!cfg) return;
   const snaps = cfg.snapshots || [];
-  if (snaps.length >= SNAP_MAX) snaps.shift();
-  const num = (snaps.length > 0 ? Math.max(...snaps.map(s => s.num || 0)) : 0) + 1;
-  snaps.push({
-    num, ts: Date.now(),
-    fo: tmData.fo.slice(), fa: tmData.fa.slice(),
-    tmType: tmType || null, tmSpokeKey: tmSpokeKey || null,
-    tmDTSub: tmDTSub || 'standard', tmWFSub: tmWFSub || 'new',
-    tensioLabel: _snapTensioLabel(tmType, tmDTSub, tmWFSub),
-  });
+  // Snapshot 1 auto si absent
+  if (snaps.length === 0) snaps.push(_snapMakeEntry(1));
+  // Quota : supprimer le plus ancien (index 1 après tri) si plein
+  if (snaps.length >= SNAP_MAX) {
+    snaps.sort((a, b) => a.ts - b.ts);
+    snaps.splice(1, 1);
+  }
+  snaps.push(_snapMakeEntry(0));
+  _snapRenum(snaps);
   cfg.snapshots = snaps;
   configs.splice(idx, 1, cfg);
   persistConfigs(configs);
-  _snapFeedback('✓ Snapshot ' + num, false);
+  _snapSetLabel(snaps[snaps.length - 1].num);
   snapRenderList();
   snapRefreshBtn();
+  snapClose();
 }
 
 function snapLoad(snapIdx) {
@@ -9130,30 +9126,22 @@ function snapLoad(snapIdx) {
     if (clearBtn) clearBtn.classList.toggle('inactive', !tmType);
     $id('tm-dt-subtype') && ($id('tm-dt-subtype').style.display = tmType === 'dt' ? 'flex' : 'none');
     $id('tm-wf-subtype') && ($id('tm-wf-subtype').style.display = tmType === 'wf' ? 'flex' : 'none');
-
-    // Sous-type DT
     if (snap.tmType === 'dt') {
       const sub = snap.tmDTSub || 'standard';
       tmDTSub = sub;
-      const bStd  = $id('tm-btn-dt-std');
-      const bAel2 = $id('tm-btn-dt-ael2');
+      const bStd = $id('tm-btn-dt-std'), bAel2 = $id('tm-btn-dt-ael2');
       if (bStd)  bStd.classList.toggle('active',  sub === 'standard');
       if (bAel2) bAel2.classList.toggle('active', sub === 'aerolite2');
       updateDTTip();
     }
-
-    // Sous-type WF
     if (snap.tmType === 'wf') {
       const sub = snap.tmWFSub || 'new';
       tmWFSub = sub;
-      const bOld = $id('tm-btn-wf-old');
-      const bNew = $id('tm-btn-wf-new');
+      const bOld = $id('tm-btn-wf-old'), bNew = $id('tm-btn-wf-new');
       if (bOld) bOld.classList.toggle('active', sub === 'old');
       if (bNew) bNew.classList.toggle('active', sub === 'new');
       updateWFTip();
     }
-
-    // Rayon
     tmSpokeKey = snap.tmSpokeKey || null;
     if (tmSpokeKey && tmSpokeKey.startsWith(CC_PREFIX)) ccInjectAll();
     tmPopulateSpokeSelect();
@@ -9167,12 +9155,10 @@ function snapLoad(snapIdx) {
   tmPrevFo  = tmData.fo.slice();
   tmPrevFa  = tmData.fa.slice();
 
-  _snapLoadedNum = snap.num || (snapIdx + 1);
   tmBuildTable();
   tmShowDiagramIfData();
-  _snapFeedback(t('snapLoaded'), false);
-  snapRenderList();
-  setTimeout(snapClose, 700);
+  _snapSetLabel(snap.num);
+  snapClose();
 }
 
 function snapDelete(snapIdx) {
@@ -9180,10 +9166,12 @@ function snapDelete(snapIdx) {
   if (!cfg) return;
   const snaps = cfg.snapshots || [];
   snaps.splice(snapIdx, 1);
+  _snapRenum(snaps);
   cfg.snapshots = snaps;
   configs.splice(idx, 1, cfg);
   persistConfigs(configs);
   snapRenderList();
+  _snapSetLabel(1); // revenir au snapshot 1
   snapRefreshBtn();
 }
 
@@ -9196,47 +9184,37 @@ function snapRenderList() {
     list.innerHTML = '<div class="snap-empty">' + t('snapEmpty') + '</div>';
     return;
   }
-  const latestIdx = snaps.length - 1;
-  const items = snaps.map((snap, i) => {
+  list.innerHTML = snaps.map((snap, i) => {
     const d = new Date(snap.ts);
     const dateStr = String(d.getDate()).padStart(2,'0') + '/'
       + String(d.getMonth()+1).padStart(2,'0') + ' '
       + String(d.getHours()).padStart(2,'0') + ':'
       + String(d.getMinutes()).padStart(2,'0');
-    const spokeStr = snap.tmSpokeKey ? snap.tmSpokeKey : '';
-    const tensioStr = snap.tensioLabel ? snap.tensioLabel : '';
-    const infoStr = [tensioStr, spokeStr].filter(Boolean).join(' · ');
-    const snapNum = snap.num || (i + 1);
-    // Liseret bleu : snapshot chargé en priorité, sinon dernier enregistré
-    const isActive = _snapLoadedNum !== null ? snapNum === _snapLoadedNum : i === latestIdx;
-    const label = 'SNAPSHOT ' + snapNum;
-    const labelStyle = '';
-    return '<div class="snap-item' + (isActive ? ' snap-item-latest' : '') + '">'
+    const infoStr = [snap.tensioLabel, snap.tmSpokeKey].filter(Boolean).join(' · ');
+    return '<div class="snap-item" onclick="snapLoad(' + i + ')">'
       + '<div class="snap-item-info">'
-      + '<span class="snap-item-label"' + labelStyle + '>' + label + '</span>'
+      + '<span class="snap-item-label">SNAPSHOT ' + snap.num + '</span>'
       + '<span class="snap-item-meta">' + dateStr + '</span>'
       + (infoStr ? '<span class="snap-item-meta">' + infoStr + '</span>' : '')
       + '</div>'
       + '<div class="snap-item-actions">'
-      + '<button class="snap-load-btn" onclick="snapLoad(' + i + ')">' + t('snapLoadBtn') + '</button>'
-      + '<button class="snap-del-btn" onclick="snapDelete(' + i + ')" title="Supprimer">×</button>'
+      + '<button class="snap-del-btn" onclick="event.stopPropagation();snapDelete(' + i + ')" title="Supprimer">×</button>'
       + '</div></div>';
   }).reverse().join('');
-  list.innerHTML = items;
-}
-
-function snapHasAny() {
-  const { cfg } = _snapFindCurrentConfig();
-  return !!(cfg && cfg.snapshots && cfg.snapshots.length > 0);
 }
 
 function snapRefreshBtn() {
   const btn = $id('tm-snap-open-btn');
-  if (!btn) return;
-  const has = snapHasAny();
-  btn.style.borderColor = has ? 'rgba(126,200,227,.6)' : '';
-  btn.style.color       = has ? 'var(--accent)' : '';
-  btn.style.background  = has ? 'rgba(126,200,227,.08)' : '';
+  const { cfg } = _snapFindCurrentConfig();
+  const snaps = cfg && cfg.snapshots ? cfg.snapshots : [];
+  const has = snaps.length > 0;
+  if (btn) {
+    btn.disabled = !has;
+    btn.style.borderColor = has ? 'rgba(126,200,227,.6)' : '';
+    btn.style.color       = has ? 'var(--accent)' : '';
+    btn.style.background  = has ? 'rgba(126,200,227,.08)' : '';
+  }
+  if (!has) _snapSetLabel(0);
 }
 </script>
 
