@@ -610,7 +610,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   border:1px solid var(--border); border-radius:var(--rs);
   transition:border-color .18s;
 }
-.snap-item-latest { border-color:rgba(126,200,227,.35); background:rgba(126,200,227,.04) }
+.snap-item-latest { }
 .snap-item-info { flex:1; display:flex; flex-direction:column; gap:.12rem; overflow:hidden; min-width:0 }
 .snap-item-label { font-family:'DM Mono',monospace; font-size:.75rem; color:var(--accent2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
 .snap-item-meta { font-size:.58rem; color:var(--text3) }
@@ -9210,7 +9210,7 @@ function snapRenderList() {
     // Liseret bleu : snapshot chargé en priorité, sinon dernier enregistré
     const isActive = _snapLoadedNum !== null ? snapNum === _snapLoadedNum : i === latestIdx;
     const label = 'SNAPSHOT ' + snapNum;
-    const labelStyle = isActive ? ' style="color:var(--accent)"' : '';
+    const labelStyle = '';
     return '<div class="snap-item' + (isActive ? ' snap-item-latest' : '') + '">'
       + '<div class="snap-item-info">'
       + '<span class="snap-item-label"' + labelStyle + '>' + label + '</span>'
