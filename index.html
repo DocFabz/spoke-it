@@ -2755,9 +2755,11 @@ function applyState(s) {
     $id('results').classList.add('show');
     if (s.summaryData) { summaryData = s.summaryData; renderSummary(); $id('summary-wrap').classList.add('show'); }
     if (s.arbData && s.arbData.fo && s.arbData.fa) {
-      arbData = s.arbData; arbSelected = s.arbSelected ? JSON.parse(JSON.stringify(s.arbSelected)) : { fo: null, fa: null };
+      arbData = s.arbData;
       buildArb('fo', arbData.fo.exactLen, arbData.fo.elongation);
       buildArb('fa', arbData.fa.exactLen, arbData.fa.elongation);
+      arbSelected = s.arbSelected ? JSON.parse(JSON.stringify(s.arbSelected)) : { fo: null, fa: null };
+      renderArb('fo'); renderArb('fa');
       const hFo = $id('arb-head-fo'); hFo.textContent = t(arbFoKey); hFo.dataset.i18nKey = arbFoKey;
       const hFa = $id('arb-head-fa'); hFa.textContent = t(arbFaKey); hFa.dataset.i18nKey = arbFaKey;
       const arbCols = $id('arb-cols'), arbColFo = $id('arb-col-fo'), arbColFa = $id('arb-col-fa');
