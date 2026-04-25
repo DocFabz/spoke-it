@@ -577,6 +577,53 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 }
 .tm-play-mode-btn:hover { border-color: rgba(126,200,227,.45); color: var(--accent); background: rgba(126,200,227,.04) }
 
+/* ── Snapshots ─────────────────────────────────────────────────────────────── */
+.snap-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
+.snap-overlay.show { display:block; opacity:1 }
+.snap-modal {
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97);
+  z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r);
+  padding:1.5rem 1.4rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55);
+  width:92%; max-width:380px; max-height:82vh; overflow-y:auto;
+  display:none; flex-direction:column; gap:.9rem;
+  opacity:0; transition:opacity .2s, transform .2s;
+}
+.snap-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+.snap-header { display:flex; align-items:center; justify-content:space-between; flex-shrink:0 }
+.snap-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
+.snap-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
+.snap-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+.snap-save-row { display:flex; gap:.4rem; flex-shrink:0 }
+.snap-save-btn {
+  background:transparent; border:1px solid var(--border-s); border-radius:var(--rs);
+  color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:500;
+  padding:.5rem .9rem; cursor:pointer; touch-action:manipulation; transition:all .22s; white-space:nowrap;
+}
+.snap-save-btn:hover { border-color:rgba(126,200,227,.5); color:var(--accent2); background:rgba(126,200,227,.05) }
+.snap-feedback { font-size:.67rem; min-height:.85rem; color:#f08080; flex-shrink:0 }
+.snap-divider { height:1px; background:var(--border); flex-shrink:0 }
+.snap-list { display:flex; flex-direction:column; gap:.35rem }
+.snap-empty { font-size:.72rem; color:var(--text3); text-align:center; padding:.6rem 0; font-style:italic }
+.snap-item {
+  display:flex; align-items:center; gap:.5rem;
+  padding:.5rem .75rem; background:var(--card-alt);
+  border:1px solid var(--border); border-radius:var(--rs);
+  transition:border-color .18s;
+}
+.snap-item-latest { border-color:rgba(126,200,227,.35); background:rgba(126,200,227,.04) }
+.snap-item-info { flex:1; display:flex; flex-direction:column; gap:.12rem; overflow:hidden; min-width:0 }
+.snap-item-label { font-family:'DM Mono',monospace; font-size:.75rem; color:var(--accent2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.snap-item-meta { font-size:.58rem; color:var(--text3) }
+.snap-item-actions { display:flex; gap:.3rem; flex-shrink:0 }
+.snap-load-btn {
+  background:transparent; border:1px solid var(--border-s); border-radius:var(--rs);
+  color:var(--text2); font-family:'DM Mono',monospace; font-size:.6rem; letter-spacing:.1em;
+  padding:.2rem .6rem; cursor:pointer; touch-action:manipulation; transition:all .2s; white-space:nowrap; text-transform:uppercase;
+}
+.snap-load-btn:hover { border-color:var(--accent); color:var(--accent) }
+.snap-del-btn { background:transparent; border:none; color:var(--text3); font-size:.95rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
+.snap-del-btn:hover { color:#f08080 }
+
 /* ── Module Tension ─────────────────────────────────────────────────────────── */
 .module-nav     { display:flex; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); padding:3px; gap:3px; max-width:880px; margin:0 auto 1.2rem; width:100% }
 .module-nav-btn { flex:1; padding:.6rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500; cursor:pointer; touch-action:manipulation; transition:all .3s cubic-bezier(.22,1,.36,1); display:flex; align-items:center; justify-content:center; gap:.4rem; letter-spacing:0; text-transform:uppercase; position:relative; overflow:hidden }
@@ -1911,11 +1958,16 @@ input[type=number] { -moz-appearance:textfield }
 
     <!-- ── Barre Play + icônes ── -->
     <div id="tm-play-bar" style="display:none;align-items:center;justify-content:space-between;margin-top:.55rem">
-      <button id="tm-play-btn" onclick="tmOpenPlayModal()" title="Animer les points" class="tm-screenshot-btn" style="gap:.42rem;padding:.32rem .75rem;border-radius:20px;font-family:'DM Sans',sans-serif;font-size:.68rem;font-weight:500;letter-spacing:.1em">
-        <svg id="tm-play-icon" width="11" height="11" viewBox="0 0 12 12" fill="currentColor"><polygon points="2,1 11,6 2,11"/></svg>
-        <span id="tm-play-label">Play</span>
+      <button id="tm-snap-open-btn" onclick="snapOpen()" class="tm-screenshot-btn" style="gap:.42rem;padding:.32rem .75rem;border-radius:20px;font-family:'DM Sans',sans-serif;font-size:.68rem;font-weight:500;letter-spacing:.1em">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </svg>
+        <span data-i18n="snapBtn">Snapshots</span>
       </button>
       <div style="display:flex;gap:.4rem">
+        <button id="tm-play-btn" onclick="tmOpenPlayModal()" title="Animer les points" class="tm-screenshot-btn">
+          <svg id="tm-play-icon" width="14" height="14" viewBox="0 0 12 12" fill="currentColor"><polygon points="2,1 11,6 2,11"/></svg>
+        </button>
         <button class="tm-screenshot-btn" id="tm-diag-btn" onclick="openDiagModal(event)" title="Diagnostic">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4.5 6.5 C4.5 6.5 4.5 4 7 4 C9.5 4 9.5 6.5 9.5 6.5 L9.5 14 C9.5 16.5 11.5 18.5 14 18.5 C16.5 18.5 18.5 16.5 18.5 14"/>
@@ -2277,6 +2329,15 @@ const i18n = {
     diagObsPlaceholder:'Observations du wheelbuilder…',
     diagPdfBtn:'Générer le PDF',
     tmLinearTitle:'Balance des tensions',
+    snapTitle:'Snapshots de tension',
+    snapBtn:'Snapshots',
+    snapSaveBtn:'Enregistrer',
+    snapLoadBtn:'Charger',
+    snapEmpty:'Aucun snapshot enregistré.',
+    snapErrNoData:'Aucune donnée de tension à enregistrer.',
+    snapErrNoConfig:'Sauvegardez d\'abord une configuration.',
+    snapOf:'sur',
+    snapLoaded:'Snapshot chargé.',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -2396,6 +2457,15 @@ const i18n = {
     diagObsPlaceholder:'Wheelbuilder observations…',
     diagPdfBtn:'Generate PDF',
     tmLinearTitle:'Tension Balance',
+    snapTitle:'Tension Snapshots',
+    snapBtn:'Snapshots',
+    snapSaveBtn:'Save',
+    snapLoadBtn:'Load',
+    snapEmpty:'No snapshots saved yet.',
+    snapErrNoData:'No tension data to save.',
+    snapErrNoConfig:'Save a configuration first.',
+    snapOf:'of',
+    snapLoaded:'Snapshot loaded.',
   }
 };
 
@@ -2468,6 +2538,8 @@ let tmData = { fo: [], fa: [] };
 let tmPrevFo = [], tmPrevFa = [];
 let tmAvgFo = null, tmAvgFa = null; // moyennes par nappe, mises à jour par tmRenderStats
 let tmCvFo  = null, tmCvFa  = null; // CV (±%) par nappe, mises à jour par tmRenderStats
+// Numéro du dernier snapshot chargé (pour le liseret bleu)
+let _snapLoadedNum = null;
 // Multi-slot store: preserves data per tensiometer key (wf, pt, dt_standard, dt_aerolite2)
 const tmStore = {};       // { [storeKey]: { spokeKey, fo, fa, prevFo, prevFa } }
 let tmActiveKey = null;   // key of the tensiometer whose data is currently in tmData
@@ -3651,7 +3723,21 @@ function saveConfig() {
   const configs = loadConfigs();
   // Remplacer si même nom, sinon insérer en tête
   const existIdx = configs.findIndex(c => c.name === name && (c.state.wtype || 'avant') === wtype);
+  // Préserver les snapshots existants si on écrase une config du même nom
+  const existingSnapshots = (existIdx >= 0 && configs[existIdx].snapshots) ? configs[existIdx].snapshots : undefined;
   const entry = { name, metaKey: wtype === 'avant' ? 'frontLabel' : 'rearLabel', state, ts: Date.now() };
+  if (existingSnapshots) {
+    entry.snapshots = existingSnapshots;
+  } else if (tmHasData()) {
+    // Première sauvegarde avec données de tension → SNAPSHOT 1 automatique
+    entry.snapshots = [{
+      num: 1, ts: Date.now(),
+      fo: tmData.fo.slice(), fa: tmData.fa.slice(),
+      tmType: tmType || null, tmSpokeKey: tmSpokeKey || null,
+      tmDTSub: tmDTSub || 'standard', tmWFSub: tmWFSub || 'new',
+      tensioLabel: _snapTensioLabel(tmType, tmDTSub, tmWFSub),
+    }];
+  }
   if (existIdx >= 0) configs.splice(existIdx, 1, entry);
   else configs.unshift(entry);
   persistConfigs(configs);
@@ -3677,6 +3763,7 @@ function loadConfig(idx) {
   resetScrollFlags();
   const top = document.querySelector('header').getBoundingClientRect().bottom + window.pageYOffset - 30; window.scrollTo({ top, behavior: 'smooth' });
   flashWheelCard(cfg.name);
+  _snapLoadedNum = null;
 }
 
 function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -7737,10 +7824,8 @@ function efNumpadDel() {
     }
     tmAnimRunning = false;
     tmAnimStep    = 0;
-    var lbl = $id('tm-play-label');
     var ico = $id('tm-play-icon');
     var btn = $id('tm-play-btn');
-    if (lbl) lbl.textContent = 'Play';
     if (ico) ico.innerHTML   = '<polygon points="2,1 11,6 2,11"/>';
     if (btn) btn.onclick = function(){ tmOpenPlayModal(); };
     var disp = $id('tm-anim-display');
@@ -7888,10 +7973,8 @@ function efNumpadDel() {
     tmAnimRunning = true;
     tmAnimStep    = 0;
 
-    var lbl = $id('tm-play-label');
     var ico = $id('tm-play-icon');
     var btn = $id('tm-play-btn');
-    if (lbl) lbl.textContent = 'Stop';
     if (ico) ico.innerHTML   = '<rect x="2" y="1" width="3" height="10"/><rect x="7" y="1" width="3" height="10"/>';
     if (btn) btn.onclick = function() { tmStopAnimation(); };
 
@@ -8943,6 +9026,219 @@ function hrClearLoadedRim() {
   <div class="tm-gauge-scroll" id="tm-gauge-body"></div>
   <div id="tm-gauge-speedos" style="display:flex;gap:.75rem;justify-content:center;padding:.6rem 0 .2rem;flex-shrink:0;border-top:1px solid var(--border)"></div>
 </div>
+<!-- ── Modale Snapshots de tension ────────────────────────────────────────── -->
+<div class="snap-overlay" id="snap-overlay" onclick="snapClose()"></div>
+<div class="snap-modal" id="snap-modal">
+  <div class="snap-header">
+    <div class="snap-title" data-i18n="snapTitle">Snapshots de tension</div>
+    <button class="snap-close" onclick="snapClose()">✕</button>
+  </div>
+  <div class="snap-save-row">
+    <button class="snap-save-btn" style="width:100%;justify-content:center" onclick="snapSave()" data-i18n="snapSaveBtn">Enregistrer un snapshot</button>
+  </div>
+  <div class="snap-feedback" id="snap-feedback"></div>
+  <div class="snap-divider"></div>
+  <div class="snap-list" id="snap-list"></div>
+</div>
+
+<script>
+// ── Snapshots de tension ──────────────────────────────────────────────────────
+// Stockage : entry.snapshots = [{ label, ts, fo, fa, tmType, tmSpokeKey }, ...]
+// Max SNAP_MAX par config. Rétrocompat totale : champ absent = []
+
+const SNAP_MAX = 4;
+
+// Résout le nom lisible du tensiomètre actif
+function _snapTensioLabel(type, dtSub, wfSub) {
+  if (!type) return null;
+  if (type.startsWith('ct_')) return type.replace(/^ct_/, '★ ');
+  const map = {
+    wf_new: 'W. FANATYK', wf_old: 'W. FANATYK (old)',
+    pt: 'PARK TOOL TM-1',
+    dt_standard: 'DT SWISS STD', dt_aerolite2: 'DT SWISS AEL2',
+    pk: 'P&KLIE', un: 'UNIOR 1752',
+  };
+  // Construire la clé composée si nécessaire
+  const key = type === 'wf' ? 'wf_' + (wfSub || 'new')
+            : type === 'dt' ? 'dt_' + (dtSub || 'standard')
+            : type;
+  return map[key] || type.toUpperCase();
+}
+
+function snapOpen() {
+  $id('snap-feedback').textContent = '';
+  snapRenderList();
+  $id('snap-overlay').classList.add('show');
+  $id('snap-modal').classList.add('show');
+}
+
+function snapClose() {
+  $id('snap-overlay').classList.remove('show');
+  $id('snap-modal').classList.remove('show');
+}
+
+function _snapFeedback(msg, isErr) {
+  const fb = $id('snap-feedback');
+  if (!fb) return;
+  fb.textContent = msg;
+  fb.style.color = isErr ? '#f08080' : 'var(--success)';
+}
+
+function _snapFindCurrentConfig() {
+  const name = _loadedConfigName[wtype];
+  if (!name) return { cfg: null, idx: -1, configs: [] };
+  const configs = loadConfigs();
+  const idx = configs.findIndex(c => c.name === name && (c.state.wtype || 'avant') === wtype);
+  return { cfg: idx >= 0 ? configs[idx] : null, idx, configs };
+}
+
+function snapSave() {
+  if (!tmHasData()) { _snapFeedback(t('snapErrNoData'), true); return; }
+  const { cfg, idx, configs } = _snapFindCurrentConfig();
+  if (!cfg) { _snapFeedback(t('snapErrNoConfig'), true); return; }
+  const snaps = cfg.snapshots || [];
+  if (snaps.length >= SNAP_MAX) snaps.shift();
+  const num = (snaps.length > 0 ? Math.max(...snaps.map(s => s.num || 0)) : 0) + 1;
+  snaps.push({
+    num, ts: Date.now(),
+    fo: tmData.fo.slice(), fa: tmData.fa.slice(),
+    tmType: tmType || null, tmSpokeKey: tmSpokeKey || null,
+    tmDTSub: tmDTSub || 'standard', tmWFSub: tmWFSub || 'new',
+    tensioLabel: _snapTensioLabel(tmType, tmDTSub, tmWFSub),
+  });
+  cfg.snapshots = snaps;
+  configs.splice(idx, 1, cfg);
+  persistConfigs(configs);
+  _snapFeedback('✓ Snapshot ' + num, false);
+  snapRenderList();
+  snapRefreshBtn();
+}
+
+function snapLoad(snapIdx) {
+  const { cfg } = _snapFindCurrentConfig();
+  if (!cfg) return;
+  const snap = (cfg.snapshots || [])[snapIdx];
+  if (!snap) return;
+
+  // ── Restaurer le tensiomètre ──
+  if (snap.tmType) {
+    tmType = snap.tmType;
+    const tmTensioSel = $id('tm-tensio-select');
+    if (tmType && tmType.startsWith('ct_')) ctRefreshAll();
+    if (tmTensioSel) tmTensioSel.value = tmType;
+    const clearBtn = $id('tm-clear-tensio');
+    if (clearBtn) clearBtn.classList.toggle('inactive', !tmType);
+    $id('tm-dt-subtype') && ($id('tm-dt-subtype').style.display = tmType === 'dt' ? 'flex' : 'none');
+    $id('tm-wf-subtype') && ($id('tm-wf-subtype').style.display = tmType === 'wf' ? 'flex' : 'none');
+
+    // Sous-type DT
+    if (snap.tmType === 'dt') {
+      const sub = snap.tmDTSub || 'standard';
+      tmDTSub = sub;
+      const bStd  = $id('tm-btn-dt-std');
+      const bAel2 = $id('tm-btn-dt-ael2');
+      if (bStd)  bStd.classList.toggle('active',  sub === 'standard');
+      if (bAel2) bAel2.classList.toggle('active', sub === 'aerolite2');
+      updateDTTip();
+    }
+
+    // Sous-type WF
+    if (snap.tmType === 'wf') {
+      const sub = snap.tmWFSub || 'new';
+      tmWFSub = sub;
+      const bOld = $id('tm-btn-wf-old');
+      const bNew = $id('tm-btn-wf-new');
+      if (bOld) bOld.classList.toggle('active', sub === 'old');
+      if (bNew) bNew.classList.toggle('active', sub === 'new');
+      updateWFTip();
+    }
+
+    // Rayon
+    tmSpokeKey = snap.tmSpokeKey || null;
+    if (tmSpokeKey && tmSpokeKey.startsWith(CC_PREFIX)) ccInjectAll();
+    tmPopulateSpokeSelect();
+    tmUpdateUnitBadge();
+    tmActiveKey = tmStoreKey();
+  }
+
+  // ── Restaurer les données de tension ──
+  tmData.fo = (snap.fo || []).slice();
+  tmData.fa = (snap.fa || []).slice();
+  tmPrevFo  = tmData.fo.slice();
+  tmPrevFa  = tmData.fa.slice();
+
+  _snapLoadedNum = snap.num || (snapIdx + 1);
+  tmBuildTable();
+  tmShowDiagramIfData();
+  _snapFeedback(t('snapLoaded'), false);
+  snapRenderList();
+  setTimeout(snapClose, 700);
+}
+
+function snapDelete(snapIdx) {
+  const { cfg, idx, configs } = _snapFindCurrentConfig();
+  if (!cfg) return;
+  const snaps = cfg.snapshots || [];
+  snaps.splice(snapIdx, 1);
+  cfg.snapshots = snaps;
+  configs.splice(idx, 1, cfg);
+  persistConfigs(configs);
+  snapRenderList();
+  snapRefreshBtn();
+}
+
+function snapRenderList() {
+  const list = $id('snap-list');
+  if (!list) return;
+  const { cfg } = _snapFindCurrentConfig();
+  const snaps = (cfg && cfg.snapshots) ? cfg.snapshots : [];
+  if (snaps.length === 0) {
+    list.innerHTML = '<div class="snap-empty">' + t('snapEmpty') + '</div>';
+    return;
+  }
+  const latestIdx = snaps.length - 1;
+  const items = snaps.map((snap, i) => {
+    const d = new Date(snap.ts);
+    const dateStr = String(d.getDate()).padStart(2,'0') + '/'
+      + String(d.getMonth()+1).padStart(2,'0') + ' '
+      + String(d.getHours()).padStart(2,'0') + ':'
+      + String(d.getMinutes()).padStart(2,'0');
+    const spokeStr = snap.tmSpokeKey ? snap.tmSpokeKey : '';
+    const tensioStr = snap.tensioLabel ? snap.tensioLabel : '';
+    const infoStr = [tensioStr, spokeStr].filter(Boolean).join(' · ');
+    const snapNum = snap.num || (i + 1);
+    // Liseret bleu : snapshot chargé en priorité, sinon dernier enregistré
+    const isActive = _snapLoadedNum !== null ? snapNum === _snapLoadedNum : i === latestIdx;
+    const label = 'SNAPSHOT ' + snapNum;
+    const labelStyle = isActive ? ' style="color:var(--accent)"' : '';
+    return '<div class="snap-item' + (isActive ? ' snap-item-latest' : '') + '">'
+      + '<div class="snap-item-info">'
+      + '<span class="snap-item-label"' + labelStyle + '>' + label + '</span>'
+      + '<span class="snap-item-meta">' + dateStr + '</span>'
+      + (infoStr ? '<span class="snap-item-meta">' + infoStr + '</span>' : '')
+      + '</div>'
+      + '<div class="snap-item-actions">'
+      + '<button class="snap-load-btn" onclick="snapLoad(' + i + ')">' + t('snapLoadBtn') + '</button>'
+      + '<button class="snap-del-btn" onclick="snapDelete(' + i + ')" title="Supprimer">×</button>'
+      + '</div></div>';
+  }).reverse().join('');
+  list.innerHTML = items;
+}
+
+function snapHasAny() {
+  const { cfg } = _snapFindCurrentConfig();
+  return !!(cfg && cfg.snapshots && cfg.snapshots.length > 0);
+}
+
+function snapRefreshBtn() {
+  const btn = $id('tm-snap-open-btn');
+  if (!btn) return;
+  const has = snapHasAny();
+  btn.style.borderColor = has ? 'rgba(126,200,227,.6)' : '';
+  btn.style.color       = has ? 'var(--accent)' : '';
+  btn.style.background  = has ? 'rgba(126,200,227,.08)' : '';
+}
+</script>
 
 </body>
 </html>
