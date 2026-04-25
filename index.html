@@ -3715,7 +3715,7 @@ function saveConfig() {
   const existingSnapshots = existIdx >= 0 ? (configs[existIdx].snapshots || []) : [];
   if (existingSnapshots.length > 0) {
     if (!existingSnapshots.some(s => s.num === 1) && tmHasData()) {
-      existingSnapshots.unshift(_snapMakeEntry(0));
+      existingSnapshots.unshift(_snapMakeEntry(1));
       _snapRenum(existingSnapshots);
     }
     entry.snapshots = existingSnapshots;
@@ -9092,17 +9092,17 @@ function snapSave() {
   const { cfg, idx, configs } = _snapFindCurrentConfig();
   if (!cfg) return;
   const snaps = cfg.snapshots || [];
-  // Quota : supprimer le plus ancien (index 1 après tri) si plein
   if (snaps.length >= SNAP_MAX) {
     snaps.sort((a, b) => a.ts - b.ts);
     snaps.splice(1, 1);
+    _snapRenum(snaps);
   }
-  snaps.push(_snapMakeEntry(0));
-  _snapRenum(snaps);
+  const num = snaps.length + 1;
+  snaps.push(_snapMakeEntry(num));
   cfg.snapshots = snaps;
   configs.splice(idx, 1, cfg);
   persistConfigs(configs);
-  _snapSetLabel(snaps[snaps.length - 1].num);
+  _snapSetLabel(num);
   snapRenderList();
   snapRefreshBtn();
   snapClose();
