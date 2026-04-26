@@ -2330,6 +2330,10 @@ const i18n = {
     snapBtn:'Snapshots',
     snapSaveBtn:'Enregistrer',
     snapEmpty:'Aucun snapshot enregistré.',
+    snapNameDesc:'Créer roue.',
+    snapNamePlaceholder:'Nom de la roue…',
+    snapNameConfirm:'Enregistrer & snapshot',
+    snapNameError:'Veuillez saisir un nom.',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -2453,6 +2457,10 @@ const i18n = {
     snapBtn:'Snapshots',
     snapSaveBtn:'Save',
     snapEmpty:'No snapshots saved yet.',
+    snapNameDesc:'Create wheel.',
+    snapNamePlaceholder:'Wheel name…',
+    snapNameConfirm:'Save & snapshot',
+    snapNameError:'Please enter a name.',
   }
 };
 
@@ -3439,7 +3447,6 @@ function calc() {
   $id('arb-wrap').classList.remove('show');
   $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
 
-  $id('save-wrap').classList.add('show'); // déjà visible, on s'assure juste que le feedback est vide
   $id('save-feedback').textContent = '';
   setTimeout(() => $id('results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
 }
@@ -9040,10 +9047,19 @@ function hrClearLoadedRim() {
     <div class="snap-title" data-i18n="snapTitle">Snapshots de tension</div>
     <button class="snap-close" onclick="snapClose()">✕</button>
   </div>
-  <div class="snap-save-row">
+  <!-- Panneau de nommage (affiché si pas de config chargée) -->
+  <div id="snap-name-panel" style="display:none;flex-direction:column;gap:.6rem">
+    <div style="font-size:.72rem;color:var(--text2);line-height:1.5" data-i18n="snapNameDesc">Créer roue.</div>
+    <div style="display:flex;flex-direction:column;gap:.4rem">
+      <input id="snap-name-inp" class="hr-save-inp" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-i18n-placeholder="snapNamePlaceholder" placeholder="Nom de la roue…" onkeydown="if(event.key==='Enter')snapRegisterAndSave()">
+      <button class="snap-save-btn" style="width:100%;justify-content:center" onclick="snapRegisterAndSave()" data-i18n="snapNameConfirm">Enregistrer & snapshot</button>
+    </div>
+    <div id="snap-name-feedback" style="font-size:.67rem;color:#f08080;min-height:.85rem"></div>
+  </div>
+  <div class="snap-save-row" id="snap-save-row">
     <button class="snap-save-btn" style="width:100%;justify-content:center" onclick="snapSave()" data-i18n="snapSaveBtn">Enregistrer</button>
   </div>
-  <div class="snap-divider"></div>
+  <div class="snap-divider" id="snap-divider"></div>
   <div class="snap-list" id="snap-list"></div>
 </div>
 
@@ -9091,15 +9107,70 @@ function _snapSetLabel(num) {
 }
 
 function snapOpen() {
-  snapRefreshBtn();
+  // Si pas de config chargée → afficher le panneau de nommage
+  if (!_loadedConfigName[wtype]) {
+    _snapShowNamePanel();
+    return;
+  }
   snapRenderList();
   $id('snap-overlay').classList.add('show');
   $id('snap-modal').classList.add('show');
 }
 
+function _snapShowNamePanel() {
+  const panel = $id('snap-name-panel');
+  const inp   = $id('snap-name-inp');
+  const fb    = $id('snap-name-feedback');
+  if (panel) panel.style.display = 'flex';
+  if (fb)    fb.textContent = '';
+  if (inp)   { inp.value = ''; setTimeout(() => inp.focus(), 80); }
+  $id('snap-overlay').classList.add('show');
+  $id('snap-modal').classList.add('show');
+  // Masquer le reste de la modale pendant la saisie
+  $id('snap-save-row').style.display  = 'none';
+  $id('snap-divider').style.display   = 'none';
+  $id('snap-list').style.display      = 'none';
+}
+
+function snapRegisterAndSave() {
+  const inp  = $id('snap-name-inp');
+  const fb   = $id('snap-name-feedback');
+  const name = inp ? inp.value.trim() : '';
+  if (!name) { if (fb) { fb.textContent = t('snapNameError'); } return; }
+
+  // Créer ou mettre à jour la config avec l'état courant du formulaire
+  const state = readState(); state.wtype = wtype;
+  const configs = loadConfigs();
+  const existIdx = configs.findIndex(c => c.name === name && (c.state.wtype || 'avant') === wtype);
+  const entry = { name, metaKey: wtype === 'avant' ? 'frontLabel' : 'rearLabel', state, ts: Date.now() };
+  if (existIdx >= 0) configs.splice(existIdx, 1, entry);
+  else configs.unshift(entry);
+  persistConfigs(configs);
+
+  // Marquer comme config chargée
+  _loadedConfigName[wtype] = name;
+  _refreshLoadedBadges();
+  renderConfigsList();
+
+  // Restaurer la modale en mode normal et enregistrer le snapshot
+  const panel = $id('snap-name-panel');
+  if (panel) panel.style.display = 'none';
+  $id('snap-save-row').style.display  = '';
+  $id('snap-divider').style.display   = '';
+  $id('snap-list').style.display      = '';
+
+  snapSave();
+}
+
 function snapClose() {
   $id('snap-overlay').classList.remove('show');
   $id('snap-modal').classList.remove('show');
+  // Réinitialiser le panneau de nommage si on ferme sans avoir confirmé
+  const panel = $id('snap-name-panel');
+  if (panel) panel.style.display = 'none';
+  $id('snap-save-row').style.display  = '';
+  $id('snap-divider').style.display   = '';
+  $id('snap-list').style.display      = '';
 }
 
 function _snapFindCurrentConfig() {
@@ -9126,7 +9197,6 @@ function snapSave() {
   persistConfigs(configs);
   _snapSetLabel(num);
   snapRenderList();
-  snapRefreshBtn();
   snapClose();
 }
 
@@ -9191,8 +9261,7 @@ function snapDelete(snapIdx) {
   configs.splice(idx, 1, cfg);
   persistConfigs(configs);
   snapRenderList();
-  _snapSetLabel(1); // revenir au snapshot 1
-  snapRefreshBtn();
+  _snapSetLabel(snaps.length > 0 ? snaps[snaps.length - 1].num : 0);
 }
 
 function snapRenderList() {
@@ -9227,13 +9296,7 @@ function snapRefreshBtn() {
   const btn = $id('tm-snap-open-btn');
   const { cfg } = _snapFindCurrentConfig();
   const snaps = cfg && cfg.snapshots ? cfg.snapshots : [];
-  const canOpen = !!cfg && tmHasData();
-  if (btn) {
-    btn.disabled          = !canOpen;
-    btn.style.borderColor = canOpen ? 'rgba(126,200,227,.6)' : '';
-    btn.style.color       = canOpen ? 'var(--accent)' : '';
-    btn.style.background  = canOpen ? 'rgba(126,200,227,.08)' : '';
-  }
+  if (btn) btn.disabled = !tmHasData();
   if (!snaps.length) _snapSetLabel(0);
 }
 </script>
