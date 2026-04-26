@@ -1981,6 +1981,16 @@ input[type=number] { -moz-appearance:textfield }
             <line x1="9" y1="9" x2="10" y2="9"/>
           </svg>
         </button>
+        <button class="tm-screenshot-btn" id="tm-snapcompare-btn" onclick="snapCompareOpen()" title="Comparer deux snapshots">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="3" x2="12" y2="21"/>
+            <path d="M5 6l-3 5h6l-3-5z"/>
+            <path d="M19 6l-3 5h6l-3-5z"/>
+            <line x1="2" y1="11" x2="8" y2="11"/>
+            <line x1="16" y1="11" x2="22" y2="11"/>
+            <line x1="5" y1="20" x2="19" y2="20"/>
+          </svg>
+        </button>
         <button class="tm-screenshot-btn" id="tm-screenshot-btn" onclick="tmScreenshot(event)" title="Screenshot">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -2321,7 +2331,7 @@ const i18n = {
     pdfoptGenerate:'G\u00e9n\u00e9rer le PDF',
     diagTitle:'Spoke It Diagnostic',
     diagWheelLabel:'Roue',
-    diagWheelPlaceholder:'Nom de la roue…',
+    diagWheelPlaceholder:'Nom de la roue',
     diagObsLabel:'Observations',
     diagObsPlaceholder:'Observations du wheelbuilder…',
     diagPdfBtn:'Générer le PDF',
@@ -2330,7 +2340,6 @@ const i18n = {
     snapBtn:'Snapshots',
     snapSaveBtn:'Enregistrer',
     snapEmpty:'Aucun snapshot enregistré.',
-    snapNameDesc:'Créer roue.',
     snapNamePlaceholder:'Nom de la roue',
     snapNameConfirm:'Enregistrer & snapshot',
     snapNameError:'Veuillez saisir un nom.',
@@ -2448,7 +2457,7 @@ const i18n = {
     pdfoptGenerate:'Generate PDF',
     diagTitle:'Spoke It Diagnostic',
     diagWheelLabel:'Wheel',
-    diagWheelPlaceholder:'Wheel name…',
+    diagWheelPlaceholder:'Wheel name',
     diagObsLabel:'Observations',
     diagObsPlaceholder:'Wheelbuilder observations…',
     diagPdfBtn:'Generate PDF',
@@ -2457,7 +2466,6 @@ const i18n = {
     snapBtn:'Snapshots',
     snapSaveBtn:'Save',
     snapEmpty:'No snapshots saved yet.',
-    snapNameDesc:'Create wheel.',
     snapNamePlaceholder:'Wheel name',
     snapNameConfirm:'Save & snapshot',
     snapNameError:'Please enter a name.',
@@ -6724,7 +6732,17 @@ async function tmExportPdfWithOpts(opts) {
     });
   }
 
-  Y += headerH + 9;
+  Y += headerH + 5;
+
+  // ── Nom de roue + séparateur (comme diagnostic et évolution) ─────────────
+  if (wheelName) {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...C_TEXT2);
+    doc.text(sanitize(wheelLabel) + ' — ' + sanitize(wheelName), ML, Y);
+    Y += 5;
+  }
+  doc.setDrawColor(...C_ACCENT); doc.setLineWidth(0.3);
+  doc.line(ML, Y, PW - MR, Y);
+  Y += 7;
 
   // ── Configuration ─────────────────────────────────────────────────────────
   if (cfgRows.length) {
@@ -8033,6 +8051,8 @@ function efNumpadDel() {
       <span id="diag-print-label">Générer le PDF</span>
     </button>
   </div>
+
+
 </div>
 
 <script>
@@ -8056,7 +8076,7 @@ function openDiagModal(e) {
   // Placeholder du champ Roue
   var wheelInp = document.getElementById('diag-wheel');
   if (wheelInp) {
-    wheelInp.placeholder = tr.diagWheelPlaceholder || (L === 'fr' ? 'Nom de la roue…' : 'Wheel name…');
+    wheelInp.placeholder = tr.diagWheelPlaceholder || (L === 'fr' ? 'Nom de la roue' : 'Wheel name');
   }
   document.getElementById('diag-overlay').classList.add('show');
   document.getElementById('diag-modal').classList.add('show');
@@ -9173,6 +9193,8 @@ function snapClose() {
   $id('snap-save-row').style.display  = '';
   $id('snap-divider').style.display   = '';
   $id('snap-list').style.display      = '';
+  // Mettre à jour le bouton de comparaison
+  snapRefreshBtn();
 }
 
 function _snapFindCurrentConfig() {
@@ -9300,8 +9322,442 @@ function snapRefreshBtn() {
   const snaps = cfg && cfg.snapshots ? cfg.snapshots : [];
   if (btn) btn.disabled = !tmHasData();
   if (!snaps.length) _snapSetLabel(0);
+  const cmpBtn = $id('tm-snapcompare-btn');
+  if (cmpBtn) {
+    const hasEnough = snaps.length >= 2;
+    cmpBtn.style.opacity      = hasEnough ? '' : '0.3';
+    cmpBtn.style.pointerEvents = hasEnough ? '' : 'none';
+  }
+}
+
+// ── Comparaison de snapshots ─────────────────────────────────────────────────
+var _snapCompareSelected = []; // indices dans _snapCompareSnaps
+var _snapCompareSnaps = [];
+
+function snapCompareOpen() {
+  var cfg = _snapFindCurrentConfig().cfg;
+  var snaps = (cfg && cfg.snapshots) ? cfg.snapshots : [];
+  if (snaps.length < 2) return;
+  _snapCompareSelected = [];
+  _snapCompareSnaps = snaps;
+  _snapCompareRenderList(snaps);
+  _snapCompareUpdateUI();
+  document.getElementById('snapcompare-overlay').classList.add('show');
+  document.getElementById('snapcompare-modal').classList.add('show');
+}
+
+function snapCompareClose() {
+  document.getElementById('snapcompare-overlay').classList.remove('show');
+  document.getElementById('snapcompare-modal').classList.remove('show');
+}
+
+function _snapCompareRenderList(snaps) {
+  var list = document.getElementById('snapcompare-list');
+  if (!list) return;
+  list.innerHTML = snaps.slice().reverse().map(function(snap, ri) {
+    var i = snaps.length - 1 - ri; // original index
+    var d = new Date(snap.ts);
+    var dateStr = String(d.getDate()).padStart(2,'0') + '/'
+      + String(d.getMonth()+1).padStart(2,'0') + ' '
+      + String(d.getHours()).padStart(2,'0') + ':'
+      + String(d.getMinutes()).padStart(2,'0');
+    var infoStr = [snap.tensioLabel, snap.tmSpokeKey].filter(Boolean).join(' · ');
+    return '<div class="snap-item" id="snapcmp-item-' + i + '" onclick="_snapCompareToggle(' + i + ')" style="cursor:pointer">'
+      + '<div class="snap-item-info">'
+      + '<span class="snap-item-label">SNAPSHOT ' + snap.num + '</span>'
+      + '<span class="snap-item-meta">' + dateStr + '</span>'
+      + (infoStr ? '<span class="snap-item-meta">' + infoStr + '</span>' : '')
+      + '</div>'
+      + '<div class="snap-item-actions"><span id="snapcmp-check-' + i + '" style="font-size:1rem;color:var(--accent);display:none">&#10003;</span></div>'
+      + '</div>';
+  }).join('');
+}
+
+function _snapCompareToggle(idx) {
+  var pos = _snapCompareSelected.indexOf(idx);
+  if (pos >= 0) {
+    _snapCompareSelected.splice(pos, 1);
+  } else {
+    if (_snapCompareSelected.length >= 2) {
+      var old = _snapCompareSelected.shift();
+      _snapCompareSetItemStyle(old, false);
+    }
+    _snapCompareSelected.push(idx);
+  }
+  _snapCompareSetItemStyle(idx, _snapCompareSelected.indexOf(idx) >= 0);
+  _snapCompareUpdateUI();
+}
+
+function _snapCompareSetItemStyle(idx, selected) {
+  var item = document.getElementById('snapcmp-item-' + idx);
+  var chk  = document.getElementById('snapcmp-check-' + idx);
+  if (item) {
+    item.style.borderColor = selected ? 'rgba(126,200,227,.6)' : '';
+    item.style.background  = selected ? 'rgba(126,200,227,.06)' : '';
+  }
+  if (chk) chk.style.display = selected ? 'inline' : 'none';
+}
+
+function _snapCompareUpdateUI() {
+  var btn = document.getElementById('snapcompare-go-btn');
+  if (btn) {
+    var ready = _snapCompareSelected.length === 2;
+    btn.style.opacity      = ready ? '1' : '.4';
+    btn.style.pointerEvents = ready ? 'auto' : 'none';
+  }
+}
+
+// ── Rendu radar dans un canvas off-screen pour un snapshot ────────────────────
+function _snapRenderRadarCanvas(snap, size) {
+  size = size || 400;
+  var canvas = document.createElement('canvas');
+  canvas.width  = size;
+  canvas.height = size;
+  var ctx = canvas.getContext('2d');
+
+  var perSide = Math.max(snap.fo.length, snap.fa.length);
+
+  // Convertir raw → kgf en utilisant la table du snapshot
+  function snapToKgf(reading, snapData) {
+    if (reading === null) return null;
+    var tableKey = snapData.tmType;
+    if (!tableKey) return null;
+    var fullKey;
+    if (tableKey.startsWith('ct_')) { fullKey = tableKey; }
+    else if (tableKey === 'dt')     { fullKey = 'dt_' + (snapData.tmDTSub || 'standard'); }
+    else if (tableKey === 'wf')     { fullKey = 'wf_' + (snapData.tmWFSub || 'new'); }
+    else                            { fullKey = tableKey; }
+    var tbl = TM_TABLES[fullKey];
+    if (!tbl || !snapData.tmSpokeKey || !tbl[snapData.tmSpokeKey]) return null;
+    return interpolateFromPoints(reading, tbl[snapData.tmSpokeKey]);
+  }
+
+  var foKgfs = snap.fo.slice(0, perSide).map(function(v) { return snapToKgf(v, snap); });
+  var faKgfs = snap.fa.slice(0, perSide).map(function(v) { return snapToKgf(v, snap); });
+
+  var cx = size/2, cy = size/2, R = size*0.38;
+  var N = perSide * 2;
+  var angleStep = (2 * Math.PI) / N;
+  var allVals = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
+  if (!allVals.length) return { canvas: canvas, foKgfs: foKgfs, faKgfs: faKgfs };
+  var maxVal   = Math.max.apply(null, allVals);
+  var scaleMax = Math.ceil(maxVal / 20) * 20 || 20;
+
+  // Rings
+  for (var r = 1; r <= 5; r++) {
+    var rr = (r/5)*R;
+    ctx.beginPath();
+    for (var i2 = 0; i2 < N; i2++) {
+      var a2 = i2*angleStep - Math.PI/2;
+      i2===0 ? ctx.moveTo(cx+rr*Math.cos(a2),cy+rr*Math.sin(a2)) : ctx.lineTo(cx+rr*Math.cos(a2),cy+rr*Math.sin(a2));
+    }
+    ctx.closePath();
+    ctx.strokeStyle='rgba(80,100,130,0.25)'; ctx.lineWidth=1; ctx.stroke();
+    if (r===2||r===4||r===5) {
+      ctx.fillStyle='rgba(100,120,150,0.5)';
+      ctx.font = Math.round(size*0.026)+'px DM Mono, monospace';
+      ctx.textAlign='center'; ctx.textBaseline='bottom';
+      ctx.fillText(Math.round((r/5)*scaleMax), cx, cy-rr-3);
+    }
+  }
+  // Axes
+  for (var i3=0;i3<N;i3++) {
+    var a3 = i3*angleStep-Math.PI/2;
+    var isFo3 = i3%2===0;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+R*Math.cos(a3),cy+R*Math.sin(a3));
+    ctx.strokeStyle = isFo3?'rgba(232,146,124,0.15)':'rgba(126,200,227,0.15)'; ctx.lineWidth=1; ctx.stroke();
+    if (perSide<=16||i3%2===0) {
+      var spokeNum3 = Math.floor(i3/2)+1;
+      var labelR3 = R+Math.max(10,size*0.032);
+      ctx.fillStyle = isFo3?'rgba(232,146,124,0.5)':'rgba(126,200,227,0.45)';
+      ctx.font = Math.round(size*0.023)+'px DM Mono, monospace';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(spokeNum3, cx+labelR3*Math.cos(a3), cy+labelR3*Math.sin(a3));
+    }
+  }
+  function drawPoly(vals, angleOff, stroke, fill) {
+    var pts = vals.map(function(v,i) {
+      var a = (i*2+angleOff)*angleStep-Math.PI/2;
+      var rp = v!==null?(v/scaleMax)*R:0;
+      return [cx+rp*Math.cos(a), cy+rp*Math.sin(a)];
+    });
+    ctx.beginPath();
+    pts.forEach(function(p,i){ i===0?ctx.moveTo(p[0],p[1]):ctx.lineTo(p[0],p[1]); });
+    ctx.closePath();
+    ctx.fillStyle=fill; ctx.fill();
+    ctx.strokeStyle=stroke; ctx.lineWidth=1.8; ctx.stroke();
+    vals.forEach(function(v,i) {
+      if (v===null) return;
+      var a=(i*2+angleOff)*angleStep-Math.PI/2;
+      var rp=(v/scaleMax)*R;
+      ctx.beginPath(); ctx.arc(cx+rp*Math.cos(a),cy+rp*Math.sin(a),3,0,2*Math.PI);
+      ctx.fillStyle=stroke; ctx.fill();
+    });
+  }
+  drawPoly(faKgfs,1,'rgba(126,200,227,0.8)','rgba(126,200,227,0.06)');
+  drawPoly(foKgfs,0,'rgba(232,146,124,0.8)','rgba(232,146,124,0.06)');
+  ctx.beginPath(); ctx.arc(cx,cy,3,0,2*Math.PI);
+  ctx.fillStyle='rgba(150,170,190,0.35)'; ctx.fill();
+
+  return { canvas: canvas, foKgfs: foKgfs, faKgfs: faKgfs };
+}
+
+// ── Stats d'un snapshot ────────────────────────────────────────────────────────
+// ── Génération PDF ─────────────────────────────────────────────────────────────
+function snapComparePDF() {
+  if (_snapCompareSelected.length !== 2) return;
+  var snaps = _snapCompareSnaps;
+  // Plus ancien à gauche
+  var selPair = [snaps[_snapCompareSelected[0]], snaps[_snapCompareSelected[1]]];
+  selPair.sort(function(a,b){ return a.ts - b.ts; });
+  var snapA = selPair[0];
+  var snapB = selPair[1];
+  if (!snapA || !snapB) return;
+
+  var jsPDFLib = window.jspdf;
+  if (!jsPDFLib || !jsPDFLib.jsPDF) { alert(L==='fr'?'jsPDF non chargé':'jsPDF not loaded'); return; }
+  var jsPDF = jsPDFLib.jsPDF;
+
+  var L  = typeof lang !== 'undefined' ? lang : 'fr';
+  var atelierInfo = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
+  var workshopName = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
+  // Nom de roue : depuis la config chargée, ou depuis la config qui contient ces snapshots
+  var wheelName = (typeof _loadedConfigName !== 'undefined' && _loadedConfigName[wtype]) ? _loadedConfigName[wtype] : '';
+  if (!wheelName) {
+    var allCfgsW = loadConfigs();
+    var cfgMatch = allCfgsW.find(function(c) {
+      return c.snapshots && c.snapshots.some(function(s) { return s.ts === snapA.ts || s.ts === snapB.ts; });
+    });
+    if (cfgMatch) wheelName = cfgMatch.name || '';
+  }
+  var now = new Date();
+  var dateStr = now.toLocaleDateString(L==='fr'?'fr-FR':'en-GB',{day:'2-digit',month:'long',year:'numeric'});
+
+  function sanitize(str) {
+    if (!str) return '';
+    return str.replace(/[→Δ±]/g, function(c){ return({'→':'->','Δ':'D','±':'+/-'})[c]||c; });
+  }
+  var PW=210, PH=297, ML=14, MR=14, MT=14, CW=PW-ML-MR;
+  var C_TEXT=[30,40,55], C_TEXT2=[90,105,120], C_TEXT3=[150,165,175];
+  var C_ACCENT=[60,160,200], C_WARM=[210,110,85], C_BORDER=[220,228,235];
+  var C_CARD=[248,250,252], C_CARD_FO=[255,248,245], C_CARD_FA=[245,250,255];
+
+  var isAvant = (typeof wtype==='undefined')||wtype==='avant';
+  var legFoEl = document.getElementById('radar-leg-fo');
+  var legFaEl = document.getElementById('radar-leg-fa');
+  var legFo = legFoEl ? legFoEl.textContent.trim() : 'DS';
+  var legFa = legFaEl ? legFaEl.textContent.trim() : 'NDS';
+  var C_NDS = isAvant ? C_WARM   : C_ACCENT;
+  var C_DS  = isAvant ? C_ACCENT : C_WARM;
+  var ndsLabel = sanitize(isAvant ? legFo : legFa);
+  var dsLabel  = sanitize(isAvant ? legFa : legFo);
+
+  // Rendu des deux radars
+  var rendA = _snapRenderRadarCanvas(snapA, 400);
+  var rendB = _snapRenderRadarCanvas(snapB, 400);
+
+  var doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4',putOnlyUsedFonts:true});
+  doc.setFillColor(255,255,255); doc.rect(0,0,PW,PH,'F');
+
+  // ── En-tête ────────────────────────────────────────────────────────────────
+  var Y = MT;
+  var HP=5, headerH=22, colSplit=ML+CW*0.52;
+  var iconS=3.0, lineH=6.5, brandBarW=4, headerPadL=brandBarW+7;
+
+  doc.setFillColor.apply(doc,C_CARD); doc.setDrawColor.apply(doc,C_BORDER); doc.setLineWidth(0.4);
+  doc.roundedRect(ML,Y,CW,headerH,2,2,'FD');
+  doc.setFillColor.apply(doc,C_TEXT2);
+  doc.roundedRect(ML,Y,brandBarW,headerH,2,2,'F');
+  doc.rect(ML+2,Y,brandBarW-2,headerH,'F');
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc,C_TEXT3);
+  doc.text(L==='fr'?'ÉVOLUTION DE TENSION BY':'TENSION EVOLUTION BY', ML+headerPadL, Y+7);
+  doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor.apply(doc,C_TEXT2);
+  doc.text(sanitize(workshopName).toUpperCase(), ML+headerPadL, Y+14);
+
+  var coordLines=[];
+  if (atelierInfo.email) coordLines.push({type:'email',text:sanitize(atelierInfo.email)});
+  if (atelierInfo.insta) coordLines.push({type:'insta',text:sanitize(atelierInfo.insta)});
+  if (coordLines.length) {
+    doc.setDrawColor.apply(doc,C_BORDER); doc.setLineWidth(0.3);
+    doc.line(colSplit,Y+HP,colSplit,Y+headerH-HP);
+    var cy2=Y+(headerH-coordLines.length*lineH)/2+lineH*0.7, cx2=colSplit+HP;
+    coordLines.forEach(function(item) {
+      var iy=cy2-iconS*0.72;
+      doc.setDrawColor.apply(doc,C_TEXT3); doc.setFillColor.apply(doc,C_TEXT3); doc.setLineWidth(0.35);
+      if (item.type==='email') {
+        doc.rect(cx2,iy,iconS,iconS*0.72,'S');
+        doc.line(cx2,iy,cx2+iconS/2,iy+iconS*0.4); doc.line(cx2+iconS,iy,cx2+iconS/2,iy+iconS*0.4);
+      } else {
+        doc.roundedRect(cx2,iy,iconS,iconS,0.8,0.8,'S');
+        doc.circle(cx2+iconS/2,iy+iconS/2,iconS*0.27,'S');
+        doc.circle(cx2+iconS*0.78,iy+iconS*0.22,iconS*0.08,'F');
+      }
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor.apply(doc,C_TEXT2);
+      doc.text(item.text, cx2+iconS+2.5, cy2);
+      cy2+=lineH;
+    });
+  }
+  Y += headerH + 5;
+
+  // Nom de roue + séparateur
+  if (wheelName) {
+    var wlabel = wtype === 'arriere' ? t('rearLabel') : t('frontLabel');
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor.apply(doc,C_TEXT2);
+    doc.text(sanitize(wlabel)+' — '+sanitize(wheelName), ML, Y);
+    Y += 5;
+  }
+  doc.setDrawColor.apply(doc,C_ACCENT); doc.setLineWidth(0.3);
+  doc.line(ML,Y,PW-MR,Y); Y += 7;
+
+  // ── Deux radars côte à côte ────────────────────────────────────────────────
+  var colGap  = 5;
+  var colW    = (CW - colGap) / 2;
+  var cardPad = 5;
+  var radarSz = colW - cardPad*2;
+  var legH    = 9;
+  var cardH   = radarSz + legH + cardPad*2;
+
+  [rendA, rendB].forEach(function(rend, si) {
+    var snap   = si===0 ? snapA : snapB;
+    var cardX  = ML + si*(colW+colGap);
+    var d3     = new Date(snap.ts);
+    var dstr   = String(d3.getDate()).padStart(2,'0')+'/'+String(d3.getMonth()+1).padStart(2,'0')
+               +' '+String(d3.getHours()).padStart(2,'0')+':'+String(d3.getMinutes()).padStart(2,'0');
+
+    // Label snapshot au-dessus de la card
+    doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor.apply(doc,C_ACCENT);
+    doc.text('SNAPSHOT '+snap.num, cardX, Y-1);
+    doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor.apply(doc,C_TEXT3);
+    doc.text(dstr, cardX+colW, Y-1, {align:'right'});
+    if (snap.tensioLabel || snap.tmSpokeKey) {
+      var info = [snap.tensioLabel, snap.tmSpokeKey].filter(Boolean).join(' · ');
+      doc.setFontSize(5); doc.setTextColor.apply(doc,C_TEXT3);
+      doc.text(sanitize(info), cardX, Y+3.5);
+    }
+
+    // Card
+    doc.setFillColor.apply(doc,C_CARD); doc.setDrawColor.apply(doc,C_BORDER); doc.setLineWidth(0.3);
+    doc.roundedRect(cardX, Y+5, colW, cardH, 2, 2, 'FD');
+
+    // Radar
+    var rUrl = rend.canvas.toDataURL('image/png');
+    doc.addImage(rUrl,'PNG', cardX+cardPad, Y+5+cardPad, radarSz, radarSz);
+
+    // Légende : NDS centré sur quart gauche, DS centré sur quart droit
+    var lY   = Y+5+cardPad+radarSz+4;
+    var dotR = 1.3;
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
+    var wNDS = doc.getTextWidth(ndsLabel);
+    var wDS  = doc.getTextWidth(dsLabel);
+    // Chaque item : ● + 1.5 + label, centré sur son quart
+    var itemNDSW = dotR*2 + 1.5 + wNDS;
+    var itemDSW  = dotR*2 + 1.5 + wDS;
+    var qMxL = cardX + colW*0.25; // centre quart gauche
+    var qMxR = cardX + colW*0.75; // centre quart droit
+    var xNDS = qMxL - itemNDSW/2;
+    var xDS  = qMxR - itemDSW/2;
+    doc.setFillColor.apply(doc,C_NDS); doc.circle(xNDS+dotR, lY, dotR, 'F');
+    doc.setTextColor.apply(doc,C_TEXT2); doc.text(ndsLabel, xNDS+dotR*2+1.5, lY+0.5);
+    doc.setFillColor.apply(doc,C_DS);  doc.circle(xDS+dotR,  lY, dotR, 'F');
+    doc.text(dsLabel, xDS+dotR*2+1.5, lY+0.5);
+  });
+
+  Y += cardH + 12;
+
+  // ── Données de tension (stats comme PDF classique) ────────────────────────
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc,C_ACCENT);
+  doc.text(L==='fr'?'DONNÉES DE TENSION':'TENSION DATA', ML, Y);
+  Y += 5;
+
+  // 4 blocs stats : S1-NDS | S1-DS | S2-NDS | S2-DS
+  function snapStatsBlock(kgfs) {
+    var v = kgfs.filter(function(x){ return x!==null&&x!==undefined; });
+    if (!v.length) return null;
+    var mean  = v.reduce(function(a,b){return a+b;},0)/v.length;
+    var mn    = Math.min.apply(null,v);
+    var mx    = Math.max.apply(null,v);
+    var delta = mx - mn;
+    var std   = Math.sqrt(v.reduce(function(s,x){return s+Math.pow(x-mean,2);},0)/v.length);
+    var cv    = mean>0 ? std/mean*100 : 0;
+    var avgLabel = L==='fr' ? 'Moyenne'       : 'Average';
+    var stdLabel = L==='fr' ? 'Écart-type' : 'Std deviation';
+    return [
+      {key: avgLabel,      val: mean.toFixed(1)+' kgf'},
+      {key: 'Min → Max', val: mn+' → '+mx+' kgf'},
+      {key: 'Δ max',  val: delta+' kgf'},
+      {key: stdLabel,      val: '± '+std.toFixed(1)+' kgf'},
+      {key: '',            val: cv.toFixed(1)+' %'}
+    ];
+  }
+
+  var STAT_ROW_H=6, STAT_PAD=4, STAT_GAP=3;
+  // 4 blocs : [snap1-NDS, snap1-DS, snap2-NDS, snap2-DS]
+  var blocks = [];
+  [rendA, rendB].forEach(function(rend, si) {
+    var foKgfs = rend.foKgfs, faKgfs = rend.faKgfs;
+    var leftKgfs  = isAvant ? foKgfs : faKgfs;
+    var rightKgfs = isAvant ? faKgfs : foKgfs;
+    var snap = si===0 ? snapA : snapB;
+    var snapLbl = 'S'+snap.num+' ';
+    blocks.push({label: snapLbl+ndsLabel, entries: snapStatsBlock(leftKgfs),  isFo: isAvant,  C_col: C_NDS, C_bg: isAvant?C_CARD_FO:C_CARD_FA});
+    blocks.push({label: snapLbl+dsLabel,  entries: snapStatsBlock(rightKgfs), isFo: !isAvant, C_col: C_DS,  C_bg: isAvant?C_CARD_FA:C_CARD_FO});
+  });
+
+  var nBlocks  = blocks.length; // 4
+  var totalGap = STAT_GAP*(nBlocks-1);
+  var bW2      = (CW - totalGap) / nBlocks;
+  var bH2      = STAT_PAD + 6 + 5*STAT_ROW_H + STAT_PAD;
+
+  blocks.forEach(function(block, bi) {
+    if (!block.entries) return;
+    var bx = ML + bi*(bW2+STAT_GAP);
+    doc.setFillColor.apply(doc, block.C_bg);
+    doc.setDrawColor.apply(doc, block.C_col); doc.setLineWidth(0.3);
+    doc.roundedRect(bx, Y, bW2, bH2, 2, 2, 'FD');
+    doc.setFillColor.apply(doc, block.C_col);
+    doc.roundedRect(bx, Y, 2, bH2, 1, 1, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor.apply(doc, block.C_col);
+    doc.text(sanitize(block.label).toUpperCase(), bx+4, Y+STAT_PAD+1);
+    block.entries.forEach(function(row, ri) {
+      var ry = Y+STAT_PAD+6+ri*STAT_ROW_H;
+      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor.apply(doc, C_TEXT2);
+      doc.text(sanitize(row.key), bx+4, ry);
+      doc.setFont('helvetica','bold'); doc.setTextColor.apply(doc, C_TEXT);
+      doc.text(sanitize(row.val), bx+bW2-3, ry, {align:'right'});
+    });
+  });
+
+  Y += bH2 + 8;
+
+  // ── Footer ─────────────────────────────────────────────────────────────────
+  doc.setDrawColor.apply(doc,C_BORDER); doc.setLineWidth(0.3);
+  doc.line(ML,PH-10,PW-MR,PH-10);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor.apply(doc,C_TEXT3);
+  doc.text(dateStr, ML, PH-6);
+  doc.text(L==='fr'?'Généré par Spoke It':'Generated by Spoke It', PW-MR, PH-6, {align:'right'});
+
+  var filename = wheelName
+    ? 'spoke-it-evolution-'+wheelName.replace(/[^a-z0-9]/gi,'-').toLowerCase()+'.pdf'
+    : 'spoke-it-evolution-tension.pdf';
+  doc.save(filename);
+  snapCompareClose();
+
+  var btn2 = document.getElementById('tm-snapcompare-btn');
+  if (btn2) { btn2.classList.add('flash'); setTimeout(function(){ btn2.classList.remove('flash'); },800); }
 }
 </script>
-
+<!-- ── Modale Évolution Tension ── -->
+<div class="snap-overlay" id="snapcompare-overlay" onclick="snapCompareClose()"></div>
+<div class="snap-modal" id="snapcompare-modal" style="max-width:380px">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div style="font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)">Évolution Tension</div>
+    <button onclick="snapCompareClose()" class="snap-close">&#x2715;</button>
+  </div>
+  <div style="font-size:.72rem;color:var(--text2);line-height:1.5">Sélectionner deux snapshots.</div>
+  <div id="snapcompare-list" style="display:flex;flex-direction:column;gap:.45rem;max-height:260px;overflow-y:auto"></div>
+  <button id="snapcompare-go-btn" onclick="snapComparePDF()" style="background:transparent;border:1px solid var(--border-s);border-radius:var(--rs);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;padding:.6rem 1rem;cursor:pointer;touch-action:manipulation;transition:all .22s;text-align:center;opacity:.4;pointer-events:none">
+    Générer le PDF
+  </button>
+</div>
 </body>
 </html>
