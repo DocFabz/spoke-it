@@ -2331,7 +2331,7 @@ const i18n = {
     snapSaveBtn:'Enregistrer',
     snapEmpty:'Aucun snapshot enregistré.',
     snapNameDesc:'Créer roue.',
-    snapNamePlaceholder:'Nom de la roue…',
+    snapNamePlaceholder:'Nom de la roue',
     snapNameConfirm:'Enregistrer & snapshot',
     snapNameError:'Veuillez saisir un nom.',
   },
@@ -2458,7 +2458,7 @@ const i18n = {
     snapSaveBtn:'Save',
     snapEmpty:'No snapshots saved yet.',
     snapNameDesc:'Create wheel.',
-    snapNamePlaceholder:'Wheel name…',
+    snapNamePlaceholder:'Wheel name',
     snapNameConfirm:'Save & snapshot',
     snapNameError:'Please enter a name.',
   }
@@ -9052,9 +9052,8 @@ function hrClearLoadedRim() {
   </div>
   <!-- Panneau de nommage (affiché si pas de config chargée) -->
   <div id="snap-name-panel" style="display:none;flex-direction:column;gap:.6rem">
-    <div style="font-size:.72rem;color:var(--text2);line-height:1.5" data-i18n="snapNameDesc">Créer roue.</div>
     <div style="display:flex;flex-direction:column;gap:.4rem">
-      <input id="snap-name-inp" class="hr-save-inp" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-i18n-placeholder="snapNamePlaceholder" placeholder="Nom de la roue…" onkeydown="if(event.key==='Enter')snapRegisterAndSave()">
+      <input id="snap-name-inp" class="hr-save-inp" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-i18n-placeholder="snapNamePlaceholder" placeholder="Nom de la roue" onkeydown="if(event.key==='Enter')snapRegisterAndSave()">
       <button class="snap-save-btn" style="width:100%;justify-content:center" onclick="snapRegisterAndSave()" data-i18n="snapNameConfirm">Enregistrer & snapshot</button>
     </div>
     <div id="snap-name-feedback" style="font-size:.67rem;color:#f08080;min-height:.85rem"></div>
