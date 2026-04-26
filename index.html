@@ -2342,6 +2342,9 @@ const i18n = {
     snapEmpty:'Aucun snapshot enregistré.',
     snapNamePlaceholder:'Nom de la roue',
     snapNameConfirm:'Enregistrer & snapshot',
+    snapCompareTitle:'Évolution Tension',
+    snapCompareDesc:'Sélectionner deux snapshots.',
+    snapCompareBtn:'Générer le PDF',
     snapNameError:'Veuillez saisir un nom.',
   },
   en: {
@@ -2468,6 +2471,9 @@ const i18n = {
     snapEmpty:'No snapshots saved yet.',
     snapNamePlaceholder:'Wheel name',
     snapNameConfirm:'Save & snapshot',
+    snapCompareTitle:'Tension Evolution',
+    snapCompareDesc:'Select two snapshots.',
+    snapCompareBtn:'Generate PDF',
     snapNameError:'Please enter a name.',
   }
 };
@@ -9750,13 +9756,13 @@ function snapComparePDF() {
 <div class="snap-overlay" id="snapcompare-overlay" onclick="snapCompareClose()"></div>
 <div class="snap-modal" id="snapcompare-modal" style="max-width:380px">
   <div style="display:flex;align-items:center;justify-content:space-between">
-    <div style="font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)">Évolution Tension</div>
+    <div style="font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)" data-i18n="snapCompareTitle">Évolution Tension</div>
     <button onclick="snapCompareClose()" class="snap-close">&#x2715;</button>
   </div>
-  <div style="font-size:.72rem;color:var(--text2);line-height:1.5">Sélectionner deux snapshots.</div>
+  <div style="font-size:.72rem;color:var(--text2);line-height:1.5" data-i18n="snapCompareDesc">Sélectionner deux snapshots.</div>
   <div id="snapcompare-list" style="display:flex;flex-direction:column;gap:.45rem;max-height:260px;overflow-y:auto"></div>
   <button id="snapcompare-go-btn" onclick="snapComparePDF()" style="background:transparent;border:1px solid var(--border-s);border-radius:var(--rs);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;padding:.6rem 1rem;cursor:pointer;touch-action:manipulation;transition:all .22s;text-align:center;opacity:.4;pointer-events:none">
-    Générer le PDF
+    <span data-i18n="snapCompareBtn">Générer le PDF</span>
   </button>
 </div>
 </body>
