@@ -2636,6 +2636,8 @@ function applyLang() {
   });
   const ctInp = $id('ct-name-inp');
   if (ctInp) ctInp.placeholder = t('ctPlaceholder');
+  const snapNameInp = $id('snap-name-inp');
+  if (snapNameInp) snapNameInp.placeholder = t('snapNamePlaceholder');
   renderConfigsList();
   // Refresh custom tensio options (separator label is language-dependent)
   ctPopulateTensioSelect();
