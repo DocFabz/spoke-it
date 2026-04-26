@@ -2767,9 +2767,8 @@ function applyState(s) {
       $id('arb-wrap').classList.remove('show');
       $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
     } else { arbData = { fo: null, fa: null }; arbSelected.fo = null; arbSelected.fa = null; }
-    $id('save-wrap').classList.add('show'); $id('save-feedback').textContent = '';
   } else {
-    ['results','arb-wrap','summary-wrap','save-wrap'].forEach(id => $id(id).classList.remove('show'));
+    ['results','arb-wrap','summary-wrap'].forEach(id => $id(id).classList.remove('show'));
   }
 
   reorderTensionFields(wtype);
@@ -2777,6 +2776,11 @@ function applyState(s) {
   updateAsymField();
   checkOffsetCoherence();
   updateCalcBtn();
+  // Afficher le bloc sauvegarde si un nombre de rayons est déjà renseigné
+  if (parseInt($id('nb-rayons').value)) {
+    $id('save-wrap').classList.add('show');
+    $id('save-feedback').textContent = '';
+  }
   if (s.hasResult) {
     $id('results-card-body').style.display = 'block';
     $id('results-card-chevron').style.transform = 'rotate(180deg)';
@@ -2886,7 +2890,7 @@ function clearFormSilent() {
   $id('field-diam-trou').style.display   = hubType === 'jbend'        ? '' : 'none';
   $id('field-sp-so-left').style.display  = hubType === 'straightpull' ? '' : 'none';
   $id('field-sp-so-right').style.display = hubType === 'straightpull' ? '' : 'none';
-  ['results','arb-wrap','summary-wrap','save-wrap'].forEach(id => $id(id).classList.remove('show'));
+  ['results','arb-wrap','summary-wrap'].forEach(id => $id(id).classList.remove('show'));
   $id('results-card-body').style.display = '';    $id('results-card-chevron').style.transform = '';
   $id('arb-card-body').style.display  = 'none'; $id('arb-card-chevron').style.transform  = '';
   $id('sum-card-body').style.display  = 'none'; $id('sum-card-chevron').style.transform  = '';
@@ -3233,7 +3237,7 @@ function checkReady() {
 
 function clearResults() {
   if (_applyingState) return;
-  ['results','arb-wrap','summary-wrap','save-wrap'].forEach(id => $id(id).classList.remove('show'));
+  ['results','arb-wrap','summary-wrap'].forEach(id => $id(id).classList.remove('show'));
 }
 
 function updateCardStatus() {
@@ -3435,7 +3439,8 @@ function calc() {
   $id('arb-wrap').classList.remove('show');
   $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
 
-  $id('save-wrap').classList.add('show'); $id('save-feedback').textContent = '';
+  $id('save-wrap').classList.add('show'); // déjà visible, on s'assure juste que le feedback est vide
+  $id('save-feedback').textContent = '';
   setTimeout(() => $id('results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
 }
 
@@ -4006,6 +4011,13 @@ $id('nb-rayons').addEventListener('change', function() {
     tmBuildTable();
     tmHideResult();
     diagClearData();
+  }
+  // Afficher le bloc sauvegarde dès qu'un nombre de rayons est choisi
+  if (parseInt(this.value)) {
+    $id('save-wrap').classList.add('show');
+    $id('save-feedback').textContent = '';
+  } else {
+    $id('save-wrap').classList.remove('show');
   }
 });
 
