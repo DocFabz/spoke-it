@@ -7404,10 +7404,10 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
     </div>
 
     <div class="ef-btn-row">
-      <button class="ef-back-btn" id="ef-back-btn" ontouchstart="efBack();event.preventDefault()" disabled>
+      <button class="ef-back-btn" id="ef-back-btn" ontouchstart="efBack();event.preventDefault()" onclick="efBack()" disabled>
         <span id="ef-back-label">←</span>
       </button>
-      <button class="ef-next-btn" id="ef-next-btn" ontouchstart="efNext();event.preventDefault()">Next →</button>
+      <button class="ef-next-btn" id="ef-next-btn" ontouchstart="efNext();event.preventDefault()" onclick="efNext()">Next →</button>
     </div>
 
   </div><!-- /ef-screen-fill -->
@@ -7569,6 +7569,7 @@ function efRenderStep() {
   var inp = $id('ef-inp');
   inp.value     = cur !== null ? tmDisplayValue(cur) : '';
   inp.className = 'ef-inp ' + step.side;
+  if (inp.value) inp.select();
   efUpdateKgf();
 
   $id('ef-back-btn').disabled = (efCurrent === 0);
@@ -7673,9 +7674,6 @@ function efAllFilled() {
 }
 
 function efNext() {
-  if (efNext._busy) return;
-  efNext._busy = true;
-  setTimeout(function(){ efNext._busy = false; }, 350);
   if (!efCommitCurrent()) return; // hors plage ou invalide → ne pas avancer
   if (efCurrent < efSteps.length - 1) {
     efCurrent++;
@@ -7700,9 +7698,6 @@ function efNext() {
 }
 
 function efBack() {
-  if (efBack._busy) return;
-  efBack._busy = true;
-  setTimeout(function(){ efBack._busy = false; }, 350);
   if (efCurrent > 0) { efCurrent--; efRenderStep(); }
 }
 
@@ -7831,9 +7826,6 @@ function efHideNumpad() {
 
 
 function efNumpadKey(char) {
-  if (efNumpadKey._busy) return;
-  efNumpadKey._busy = true;
-  setTimeout(function(){ efNumpadKey._busy = false; }, 350);
   var inp = $id('ef-inp');
   var val = inp.value;
   if (char === '.' && val.indexOf('.') !== -1) return; // un seul point décimal
@@ -7843,9 +7835,6 @@ function efNumpadKey(char) {
 }
 
 function efNumpadDel() {
-  if (efNumpadDel._busy) return;
-  efNumpadDel._busy = true;
-  setTimeout(function(){ efNumpadDel._busy = false; }, 350);
   var inp = $id('ef-inp');
   inp.value = inp.value.slice(0, -1);
   efUpdateKgf();
