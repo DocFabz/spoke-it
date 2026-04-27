@@ -525,6 +525,13 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .defl-cell { display:flex; flex-direction:column; align-items:center; gap:.08rem }
 .defl-td   { padding:.22rem .35rem }
 
+/* ── En-tête colonne : bouton inversion ────────────────────────────────── */
+.tm-th-invert { display:none; background:none; border:none; cursor:pointer; padding:.1rem .25rem; border-radius:4px; opacity:.5; font-size:.78rem; color:inherit; line-height:1; transition:opacity .15s, transform .2s; flex-shrink:0 }
+.tm-th-invert:hover { opacity:1; transform:scaleY(-1) }
+.tm-th-invert.visible { display:inline-flex }
+.tm-th-invert.flash { animation:inv-flash .35s ease }
+@keyframes inv-flash { 0%,100%{opacity:.5} 50%{opacity:1;transform:scaleY(-1)} }
+
 /* ── Arbitrage ─────────────────────────────────────────────────────────────── */
 .arb-wrap          { display:none; animation:fu .5s cubic-bezier(.22,1,.36,1) }
 .arb-wrap.show     { display:block }
@@ -1919,6 +1926,7 @@ input[type=number] { -moz-appearance:textfield }
             <th id="tm-th-nds" class="th-fa">
               <div class="tm-th-row">
                 <span id="tm-th-nds-label">NDS</span>
+                <button class="tm-th-invert" id="tm-th-nds-invert" onclick="invColDirect('nds')" title="Inverser NDS">⇅</button>
                 <button class="tm-th-reset" onclick="tmResetSide('nds')" title="Effacer NDS">✕</button>
               </div>
               <div class="tm-th-sub" id="tm-th-nds-sub">lecture · kgf</div>
@@ -1926,6 +1934,7 @@ input[type=number] { -moz-appearance:textfield }
             <th id="tm-th-ds" class="th-fo">
               <div class="tm-th-row">
                 <span id="tm-th-ds-label">DS</span>
+                <button class="tm-th-invert" id="tm-th-ds-invert" onclick="invColDirect('ds')" title="Inverser DS">⇅</button>
                 <button class="tm-th-reset" onclick="tmResetSide('ds')" title="Effacer DS">✕</button>
               </div>
               <div class="tm-th-sub" id="tm-th-ds-sub">lecture · kgf</div>
@@ -5978,6 +5987,7 @@ function tmBuildTable() {
         tmUpdateResultCardState();
         _snapSetLabel(0);
         snapRefreshBtn();
+        tmUpdateInvertibleHeaders();
       });
 
       inp.addEventListener('keydown', function(e) {
@@ -6007,6 +6017,8 @@ function tmBuildTable() {
       });
     });
   }
+  // Mettre à jour l'état cliquable des en-têtes après reconstruction du tableau
+  tmUpdateInvertibleHeaders();
 }
 
 function tmUpdateCell(idx, side) {
@@ -7599,6 +7611,7 @@ function efCommitCurrent() {
   tmTryRenderRadar();
   tmUpdateResultCardState();
   snapRefreshBtn();
+  tmUpdateInvertibleHeaders();
   return true;
 }
 
@@ -9279,6 +9292,7 @@ function snapLoad(snapIdx) {
   tmShowDiagramIfData();
   _snapSetLabel(snap.num);
   snapClose();
+  tmUpdateInvertibleHeaders();
 }
 
 function snapDelete(snapIdx) {
@@ -9334,6 +9348,60 @@ function snapRefreshBtn() {
     cmpBtn.style.opacity      = hasEnough ? '' : '0.3';
     cmpBtn.style.pointerEvents = hasEnough ? '' : 'none';
   }
+}
+
+// ── Inversion colonne DS / NDS ────────────────────────────────────────────────
+function tmColumnAllFilled(col) {
+  const nb = parseInt($id('nb-rayons').value) || 0;
+  const perSide = Math.floor(nb / 2);
+  if (perSide < 2) return false;
+  const isFront = wtype === 'avant';
+  const side = (col === 'nds') ? (isFront ? 'fo' : 'fa') : (isFront ? 'fa' : 'fo');
+  const arr = side === 'fo' ? tmData.fo : tmData.fa;
+  for (let i = 0; i < perSide; i++) {
+    if (arr[i] === null || arr[i] === undefined) return false;
+  }
+  return true;
+}
+
+function tmUpdateInvertibleHeaders() {
+  ['nds', 'ds'].forEach(col => {
+    const btn = $id('tm-th-' + col + '-invert');
+    if (btn) btn.classList.toggle('visible', tmColumnAllFilled(col));
+  });
+}
+
+function invColDirect(col) {
+  const nb = parseInt($id('nb-rayons').value) || 0;
+  const perSide = Math.floor(nb / 2);
+  if (perSide < 2) return;
+  const isFront = wtype === 'avant';
+  const side = (col === 'nds') ? (isFront ? 'fo' : 'fa') : (isFront ? 'fa' : 'fo');
+  const arr = side === 'fo' ? tmData.fo : tmData.fa;
+  for (let i = 0, j = perSide - 1; i < j; i++, j--) {
+    const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  }
+  if (side === 'fo') tmPrevFo = arr.slice(); else tmPrevFa = arr.slice();
+
+  // Resync les inputs du tableau sans toucher à la visibilité de la card
+  for (let i = 0; i < perSide; i++) {
+    const val = arr[i];
+    const inp = document.querySelector(`.defl-inp[data-side="${side}"][data-idx="${i}"]`);
+    if (inp) {
+      inp.value = val !== null ? tmDisplayValue(val) : '';
+      inp.classList.toggle('has-val', val !== null);
+    }
+    tmUpdateCell(i, side);
+  }
+
+  // Flash sur le bouton
+  const btn = $id('tm-th-' + col + '-invert');
+  if (btn) { btn.classList.add('flash'); setTimeout(() => btn.classList.remove('flash'), 380); }
+
+  tmTryRenderRadar();
+  tmUpdateResultCardState();
+  _snapSetLabel(0);
+  snapRefreshBtn();
 }
 
 // ── Comparaison de snapshots ─────────────────────────────────────────────────
