@@ -2347,10 +2347,10 @@ const i18n = {
     tmLinearTitle:'Balance des tensions',
     snapTitle:'Snapshots de tension',
     snapBtn:'Snapshots',
-    snapSaveBtn:'Enregistrer',
+    snapSaveBtn:'✓ Nouveau snapshot',
     snapEmpty:'Aucun snapshot enregistré.',
-    snapNamePlaceholder:'Nom de la roue',
-    snapNameConfirm:'Enregistrer & snapshot',
+    snapNamePlaceholder:'Ex : Ma roue',
+    snapNameConfirm:'✓ Enregistrer & snapshot',
     snapCompareTitle:'Évolution Tension',
     snapCompareDesc:'Sélectionner deux snapshots.',
     snapCompareBtn:'Générer le PDF',
@@ -2476,10 +2476,10 @@ const i18n = {
     tmLinearTitle:'Tension Balance',
     snapTitle:'Tension Snapshots',
     snapBtn:'Snapshots',
-    snapSaveBtn:'Save',
+    snapSaveBtn:'✓ New snapshot',
     snapEmpty:'No snapshots saved yet.',
-    snapNamePlaceholder:'Wheel name',
-    snapNameConfirm:'Save & snapshot',
+    snapNamePlaceholder:'Ex: My wheel',
+    snapNameConfirm:'✓ Save & snapshot',
     snapCompareTitle:'Tension Evolution',
     snapCompareDesc:'Select two snapshots.',
     snapCompareBtn:'Generate PDF',
@@ -2672,6 +2672,40 @@ function applyLang() {
   tmBuildTable();
   tmUpdateOutlierCount();
   if ($id('tm-result-card').style.display !== 'none') tmTryRenderRadar();
+  _applyLangModals();
+}
+
+function _applyLangModals() {
+  var L  = typeof lang !== 'undefined' ? lang : 'fr';
+  var tr = (typeof i18n !== 'undefined' && i18n[L]) ? i18n[L] : {};
+  var el;
+
+  // ── Modale Diagnostic ──
+  el = $id('diag-modal-title'); if (el) el.textContent = tr.diagTitle      || 'Spoke It Diagnostic';
+  el = $id('diag-wheel-label'); if (el) el.textContent = tr.diagWheelLabel || (L==='fr' ? 'Roue' : 'Wheel');
+  el = $id('diag-obs-label');   if (el) el.textContent = tr.diagObsLabel   || 'Observations';
+  el = $id('diag-print-label'); if (el) el.textContent = tr.diagPdfBtn     || (L==='fr' ? 'Générer le PDF' : 'Generate PDF');
+  el = $id('diag-obs');         if (el) el.placeholder = tr.diagObsPlaceholder || (L==='fr' ? 'Observations du wheelbuilder…' : 'Wheelbuilder observations…');
+  el = $id('diag-wheel');       if (el) el.placeholder = tr.diagWheelPlaceholder || (L==='fr' ? 'Nom de la roue' : 'Wheel name');
+
+  // ── Modale Options PDF ──
+  el = $id('pdfopt-lbl-diagram');  if (el) el.textContent = tr.pdfoptDiagram  || (L==='fr' ? 'Diagramme de tension' : 'Tension diagram');
+  el = $id('pdfopt-lbl-values');   if (el) el.textContent = tr.pdfoptValues   || (L==='fr' ? 'Valeurs de tension'   : 'Tension values');
+  el = $id('pdfopt-lbl-stats');    if (el) el.textContent = tr.pdfoptStats    || (L==='fr' ? 'Données de tension'   : 'Tension data');
+  el = $id('pdfopt-lbl-generate'); if (el) el.textContent = tr.pdfoptGenerate || (L==='fr' ? 'Générer le PDF'       : 'Generate PDF');
+  el = $id('pdfopt-title');        if (el) el.textContent = tr.pdfoptTitle    || 'Options PDF';
+  el = $id('pdfopt-desc');         if (el) el.textContent = tr.pdfoptDesc     || (L==='fr' ? 'Choisissez les éléments à inclure dans le PDF.' : 'Choose the elements to include in the PDF.');
+
+  // ── Modale Snapshots ──
+  el = document.querySelector('#snap-modal .snap-title');  if (el) el.textContent = tr.snapTitle       || (L==='fr' ? 'Snapshots de tension' : 'Tension Snapshots');
+  el = $id('snap-name-confirm-btn');                                         if (el) el.textContent = tr.snapNameConfirm || (L==='fr' ? '✓ Enregistrer & snapshot' : '✓ Save & snapshot');
+  el = $id('snap-save-btn');                                                 if (el) el.textContent = tr.snapSaveBtn     || (L==='fr' ? '✓ Nouveau snapshot' : '✓ New snapshot');
+  if (typeof snapRenderList === 'function') snapRenderList();
+
+  // ── Modale Évolution Tension (snapCompare) ──
+  el = $id('snapcompare-title');    if (el) el.textContent = tr.snapCompareTitle || (L==='fr' ? 'Évolution Tension'          : 'Tension Evolution');
+  el = $id('snapcompare-desc');     if (el) el.textContent = tr.snapCompareDesc  || (L==='fr' ? 'Sélectionner deux snapshots.' : 'Select two snapshots.');
+  el = $id('snapcompare-btn-label');if (el) el.textContent = tr.snapCompareBtn   || (L==='fr' ? 'Générer le PDF'              : 'Generate PDF');
 }
 
 function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; localStorage.setItem('spoke-it-lang', lang); applyLang(); }
@@ -7370,10 +7404,10 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
     </div>
 
     <div class="ef-btn-row">
-      <button class="ef-back-btn" id="ef-back-btn" ontouchstart="efBack();event.preventDefault()" onclick="efBack()" disabled>
+      <button class="ef-back-btn" id="ef-back-btn" ontouchstart="efBack();event.preventDefault()" disabled>
         <span id="ef-back-label">←</span>
       </button>
-      <button class="ef-next-btn" id="ef-next-btn" ontouchstart="efNext();event.preventDefault()" onclick="efNext()">Next →</button>
+      <button class="ef-next-btn" id="ef-next-btn" ontouchstart="efNext();event.preventDefault()">Next →</button>
     </div>
 
   </div><!-- /ef-screen-fill -->
@@ -7382,19 +7416,19 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 <!-- ── Pavé numérique ── -->
 <div id="ef-numpad">
   <div class="ef-numpad">
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('7');event.preventDefault()" onclick="efNumpadKey('7')">7</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('8');event.preventDefault()" onclick="efNumpadKey('8')">8</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('9');event.preventDefault()" onclick="efNumpadKey('9')">9</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('4');event.preventDefault()" onclick="efNumpadKey('4')">4</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('5');event.preventDefault()" onclick="efNumpadKey('5')">5</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('6');event.preventDefault()" onclick="efNumpadKey('6')">6</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('1');event.preventDefault()" onclick="efNumpadKey('1')">1</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('2');event.preventDefault()" onclick="efNumpadKey('2')">2</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('3');event.preventDefault()" onclick="efNumpadKey('3')">3</button>
-    <button class="ef-numpad-key key-dot" ontouchstart="efNumpadKey('.');event.preventDefault()" onclick="efNumpadKey('.')">.</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('0');event.preventDefault()" onclick="efNumpadKey('0')">0</button>
-    <button class="ef-numpad-key key-del" ontouchstart="efNumpadDel();event.preventDefault()" onclick="efNumpadDel()">⌫</button>
-    <button class="ef-numpad-key key-enter" ontouchstart="efNext();event.preventDefault()" onclick="efNext()" id="ef-numpad-enter">Entrée ↵</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('7');event.preventDefault()">7</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('8');event.preventDefault()">8</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('9');event.preventDefault()">9</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('4');event.preventDefault()">4</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('5');event.preventDefault()">5</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('6');event.preventDefault()">6</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('1');event.preventDefault()">1</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('2');event.preventDefault()">2</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('3');event.preventDefault()">3</button>
+    <button class="ef-numpad-key key-dot" ontouchstart="efNumpadKey('.');event.preventDefault()">.</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('0');event.preventDefault()">0</button>
+    <button class="ef-numpad-key key-del" ontouchstart="efNumpadDel();event.preventDefault()">⌫</button>
+    <button class="ef-numpad-key key-enter" ontouchstart="efNext();event.preventDefault()" id="ef-numpad-enter">Entrée ↵</button>
   </div>
 </div><!-- /ef-numpad -->
 
@@ -8086,24 +8120,8 @@ function efNumpadDel() {
 
 function openDiagModal(e) {
   if (e) e.stopPropagation();
-  var L  = typeof lang !== 'undefined' ? lang : 'fr';
-  var tr = typeof i18n !== 'undefined' && i18n[L] ? i18n[L] : {};
-  // Labels (toujours mis à jour pour la langue)
-  var el;
-  el = document.getElementById('diag-modal-title');  if (el) el.textContent = tr.diagTitle      || 'Spoke It Diagnostic';
-  el = document.getElementById('diag-wheel-label');  if (el) el.textContent = tr.diagWheelLabel || (L === 'fr' ? 'Roue' : 'Wheel');
-  el = document.getElementById('diag-obs-label');    if (el) el.textContent = tr.diagObsLabel   || 'Observations';
-  el = document.getElementById('diag-print-label');  if (el) el.textContent = tr.diagPdfBtn     || (L === 'fr' ? 'Générer le PDF' : 'Generate PDF');
-  // Placeholder observations
-  var obsTA = document.getElementById('diag-obs');
-  if (obsTA) obsTA.placeholder = tr.diagObsPlaceholder || (L === 'fr' ? 'Observations du wheelbuilder…' : 'Wheelbuilder observations…');
-  // Restaurer depuis le store de la roue courante
+  _applyLangModals();
   diagRestoreWheel(wtype);
-  // Placeholder du champ Roue
-  var wheelInp = document.getElementById('diag-wheel');
-  if (wheelInp) {
-    wheelInp.placeholder = tr.diagWheelPlaceholder || (L === 'fr' ? 'Nom de la roue' : 'Wheel name');
-  }
   document.getElementById('diag-overlay').classList.add('show');
   document.getElementById('diag-modal').classList.add('show');
 }
@@ -8491,10 +8509,10 @@ function diagRestoreWheel(wh) {
 <div class="pdfopt-overlay" id="pdfopt-overlay" onclick="closePdfOptModal()"></div>
 <div class="pdfopt-modal" id="pdfopt-modal" role="dialog" aria-modal="true">
   <div class="pdfopt-header">
-    <span class="pdfopt-title">Options PDF</span>
+    <span class="pdfopt-title" id="pdfopt-title">Options PDF</span>
     <button class="pdfopt-close" onclick="closePdfOptModal()">✕</button>
   </div>
-  <p class="pdfopt-desc">Choisissez les éléments à inclure dans le PDF.</p>
+  <p class="pdfopt-desc" id="pdfopt-desc">Choisissez les éléments à inclure dans le PDF.</p>
   <div class="pdfopt-options">
     <!-- Option 1 : Diagramme de tension -->
     <div class="pdfopt-row" id="pdfopt-row-diagram">
@@ -8537,16 +8555,7 @@ function diagRestoreWheel(wh) {
 // ── Modale options PDF ─────────────────────────────────────────────────────────
 function openPdfOptModal(e) {
   if (e) e.stopPropagation();
-  // Mettre à jour les labels selon la langue courante
-  var L = typeof lang !== 'undefined' ? lang : 'fr';
-  var tr = typeof i18n !== 'undefined' && i18n[L] ? i18n[L] : {};
-  var el;
-  el = document.getElementById('pdfopt-lbl-diagram');   if (el) el.textContent = tr.pdfoptDiagram   || 'Diagramme de tension';
-  el = document.getElementById('pdfopt-lbl-values');    if (el) el.textContent = tr.pdfoptValues    || 'Valeurs de tension';
-  el = document.getElementById('pdfopt-lbl-stats');     if (el) el.textContent = tr.pdfoptStats     || 'Données de tension';
-  el = document.getElementById('pdfopt-lbl-generate');  if (el) el.textContent = tr.pdfoptGenerate  || 'Générer le PDF';
-  var title = document.querySelector('#pdfopt-modal .pdfopt-title'); if (title) title.textContent = tr.pdfoptTitle || 'Options PDF';
-  var desc  = document.querySelector('#pdfopt-modal .pdfopt-desc');  if (desc)  desc.textContent  = tr.pdfoptDesc  || 'Choisissez les éléments à inclure dans le PDF.';
+  _applyLangModals();
   // Réinitialiser l'état
   document.getElementById('pdfopt-diagram').checked = true;
   document.getElementById('pdfopt-values').checked  = true;
@@ -9093,19 +9102,19 @@ function hrClearLoadedRim() {
 <div class="snap-overlay" id="snap-overlay" onclick="snapClose()"></div>
 <div class="snap-modal" id="snap-modal">
   <div class="snap-header">
-    <div class="snap-title" data-i18n="snapTitle">Snapshots de tension</div>
+    <div class="snap-title">Snapshots de tension</div>
     <button class="snap-close" onclick="snapClose()">✕</button>
   </div>
   <!-- Panneau de nommage (affiché si pas de config chargée) -->
   <div id="snap-name-panel" style="display:none;flex-direction:column;gap:.6rem">
     <div style="display:flex;flex-direction:column;gap:.4rem">
-      <input id="snap-name-inp" class="hr-save-inp" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-i18n-placeholder="snapNamePlaceholder" placeholder="Nom de la roue" onkeydown="if(event.key==='Enter')snapRegisterAndSave()">
-      <button class="snap-save-btn" style="width:100%;justify-content:center" onclick="snapRegisterAndSave()" data-i18n="snapNameConfirm">Enregistrer & snapshot</button>
+      <input id="snap-name-inp" class="ct-input" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Ex : Ma roue" onkeydown="if(event.key==='Enter')snapRegisterAndSave()">
+      <button id="snap-name-confirm-btn" class="ct-save-btn" onclick="snapRegisterAndSave()">✓ Enregistrer & snapshot</button>
     </div>
     <div id="snap-name-feedback" style="font-size:.67rem;color:#f08080;min-height:.85rem"></div>
   </div>
   <div class="snap-save-row" id="snap-save-row">
-    <button class="snap-save-btn" style="width:100%;justify-content:center" onclick="snapSave()" data-i18n="snapSaveBtn">Enregistrer</button>
+    <button id="snap-save-btn" class="ct-save-btn" onclick="snapSave()">✓ Nouveau snapshot</button>
   </div>
   <div class="snap-divider" id="snap-divider"></div>
   <div class="snap-list" id="snap-list"></div>
@@ -9155,6 +9164,7 @@ function _snapSetLabel(num) {
 }
 
 function snapOpen() {
+  _applyLangModals();
   // Si pas de config chargée → afficher le panneau de nommage
   if (!_loadedConfigName[wtype]) {
     _snapShowNamePanel();
@@ -9836,13 +9846,14 @@ function snapComparePDF() {
 <div class="snap-overlay" id="snapcompare-overlay" onclick="snapCompareClose()"></div>
 <div class="snap-modal" id="snapcompare-modal" style="max-width:380px">
   <div style="display:flex;align-items:center;justify-content:space-between">
-    <div style="font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)" data-i18n="snapCompareTitle">Évolution Tension</div>
+    <div id="snapcompare-title" style="font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)">Évolution Tension</div>
     <button onclick="snapCompareClose()" class="snap-close">&#x2715;</button>
   </div>
-  <div style="font-size:.72rem;color:var(--text2);line-height:1.5" data-i18n="snapCompareDesc">Sélectionner deux snapshots.</div>
+  <div id="snapcompare-desc" style="font-size:.72rem;color:var(--text2);line-height:1.5">Sélectionner deux snapshots.</div>
   <div id="snapcompare-list" style="display:flex;flex-direction:column;gap:.45rem;max-height:260px;overflow-y:auto"></div>
-  <button id="snapcompare-go-btn" onclick="snapComparePDF()" style="background:transparent;border:1px solid var(--border-s);border-radius:var(--rs);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;padding:.6rem 1rem;cursor:pointer;touch-action:manipulation;transition:all .22s;text-align:center;opacity:.4;pointer-events:none">
-    <span data-i18n="snapCompareBtn">Générer le PDF</span>
+  <button id="snapcompare-go-btn" class="pdfopt-generate" onclick="snapComparePDF()" style="opacity:.4;pointer-events:none;display:flex;align-items:center;justify-content:center;gap:.45rem">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <span id="snapcompare-btn-label">Générer le PDF</span>
   </button>
 </div>
 </body>
