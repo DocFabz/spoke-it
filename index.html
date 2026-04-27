@@ -7370,10 +7370,10 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
     </div>
 
     <div class="ef-btn-row">
-      <button class="ef-back-btn" id="ef-back-btn" onclick="efBack()" disabled>
+      <button class="ef-back-btn" id="ef-back-btn" ontouchstart="efBack();event.preventDefault()" onclick="efBack()" disabled>
         <span id="ef-back-label">←</span>
       </button>
-      <button class="ef-next-btn" id="ef-next-btn" onclick="efNext()">Next →</button>
+      <button class="ef-next-btn" id="ef-next-btn" ontouchstart="efNext();event.preventDefault()" onclick="efNext()">Next →</button>
     </div>
 
   </div><!-- /ef-screen-fill -->
@@ -7382,19 +7382,19 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 <!-- ── Pavé numérique ── -->
 <div id="ef-numpad">
   <div class="ef-numpad">
-    <button class="ef-numpad-key" onclick="efNumpadKey('7')">7</button>
-    <button class="ef-numpad-key" onclick="efNumpadKey('8')">8</button>
-    <button class="ef-numpad-key" onclick="efNumpadKey('9')">9</button>
-    <button class="ef-numpad-key" onclick="efNumpadKey('4')">4</button>
-    <button class="ef-numpad-key" onclick="efNumpadKey('5')">5</button>
-    <button class="ef-numpad-key" onclick="efNumpadKey('6')">6</button>
-    <button class="ef-numpad-key" onclick="efNumpadKey('1')">1</button>
-    <button class="ef-numpad-key" onclick="efNumpadKey('2')">2</button>
-    <button class="ef-numpad-key" onclick="efNumpadKey('3')">3</button>
-    <button class="ef-numpad-key key-dot" onclick="efNumpadKey('.')">.</button>
-    <button class="ef-numpad-key" onclick="efNumpadKey('0')">0</button>
-    <button class="ef-numpad-key key-del" onclick="efNumpadDel()">⌫</button>
-    <button class="ef-numpad-key key-enter" onclick="efNext()" id="ef-numpad-enter">Entrée ↵</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('7');event.preventDefault()" onclick="efNumpadKey('7')">7</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('8');event.preventDefault()" onclick="efNumpadKey('8')">8</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('9');event.preventDefault()" onclick="efNumpadKey('9')">9</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('4');event.preventDefault()" onclick="efNumpadKey('4')">4</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('5');event.preventDefault()" onclick="efNumpadKey('5')">5</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('6');event.preventDefault()" onclick="efNumpadKey('6')">6</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('1');event.preventDefault()" onclick="efNumpadKey('1')">1</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('2');event.preventDefault()" onclick="efNumpadKey('2')">2</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('3');event.preventDefault()" onclick="efNumpadKey('3')">3</button>
+    <button class="ef-numpad-key key-dot" ontouchstart="efNumpadKey('.');event.preventDefault()" onclick="efNumpadKey('.')">.</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('0');event.preventDefault()" onclick="efNumpadKey('0')">0</button>
+    <button class="ef-numpad-key key-del" ontouchstart="efNumpadDel();event.preventDefault()" onclick="efNumpadDel()">⌫</button>
+    <button class="ef-numpad-key key-enter" ontouchstart="efNext();event.preventDefault()" onclick="efNext()" id="ef-numpad-enter">Entrée ↵</button>
   </div>
 </div><!-- /ef-numpad -->
 
@@ -7639,6 +7639,9 @@ function efAllFilled() {
 }
 
 function efNext() {
+  if (efNext._busy) return;
+  efNext._busy = true;
+  setTimeout(function(){ efNext._busy = false; }, 350);
   if (!efCommitCurrent()) return; // hors plage ou invalide → ne pas avancer
   if (efCurrent < efSteps.length - 1) {
     efCurrent++;
@@ -7663,6 +7666,9 @@ function efNext() {
 }
 
 function efBack() {
+  if (efBack._busy) return;
+  efBack._busy = true;
+  setTimeout(function(){ efBack._busy = false; }, 350);
   if (efCurrent > 0) { efCurrent--; efRenderStep(); }
 }
 
@@ -7791,6 +7797,9 @@ function efHideNumpad() {
 
 
 function efNumpadKey(char) {
+  if (efNumpadKey._busy) return;
+  efNumpadKey._busy = true;
+  setTimeout(function(){ efNumpadKey._busy = false; }, 350);
   var inp = $id('ef-inp');
   var val = inp.value;
   if (char === '.' && val.indexOf('.') !== -1) return; // un seul point décimal
@@ -7800,6 +7809,9 @@ function efNumpadKey(char) {
 }
 
 function efNumpadDel() {
+  if (efNumpadDel._busy) return;
+  efNumpadDel._busy = true;
+  setTimeout(function(){ efNumpadDel._busy = false; }, 350);
   var inp = $id('ef-inp');
   inp.value = inp.value.slice(0, -1);
   efUpdateKgf();
