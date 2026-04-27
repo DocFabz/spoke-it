@@ -5857,32 +5857,27 @@ function tmBuildTable() {
   const tbody = $id('tm-tbody');
   tbody.innerHTML = '';
 
-  const body = $id('tm-input-card-body');
-  const chev = $id('tm-input-card-chevron');
-
-  if (nb < 2) {
-    if (body) { body.style.display = 'none'; }
-    if (chev) { chev.style.transform = ''; }
-    return;
-  }
-
-  if (!tmSpokeKey) {
-    if (body) { body.style.display = 'none'; }
-    if (chev) { chev.style.transform = ''; }
-    return;
-  }
-
-  // Table peuplée — ouvrir la card déflexions seulement si pas encore de données
-  // Si des données existent déjà, garder la card fermée et laisser tmTryRenderRadar ouvrir le diagramme
-  if (!tmHasData()) {
-    if (body) { body.style.display = ''; }
-    if (chev) { chev.style.transform = 'rotate(180deg)'; }
-  } else {
-    if (body) { body.style.display = 'none'; }
-    if (chev) { chev.style.transform = ''; }
-  }
+  const body  = $id('tm-input-card-body');
+  const chev  = $id('tm-input-card-chevron');
   const efBar = $id('easy-fill-bar');
-  if (efBar) efBar.style.display = 'flex';
+
+  function _closeCard() {
+    if (body)  body.style.display   = 'none';
+    if (chev)  chev.style.transform = '';
+    if (efBar) efBar.style.display  = 'none';
+  }
+
+  if (nb < 2 || !tmSpokeKey) { _closeCard(); return; }
+
+  // Ouvrir la card seulement si pas encore de données
+  // Si données présentes, garder fermée et laisser tmTryRenderRadar ouvrir le diagramme
+  if (!tmHasData()) {
+    if (body)  body.style.display   = '';
+    if (chev)  chev.style.transform = 'rotate(180deg)';
+  } else {
+    _closeCard();
+  }
+  if (efBar) efBar.style.display = (body && body.style.display !== 'none') ? 'flex' : 'none';
 
   const perSide = Math.floor(nb / 2);
   while (tmData.fo.length < perSide) tmData.fo.push(null);
