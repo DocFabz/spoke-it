@@ -7440,6 +7440,7 @@ var efSteps      = [];
 var efCurrent    = 0;
 var efSideMode   = 'both'; // 'fo' | 'fa' | 'both'
 var efBtMode     = false;  // true = clavier Bluetooth actif (mode desktop forcé)
+var efPendingReplace = false; // true = valeur présélectionnée, prochaine frappe remplace
 
 // Labels lisibles pour fo (fort) et fa (faible) selon wtype
 function efGetLabels() {
@@ -7569,7 +7570,7 @@ function efRenderStep() {
   var inp = $id('ef-inp');
   inp.value     = cur !== null ? tmDisplayValue(cur) : '';
   inp.className = 'ef-inp ' + step.side;
-  if (inp.value) inp.select();
+  if (inp.value) { inp.select(); efPendingReplace = true; } else { efPendingReplace = false; }
   efUpdateKgf();
 
   $id('ef-back-btn').disabled = (efCurrent === 0);
@@ -7827,6 +7828,7 @@ function efHideNumpad() {
 
 function efNumpadKey(char) {
   var inp = $id('ef-inp');
+  if (efPendingReplace) { inp.value = ''; efPendingReplace = false; }
   var val = inp.value;
   if (char === '.' && val.indexOf('.') !== -1) return; // un seul point décimal
   if (char !== '.' && val === '0') { inp.value = char; efUpdateKgf(); return; } // pas de zéro en tête
@@ -7836,6 +7838,7 @@ function efNumpadKey(char) {
 
 function efNumpadDel() {
   var inp = $id('ef-inp');
+  if (efPendingReplace) { inp.value = ''; efPendingReplace = false; efUpdateKgf(); return; }
   inp.value = inp.value.slice(0, -1);
   efUpdateKgf();
 }
