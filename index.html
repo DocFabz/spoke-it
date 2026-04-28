@@ -7153,9 +7153,13 @@ async function tmScreenshot(e) {
   const rH = Math.round(rW * (radar.height / radar.width));
   const rX = CARD_MX + PAD + Math.round((innerW - rW) / 2);
 
+  // Infos atelier (nécessaire pour le calcul de hauteur)
+  const atelierInfo   = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
+  const workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
+
   // Hauteurs des sections
-  const headerH = 104;
-  const legendH = 64;
+  const headerH = 120;
+  const legendH = 128;
   const statsBH = statBlocks.length
     ? statBlocks.reduce((acc, b) => acc + blockH(b) + STAT_GAP, 0) - STAT_GAP
     : 0;
@@ -7175,9 +7179,11 @@ async function tmScreenshot(e) {
   ctx.fillRect(0, 0, W, totalH);
   const cardX = 0, cardY = 0;
 
-  // Header — 2 lignes : titre/workshop à gauche, type/nom de roue à droite
-  const hLine1 = cardY + headerH * 0.32;  // ligne 1 : ~1/3 du header
-  const hLine2 = cardY + headerH * 0.72;  // ligne 2 : ~3/4 du header
+  // Header — 2 lignes gauche/droite + tensiomètre centré
+  const hLine1 = cardY + headerH * 0.30;
+  const hLine2 = cardY + headerH * 0.72;
+  const hMid   = cardY + headerH / 2;
+
   ctx.strokeStyle = 'rgba(255,255,255,0.20)';
   ctx.lineWidth   = 1;
   ctx.beginPath();
@@ -7187,37 +7193,36 @@ async function tmScreenshot(e) {
 
   drawHexIcon(ctx, cardX + PAD + 12, hLine1, 11, 'rgba(126,200,227,0.85)');
 
-  // Ligne 1 gauche : DIAGRAMME DE TENSION
-  ctx.font         = '600 22px DM Sans, sans-serif';
+  // Gauche ligne 1 : DIAGRAMME DE TENSION
+  ctx.font         = '600 32px DM Sans, sans-serif';
   ctx.fillStyle    = 'rgba(126,200,227,1)';
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillText(lang === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', cardX + PAD + 34, hLine1);
 
-  // Ligne 2 gauche : nom du workshop
-  const atelierInfo   = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
-  const workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
-  ctx.font      = '600 22px DM Sans, sans-serif';
+  // Gauche ligne 2 : nom du workshop
+  ctx.font      = '600 32px DM Sans, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,0.92)';
   ctx.textAlign = 'left';
   ctx.fillText(workshopLabel, cardX + PAD + 34, hLine2);
 
-  // Ligne 1 droite : type de roue (même style que DIAGRAMME DE TENSION)
-  ctx.font      = '600 22px DM Sans, sans-serif';
+  // Droite ligne 1 : type de roue
+  ctx.font      = '600 32px DM Sans, sans-serif';
   ctx.fillStyle = 'rgba(126,200,227,1)';
   ctx.textAlign = 'right';
   ctx.fillText(wheelLabel.toUpperCase(), cardX + cardW - PAD, hLine1);
 
-  // Ligne 2 droite : nom de la roue (même style que nom atelier)
+  // Droite ligne 2 : nom de la roue
   if (wheelName) {
-    ctx.font      = '600 22px DM Sans, sans-serif';
+    ctx.font      = '600 32px DM Sans, sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,0.92)';
     ctx.textAlign = 'right';
     ctx.fillText(wheelName, cardX + cardW - PAD, hLine2);
   }
 
+
   // Radar
-  const radarY = cardY + headerH + 8;
+  const radarY = cardY + headerH + 10;
   ctx.drawImage(radar, rX, radarY, rW, rH);
 
   // Légende
@@ -7226,7 +7231,7 @@ async function tmScreenshot(e) {
   const legMid = cardX + cardW / 2;
 
   ctx.textBaseline = 'middle';
-  ctx.font         = '500 24px DM Sans, sans-serif';
+  ctx.font         = '500 32px DM Sans, sans-serif';
 
 
   const wLeft  = ctx.measureText(legLeft).width;
@@ -7245,14 +7250,14 @@ async function tmScreenshot(e) {
   ctx.beginPath(); ctx.arc(xLeft + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = 'rgba(220,228,237,0.95)';
   ctx.textAlign = 'left';
-  ctx.fillText(legLeft, xLeft + DOT_R * 2 + 12, legY);
+  ctx.fillText(legLeft, xLeft + DOT_R * 2 + 15, legY);
 
 
   ctx.fillStyle = rightColor;
   ctx.beginPath(); ctx.arc(xRight + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = 'rgba(220,228,237,0.95)';
   ctx.textAlign = 'left';
-  ctx.fillText(legRight, xRight + DOT_R * 2 + 12, legY);
+  ctx.fillText(legRight, xRight + DOT_R * 2 + 15, legY);
 
   // Blocs stats
   if (statBlocks.length) {
@@ -7265,12 +7270,12 @@ async function tmScreenshot(e) {
       const warm = block.isFo;
 
       ctx.fillStyle   = warm ? 'rgba(232,146,124,0.10)' : 'rgba(126,200,227,0.10)';
-      ctx.strokeStyle = warm ? 'rgba(232,146,124,0.50)' : 'rgba(126,200,227,0.45)';
+      ctx.strokeStyle = warm ? 'rgba(232,146,124,0.85)' : 'rgba(126,200,227,0.80)';
       ctx.lineWidth   = 1;
       roundRect(ctx, bx, curY, bw, bh, 8);
       ctx.fill(); ctx.stroke();
 
-      ctx.font         = '600 22px DM Sans, sans-serif';
+      ctx.font         = '600 32px DM Sans, sans-serif';
       ctx.fillStyle    = warm ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
       ctx.textAlign    = 'left';
       ctx.textBaseline = 'top';
@@ -7278,11 +7283,11 @@ async function tmScreenshot(e) {
 
       block.entries.forEach((row, ri) => {
         const ry = curY + BPADY + LABELH + ri * LINE_H;
-        ctx.font      = '400 26px DM Sans, sans-serif';
+        ctx.font      = '400 32px DM Sans, sans-serif';
         ctx.fillStyle = '#dce4ed';
         ctx.textAlign = 'left';
         ctx.fillText(row.key, bx + PAD, ry);
-        ctx.font      = '400 26px DM Mono, monospace';
+        ctx.font      = '400 32px DM Mono, monospace';
         ctx.fillStyle = '#dce4ed';
         ctx.textAlign = 'right';
         ctx.fillText(row.val, bx + bw - PAD, ry);
