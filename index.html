@@ -7106,7 +7106,6 @@ async function tmScreenshot(e) {
 
   // Constantes de mise en page
   const W        = 1280;
-  const CARD_MX  = 0;
   const PAD      = 48;
   const LINE_H   = 52;
   const BPADY    = 28;
@@ -7145,13 +7144,13 @@ async function tmScreenshot(e) {
   const rightColor = isFrontWheel ? 'rgba(126,200,227,1)' : 'rgba(232,146,124,1)';
 
   // Dimensions internes
-  const cardW  = W - CARD_MX * 2;
+  const cardW  = W;
   const innerW = cardW - PAD * 2;
 
   // Radar : 88% de la largeur interne, ratio préservé
   const rW = Math.round(innerW * 0.88);
   const rH = Math.round(rW * (radar.height / radar.width));
-  const rX = CARD_MX + PAD + Math.round((innerW - rW) / 2);
+  const rX = PAD + Math.round((innerW - rW) / 2);
 
   // Infos atelier (nécessaire pour le calcul de hauteur)
   const atelierInfo   = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
@@ -7182,14 +7181,7 @@ async function tmScreenshot(e) {
   // Header — 2 lignes gauche/droite + tensiomètre centré
   const hLine1 = cardY + headerH * 0.30;
   const hLine2 = cardY + headerH * 0.72;
-  const hMid   = cardY + headerH / 2;
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.20)';
-  ctx.lineWidth   = 1;
-  ctx.beginPath();
-  ctx.moveTo(cardX + PAD, cardY + headerH);
-  ctx.lineTo(cardX + cardW - PAD, cardY + headerH);
-  ctx.stroke();
 
   drawHexIcon(ctx, cardX + PAD + 12, hLine1, 11, 'rgba(126,200,227,0.85)');
 
