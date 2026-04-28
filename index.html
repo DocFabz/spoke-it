@@ -5093,7 +5093,7 @@ function tmConvToggleView() {
 function tmDrawConvCurve(pts) {
   const canvas = document.getElementById('tm-conv-canvas');
   if (!canvas || !pts || pts.length < 2) return;
-  const dpr  = window.devicePixelRatio || 1;
+  const dpr  = Math.max(window.devicePixelRatio || 1, 2);
   const wrap = document.getElementById('tm-conv-curve-wrap');
   const W    = wrap.getBoundingClientRect().width || 300;
   const H    = Math.round(W * 0.65);
@@ -7104,15 +7104,14 @@ async function tmScreenshot(e) {
   const statsEl = document.getElementById('tm-stats');
   if (!radar) return;
 
-  // Constantes de mise en page
-  const W       = 640;   // largeur fixe, format portrait smartphone
-  const CARD_MX = 20;    // marge extérieure gauche/droite
-  const PAD     = 24;    // padding interne de la card
-  const LINE_H  = 26;
-  const BPADY   = 14;
-  const LABELH  = 24;
-  const STAT_GAP = 10;
-  const CARD_R  = 16;
+  // Constantes de mise en page — haute résolution
+  const W        = 1280;
+  const CARD_MX  = 0;
+  const PAD      = 48;
+  const LINE_H   = 52;
+  const BPADY    = 28;
+  const LABELH   = 48;
+  const STAT_GAP = 20;
   function blockH(b) { return BPADY * 2 + LABELH + b.entries.length * LINE_H; }
 
   // Lire les blocs de stats depuis le DOM
@@ -7129,12 +7128,21 @@ async function tmScreenshot(e) {
     });
     statBlocks.push({ label: label?.textContent.trim() || '', isFo, entries });
   });
+  // Nappe forte (orange/fo) toujours au-dessus
+  statBlocks.sort((a, b) => (b.isFo ? 1 : 0) - (a.isFo ? 1 : 0));
 
   // Nom + type de roue, légendes
-  const wheelName  = document.getElementById('tm-cfg-loaded-text')?.textContent.trim() || '';
-  const wheelLabel = wtype === 'arriere' ? t('rearWheel') : t('frontWheel');
-  const legFo      = document.getElementById('radar-leg-fo')?.textContent.trim() || 'DS';
-  const legFa      = document.getElementById('radar-leg-fa')?.textContent.trim() || 'NDS';
+  // fo=warm(orange) : NDS avant / DS arrière — fa=accent(bleu) : inverse
+  // NDS toujours à gauche, DS toujours à droite
+  const wheelName    = document.getElementById('tm-cfg-loaded-text')?.textContent.trim() || '';
+  const wheelLabel   = wtype === 'arriere' ? t('rearWheel') : t('frontWheel');
+  const isFrontWheel = wtype !== 'arriere';
+  const legFo    = document.getElementById('radar-leg-fo')?.textContent.trim() || (isFrontWheel ? 'NDS' : 'DS');
+  const legFa    = document.getElementById('radar-leg-fa')?.textContent.trim() || (isFrontWheel ? 'DS'  : 'NDS');
+  const legLeft  = isFrontWheel ? legFo : legFa;
+  const legRight = isFrontWheel ? legFa : legFo;
+  const leftColor  = isFrontWheel ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
+  const rightColor = isFrontWheel ? 'rgba(126,200,227,1)' : 'rgba(232,146,124,1)';
 
   // Dimensions internes
   const cardW  = W - CARD_MX * 2;
@@ -7146,55 +7154,57 @@ async function tmScreenshot(e) {
   const rX = CARD_MX + PAD + Math.round((innerW - rW) / 2);
 
   // Hauteurs des sections
-  const headerH = 44;
-  const legendH = 32;
+  const headerH = 88;
+  const legendH = 64;
   const statsBH = statBlocks.length
     ? statBlocks.reduce((acc, b) => acc + blockH(b) + STAT_GAP, 0) - STAT_GAP
     : 0;
   const statsH  = statBlocks.length ? statsBH + PAD : 0;
   const cardH   = headerH + rH + legendH + statsH + PAD;
-  const totalH  = PAD + cardH + PAD;
+  const totalH  = cardH;
 
   // Canvas off-screen — résolution native (Retina / iPhone)
-  const dpr  = window.devicePixelRatio || 1;
+  const dpr  = Math.max(window.devicePixelRatio || 1, 2);
   const off  = document.createElement('canvas');
   off.width  = Math.round(W      * dpr);
   off.height = Math.round(totalH * dpr);
   const ctx  = off.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  // Fond global
-  ctx.fillStyle = '#181c24';
+  ctx.fillStyle = '#1e2330';
   ctx.fillRect(0, 0, W, totalH);
+  const cardX = 0, cardY = 0;
 
-  // Card
-  const cardX = CARD_MX, cardY = PAD;
-  ctx.fillStyle   = '#232a38';
-  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-  ctx.lineWidth   = 1;
-  roundRect(ctx, cardX, cardY, cardW, cardH, CARD_R);
-  ctx.fill(); ctx.stroke();
-
-  // Header : icône + titre + (roue si chargée)
+  // Header
   const hY = cardY + headerH / 2;
-  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.20)';
   ctx.lineWidth   = 1;
   ctx.beginPath();
   ctx.moveTo(cardX + PAD, cardY + headerH);
   ctx.lineTo(cardX + cardW - PAD, cardY + headerH);
   ctx.stroke();
 
-  drawHexIcon(ctx, cardX + PAD + 6, hY, 6, 'rgba(126,200,227,0.7)');
+  drawHexIcon(ctx, cardX + PAD + 12, hY, 12, 'rgba(126,200,227,0.85)');
 
-  ctx.font         = '600 11px DM Sans, sans-serif';
-  ctx.fillStyle    = 'rgba(126,200,227,0.9)';
+
+  ctx.font         = '600 22px DM Sans, sans-serif';
+  ctx.fillStyle    = 'rgba(126,200,227,1)';
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText('TENSION DIAGRAM', cardX + PAD + 18, hY);
+  ctx.fillText(lang === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', cardX + PAD + 36, hY);
+
+
+  const atelierInfo   = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
+  const workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
+  ctx.font      = '600 28px DM Sans, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.textAlign = 'center';
+  ctx.fillText(workshopLabel.toUpperCase(), cardX + cardW / 2, hY);
+
 
   if (wheelName) {
-    ctx.font      = '400 11px DM Mono, monospace';
-    ctx.fillStyle = 'rgba(126,200,227,0.55)';
+    ctx.font      = '400 22px DM Mono, monospace';
+    ctx.fillStyle = 'rgba(126,200,227,0.7)';
     ctx.textAlign = 'right';
     ctx.fillText(wheelLabel.toUpperCase() + ' · ' + wheelName, cardX + cardW - PAD, hY);
   }
@@ -7204,26 +7214,40 @@ async function tmScreenshot(e) {
   ctx.drawImage(radar, rX, radarY, rW, rH);
 
   // Légende
-  const legY  = radarY + rH + legendH / 2;
-  const DOT_R = 5;
+  const legY   = radarY + rH + legendH / 2;
+  const DOT_R  = 10;
   const legMid = cardX + cardW / 2;
-  const legGap = 70;
 
   ctx.textBaseline = 'middle';
-  ctx.font         = '400 12px DM Sans, sans-serif';
-  ctx.textAlign    = 'left';
+  ctx.font         = '500 24px DM Sans, sans-serif';
 
-  ctx.fillStyle = 'rgba(232,146,124,0.9)';
-  ctx.beginPath(); ctx.arc(legMid - legGap, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = 'rgba(154,170,187,0.85)';
-  ctx.fillText(legFo, legMid - legGap + DOT_R + 5, legY);
 
-  ctx.fillStyle = 'rgba(126,200,227,0.9)';
-  ctx.beginPath(); ctx.arc(legMid + legGap, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = 'rgba(154,170,187,0.85)';
-  ctx.fillText(legFa, legMid + legGap + DOT_R + 5, legY);
+  const wLeft  = ctx.measureText(legLeft).width;
+  const wRight = ctx.measureText(legRight).width;
+  const itemLeftW  = DOT_R * 2 + 6 + wLeft;
+  const itemRightW = DOT_R * 2 + 6 + wRight;
 
-  // Blocs stats empilés
+  const midLeft  = legMid / 2;
+  const midRight = legMid + (cardW - legMid) / 2;
+
+  const xLeft  = midLeft  - itemLeftW  / 2;
+  const xRight = midRight - itemRightW / 2;
+
+
+  ctx.fillStyle = leftColor;
+  ctx.beginPath(); ctx.arc(xLeft + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(220,228,237,0.95)';
+  ctx.textAlign = 'left';
+  ctx.fillText(legLeft, xLeft + DOT_R * 2 + 12, legY);
+
+
+  ctx.fillStyle = rightColor;
+  ctx.beginPath(); ctx.arc(xRight + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(220,228,237,0.95)';
+  ctx.textAlign = 'left';
+  ctx.fillText(legRight, xRight + DOT_R * 2 + 12, legY);
+
+  // Blocs stats
   if (statBlocks.length) {
     let curY = radarY + rH + legendH;
     const bx = cardX + PAD;
@@ -7233,25 +7257,25 @@ async function tmScreenshot(e) {
       const bh   = blockH(block);
       const warm = block.isFo;
 
-      ctx.fillStyle   = warm ? 'rgba(232,146,124,0.06)' : 'rgba(126,200,227,0.06)';
-      ctx.strokeStyle = warm ? 'rgba(232,146,124,0.28)' : 'rgba(126,200,227,0.28)';
+      ctx.fillStyle   = warm ? 'rgba(232,146,124,0.10)' : 'rgba(126,200,227,0.10)';
+      ctx.strokeStyle = warm ? 'rgba(232,146,124,0.50)' : 'rgba(126,200,227,0.45)';
       ctx.lineWidth   = 1;
       roundRect(ctx, bx, curY, bw, bh, 8);
       ctx.fill(); ctx.stroke();
 
-      ctx.font         = '600 11px DM Sans, sans-serif';
-      ctx.fillStyle    = warm ? 'rgba(232,146,124,0.9)' : 'rgba(126,200,227,0.9)';
+      ctx.font         = '600 22px DM Sans, sans-serif';
+      ctx.fillStyle    = warm ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
       ctx.textAlign    = 'left';
       ctx.textBaseline = 'top';
       ctx.fillText(block.label.toUpperCase(), bx + PAD, curY + BPADY);
 
       block.entries.forEach((row, ri) => {
         const ry = curY + BPADY + LABELH + ri * LINE_H;
-        ctx.font      = '300 13px DM Sans, sans-serif';
-        ctx.fillStyle = 'rgba(154,170,187,0.85)';
+        ctx.font      = '300 26px DM Sans, sans-serif';
+        ctx.fillStyle = 'rgba(190,206,220,1)';
         ctx.textAlign = 'left';
         ctx.fillText(row.key, bx + PAD, ry);
-        ctx.font      = '400 14px DM Mono, monospace';
+        ctx.font      = '400 28px DM Mono, monospace';
         ctx.fillStyle = '#dce4ed';
         ctx.textAlign = 'right';
         ctx.fillText(row.val, bx + bw - PAD, ry);
@@ -7262,7 +7286,7 @@ async function tmScreenshot(e) {
   }
 
   // Export JPEG — share natif sur mobile, téléchargement sur desktop
-  const jpeg     = off.toDataURL('image/jpeg', 0.92);
+  const jpeg     = off.toDataURL('image/jpeg', 0.96);
   const filename = 'tension-diagram.jpg';
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   let shared     = false;
