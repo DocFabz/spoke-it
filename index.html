@@ -7104,7 +7104,7 @@ async function tmScreenshot(e) {
   const statsEl = document.getElementById('tm-stats');
   if (!radar) return;
 
-  // Constantes de mise en page — haute résolution
+  // Constantes de mise en page
   const W        = 1280;
   const CARD_MX  = 0;
   const PAD      = 48;
@@ -7154,7 +7154,7 @@ async function tmScreenshot(e) {
   const rX = CARD_MX + PAD + Math.round((innerW - rW) / 2);
 
   // Hauteurs des sections
-  const headerH = 88;
+  const headerH = 104;
   const legendH = 64;
   const statsBH = statBlocks.length
     ? statBlocks.reduce((acc, b) => acc + blockH(b) + STAT_GAP, 0) - STAT_GAP
@@ -7175,8 +7175,9 @@ async function tmScreenshot(e) {
   ctx.fillRect(0, 0, W, totalH);
   const cardX = 0, cardY = 0;
 
-  // Header
-  const hY = cardY + headerH / 2;
+  // Header — 2 lignes : titre/workshop à gauche, type/nom de roue à droite
+  const hLine1 = cardY + headerH * 0.32;  // ligne 1 : ~1/3 du header
+  const hLine2 = cardY + headerH * 0.72;  // ligne 2 : ~3/4 du header
   ctx.strokeStyle = 'rgba(255,255,255,0.20)';
   ctx.lineWidth   = 1;
   ctx.beginPath();
@@ -7184,29 +7185,35 @@ async function tmScreenshot(e) {
   ctx.lineTo(cardX + cardW - PAD, cardY + headerH);
   ctx.stroke();
 
-  drawHexIcon(ctx, cardX + PAD + 12, hY, 12, 'rgba(126,200,227,0.85)');
+  drawHexIcon(ctx, cardX + PAD + 12, hLine1, 11, 'rgba(126,200,227,0.85)');
 
-
+  // Ligne 1 gauche : DIAGRAMME DE TENSION
   ctx.font         = '600 22px DM Sans, sans-serif';
   ctx.fillStyle    = 'rgba(126,200,227,1)';
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(lang === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', cardX + PAD + 36, hY);
+  ctx.fillText(lang === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', cardX + PAD + 34, hLine1);
 
-
+  // Ligne 2 gauche : nom du workshop
   const atelierInfo   = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
   const workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
-  ctx.font      = '600 28px DM Sans, sans-serif';
+  ctx.font      = '500 26px DM Sans, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,0.92)';
-  ctx.textAlign = 'center';
-  ctx.fillText(workshopLabel.toUpperCase(), cardX + cardW / 2, hY);
+  ctx.textAlign = 'left';
+  ctx.fillText(workshopLabel, cardX + PAD + 34, hLine2);
 
+  // Ligne 1 droite : type de roue (même style que DIAGRAMME DE TENSION)
+  ctx.font      = '600 22px DM Sans, sans-serif';
+  ctx.fillStyle = 'rgba(126,200,227,1)';
+  ctx.textAlign = 'right';
+  ctx.fillText(wheelLabel.toUpperCase(), cardX + cardW - PAD, hLine1);
 
+  // Ligne 2 droite : nom de la roue (même style que nom atelier)
   if (wheelName) {
-    ctx.font      = '400 22px DM Mono, monospace';
-    ctx.fillStyle = 'rgba(126,200,227,0.7)';
+    ctx.font      = '500 26px DM Sans, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
     ctx.textAlign = 'right';
-    ctx.fillText(wheelLabel.toUpperCase() + ' · ' + wheelName, cardX + cardW - PAD, hY);
+    ctx.fillText(wheelName, cardX + cardW - PAD, hLine2);
   }
 
   // Radar
