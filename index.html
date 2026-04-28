@@ -6388,8 +6388,8 @@ function tmLinearOpen() {
   // Colonne gauche = toujours NDS, colonne droite = toujours DS
   var leftKgfs  = isFront ? foKgfs : faKgfs;
   var rightKgfs = isFront ? faKgfs : foKgfs;
-  var leftColor  = isFront ? 'rgba(232,146,124,0.85)' : 'rgba(126,200,227,0.85)';
-  var rightColor = isFront ? 'rgba(126,200,227,0.85)' : 'rgba(232,146,124,0.85)';
+  var leftColor  = isFront ? 'rgba(232,146,124,0.95)' : 'rgba(126,200,227,0.85)';
+  var rightColor = isFront ? 'rgba(126,200,227,0.85)' : 'rgba(232,146,124,0.95)';
   var leftTrack  = isFront ? 'rgba(232,146,124,0.12)' : 'rgba(126,200,227,0.10)';
   var rightTrack = isFront ? 'rgba(126,200,227,0.10)' : 'rgba(232,146,124,0.12)';
 
@@ -7107,9 +7107,9 @@ async function tmScreenshot(e) {
   // Constantes de mise en page
   const W        = 1280;
   const PAD      = 48;
-  const LINE_H   = 52;
-  const BPADY    = 28;
-  const LABELH   = 48;
+  const LINE_H   = 66;
+  const BPADY    = 36;
+  const LABELH   = 60;
   const STAT_GAP = 20;
   function blockH(b) { return BPADY * 2 + LABELH + b.entries.length * LINE_H; }
 
@@ -7157,7 +7157,7 @@ async function tmScreenshot(e) {
   const workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
 
   // Hauteurs des sections
-  const headerH = 120;
+  const headerH = 150;
   const legendH = 128;
   const statsBH = statBlocks.length
     ? statBlocks.reduce((acc, b) => acc + blockH(b) + STAT_GAP, 0) - STAT_GAP
@@ -7186,27 +7186,27 @@ async function tmScreenshot(e) {
   drawHexIcon(ctx, cardX + PAD + 12, hLine1, 11, 'rgba(126,200,227,0.85)');
 
   // Gauche ligne 1 : DIAGRAMME DE TENSION
-  ctx.font         = '600 32px DM Sans, sans-serif';
+  ctx.font         = '600 42px DM Sans, sans-serif';
   ctx.fillStyle    = 'rgba(126,200,227,1)';
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillText(lang === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', cardX + PAD + 34, hLine1);
 
   // Gauche ligne 2 : nom du workshop
-  ctx.font      = '600 32px DM Sans, sans-serif';
+  ctx.font      = '600 42px DM Sans, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,0.92)';
   ctx.textAlign = 'left';
   ctx.fillText(workshopLabel, cardX + PAD + 34, hLine2);
 
   // Droite ligne 1 : type de roue
-  ctx.font      = '600 32px DM Sans, sans-serif';
+  ctx.font      = '600 42px DM Sans, sans-serif';
   ctx.fillStyle = 'rgba(126,200,227,1)';
   ctx.textAlign = 'right';
   ctx.fillText(wheelLabel.toUpperCase(), cardX + cardW - PAD, hLine1);
 
   // Droite ligne 2 : nom de la roue
   if (wheelName) {
-    ctx.font      = '600 32px DM Sans, sans-serif';
+    ctx.font      = '600 42px DM Sans, sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,0.92)';
     ctx.textAlign = 'right';
     ctx.fillText(wheelName, cardX + cardW - PAD, hLine2);
@@ -7262,12 +7262,12 @@ async function tmScreenshot(e) {
       const warm = block.isFo;
 
       ctx.fillStyle   = warm ? 'rgba(232,146,124,0.10)' : 'rgba(126,200,227,0.10)';
-      ctx.strokeStyle = warm ? 'rgba(232,146,124,0.85)' : 'rgba(126,200,227,0.80)';
+      ctx.strokeStyle = warm ? 'rgba(232,146,124,0.95)' : 'rgba(126,200,227,0.95)';
       ctx.lineWidth   = 1;
       roundRect(ctx, bx, curY, bw, bh, 8);
       ctx.fill(); ctx.stroke();
 
-      ctx.font         = '600 32px DM Sans, sans-serif';
+      ctx.font         = '600 42px DM Sans, sans-serif';
       ctx.fillStyle    = warm ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
       ctx.textAlign    = 'left';
       ctx.textBaseline = 'top';
@@ -7275,11 +7275,11 @@ async function tmScreenshot(e) {
 
       block.entries.forEach((row, ri) => {
         const ry = curY + BPADY + LABELH + ri * LINE_H;
-        ctx.font      = '400 32px DM Sans, sans-serif';
+        ctx.font      = '400 42px DM Sans, sans-serif';
         ctx.fillStyle = '#dce4ed';
         ctx.textAlign = 'left';
         ctx.fillText(row.key, bx + PAD, ry);
-        ctx.font      = '400 32px DM Mono, monospace';
+        ctx.font      = '400 42px DM Mono, monospace';
         ctx.fillStyle = '#dce4ed';
         ctx.textAlign = 'right';
         ctx.fillText(row.val, bx + bw - PAD, ry);
