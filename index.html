@@ -1165,6 +1165,7 @@ input[type=number] { -moz-appearance:textfield }
 @media (max-width: 520px) {
   #tm-result-card, #tm-input-card { padding: 1.2rem .8rem; }
   .tm-stats { grid-template-columns: 1fr; gap: .6rem; }
+  .tm-stat:has(.tm-stat-label.fo) { order: -1; }  /* nappe forte (fo) toujours en haut */
   .tm-stat  { padding: .65rem .85rem; }
   .tm-stat-row      { font-size: .74rem; }
   .tm-stat-row strong { font-size: .77rem; }
@@ -7356,9 +7357,11 @@ function tmRenderStats(foKgfs, faKgfs) {
       <div class="tm-stat-row"><span></span><strong style="${cvColor}">${s.cv} %</strong></div>`;
     container.appendChild(div);
   }
-  // NDS toujours à gauche, DS toujours à droite
-  // Avant : fo=NDS(gauche), fa=DS(droite) → fo puis fa
-  // Arrière : fa=NDS(gauche), fo=DS(droite) → fa puis fo
+  // Nappe forte (fo/orange) toujours en premier (en haut sur mobile, à gauche sur desktop)
+  // Desktop (2 col) : NDS à gauche, DS à droite
+  // Mobile (1 col)  : order CSS met la nappe forte (fo) en haut
+  // Avant  : fo=NDS → fo puis fa
+  // Arrière: fa=NDS → fa puis fo
   if (isFront) {
     card(fo, foLabel, 'fo');
     card(fa, faLabel, 'fa');
@@ -7367,7 +7370,6 @@ function tmRenderStats(foKgfs, faKgfs) {
     card(fo, foLabel, 'fo');
   }
 }
-
 // ── Select placeholder colour (sync avec input::placeholder) ─────────────────
 function syncSelectPlaceholder(sel) {
   if (!sel) return;
