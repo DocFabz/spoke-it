@@ -6276,13 +6276,13 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
               : ctx.lineTo(cx + rr * Math.cos(a), cy + rr * Math.sin(a));
     }
     ctx.closePath();
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
     ctx.lineWidth = 1;
     ctx.stroke();
     // Graduation labels (3 rings)
     if (r === 2 || r === 4 || r === rings) {
       const kgfLabel = Math.round((r / rings) * scaleMax);
-      ctx.fillStyle  = 'rgba(150,170,190,0.4)';
+      ctx.fillStyle  = 'rgba(150,170,190,0.7)';
       ctx.font       = `${Math.round(W * 0.026)}px 'DM Mono', monospace`;
       ctx.textAlign  = 'center';
       ctx.textBaseline = 'bottom';
@@ -6297,7 +6297,7 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
-    ctx.strokeStyle = isFo ? 'rgba(232,146,124,0.12)' : 'rgba(126,200,227,0.12)';
+    ctx.strokeStyle = isFo ? 'rgba(232,146,124,0.22)' : 'rgba(126,200,227,0.22)';
     ctx.lineWidth   = 1;
     ctx.stroke();
 
@@ -6305,7 +6305,7 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
     if (perSide <= 16 || i % 2 === 0) {
       const spokeNum = Math.floor(i / 2) + 1;
       const labelR   = R + Math.max(10, W * 0.032);
-      ctx.fillStyle  = isFo ? 'rgba(232,146,124,0.45)' : 'rgba(126,200,227,0.38)';
+      ctx.fillStyle  = isFo ? 'rgba(232,146,124,0.75)' : 'rgba(126,200,227,0.65)';
       ctx.font       = `${Math.round(W * 0.023)}px 'DM Mono', monospace`;
       ctx.textAlign  = 'center';
       ctx.textBaseline = 'middle';
@@ -9574,9 +9574,9 @@ function _snapRenderRadarCanvas(snap, size) {
       i2===0 ? ctx.moveTo(cx+rr*Math.cos(a2),cy+rr*Math.sin(a2)) : ctx.lineTo(cx+rr*Math.cos(a2),cy+rr*Math.sin(a2));
     }
     ctx.closePath();
-    ctx.strokeStyle='rgba(80,100,130,0.25)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.strokeStyle='rgba(80,100,130,0.33)'; ctx.lineWidth=1; ctx.stroke();
     if (r===2||r===4||r===5) {
-      ctx.fillStyle='rgba(100,120,150,0.5)';
+      ctx.fillStyle='rgba(100,120,150,0.8)';
       ctx.font = Math.round(size*0.026)+'px DM Mono, monospace';
       ctx.textAlign='center'; ctx.textBaseline='bottom';
       ctx.fillText(Math.round((r/5)*scaleMax), cx, cy-rr-3);
@@ -9587,11 +9587,11 @@ function _snapRenderRadarCanvas(snap, size) {
     var a3 = i3*angleStep-Math.PI/2;
     var isFo3 = i3%2===0;
     ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+R*Math.cos(a3),cy+R*Math.sin(a3));
-    ctx.strokeStyle = isFo3?'rgba(232,146,124,0.15)':'rgba(126,200,227,0.15)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.strokeStyle = isFo3?'rgba(232,146,124,0.25)':'rgba(126,200,227,0.25)'; ctx.lineWidth=1; ctx.stroke();
     if (perSide<=16||i3%2===0) {
       var spokeNum3 = Math.floor(i3/2)+1;
       var labelR3 = R+Math.max(10,size*0.032);
-      ctx.fillStyle = isFo3?'rgba(232,146,124,0.5)':'rgba(126,200,227,0.45)';
+      ctx.fillStyle = isFo3?'rgba(232,146,124,0.8)':'rgba(126,200,227,0.7)';
       ctx.font = Math.round(size*0.023)+'px DM Mono, monospace';
       ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(spokeNum3, cx+labelR3*Math.cos(a3), cy+labelR3*Math.sin(a3));
