@@ -9332,6 +9332,7 @@ function snapLoad(snapIdx) {
 
   tmBuildTable();
   tmShowDiagramIfData();
+  if (tmHighlightOn) tmApplyHighlight();
   _snapSetLabel(snap.num);
   snapClose();
   tmUpdateInvertibleHeaders();
