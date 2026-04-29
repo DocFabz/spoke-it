@@ -7174,7 +7174,7 @@ async function tmScreenshot(e) {
   const ctx  = off.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  ctx.fillStyle = '#1e2330';
+  ctx.fillStyle = '#0d1017';
   ctx.fillRect(0, 0, W, totalH);
   const cardX = 0, cardY = 0;
 
@@ -7262,8 +7262,8 @@ async function tmScreenshot(e) {
       const warm = block.isFo;
 
       ctx.fillStyle   = warm ? 'rgba(232,146,124,0.10)' : 'rgba(126,200,227,0.10)';
-      ctx.strokeStyle = warm ? 'rgba(232,146,124,0.95)' : 'rgba(126,200,227,0.95)';
-      ctx.lineWidth   = 1;
+      ctx.strokeStyle = warm ? 'rgba(255,140,110,1)'    : 'rgba(100,220,255,1)';
+      ctx.lineWidth   = 2;
       roundRect(ctx, bx, curY, bw, bh, 8);
       ctx.fill(); ctx.stroke();
 
