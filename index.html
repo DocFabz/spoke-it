@@ -980,8 +980,9 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-conv-header   { display:flex; align-items:center; gap:.5rem; margin-bottom:1rem }
 .tm-conv-title    { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); flex:1 }
 .tm-conv-spoke    { font-family:'DM Mono',monospace; font-size:.72rem; color:var(--text2); margin-bottom:.8rem; line-height:1.4 }
-.tm-conv-close    { background:none; border:none; color:var(--text3); font-size:1.1rem; cursor:pointer; padding:.2rem .4rem; line-height:1; transition:color .2s; flex-shrink:0 }
+.tm-conv-close    { background:none; border:none; color:var(--text3); font-size:1.1rem; cursor:pointer; padding:.2rem .4rem; line-height:1; transition:color .2s; flex-shrink:0; outline:none }
 .tm-conv-close:hover { color:var(--text) }
+#tm-conv-calc-btn, #tm-conv-view-btn { outline:none }
 .tm-conv-scroll   { overflow-y:auto; flex:1; border-radius:var(--rs); border:1px solid var(--border) }
 .tm-conv-table    { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:.8rem }
 .tm-conv-table th { padding:.5rem .7rem; font-family:'DM Sans',sans-serif; font-size:.58rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; text-align:center; border-bottom:1px solid var(--border); background:rgba(126,200,227,.06); color:var(--accent); position:sticky; top:0; z-index:1 }
@@ -2074,8 +2075,9 @@ input[type=number] { -moz-appearance:textfield }
       <button class="tm-conv-close" onclick="tmCloseConvTable()">✕</button>
     </div>
     <div class="tm-conv-spoke" id="tm-conv-spoke-label"></div>
-    <div style="display:flex;justify-content:flex-end;margin-bottom:.6rem">
-      <button id="tm-conv-view-btn" onclick="tmConvToggleView()" style="background:rgba(126,200,227,.12);border:1px solid rgba(126,200,227,.45);border-radius:20px;color:var(--accent);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;padding:.22rem .75rem;cursor:pointer;transition:all .2s"></button>
+    <div style="display:flex;justify-content:space-between;margin-bottom:.6rem">
+      <button id="tm-conv-calc-btn" onclick="tmConvToggleCalc()" style="background:transparent;border:1px solid rgba(126,200,227,.45);border-radius:20px;color:var(--accent);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;padding:.22rem .75rem;cursor:pointer;transition:all .2s"></button>
+      <button id="tm-conv-view-btn" onclick="tmConvToggleView()" style="background:transparent;border:1px solid rgba(126,200,227,.45);border-radius:20px;color:var(--accent);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;padding:.22rem .75rem;cursor:pointer;transition:all .2s;outline:none"></button>
     </div>
     <div class="tm-conv-scroll" id="tm-conv-table-wrap">
       <table class="tm-conv-table">
@@ -2090,6 +2092,36 @@ input[type=number] { -moz-appearance:textfield }
     </div>
     <div id="tm-conv-curve-wrap" style="display:none;padding:.4rem 0">
       <canvas id="tm-conv-canvas" style="display:block;width:100%;border-radius:var(--rs)"></canvas>
+    </div>
+    <!-- ── Vue calculatrice ── -->
+    <div id="tm-conv-calc-wrap" style="display:none;padding:.2rem 0">
+      <div style="background:rgba(126,200,227,.05);border:1px solid rgba(126,200,227,.13);border-radius:var(--rs);padding:.9rem 1rem">
+        <div style="font-size:.55rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:.6rem;text-align:center" id="tm-conv-calc-title-kgf">Objectif → Lecture</div>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.65rem">
+          <input id="tm-conv-kgf-input" type="text" inputmode="none" readonly
+            style="flex:1;font-family:'DM Mono',monospace;font-size:.95rem;background:var(--inp);border:1px solid var(--border-s);border-radius:var(--rs);color:var(--text);padding:.42rem .65rem;outline:none;width:0;caret-color:transparent;text-align:right">
+          <div style="font-size:.65rem;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0">kgf →</div>
+          <input id="tm-conv-kgf-result" readonly tabindex="-1"
+            style="flex:1;font-family:'DM Mono',monospace;font-size:.95rem;font-weight:400;color:var(--accent);text-align:right;background:var(--inp);border:1px solid var(--border-s);border-radius:var(--rs);padding:.42rem .65rem;outline:none;width:0;caret-color:transparent" value="—">
+        </div>
+        <div id="tm-conv-kgf-hint" style="font-size:.6rem;color:var(--text3);margin-bottom:.5rem;font-family:'DM Mono',monospace;min-height:.9rem;text-align:center"></div>
+        <!-- Pavé numérique -->
+        <div class="ef-numpad" id="cc-numpad">
+          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('7');event.preventDefault()">7</button>
+          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('8');event.preventDefault()">8</button>
+          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('9');event.preventDefault()">9</button>
+          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('4');event.preventDefault()">4</button>
+          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('5');event.preventDefault()">5</button>
+          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('6');event.preventDefault()">6</button>
+          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('1');event.preventDefault()">1</button>
+          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('2');event.preventDefault()">2</button>
+          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('3');event.preventDefault()">3</button>
+          <button class="ef-numpad-key key-dot" ontouchstart="ccNumpadKey('.');event.preventDefault()">.</button>
+          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('0');event.preventDefault()">0</button>
+          <button class="ef-numpad-key key-del" ontouchstart="ccNumpadDel();event.preventDefault()">⌫</button>
+          <button class="ef-numpad-key key-enter" id="cc-numpad-enter" ontouchstart="tmConvCalcKgf();event.preventDefault()">Entrée ↵</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2286,7 +2318,10 @@ const i18n = {
     tmConvTitle:'Charte de conversion',
     tmConvReading:'Lecture',
     tmConvCurve:'Courbe',
-    tmConvTable:'Tableau',
+    tmConvTable:'Charte',
+    tmConvCalc:'Conversion',
+    tmConvChart:'Charte',
+    tmConvCalcTitleKgf:'Objectif → Lecture',
     tmConvTensio:'Tensiomètre',
     tmWFTipNew:'Dernières mises à jour des Tension Charts par WF',
     tmWFTipOld:'Version précédente des Tension Charts par WF',
@@ -2416,6 +2451,9 @@ const i18n = {
     tmConvReading:'Reading',
     tmConvCurve:'Curve',
     tmConvTable:'Table',
+    tmConvCalc:'Conversion',
+    tmConvChart:'Chart',
+    tmConvCalcTitleKgf:'Target → Reading',
     tmConvTensio:'Tensiometer',
     tmWFTipNew:'Latest Tension Charts update by WF',
     tmWFTipOld:'Previous version of WF Tension Charts',
@@ -4785,7 +4823,6 @@ function tmPopulateSpokeSelect() {
         const opt = document.createElement('option');
         opt.value = k; opt.textContent = k;
         opt.className = 'tm-spoke-custom';
-        opt.style.color = '#7ec8e3';
         if (k === prev) opt.selected = true;
         grpCustom.appendChild(opt);
       });
@@ -4810,7 +4847,6 @@ function tmPopulateSpokeSelect() {
         const opt = document.createElement('option');
         opt.value = k; opt.textContent = k;
         opt.className = 'tm-spoke-custom';
-        opt.style.color = '#7ec8e3';
         if (k === prev) opt.selected = true;
         grpCustom.appendChild(opt);
       });
@@ -5120,16 +5156,35 @@ function tmOpenConvTable() {
   // Stocker les points pour la courbe + reset état
   _tmConvPts = pts;
   _tmConvShowCurve = false;
+  _tmConvShowCalc = false;
   const viewBtn = document.getElementById('tm-conv-view-btn');
   if (viewBtn) {
     viewBtn.textContent = t('tmConvCurve');
+    viewBtn.style.background = 'transparent';
     viewBtn.style.borderColor = 'rgba(126,200,227,.45)';
     viewBtn.style.color = 'var(--accent)';
   }
+  const calcBtn = document.getElementById('tm-conv-calc-btn');
+  if (calcBtn) {
+    calcBtn.textContent = t('tmConvCalc');
+    calcBtn.style.background = 'transparent';
+    calcBtn.style.borderColor = 'rgba(126,200,227,.45)';
+    calcBtn.style.color = 'var(--accent)';
+  }
+  // Labels i18n de la vue calc
+  const elKgf = document.getElementById('tm-conv-calc-title-kgf');
+  if (elKgf) elKgf.textContent = t('tmConvCalcTitleKgf');
+  // Reset champs calc
+  const kgfInp = $id('tm-conv-kgf-input'); if (kgfInp) { kgfInp.value = ''; }
+  ccPendingReplace = false;
+  const kgfRes = $id('tm-conv-kgf-result'); if (kgfRes) kgfRes.value = '—';
+  const kgfHint = $id('tm-conv-kgf-hint'); if (kgfHint) kgfHint.textContent = '';
   const tableWrap = document.getElementById('tm-conv-table-wrap');
   const curveWrap = document.getElementById('tm-conv-curve-wrap');
+  const calcWrap  = document.getElementById('tm-conv-calc-wrap');
   if (tableWrap) tableWrap.style.display = '';
   if (curveWrap) curveWrap.style.display = 'none';
+  if (calcWrap)  calcWrap.style.display  = 'none';
 
   // Afficher
   $id('tm-conv-overlay').classList.add('show');
@@ -5137,30 +5192,136 @@ function tmOpenConvTable() {
   document.body.style.overflow = 'hidden';
 }
 
-// ── Toggle table / courbe ────────────────────────────────────────────────────
+// ── Toggle table / courbe / calculatrice ─────────────────────────────────────
 let _tmConvShowCurve = false;
+let _tmConvShowCalc  = false;
 let _tmConvPts = [];
+
+function _tmConvShowOnly(mode) {
+  // mode: 'table' | 'curve' | 'calc'
+  const tableWrap = document.getElementById('tm-conv-table-wrap');
+  const curveWrap = document.getElementById('tm-conv-curve-wrap');
+  const calcWrap  = document.getElementById('tm-conv-calc-wrap');
+  const viewBtn   = document.getElementById('tm-conv-view-btn');
+  const calcBtn   = document.getElementById('tm-conv-calc-btn');
+  tableWrap.style.display = mode === 'table' ? '' : 'none';
+  curveWrap.style.display = mode === 'curve' ? 'block' : 'none';
+  calcWrap.style.display  = mode === 'calc'  ? '' : 'none';
+  // Bouton gauche (calc) : "Calculer" sauf si on est en calc → "Tableau"
+  calcBtn.textContent   = mode === 'calc'  ? t('tmConvChart') : t('tmConvCalc');
+  calcBtn.style.borderColor = 'rgba(126,200,227,.45)';
+  calcBtn.style.color   = 'var(--accent)';
+  // Bouton droit (courbe) : "Courbe" sauf si on est en courbe → "Tableau"
+  viewBtn.textContent   = mode === 'curve' ? t('tmConvTable') : t('tmConvCurve');
+  viewBtn.style.borderColor = 'rgba(126,200,227,.45)';
+  viewBtn.style.color   = 'var(--accent)';
+}
 
 function tmConvToggleView() {
   _tmConvShowCurve = !_tmConvShowCurve;
-  const btn       = document.getElementById('tm-conv-view-btn');
-  const tableWrap = document.getElementById('tm-conv-table-wrap');
-  const curveWrap = document.getElementById('tm-conv-curve-wrap');
+  _tmConvShowCalc  = false;
   if (_tmConvShowCurve) {
-    tableWrap.style.display = 'none';
-    curveWrap.style.display = 'block';
-    btn.textContent         = t('tmConvTable');
-    btn.style.borderColor   = 'rgba(126,200,227,.45)';
-    btn.style.color         = 'var(--accent)';
+    _tmConvShowOnly('curve');
     tmDrawConvCurve(_tmConvPts);
   } else {
-    tableWrap.style.display = '';
-    curveWrap.style.display = 'none';
-    btn.textContent         = t('tmConvCurve');
-    btn.style.borderColor   = 'rgba(126,200,227,.45)';
-    btn.style.color         = 'var(--accent)';
+    _tmConvShowOnly('table');
   }
 }
+
+var _ccKeyHandler = null;
+
+function ccAttachKeyHandler() {
+  if (_ccKeyHandler) return;
+  _ccKeyHandler = function(e) {
+    if (!$id('tm-conv-calc-wrap') || $id('tm-conv-calc-wrap').style.display === 'none') return;
+    if (e.key >= '0' && e.key <= '9') { e.preventDefault(); ccNumpadKey(e.key); return; }
+    if (e.key === '.' || e.key === ',') { e.preventDefault(); ccNumpadKey('.'); return; }
+    if (e.key === 'Backspace') { e.preventDefault(); ccNumpadDel(); return; }
+    if (e.key === 'Enter')     { e.preventDefault(); tmConvCalcKgf(); return; }
+  };
+  document.addEventListener('keydown', _ccKeyHandler);
+}
+
+function ccDetachKeyHandler() {
+  if (!_ccKeyHandler) return;
+  document.removeEventListener('keydown', _ccKeyHandler);
+  _ccKeyHandler = null;
+}
+
+function tmConvToggleCalc() {
+  _tmConvShowCalc  = !_tmConvShowCalc;
+  _tmConvShowCurve = false;
+  _tmConvShowOnly(_tmConvShowCalc ? 'calc' : 'table');
+  if (_tmConvShowCalc) {
+    var isTouch = efIsTouchDevice();
+    var numpad = $id('cc-numpad');
+    if (numpad) numpad.style.display = isTouch ? '' : 'none';
+    if (!isTouch) ccAttachKeyHandler();
+  } else {
+    ccDetachKeyHandler();
+  }
+}
+
+function ccNumpadKey(char) {
+  var inp = $id('tm-conv-kgf-input');
+  if (ccPendingReplace) { inp.value = ''; ccPendingReplace = false; }
+  var val = inp.value;
+  if (char === '.' && val.indexOf('.') !== -1) return;
+  if (char !== '.' && val === '0') { inp.value = char; return; }
+  inp.value = val + char;
+}
+
+function ccNumpadDel() {
+  var inp = $id('tm-conv-kgf-input');
+  if (ccPendingReplace) { inp.value = ''; ccPendingReplace = false; }
+  else inp.value = inp.value.slice(0, -1);
+  var res = $id('tm-conv-kgf-result'); if (res) res.value = '—';
+  var hint = $id('tm-conv-kgf-hint'); if (hint) hint.textContent = '';
+}
+
+var ccPendingReplace = false;
+
+// ── Calcul kgf → lecture ─────────────────────────────────────────────────────
+function tmConvCalcKgf() {
+  const inp  = document.getElementById('tm-conv-kgf-input');
+  const res  = document.getElementById('tm-conv-kgf-result');
+  const hint = document.getElementById('tm-conv-kgf-hint');
+  const raw  = parseFloat(inp.value.replace(',', '.'));
+  if (isNaN(raw) || inp.value.trim() === '') { res.value = '—'; hint.textContent = ''; return; }
+  const pts   = _tmConvPts;
+  const valid = pts ? pts.filter(p => p[1] !== null) : [];
+  if (!valid.length) { res.value = '—'; hint.textContent = ''; return; }
+  // Interpolation inverse kgf → lecture (tri par kgf croissant, fonctionne dans les deux sens)
+  const sorted  = [...valid].sort((a, b) => a[1] - b[1]);
+  const kgfMin  = sorted[0][1], kgfMax = sorted[sorted.length - 1][1];
+  if (raw < kgfMin || raw > kgfMax) {
+    res.value  = '—';
+    hint.textContent = `Plage : ${kgfMin}–${kgfMax} kgf`;
+    return;
+  }
+  let reading = null;
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const [r0, k0] = sorted[i], [r1, k1] = sorted[i + 1];
+    if (raw >= k0 && raw <= k1) {
+      const ratio = (raw - k0) / (k1 - k0);
+      reading = r0 + ratio * (r1 - r0);
+      break;
+    }
+  }
+  if (reading === null) {
+    res.value  = '—';
+    hint.textContent = `Plage : ${kgfMin}–${kgfMax} kgf`;
+  } else {
+    const isInteger = (tmType === 'pt' || tmType === 'un');
+    const rounded = isInteger ? Math.round(reading) : Math.round(reading * 1000) / 1000;
+    res.value  = tmDisplayValue(rounded);
+    hint.textContent = '';
+    // Présélectionner le champ pour la prochaine saisie
+    ccPendingReplace = true;
+    inp.select();
+  }
+}
+
 
 function tmDrawConvCurve(pts) {
   const canvas = document.getElementById('tm-conv-canvas');
@@ -5303,6 +5464,8 @@ function tmCloseConvTable() {
   $id('tm-conv-modal').classList.remove('show');
   document.body.style.overflow = '';
   if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+  ccDetachKeyHandler();
+  _tmConvShowCalc = false;
 }
 
 // Fermer la modale avec Escape
@@ -7837,6 +8000,7 @@ function efShowNumpad(isTouch) {
   window.addEventListener('orientationchange', wrapper._orientHandler);
   window.addEventListener('resize', wrapper._orientHandler);
   $id('ef-numpad-enter').textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
+  var ccEnter = $id('cc-numpad-enter'); if (ccEnter) ccEnter.textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
 }
 
 function efUpdateOrientation() {
@@ -7908,6 +8072,7 @@ function efToggleBt() {
     window.addEventListener('orientationchange', wrapper._orientHandler);
     window.addEventListener('resize', wrapper._orientHandler);
     $id('ef-numpad-enter').textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
+    var ccEnter = $id('cc-numpad-enter'); if (ccEnter) ccEnter.textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
   }
   // Désactiver BT sur desktop : rien à changer, le listener clavier reste actif
 }
