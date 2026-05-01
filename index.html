@@ -2322,6 +2322,7 @@ const i18n = {
     tmConvCalc:'Conversion',
     tmConvChart:'Charte',
     tmConvCalcTitleKgf:'Objectif → Lecture',
+    tmConvRange:'Plage',
     tmConvTensio:'Tensiomètre',
     tmWFTipNew:'Dernières mises à jour des Tension Charts par WF',
     tmWFTipOld:'Version précédente des Tension Charts par WF',
@@ -2454,6 +2455,7 @@ const i18n = {
     tmConvCalc:'Conversion',
     tmConvChart:'Chart',
     tmConvCalcTitleKgf:'Target → Reading',
+    tmConvRange:'Range',
     tmConvTensio:'Tensiometer',
     tmWFTipNew:'Latest Tension Charts update by WF',
     tmWFTipOld:'Previous version of WF Tension Charts',
@@ -5277,8 +5279,9 @@ function tmConvCalcKgf() {
   const sorted  = [...valid].sort((a, b) => a[1] - b[1]);
   const kgfMin  = sorted[0][1], kgfMax = sorted[sorted.length - 1][1];
   if (raw < kgfMin || raw > kgfMax) {
-    res.value  = '—';
-    hint.textContent = `Plage : ${kgfMin}–${kgfMax} kgf`;
+    inp.value = ''; inp.style.color = 'var(--text)';
+    res.value = '—';
+    hint.textContent = `${t('tmConvRange')} : ${kgfMin}–${kgfMax} kgf`;
     return;
   }
   let reading = null;
@@ -5291,8 +5294,9 @@ function tmConvCalcKgf() {
     }
   }
   if (reading === null) {
-    res.value  = '—';
-    hint.textContent = `Plage : ${kgfMin}–${kgfMax} kgf`;
+    inp.value = ''; inp.style.color = 'var(--text)';
+    res.value = '—';
+    hint.textContent = `${t('tmConvRange')} : ${kgfMin}–${kgfMax} kgf`;
   } else {
     const isInteger = (tmType === 'pt' || tmType === 'un');
     const rounded = isInteger ? Math.round(reading) : Math.round(reading * 1000) / 1000;
