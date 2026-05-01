@@ -2096,7 +2096,7 @@ input[type=number] { -moz-appearance:textfield }
     <!-- ── Vue calculatrice ── -->
     <div id="tm-conv-calc-wrap" style="display:none;padding:.2rem 0">
       <div style="background:rgba(126,200,227,.05);border:1px solid rgba(126,200,227,.13);border-radius:var(--rs);padding:.9rem 1rem">
-        <div style="font-size:.55rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:.6rem;text-align:center" id="tm-conv-calc-title-kgf">Objectif → Lecture</div>
+        <div style="font-size:.55rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--text2);margin-bottom:.6rem;text-align:center" id="tm-conv-calc-title-kgf">Objectif → Lecture</div>
         <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.65rem">
           <input id="tm-conv-kgf-input" type="text" inputmode="none" readonly
             style="flex:1;font-family:'DM Mono',monospace;font-size:.95rem;background:var(--inp);border:1px solid var(--border-s);border-radius:var(--rs);color:var(--text);padding:.42rem .65rem;outline:none;width:0;caret-color:transparent;text-align:right">
@@ -5140,8 +5140,7 @@ function tmOpenConvTable() {
   $id('tm-conv-spoke-label').innerHTML = `${t('tmConvTensio')}\u00a0: <strong style="color:var(--accent)">${tensioLabel}</strong><br>${t('tmSpokeLabel')}\u00a0: <strong style="color:var(--text)">${tmSpokeKey.replace(/^__[A-Z ]+__/, '')}</strong>`;
 
   // Header lecture
-  const readingUnits = { wf:'WF', pt:'#', dt:'mm', pk:'mm', un:'#', pillar:'kgf' };
-  $id('tm-conv-th-reading').textContent = t('tmConvReading') + ' (' + (readingUnits[tmType] || '') + ')';
+  $id('tm-conv-th-reading').textContent = t('tmConvReading');
 
   // Remplir le tbody
   const tbody = $id('tm-conv-tbody');
@@ -5156,35 +5155,29 @@ function tmOpenConvTable() {
   // Stocker les points pour la courbe + reset état
   _tmConvPts = pts;
   _tmConvShowCurve = false;
-  _tmConvShowCalc = false;
+  _tmConvShowCalc  = false;
+  ccPendingReplace = false;
+
+  // Labels boutons
   const viewBtn = document.getElementById('tm-conv-view-btn');
-  if (viewBtn) {
-    viewBtn.textContent = t('tmConvCurve');
-    viewBtn.style.background = 'transparent';
-    viewBtn.style.borderColor = 'rgba(126,200,227,.45)';
-    viewBtn.style.color = 'var(--accent)';
-  }
+  if (viewBtn) viewBtn.textContent = t('tmConvCurve');
   const calcBtn = document.getElementById('tm-conv-calc-btn');
-  if (calcBtn) {
-    calcBtn.textContent = t('tmConvCalc');
-    calcBtn.style.background = 'transparent';
-    calcBtn.style.borderColor = 'rgba(126,200,227,.45)';
-    calcBtn.style.color = 'var(--accent)';
-  }
-  // Labels i18n de la vue calc
+  if (calcBtn) calcBtn.textContent = t('tmConvCalc');
+
+  // Label titre calc
   const elKgf = document.getElementById('tm-conv-calc-title-kgf');
   if (elKgf) elKgf.textContent = t('tmConvCalcTitleKgf');
+
   // Reset champs calc
-  const kgfInp = $id('tm-conv-kgf-input'); if (kgfInp) { kgfInp.value = ''; }
-  ccPendingReplace = false;
-  const kgfRes = $id('tm-conv-kgf-result'); if (kgfRes) kgfRes.value = '—';
-  const kgfHint = $id('tm-conv-kgf-hint'); if (kgfHint) kgfHint.textContent = '';
-  const tableWrap = document.getElementById('tm-conv-table-wrap');
-  const curveWrap = document.getElementById('tm-conv-curve-wrap');
-  const calcWrap  = document.getElementById('tm-conv-calc-wrap');
-  if (tableWrap) tableWrap.style.display = '';
-  if (curveWrap) curveWrap.style.display = 'none';
-  if (calcWrap)  calcWrap.style.display  = 'none';
+  const kgfInp = $id('tm-conv-kgf-input');
+  if (kgfInp) { kgfInp.value = ''; kgfInp.style.color = 'var(--text)'; }
+  const kgfRes = $id('tm-conv-kgf-result');
+  if (kgfRes) kgfRes.value = '—';
+  const kgfHint = $id('tm-conv-kgf-hint');
+  if (kgfHint) kgfHint.textContent = '';
+
+  // Afficher vue tableau par défaut
+  _tmConvShowOnly('table');
 
   // Afficher
   $id('tm-conv-overlay').classList.add('show');
@@ -5199,22 +5192,11 @@ let _tmConvPts = [];
 
 function _tmConvShowOnly(mode) {
   // mode: 'table' | 'curve' | 'calc'
-  const tableWrap = document.getElementById('tm-conv-table-wrap');
-  const curveWrap = document.getElementById('tm-conv-curve-wrap');
-  const calcWrap  = document.getElementById('tm-conv-calc-wrap');
-  const viewBtn   = document.getElementById('tm-conv-view-btn');
-  const calcBtn   = document.getElementById('tm-conv-calc-btn');
-  tableWrap.style.display = mode === 'table' ? '' : 'none';
-  curveWrap.style.display = mode === 'curve' ? 'block' : 'none';
-  calcWrap.style.display  = mode === 'calc'  ? '' : 'none';
-  // Bouton gauche (calc) : "Calculer" sauf si on est en calc → "Tableau"
-  calcBtn.textContent   = mode === 'calc'  ? t('tmConvChart') : t('tmConvCalc');
-  calcBtn.style.borderColor = 'rgba(126,200,227,.45)';
-  calcBtn.style.color   = 'var(--accent)';
-  // Bouton droit (courbe) : "Courbe" sauf si on est en courbe → "Tableau"
-  viewBtn.textContent   = mode === 'curve' ? t('tmConvTable') : t('tmConvCurve');
-  viewBtn.style.borderColor = 'rgba(126,200,227,.45)';
-  viewBtn.style.color   = 'var(--accent)';
+  $id('tm-conv-table-wrap').style.display = mode === 'table' ? '' : 'none';
+  $id('tm-conv-curve-wrap').style.display = mode === 'curve' ? 'block' : 'none';
+  $id('tm-conv-calc-wrap').style.display  = mode === 'calc'  ? '' : 'none';
+  $id('tm-conv-calc-btn').textContent = mode === 'calc'  ? t('tmConvChart') : t('tmConvCalc');
+  $id('tm-conv-view-btn').textContent = mode === 'curve' ? t('tmConvTable') : t('tmConvCurve');
 }
 
 function tmConvToggleView() {
@@ -5264,7 +5246,7 @@ function tmConvToggleCalc() {
 
 function ccNumpadKey(char) {
   var inp = $id('tm-conv-kgf-input');
-  if (ccPendingReplace) { inp.value = ''; ccPendingReplace = false; }
+  if (ccPendingReplace) { inp.value = ''; ccPendingReplace = false; inp.style.color = 'var(--text)'; }
   var val = inp.value;
   if (char === '.' && val.indexOf('.') !== -1) return;
   if (char !== '.' && val === '0') { inp.value = char; return; }
@@ -5273,7 +5255,7 @@ function ccNumpadKey(char) {
 
 function ccNumpadDel() {
   var inp = $id('tm-conv-kgf-input');
-  if (ccPendingReplace) { inp.value = ''; ccPendingReplace = false; }
+  if (ccPendingReplace) { inp.value = ''; ccPendingReplace = false; inp.style.color = 'var(--text)'; }
   else inp.value = inp.value.slice(0, -1);
   var res = $id('tm-conv-kgf-result'); if (res) res.value = '—';
   var hint = $id('tm-conv-kgf-hint'); if (hint) hint.textContent = '';
@@ -5318,7 +5300,7 @@ function tmConvCalcKgf() {
     hint.textContent = '';
     // Présélectionner le champ pour la prochaine saisie
     ccPendingReplace = true;
-    inp.select();
+    inp.style.color = 'var(--accent)';
   }
 }
 
