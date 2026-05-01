@@ -4779,18 +4779,17 @@ function tmPopulateSpokeSelect() {
     });
 
     if (customSpokes.length > 0) {
-      const sep = document.createElement('option');
-      sep.disabled = true;
-      sep.textContent = '── ' + t('ccCustomLabel') + ' ──';
-      sel.appendChild(sep);
+      const grpCustom = document.createElement('optgroup');
+      grpCustom.label = t('ccCustomLabel');
       customSpokes.forEach(k => {
         const opt = document.createElement('option');
         opt.value = k; opt.textContent = k;
         opt.className = 'tm-spoke-custom';
         opt.style.color = '#7ec8e3';
         if (k === prev) opt.selected = true;
-        sel.appendChild(opt);
+        grpCustom.appendChild(opt);
       });
+      sel.appendChild(grpCustom);
     }
 
   } else {
@@ -4805,18 +4804,17 @@ function tmPopulateSpokeSelect() {
     });
 
     if (customSpokes.length > 0) {
-      const sep = document.createElement('option');
-      sep.disabled = true;
-      sep.textContent = '── ' + t('ccCustomLabel') + ' ──';
-      sel.appendChild(sep);
+      const grpCustom = document.createElement('optgroup');
+      grpCustom.label = t('ccCustomLabel');
       customSpokes.forEach(k => {
         const opt = document.createElement('option');
         opt.value = k; opt.textContent = k;
         opt.className = 'tm-spoke-custom';
         opt.style.color = '#7ec8e3';
         if (k === prev) opt.selected = true;
-        sel.appendChild(opt);
+        grpCustom.appendChild(opt);
       });
+      sel.appendChild(grpCustom);
     }
   }
 
