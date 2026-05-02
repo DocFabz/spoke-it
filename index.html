@@ -587,6 +587,23 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 
 /* ── Snapshots ─────────────────────────────────────────────────────────────── */
 .snap-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
+
+/* ── Modale confirmation écrasement ─────────────────────────────────────────── */
+#confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9995; opacity:0; transition:opacity .22s; display:none }
+#confirm-overlay.show { display:block; opacity:1 }
+#confirm-modal {
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97);
+  z-index:9996; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r);
+  padding:1.5rem 1.4rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55);
+  width:92%; max-width:300px; display:none; flex-direction:column; gap:1rem;
+  opacity:0; transition:opacity .2s, transform .2s;
+}
+#confirm-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+#confirm-msg { font-size:.82rem; color:var(--text2); line-height:1.5; text-align:center }
+#confirm-msg strong { color:var(--text) }
+.confirm-btns { display:flex; gap:.5rem }
+.confirm-yes { flex:1; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.8rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; padding:.7rem 1rem; cursor:pointer; touch-action:manipulation; transition:all .25s }
+.confirm-no  { flex:1; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.8rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; padding:.7rem 1rem; cursor:pointer; touch-action:manipulation; transition:all .25s }
 .snap-overlay.show { display:block; opacity:1 }
 .snap-modal {
   position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97);
@@ -3823,29 +3840,41 @@ function hideConfigsPanel()   { $id('configs-wrap').style.display = 'none'; }
 function saveConfig() {
   const nameEl = $id('save-name'), name = nameEl.value.trim(), fb = $id('save-feedback');
   if (!name) { fb.textContent = t('saveError'); fb.style.color = '#f08080'; return; }
-  const state = readState(); state.wtype = wtype;
   const configs = loadConfigs();
   const existIdx = configs.findIndex(c => c.name === name && (c.state.wtype || 'avant') === wtype);
-  const entry = { name, metaKey: wtype === 'avant' ? 'frontLabel' : 'rearLabel', state, ts: Date.now() };
-  // Préserver les snapshots existants ; créer snapshot 1 si absent et données présentes
-  const existingSnapshots = existIdx >= 0 ? (configs[existIdx].snapshots || []) : [];
-  if (existingSnapshots.length > 0) {
-    if (!existingSnapshots.some(s => s.num === 1) && tmHasData()) {
-      existingSnapshots.unshift(_snapMakeEntry(1));
-      _snapRenum(existingSnapshots);
+  function doSave() {
+    const state = readState(); state.wtype = wtype;
+    const configs2 = loadConfigs();
+    const ei2 = configs2.findIndex(c => c.name === name && (c.state.wtype || 'avant') === wtype);
+    const entry = { name, metaKey: wtype === 'avant' ? 'frontLabel' : 'rearLabel', state, ts: Date.now() };
+    const existingSnapshots = ei2 >= 0 ? (configs2[ei2].snapshots || []) : [];
+    if (existingSnapshots.length > 0) {
+      if (!existingSnapshots.some(s => s.num === 1) && tmHasData()) {
+        existingSnapshots.unshift(_snapMakeEntry(1));
+        _snapRenum(existingSnapshots);
+      }
+      entry.snapshots = existingSnapshots;
+    } else if (tmHasData()) {
+      entry.snapshots = [_snapMakeEntry(1)];
     }
-    entry.snapshots = existingSnapshots;
-  } else if (tmHasData()) {
-    entry.snapshots = [_snapMakeEntry(1)];
+    if (ei2 >= 0) configs2.splice(ei2, 1, entry);
+    else configs2.unshift(entry);
+    persistConfigs(configs2);
+    nameEl.value = ''; fb.textContent = '';
+    renderConfigsList(); showConfigsPanel();
+    $id('save-card-body').style.display = 'none'; $id('save-card-chevron').style.transform = '';
+    const top = document.querySelector('header').getBoundingClientRect().bottom + window.pageYOffset - 30; window.scrollTo({ top, behavior: 'smooth' });
+    flashWheelCard(name);
   }
-  if (existIdx >= 0) configs.splice(existIdx, 1, entry);
-  else configs.unshift(entry);
-  persistConfigs(configs);
-  nameEl.value = ''; fb.textContent = '';
-  renderConfigsList(); showConfigsPanel();
-  $id('save-card-body').style.display = 'none'; $id('save-card-chevron').style.transform = '';
-  const top = document.querySelector('header').getBoundingClientRect().bottom + window.pageYOffset - 30; window.scrollTo({ top, behavior: 'smooth' });
-  flashWheelCard(name);
+  if (existIdx >= 0) {
+    var L = typeof lang !== 'undefined' ? lang : 'fr';
+    var msg = L === 'fr'
+      ? '<strong>' + escHtml(name) + '</strong> existe déjà. Remplacer ?'
+      : '<strong>' + escHtml(name) + '</strong> already exists. Replace?';
+    confirmShow(msg, doSave);
+  } else {
+    doSave();
+  }
 }
 
 function deleteConfig(idx) { const configs = loadConfigs(); configs.splice(idx, 1); persistConfigs(configs); renderConfigsList(); }
@@ -3912,12 +3941,10 @@ function exportConfigs() {
     savedHubs:     hrLoadAll('hub'),
     savedRims:     hrLoadAll('rim')
   };
-  const now = new Date();
-  const date = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href = url; a.download = `spokeit-backup-${date}.json`; a.click();
+  a.href = url; a.download = 'Spokeit-Backup.json'; a.click();
   URL.revokeObjectURL(url);
 }
 
@@ -9052,18 +9079,36 @@ function confirmHrSave() {
     return;
   }
   var type = _hrModalType;
-  var data = type === 'hub' ? hrReadHub() : hrReadRim();
   var arr  = hrLoadAll(type);
   var existing = arr.findIndex(function(e) { return e.name.toLowerCase() === name.toLowerCase(); });
-  var entry = { name: name, data: data, ts: Date.now() };
-  if (existing >= 0) arr.splice(existing, 1, entry);
-  else arr.unshift(entry);
-  hrPersist(type, arr);
-  closeHrSaveModal();
-  if (type === 'hub') hrSetLoadedHub(name);
-  else hrSetLoadedRim(name);
-  hrUpdateButtons();
-  if (typeof showCacheToast === 'function') showCacheToast();
+
+  function doHrSave() {
+    var data  = type === 'hub' ? hrReadHub() : hrReadRim();
+    var arr2  = hrLoadAll(type);
+    var ei2   = arr2.findIndex(function(e) { return e.name.toLowerCase() === name.toLowerCase(); });
+    var entry = { name: name, data: data, ts: Date.now() };
+    if (ei2 >= 0) arr2.splice(ei2, 1, entry);
+    else arr2.unshift(entry);
+    hrPersist(type, arr2);
+    closeHrSaveModal();
+    if (type === 'hub') hrSetLoadedHub(name);
+    else hrSetLoadedRim(name);
+    hrUpdateButtons();
+    if (typeof showCacheToast === 'function') showCacheToast();
+  }
+
+  if (existing >= 0) {
+    var L = typeof lang !== 'undefined' ? lang : 'fr';
+    var label = type === 'hub'
+      ? (L === 'fr' ? 'ce moyeu' : 'this hub')
+      : (L === 'fr' ? 'cette jante' : 'this rim');
+    var msg = L === 'fr'
+      ? '<strong>' + escHtml(name) + '</strong> existe déjà. Remplacer ' + label + ' ?'
+      : '<strong>' + escHtml(name) + '</strong> already exists. Replace ' + label + '?';
+    confirmShow(msg, doHrSave);
+  } else {
+    doHrSave();
+  }
 }
 
 // ── Open load modal ──────────────────────────────────────────────────────────
@@ -9443,28 +9488,37 @@ function snapRegisterAndSave() {
   const name = inp ? inp.value.trim() : '';
   if (!name) { if (fb) { fb.textContent = t('snapNameError'); } return; }
 
-  // Créer ou mettre à jour la config avec l'état courant du formulaire
-  const state = readState(); state.wtype = wtype;
   const configs = loadConfigs();
   const existIdx = configs.findIndex(c => c.name === name && (c.state.wtype || 'avant') === wtype);
-  const entry = { name, metaKey: wtype === 'avant' ? 'frontLabel' : 'rearLabel', state, ts: Date.now() };
-  if (existIdx >= 0) configs.splice(existIdx, 1, entry);
-  else configs.unshift(entry);
-  persistConfigs(configs);
 
-  // Marquer comme config chargée
-  _loadedConfigName[wtype] = name;
-  _refreshLoadedBadges();
-  renderConfigsList();
+  function doRegister() {
+    const state = readState(); state.wtype = wtype;
+    const configs2 = loadConfigs();
+    const ei2 = configs2.findIndex(c => c.name === name && (c.state.wtype || 'avant') === wtype);
+    const entry = { name, metaKey: wtype === 'avant' ? 'frontLabel' : 'rearLabel', state, ts: Date.now() };
+    if (ei2 >= 0) configs2.splice(ei2, 1, entry);
+    else configs2.unshift(entry);
+    persistConfigs(configs2);
+    _loadedConfigName[wtype] = name;
+    _refreshLoadedBadges();
+    renderConfigsList();
+    const panel = $id('snap-name-panel');
+    if (panel) panel.style.display = 'none';
+    $id('snap-save-row').style.display  = '';
+    $id('snap-divider').style.display   = '';
+    $id('snap-list').style.display      = '';
+    snapSave();
+  }
 
-  // Restaurer la modale en mode normal et enregistrer le snapshot
-  const panel = $id('snap-name-panel');
-  if (panel) panel.style.display = 'none';
-  $id('snap-save-row').style.display  = '';
-  $id('snap-divider').style.display   = '';
-  $id('snap-list').style.display      = '';
-
-  snapSave();
+  if (existIdx >= 0) {
+    var L = typeof lang !== 'undefined' ? lang : 'fr';
+    var msg = L === 'fr'
+      ? '<strong>' + escHtml(name) + '</strong> existe déjà. Remplacer ?'
+      : '<strong>' + escHtml(name) + '</strong> already exists. Replace?';
+    confirmShow(msg, doRegister);
+  } else {
+    doRegister();
+  }
 }
 
 function snapClose() {
@@ -10104,5 +10158,45 @@ function snapComparePDF() {
     <span id="snapcompare-btn-label">Générer le PDF</span>
   </button>
 </div>
+
+<!-- ── Modale confirmation écrasement ── -->
+<div id="confirm-overlay"></div>
+<div id="confirm-modal">
+  <div id="confirm-msg"></div>
+  <div class="confirm-btns">
+    <button class="confirm-no"  id="confirm-no-btn"  onclick="confirmDismiss()"></button>
+    <button class="confirm-yes" id="confirm-yes-btn" onclick="confirmProceed()"></button>
+  </div>
+</div>
+
+<script>
+var _confirmCallback = null;
+
+function confirmShow(msg, onYes) {
+  _confirmCallback = onYes;
+  var L = typeof lang !== 'undefined' ? lang : 'fr';
+  document.getElementById('confirm-msg').innerHTML = msg;
+  document.getElementById('confirm-yes-btn').textContent = L === 'fr' ? '✓ Confirmer' : '✓ Confirm';
+  document.getElementById('confirm-no-btn').textContent  = L === 'fr' ? '✕ Annuler'   : '✕ Cancel';
+  document.getElementById('confirm-overlay').classList.add('show');
+  document.getElementById('confirm-modal').classList.add('show');
+}
+
+function confirmDismiss() {
+  _confirmCallback = null;
+  document.getElementById('confirm-overlay').classList.remove('show');
+  document.getElementById('confirm-modal').classList.remove('show');
+}
+
+function confirmProceed() {
+  var cb = _confirmCallback;
+  confirmDismiss();
+  if (cb) cb();
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('confirm-modal').classList.contains('show')) confirmDismiss();
+});
+</script>
 </body>
 </html>
