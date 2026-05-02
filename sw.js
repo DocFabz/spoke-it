@@ -1,4 +1,4 @@
-const CACHE = 'spoke-it-6f423762';
+const CACHE = 'spoke-it-v1';
 
 const ASSETS = [
   '/',
@@ -27,13 +27,8 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-self.addEventListener('message', e => {
-  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
-});
-
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-
   e.respondWith(
     caches.match(e.request).then(cached => {
       const networkFetch = fetch(e.request).then(response => {
@@ -42,7 +37,6 @@ self.addEventListener('fetch', e => {
         }
         return response;
       }).catch(() => null);
-
       return cached || networkFetch;
     })
   );
