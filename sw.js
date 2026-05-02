@@ -1,4 +1,4 @@
-const CACHE = 'spoke-it-3aeb6d87';
+const CACHE = 'spoke-it-v1';
 
 const ASSETS = [
   '/',
@@ -19,16 +19,41 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(
+  e.waitUntil(Promise.all([
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
-  );
+    ),
+    self.registration.navigationPreload && self.registration.navigationPreload.enable()
+  ]));
   self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  if (e.request.mode === 'navigate') {
+    e.respondWith((async () => {
+      try {
+        const cached = await caches.match(e.request);
+        const preload = e.preloadResponse;
+        const network = preload || fetch(e.request);
+        // Retourner le cache immédiatement, mettre à jour en fond
+        if (cached) {
+          network.then(r => {
+            if (r && r.status === 200) caches.open(CACHE).then(c => c.put(e.request, r.clone()));
+          }).catch(() => {});
+          return cached;
+        }
+        const response = await network;
+        if (response && response.status === 200) {
+          caches.open(CACHE).then(c => c.put(e.request, response.clone()));
+        }
+        return response;
+      } catch(e) {
+        return caches.match('/index.html');
+      }
+    })());
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(cached => {
       const networkFetch = fetch(e.request).then(response => {
