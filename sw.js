@@ -1,4 +1,4 @@
-const CACHE = 'spoke-it-3aeb6d87';
+const CACHE = 'spoke-it-v1';
 
 const ASSETS = [
   '/',
