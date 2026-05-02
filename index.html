@@ -3752,15 +3752,20 @@ const SpokeDB = (() => {
   async function migrate(keys) {
     for (const key of keys) {
       const lsVal = localStorage.getItem(key);
-      if (lsVal === null) continue;
       try {
         const db = await _open();
-        const already = await new Promise(r => {
+        const idbVal = await new Promise(r => {
           const req = db.transaction(STORE).objectStore(STORE).get(key);
-          req.onsuccess = () => r(req.result);
+          req.onsuccess = () => r(req.result ?? null);
           req.onerror   = () => r(null);
         });
-        if (already === undefined || already === null) await set(key, lsVal);
+        if (lsVal !== null && (idbVal === null || idbVal === undefined)) {
+          // localStorage a des données, IDB non → copier vers IDB
+          await set(key, lsVal);
+        } else if (idbVal !== null && idbVal !== undefined && lsVal === null) {
+          // IDB a des données, localStorage non (purgé par iOS) → restaurer localStorage
+          try { localStorage.setItem(key, idbVal); } catch(_) {}
+        }
       } catch(_) {}
     }
   }
@@ -3768,13 +3773,11 @@ const SpokeDB = (() => {
   return { get, set, migrate };
 })();
 
-(async () => {
-  await SpokeDB.migrate([
-    'spokeit_atelier','spokeit_configs',
-    'spokeit_custom_charts','spokeit_custom_tensios',
-    'spokeit_saved_hubs','spokeit_saved_rims'
-  ]);
-})();
+const _spokeDBReady = SpokeDB.migrate([
+  'spokeit_atelier','spokeit_configs',
+  'spokeit_custom_charts','spokeit_custom_tensios',
+  'spokeit_saved_hubs','spokeit_saved_rims'
+]);
 
 // ── Modale Atelier ───────────────────────────────────────────────────────────
 const LS_ATELIER = 'spokeit_atelier';
@@ -3785,7 +3788,6 @@ function loadAtelierInfo() {
 async function _loadAtelierAsync() {
   try { const v = await SpokeDB.get(LS_ATELIER); return JSON.parse(v) || {}; } catch(e) { return {}; }
 }
-
 function openAtelierMgr() {
   _loadAtelierAsync().then(info => {
     $id('atelier-shop').value  = info.name  || '';
@@ -4323,7 +4325,8 @@ window.addEventListener('resize', function() {
 })();
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-(function() {
+(async function() {
+  await _spokeDBReady;  // attend que IDB ait restauré localStorage si besoin
   const configs = loadConfigs();
   if (configs.length > 0) { renderConfigsList(); $id('configs-wrap').style.display = ''; }
   applyLang();       // initialise labels, texte d'aide, ordre DS/NDS, tout en une fois
