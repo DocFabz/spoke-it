@@ -3708,92 +3708,18 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { e.preventDefault(); slenClose(); }
 });
 
-// ── SpokeDB : IndexedDB avec fallback localStorage ───────────────────────────
-const SpokeDB = (() => {
-  const DB_NAME = 'spokeit-db', DB_VERSION = 1, STORE = 'kv';
-  let _db = null;
-
-  function _open() {
-    if (_db) return Promise.resolve(_db);
-    return new Promise((resolve, reject) => {
-      const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = e => e.target.result.createObjectStore(STORE);
-      req.onsuccess = e => { _db = e.target.result; resolve(_db); };
-      req.onerror   = () => reject(req.error);
-    });
-  }
-
-  async function get(key) {
-    try {
-      const db = await _open();
-      return new Promise((resolve, reject) => {
-        const req = db.transaction(STORE).objectStore(STORE).get(key);
-        req.onsuccess = () => resolve(req.result ?? null);
-        req.onerror   = () => reject(req.error);
-      });
-    } catch(e) {
-      try { return localStorage.getItem(key); } catch(_) { return null; }
-    }
-  }
-
-  async function set(key, value) {
-    try {
-      const db = await _open();
-      return new Promise((resolve, reject) => {
-        const req = db.transaction(STORE, 'readwrite').objectStore(STORE).put(value, key);
-        req.onsuccess = () => resolve();
-        req.onerror   = () => reject(req.error);
-      });
-    } catch(e) {
-      try { localStorage.setItem(key, value); } catch(_) {}
-    }
-  }
-
-  async function migrate(keys) {
-    for (const key of keys) {
-      const lsVal = localStorage.getItem(key);
-      try {
-        const db = await _open();
-        const idbVal = await new Promise(r => {
-          const req = db.transaction(STORE).objectStore(STORE).get(key);
-          req.onsuccess = () => r(req.result ?? null);
-          req.onerror   = () => r(null);
-        });
-        if (lsVal !== null && (idbVal === null || idbVal === undefined)) {
-          // localStorage a des données, IDB non → copier vers IDB
-          await set(key, lsVal);
-        } else if (idbVal !== null && idbVal !== undefined && lsVal === null) {
-          // IDB a des données, localStorage non (purgé par iOS) → restaurer localStorage
-          try { localStorage.setItem(key, idbVal); } catch(_) {}
-        }
-      } catch(_) {}
-    }
-  }
-
-  return { get, set, migrate };
-})();
-
-const _spokeDBReady = SpokeDB.migrate([
-  'spokeit_atelier','spokeit_configs',
-  'spokeit_custom_charts','spokeit_custom_tensios',
-  'spokeit_saved_hubs','spokeit_saved_rims'
-]);
-
 // ── Modale Atelier ───────────────────────────────────────────────────────────
 const LS_ATELIER = 'spokeit_atelier';
 
 function loadAtelierInfo() {
   try { return JSON.parse(localStorage.getItem(LS_ATELIER)) || {}; } catch(e) { return {}; }
 }
-async function _loadAtelierAsync() {
-  try { const v = await SpokeDB.get(LS_ATELIER); return JSON.parse(v) || {}; } catch(e) { return {}; }
-}
+
 function openAtelierMgr() {
-  _loadAtelierAsync().then(info => {
-    $id('atelier-shop').value  = info.name  || '';
-    $id('atelier-email').value = info.email || '';
-    $id('atelier-insta').value = info.insta || '';
-  });
+  const info = loadAtelierInfo();
+  $id('atelier-shop').value  = info.name  || '';
+  $id('atelier-email').value = info.email || '';
+  $id('atelier-insta').value = info.insta || '';
   $id('ateliermgr-overlay').classList.add('show');
   $id('ateliermgr-modal').classList.add('show');
   setTimeout(() => $id('atelier-shop').focus(), 80);
@@ -3815,7 +3741,7 @@ function saveAtelierInfo() {
     email: $id('atelier-email').value.trim(),
     insta: $id('atelier-insta').value.trim()
   };
-  SpokeDB.set(LS_ATELIER, JSON.stringify(info));
+  localStorage.setItem(LS_ATELIER, JSON.stringify(info));
   closeAtelierMgr();
 }
 
@@ -3890,7 +3816,7 @@ function closeConfigsCardIfOpen() {
 // ── Configs (localStorage) ────────────────────────────────────────────────────
 const LS_KEY = 'spokeit_configs';
 function loadConfigs()        { try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch(e) { return []; } }
-function persistConfigs(cfg)  { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); SpokeDB.set(LS_KEY, JSON.stringify(cfg)); }
+function persistConfigs(cfg)  { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); }
 function showConfigsPanel()   { $id('configs-wrap').style.display = ''; }
 function hideConfigsPanel()   { $id('configs-wrap').style.display = 'none'; }
 
@@ -4325,8 +4251,7 @@ window.addEventListener('resize', function() {
 })();
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-(async function() {
-  await _spokeDBReady;  // attend que IDB ait restauré localStorage si besoin
+(function() {
   const configs = loadConfigs();
   if (configs.length > 0) { renderConfigsList(); $id('configs-wrap').style.display = ''; }
   applyLang();       // initialise labels, texte d'aide, ordre DS/NDS, tout en une fois
@@ -4421,7 +4346,7 @@ const CC_PREFIX = '★ ';
 
 // ── localStorage ────────────────────────────────────────────────────────────
 function ccLoadAll()     { try { return JSON.parse(localStorage.getItem(CC_LS_KEY)) || []; } catch(e) { return []; } }
-function ccPersist(arr)  { localStorage.setItem(CC_LS_KEY, JSON.stringify(arr)); SpokeDB.set(CC_LS_KEY, JSON.stringify(arr)); }
+function ccPersist(arr)  { localStorage.setItem(CC_LS_KEY, JSON.stringify(arr)); }
 
 // ── Injecter les chartes custom dans TM_TABLES ──────────────────────────────
 function ccInjectAll() {
@@ -4494,7 +4419,7 @@ ccInjectAll();
 const CT_LS_KEY = 'spokeit_custom_tensios';
 
 function ctLoadAll()    { try { return JSON.parse(localStorage.getItem(CT_LS_KEY)) || []; } catch(e) { return []; } }
-function ctPersist(arr) { localStorage.setItem(CT_LS_KEY, JSON.stringify(arr)); SpokeDB.set(CT_LS_KEY, JSON.stringify(arr)); }
+function ctPersist(arr) { localStorage.setItem(CT_LS_KEY, JSON.stringify(arr)); }
 
 // Créer une table vide dans TM_TABLES pour chaque tensiomètre custom
 function ctInjectAll() {
@@ -8927,9 +8852,7 @@ function hrLoadAll(type) {
   try { return JSON.parse(localStorage.getItem(type === 'hub' ? LS_HUBS : LS_RIMS)) || []; } catch(e) { return []; }
 }
 function hrPersist(type, arr) {
-  const key = type === 'hub' ? LS_HUBS : LS_RIMS;
-  localStorage.setItem(key, JSON.stringify(arr));
-  SpokeDB.set(key, JSON.stringify(arr));
+  localStorage.setItem(type === 'hub' ? LS_HUBS : LS_RIMS, JSON.stringify(arr));
 }
 
 // ── Read hub data from form ───────────────────────────────────────────────────
