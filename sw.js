@@ -1,4 +1,4 @@
-const CACHE = 'spoke-it-2b39b0e4';
+const CACHE = 'spoke-it-v1';
 
 const ASSETS = [
   '/',
@@ -11,7 +11,6 @@ const ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
 ];
 
-// Installation : on pré-cache tous les assets
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(cache => cache.addAll(ASSETS))
@@ -19,7 +18,6 @@ self.addEventListener('install', e => {
   self.skipWaiting();
 });
 
-// Activation : on supprime les anciens caches
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -29,22 +27,22 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Fetch : cache-first, mise à jour réseau en arrière-plan
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('fetch', e => {
-  // On ignore les requêtes non-GET (ex: Google Analytics)
   if (e.request.method !== 'GET') return;
 
   e.respondWith(
     caches.match(e.request).then(cached => {
       const networkFetch = fetch(e.request).then(response => {
-        // On met à jour le cache si la réponse est valide
         if (response && response.status === 200 && response.type !== 'opaque') {
           caches.open(CACHE).then(cache => cache.put(e.request, response.clone()));
         }
         return response;
       }).catch(() => null);
 
-      // Retourne le cache immédiatement si dispo, sinon attend le réseau
       return cached || networkFetch;
     })
   );

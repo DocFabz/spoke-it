@@ -113,6 +113,15 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .insta-link:hover { color:var(--accent) }
 .insta-icon   { width:13px; height:13px; flex-shrink:0; vertical-align:middle }
 .hline        { width:44px; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent); margin:1.3rem auto 0 }
+
+/* ── Bannière mise à jour SW ────────────────────────────────────────────────── */
+#sw-update-banner { display:none; align-items:center; justify-content:space-between; gap:.8rem; background:var(--bg2); border-bottom:1px solid rgba(126,200,227,.2); padding:.6rem 1rem; }
+#sw-update-banner.show { display:flex }
+.sw-update-dot  { width:7px; height:7px; border-radius:50%; background:var(--accent); flex-shrink:0 }
+.sw-update-text { font-size:.75rem; color:var(--text2); flex:1; line-height:1.4 }
+.sw-update-text strong { color:var(--text); font-weight:500 }
+.sw-update-btn  { background:transparent; border:1px solid rgba(126,200,227,.35); border-radius:20px; color:var(--accent); font-family:'DM Sans',sans-serif; font-size:.7rem; padding:.28rem .85rem; cursor:pointer; touch-action:manipulation; white-space:nowrap; flex-shrink:0; transition:all .2s }
+.sw-update-btn:hover { background:rgba(126,200,227,.08) }
 .lang-btn     { margin-top:0; background:transparent; border:1px solid var(--border-s); border-radius:20px; color:var(--text3); font-family:'DM Mono',monospace; font-size:.65rem; font-weight:400; letter-spacing:.15em; padding:.28rem .9rem; cursor:pointer; touch-action:manipulation; transition:all .2s }
 .lang-btn:hover { border-color:var(--accent); color:var(--accent) }
 
@@ -1215,6 +1224,13 @@ input[type=number] { -moz-appearance:textfield }
     </div>
   </div>
 </header>
+
+<!-- ── Bannière mise à jour Service Worker ── -->
+<div id="sw-update-banner">
+  <div class="sw-update-dot"></div>
+  <div class="sw-update-text"><strong id="sw-update-title"></strong><br><span id="sw-update-sub"></span></div>
+  <button class="sw-update-btn" id="sw-update-btn" onclick="swApplyUpdate()"></button>
+</div>
 
 <!-- ── Modale Atelier ── -->
 <div class="ateliermgr-overlay" id="ateliermgr-overlay" onclick="closeAtelierMgr()"></div>
@@ -2394,6 +2410,9 @@ const i18n = {
     snapCompareDesc:'Sélectionner deux snapshots.',
     snapCompareBtn:'Générer le PDF',
     snapNameError:'Veuillez saisir un nom.',
+    swUpdateTitle:'Mise à jour disponible',
+    swUpdateSub:'Rechargez pour l\'activer',
+    swUpdateBtn:'Recharger',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -2527,6 +2546,9 @@ const i18n = {
     snapCompareDesc:'Select two snapshots.',
     snapCompareBtn:'Generate PDF',
     snapNameError:'Please enter a name.',
+    swUpdateTitle:'Update available',
+    swUpdateSub:'Reload to activate',
+    swUpdateBtn:'Reload',
   }
 };
 
@@ -2749,6 +2771,11 @@ function _applyLangModals() {
   el = $id('snapcompare-title');    if (el) el.textContent = tr.snapCompareTitle || (L==='fr' ? 'Évolution Tension'          : 'Tension Evolution');
   el = $id('snapcompare-desc');     if (el) el.textContent = tr.snapCompareDesc  || (L==='fr' ? 'Sélectionner deux snapshots.' : 'Select two snapshots.');
   el = $id('snapcompare-btn-label');if (el) el.textContent = tr.snapCompareBtn   || (L==='fr' ? 'Générer le PDF'              : 'Generate PDF');
+
+  // ── Bannière SW ──
+  el = $id('sw-update-title'); if (el) el.textContent = tr.swUpdateTitle || (L==='fr' ? 'Mise à jour disponible' : 'Update available');
+  el = $id('sw-update-sub');   if (el) el.textContent = tr.swUpdateSub   || (L==='fr' ? 'Rechargez pour l\'activer' : 'Reload to activate');
+  el = $id('sw-update-btn');   if (el) el.textContent = tr.swUpdateBtn   || (L==='fr' ? 'Recharger' : 'Reload');
 }
 
 function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; localStorage.setItem('spoke-it-lang', lang); applyLang(); }
@@ -10105,7 +10132,29 @@ function snapComparePDF() {
   </button>
 </div>
 <script>
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  var _swReg = null;
+  function swApplyUpdate() {
+    if (_swReg && _swReg.waiting) {
+      _swReg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+  }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+      _swReg = reg;
+      reg.addEventListener('updatefound', function() {
+        var newSW = reg.installing;
+        newSW.addEventListener('statechange', function() {
+          if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+            document.getElementById('sw-update-banner').classList.add('show');
+            _applyLangModals();
+          }
+        });
+      });
+    });
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+      location.reload();
+    });
+  }
 </script>
 </body>
 </html>
