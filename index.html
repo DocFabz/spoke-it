@@ -10326,18 +10326,16 @@ async function snapCompareJPEG() {
     // fo=orange : NDS si avant, DS si arrière — fa=bleu : inverse
     // → gauche=NDS : orange si avant (fo), bleu si arrière (fa)
     // → droite=DS  : bleu si avant (fa), orange si arrière (fo)
-    var legLeftTxt  = 'NDS';
-    var legRightTxt = 'DS';
-    var leftColor   = isAvant ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
-    var rightColor  = isAvant ? 'rgba(126,200,227,1)' : 'rgba(232,146,124,1)';
+    var leftColor  = isAvant ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
+    var rightColor = isAvant ? 'rgba(126,200,227,1)' : 'rgba(232,146,124,1)';
     var legY  = radarY + rH + legendH / 2;
     var DOT_R = 10;
     var legMid = W / 2;
 
     ctx.textBaseline = 'middle';
     ctx.font = '500 32px DM Sans, sans-serif';
-    var wLeft  = ctx.measureText(legLeftTxt).width;
-    var wRight = ctx.measureText(legRightTxt).width;
+    var wLeft  = ctx.measureText('NDS').width;
+    var wRight = ctx.measureText('DS').width;
     var itemLeftW  = DOT_R * 2 + 6 + wLeft;
     var itemRightW = DOT_R * 2 + 6 + wRight;
     var midLeft  = legMid / 2;
@@ -10349,12 +10347,12 @@ async function snapCompareJPEG() {
     ctx.beginPath(); ctx.arc(xLeft2 + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = 'rgba(220,228,237,0.95)';
     ctx.textAlign = 'left';
-    ctx.fillText(legLeftTxt, xLeft2 + DOT_R * 2 + 15, legY);
+    ctx.fillText('NDS', xLeft2 + DOT_R * 2 + 15, legY);
 
     ctx.fillStyle = rightColor;
     ctx.beginPath(); ctx.arc(xRight2 + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = 'rgba(220,228,237,0.95)';
-    ctx.fillText(legRightTxt, xRight2 + DOT_R * 2 + 15, legY);
+    ctx.fillText('DS', xRight2 + DOT_R * 2 + 15, legY);
 
     // Blocs stats
     if (statBlocks.length) {
