@@ -10190,8 +10190,6 @@ async function snapCompareJPEG() {
 
   // Spinner
   var jpegBtn = document.getElementById('snapcompare-jpeg-btn');
-  var jpegLbl = document.getElementById('snapcompare-jpeg-label');
-  var originalContent = jpegBtn ? jpegBtn.innerHTML : '';
   if (jpegBtn) {
     jpegBtn.classList.add('loading');
     jpegBtn.innerHTML = '<span class="btn-spinner"></span><span>' + (typeof lang !== 'undefined' && lang === 'en' ? 'Generating…' : 'Génération…') + '</span>';
@@ -10324,8 +10322,12 @@ async function snapCompareJPEG() {
     ctx.drawImage(radar, rX, radarY, rW, rH);
 
     // Légende
-    var legLeftTxt  = isAvant ? 'NDS' : 'DS';
-    var legRightTxt = isAvant ? 'DS'  : 'NDS';
+    // NDS toujours à gauche, DS toujours à droite
+    // fo=orange : NDS si avant, DS si arrière — fa=bleu : inverse
+    // → gauche=NDS : orange si avant (fo), bleu si arrière (fa)
+    // → droite=DS  : bleu si avant (fa), orange si arrière (fo)
+    var legLeftTxt  = 'NDS';
+    var legRightTxt = 'DS';
     var leftColor   = isAvant ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
     var rightColor  = isAvant ? 'rgba(126,200,227,1)' : 'rgba(232,146,124,1)';
     var legY  = radarY + rH + legendH / 2;
@@ -10433,10 +10435,7 @@ async function snapCompareJPEG() {
         shared = true;
       }
     } catch(err) {
-      if (err.name === 'AbortError') {
-        if (jpegBtn) { jpegBtn.innerHTML = originalContent; jpegBtn.classList.remove('loading'); }
-        return;
-      }
+      if (err.name === 'AbortError') return;
     }
   }
   if (!shared) {
