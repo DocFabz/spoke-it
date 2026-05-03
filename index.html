@@ -10194,7 +10194,7 @@ function confirmShow(msg, onYes) {
   _confirmCallback = onYes;
   var L = typeof lang !== 'undefined' ? lang : 'fr';
   document.getElementById('confirm-msg').innerHTML = msg;
-  document.getElementById('confirm-yes-btn').textContent = L === 'fr' ? '✓ Confirmer' : '✓ Confirm';
+  document.getElementById('confirm-yes-btn').textContent = L === 'fr' ? '✓ Valider' : '✓ Confirm';
   document.getElementById('confirm-no-btn').textContent  = L === 'fr' ? '✕ Annuler'   : '✕ Cancel';
   document.getElementById('confirm-overlay').classList.add('show');
   document.getElementById('confirm-modal').classList.add('show');
