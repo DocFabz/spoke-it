@@ -2413,6 +2413,7 @@ const i18n = {
     snapCompareTitle:'Évolution Tension',
     snapCompareDesc:'Sélectionner deux snapshots.',
     snapCompareBtn:'Générer le PDF',
+    snapCompareJpegBtn:'Générer le JPEG',
     snapNameError:'Veuillez saisir un nom.',
   },
   en: {
@@ -2547,6 +2548,7 @@ const i18n = {
     snapCompareTitle:'Tension Evolution',
     snapCompareDesc:'Select two snapshots.',
     snapCompareBtn:'Generate PDF',
+    snapCompareJpegBtn:'Generate JPEG',
     snapNameError:'Please enter a name.',
   }
 };
@@ -2770,6 +2772,7 @@ function _applyLangModals() {
   el = $id('snapcompare-title');    if (el) el.textContent = tr.snapCompareTitle || (L==='fr' ? 'Évolution Tension'          : 'Tension Evolution');
   el = $id('snapcompare-desc');     if (el) el.textContent = tr.snapCompareDesc  || (L==='fr' ? 'Sélectionner deux snapshots.' : 'Select two snapshots.');
   el = $id('snapcompare-btn-label');if (el) el.textContent = tr.snapCompareBtn   || (L==='fr' ? 'Générer le PDF'              : 'Generate PDF');
+  el = $id('snapcompare-jpeg-label');if (el) el.textContent = tr.snapCompareJpegBtn || (L==='fr' ? 'Générer le JPEG'           : 'Generate JPEG');
 }
 
 function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; localStorage.setItem('spoke-it-lang', lang); applyLang(); }
@@ -9827,10 +9830,15 @@ function _snapCompareSetItemStyle(idx, selected) {
 
 function _snapCompareUpdateUI() {
   var btn = document.getElementById('snapcompare-go-btn');
+  var btnJpeg = document.getElementById('snapcompare-jpeg-btn');
+  var ready = _snapCompareSelected.length === 2;
   if (btn) {
-    var ready = _snapCompareSelected.length === 2;
     btn.style.opacity      = ready ? '1' : '.4';
     btn.style.pointerEvents = ready ? 'auto' : 'none';
+  }
+  if (btnJpeg) {
+    btnJpeg.style.opacity       = ready ? '1' : '.4';
+    btnJpeg.style.pointerEvents = ready ? 'auto' : 'none';
   }
 }
 
@@ -10172,6 +10180,256 @@ function snapComparePDF() {
   var btn2 = document.getElementById('tm-snapcompare-btn');
   if (btn2) { btn2.classList.add('flash'); setTimeout(function(){ btn2.classList.remove('flash'); },800); }
 }
+
+// ── Génération JPEG évolution (deux JPEG côte à côte) ──────────────────────────
+async function snapCompareJPEG() {
+  if (_snapCompareSelected.length !== 2) return;
+  var snaps = _snapCompareSnaps;
+  var selPair = [snaps[_snapCompareSelected[0]], snaps[_snapCompareSelected[1]]];
+  selPair.sort(function(a, b) { return a.ts - b.ts; }); // plus ancien à gauche
+  var snapA = selPair[0];
+  var snapB = selPair[1];
+  var L = typeof lang !== 'undefined' ? lang : 'fr';
+
+  // Constantes identiques à tmScreenshot
+  var W       = 1280;
+  var PAD     = 48;
+  var LINE_H  = 66;
+  var BPADY   = 36;
+  var LABELH  = 60;
+  var STAT_GAP = 20;
+  var RADAR_SIZE = 700;
+  function blockH(b) { return BPADY * 2 + LABELH + b.entries.length * LINE_H; }
+
+  var wheelName = document.getElementById('tm-cfg-loaded-text')
+    ? document.getElementById('tm-cfg-loaded-text').textContent.trim() : '';
+  var atelierInfo   = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
+  var workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
+  var isAvant = (typeof wtype !== 'undefined') ? wtype !== 'arriere' : true;
+  var wheelLabel = isAvant ? (L === 'fr' ? 'Roue Avant' : 'Front Wheel') : (L === 'fr' ? 'Roue Arrière' : 'Rear Wheel');
+
+  function computeStatBlocks(rendFo, rendFa) {
+    var blocks = [];
+    [[rendFo, true], [rendFa, false]].forEach(function(pair) {
+      var kgfs = pair[0].filter(function(v) { return v !== null; });
+      if (!kgfs.length) return;
+      var avg   = kgfs.reduce(function(a, b) { return a + b; }, 0) / kgfs.length;
+      var mn    = Math.min.apply(null, kgfs);
+      var mx    = Math.max.apply(null, kgfs);
+      var std   = Math.sqrt(kgfs.reduce(function(s, x) { return s + Math.pow(x - avg, 2); }, 0) / kgfs.length);
+      var cv    = avg > 0 ? std / avg * 100 : 0;
+      blocks.push({
+        isFo: pair[1],
+        label: pair[1] ? (isAvant ? 'NDS' : 'DS') : (isAvant ? 'DS' : 'NDS'),
+        entries: [
+          { key: L === 'fr' ? 'Moyenne' : 'Average',         val: avg.toFixed(1) + ' kgf' },
+          { key: 'Min → Max',                                  val: mn.toFixed(1) + ' → ' + mx.toFixed(1) + ' kgf' },
+          { key: 'Δ max',                                      val: (mx - mn).toFixed(1) + ' kgf' },
+          { key: L === 'fr' ? 'Écart-type' : 'Std deviation', val: '± ' + std.toFixed(1) + ' kgf' },
+          { key: '',                                            val: cv.toFixed(1) + ' %' }
+        ]
+      });
+    });
+    blocks.sort(function(a, b) { return (b.isFo ? 1 : 0) - (a.isFo ? 1 : 0); });
+    return blocks;
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function buildSnapCanvas(snap) {
+    var rend = _snapRenderRadarCanvas(snap, RADAR_SIZE);
+    var radar = rend.canvas;
+    var foKgfs = rend.foKgfs;
+    var faKgfs = rend.faKgfs;
+    var statBlocks = computeStatBlocks(foKgfs, faKgfs);
+
+    var innerW  = W - PAD * 2;
+    var rW      = Math.round(innerW * 0.88);
+    var rH      = Math.round(rW * (radar.height / radar.width));
+    var rX      = PAD + Math.round((innerW - rW) / 2);
+    var headerH = 150;
+    var legendH = 128;
+    var statsBH = statBlocks.length
+      ? statBlocks.reduce(function(acc, b) { return acc + blockH(b) + STAT_GAP; }, 0) - STAT_GAP : 0;
+    var statsH  = statBlocks.length ? statsBH + PAD : 0;
+    var totalH  = headerH + rH + legendH + statsH + PAD;
+
+    var dpr = Math.max(window.devicePixelRatio || 1, 2);
+    var off = document.createElement('canvas');
+    off.width  = Math.round(W     * dpr);
+    off.height = Math.round(totalH * dpr);
+    var ctx = off.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    ctx.fillStyle = '#0d1017';
+    ctx.fillRect(0, 0, W, totalH);
+
+    // Étiquette snapshot (S1, S2…)
+    var snapLbl = 'S' + snap.num;
+    var dateStr = new Date(snap.ts).toLocaleDateString(L === 'fr' ? 'fr-FR' : 'en-GB', { day:'2-digit', month:'short', year:'numeric' });
+
+    var hLine1 = headerH * 0.30;
+    var hLine2 = headerH * 0.72;
+
+    // Icône hex gauche
+    if (typeof drawHexIcon === 'function') drawHexIcon(ctx, PAD + 12, hLine1, 11, 'rgba(126,200,227,0.85)');
+
+    ctx.font         = '600 42px DM Sans, sans-serif';
+    ctx.fillStyle    = 'rgba(126,200,227,1)';
+    ctx.textAlign    = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(snapLbl + ' — ' + dateStr, PAD + 34, hLine1);
+
+    ctx.font      = '600 42px DM Sans, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.fillText(workshopLabel, PAD + 34, hLine2);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(126,200,227,1)';
+    ctx.fillText(wheelLabel.toUpperCase(), W - PAD, hLine1);
+    if (wheelName) {
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.fillText(wheelName, W - PAD, hLine2);
+    }
+
+    // Radar
+    var radarY = headerH + 10;
+    ctx.drawImage(radar, rX, radarY, rW, rH);
+
+    // Légende
+    var legLeftTxt  = isAvant ? 'NDS' : 'DS';
+    var legRightTxt = isAvant ? 'DS'  : 'NDS';
+    var leftColor   = isAvant ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
+    var rightColor  = isAvant ? 'rgba(126,200,227,1)' : 'rgba(232,146,124,1)';
+    var legY  = radarY + rH + legendH / 2;
+    var DOT_R = 10;
+    var legMid = W / 2;
+
+    ctx.textBaseline = 'middle';
+    ctx.font = '500 32px DM Sans, sans-serif';
+    var wLeft  = ctx.measureText(legLeftTxt).width;
+    var wRight = ctx.measureText(legRightTxt).width;
+    var itemLeftW  = DOT_R * 2 + 6 + wLeft;
+    var itemRightW = DOT_R * 2 + 6 + wRight;
+    var midLeft  = legMid / 2;
+    var midRight = legMid + (W - legMid) / 2;
+    var xLeft2   = midLeft  - itemLeftW  / 2;
+    var xRight2  = midRight - itemRightW / 2;
+
+    ctx.fillStyle = leftColor;
+    ctx.beginPath(); ctx.arc(xLeft2 + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(220,228,237,0.95)';
+    ctx.textAlign = 'left';
+    ctx.fillText(legLeftTxt, xLeft2 + DOT_R * 2 + 15, legY);
+
+    ctx.fillStyle = rightColor;
+    ctx.beginPath(); ctx.arc(xRight2 + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(220,228,237,0.95)';
+    ctx.fillText(legRightTxt, xRight2 + DOT_R * 2 + 15, legY);
+
+    // Blocs stats
+    if (statBlocks.length) {
+      var curY = radarY + rH + legendH;
+      var bx = PAD;
+      var bw = W - PAD * 2;
+      statBlocks.forEach(function(block) {
+        var bh   = blockH(block);
+        var warm = block.isFo;
+        ctx.fillStyle   = warm ? 'rgba(232,146,124,0.10)' : 'rgba(126,200,227,0.10)';
+        ctx.strokeStyle = warm ? 'rgba(255,140,110,1)'    : 'rgba(100,220,255,1)';
+        ctx.lineWidth   = 2;
+        roundRect(ctx, bx, curY, bw, bh, 8);
+        ctx.fill(); ctx.stroke();
+
+        ctx.font         = '600 42px DM Sans, sans-serif';
+        ctx.fillStyle    = warm ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
+        ctx.textAlign    = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(block.label.toUpperCase(), bx + PAD, curY + BPADY);
+
+        block.entries.forEach(function(row, ri) {
+          var ry = curY + BPADY + LABELH + ri * LINE_H;
+          ctx.font      = '400 42px DM Sans, sans-serif';
+          ctx.fillStyle = '#dce4ed';
+          ctx.textAlign = 'left';
+          ctx.fillText(row.key, bx + PAD, ry);
+          ctx.font      = '400 42px DM Mono, monospace';
+          ctx.textAlign = 'right';
+          ctx.fillText(row.val, bx + bw - PAD, ry);
+        });
+        curY += bh + STAT_GAP;
+      });
+    }
+
+    return { canvas: off, totalH: totalH, dpr: dpr };
+  }
+
+  // Construire les deux canvas
+  var resA = buildSnapCanvas(snapA);
+  var resB = buildSnapCanvas(snapB);
+
+  // Canvas final : côte à côte, hauteur = max des deux
+  var dpr      = resA.dpr;
+  var totalH   = Math.max(resA.totalH, resB.totalH);
+  var SEPARATOR = 4; // px logiques entre les deux images
+  var finalW   = W * 2 + SEPARATOR;
+  var finalCanvas  = document.createElement('canvas');
+  finalCanvas.width  = Math.round(finalW * dpr);
+  finalCanvas.height = Math.round(totalH * dpr);
+  var fctx     = finalCanvas.getContext('2d');
+
+  fctx.fillStyle = '#0d1017';
+  fctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+  // Coller snapA (gauche) et snapB (droite) en coordonnées pixel natif
+  fctx.drawImage(resA.canvas, 0, 0);
+  fctx.drawImage(resB.canvas, Math.round((W + SEPARATOR) * dpr), 0);
+
+  // Ligne séparatrice
+  fctx.fillStyle = 'rgba(255,255,255,0.07)';
+  fctx.fillRect(Math.round(W * dpr), 0, Math.round(SEPARATOR * dpr), finalCanvas.height);
+
+  // Export
+  var jpeg     = finalCanvas.toDataURL('image/jpeg', 0.96);
+  var filename = wheelName
+    ? 'spoke-it-evolution-' + wheelName.replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.jpg'
+    : 'spoke-it-evolution-tension.jpg';
+  var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  var shared   = false;
+
+  if (isMobile && navigator.canShare) {
+    try {
+      var blob = await (await fetch(jpeg)).blob();
+      var file = new File([blob], filename, { type: 'image/jpeg' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Tension Evolution' });
+        shared = true;
+      }
+    } catch(err) { if (err.name === 'AbortError') return; }
+  }
+  if (!shared) {
+    var a = document.createElement('a');
+    a.download = filename;
+    a.href     = jpeg;
+    a.click();
+  }
+
+  snapCompareClose();
+  var btn3 = document.getElementById('tm-snapcompare-btn');
+  if (btn3) { btn3.classList.add('flash'); setTimeout(function(){ btn3.classList.remove('flash'); }, 800); }
+}
 </script>
 <!-- ── Modale Évolution Tension ── -->
 <div class="snap-overlay" id="snapcompare-overlay" onclick="snapCompareClose()"></div>
@@ -10185,6 +10443,10 @@ function snapComparePDF() {
   <button id="snapcompare-go-btn" class="pdfopt-generate" onclick="snapComparePDF()" style="opacity:.4;pointer-events:none;display:flex;align-items:center;justify-content:center;gap:.45rem">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
     <span id="snapcompare-btn-label">Générer le PDF</span>
+  </button>
+  <button id="snapcompare-jpeg-btn" class="pdfopt-generate" onclick="snapCompareJPEG()" style="opacity:.4;pointer-events:none;display:flex;align-items:center;justify-content:center;gap:.45rem">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    <span id="snapcompare-jpeg-label">Générer le JPEG</span>
   </button>
 </div>
 
