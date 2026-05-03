@@ -7451,15 +7451,15 @@ function tmRenderRadarOffscreen(w, h, whiteBg) {
     const isFo = (i % 2 === 0);
     ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
     ctx.strokeStyle = isFo
-      ? (whiteBg ? 'rgba(232,146,124,0.35)' : 'rgba(232,146,124,0.22)')
-      : (whiteBg ? 'rgba(126,200,227,0.35)' : 'rgba(126,200,227,0.22)');
+      ? (whiteBg ? 'rgba(232,146,124,0.5)' : 'rgba(232,146,124,0.22)')
+      : (whiteBg ? 'rgba(126,200,227,0.5)' : 'rgba(126,200,227,0.22)');
     ctx.lineWidth = 1; ctx.stroke();
     if (perSide <= 16 || i % 2 === 0) {
       const spokeNum = Math.floor(i / 2) + 1;
       const labelR   = R + Math.max(10, W * 0.032);
       ctx.fillStyle  = isFo
-        ? (whiteBg ? 'rgba(200,100,70,0.85)'  : 'rgba(232,146,124,0.75)')
-        : (whiteBg ? 'rgba(60,160,200,0.85)'  : 'rgba(126,200,227,0.65)');
+        ? (whiteBg ? 'rgba(190,85,55,1)'    : 'rgba(232,146,124,0.75)')
+        : (whiteBg ? 'rgba(40,140,185,1)'   : 'rgba(126,200,227,0.65)');
       ctx.font         = `${Math.round(W * 0.023)}px 'DM Mono', monospace`;
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
@@ -7488,8 +7488,8 @@ function tmRenderRadarOffscreen(w, h, whiteBg) {
     });
   }
 
-  const foFill = whiteBg ? 'rgba(232,146,124,0.12)' : 'rgba(232,146,124,0.06)';
-  const faFill = whiteBg ? 'rgba(126,200,227,0.12)' : 'rgba(126,200,227,0.06)';
+  const foFill = whiteBg ? 'rgba(232,146,124,0.18)' : 'rgba(232,146,124,0.06)';
+  const faFill = whiteBg ? 'rgba(126,200,227,0.18)' : 'rgba(126,200,227,0.06)';
   drawPoly(faKgfs, 1, 'rgba(126,200,227,0.8)', faFill);
   drawPoly(foKgfs, 0, 'rgba(232,146,124,0.8)', foFill);
 
@@ -7557,6 +7557,7 @@ async function tmScreenshotGo() {
 
 async function tmScreenshot(whiteBg) {
 
+  await document.fonts.ready;
   const radar   = document.getElementById('tm-radar');
   const statsEl = document.getElementById('tm-stats');
   if (!radar) return;
@@ -10168,15 +10169,15 @@ function _snapRenderRadarCanvasColored(snap, w, h, whiteBg) {
     var isFo3 = i3 % 2 === 0;
     ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(a3), cy + R * Math.sin(a3));
     ctx.strokeStyle = isFo3
-      ? (whiteBg ? 'rgba(232,146,124,0.35)' : 'rgba(232,146,124,0.25)')
-      : (whiteBg ? 'rgba(126,200,227,0.35)' : 'rgba(126,200,227,0.25)');
+      ? (whiteBg ? 'rgba(232,146,124,0.5)' : 'rgba(232,146,124,0.25)')
+      : (whiteBg ? 'rgba(126,200,227,0.5)' : 'rgba(126,200,227,0.25)');
     ctx.lineWidth = 1; ctx.stroke();
     if (perSide <= 16 || i3 % 2 === 0) {
       var spokeNum3 = Math.floor(i3 / 2) + 1;
       var labelR3   = R + Math.max(10, Math.min(w,h) * 0.032);
       ctx.fillStyle = isFo3
-        ? (whiteBg ? 'rgba(200,100,70,0.85)'  : 'rgba(232,146,124,0.8)')
-        : (whiteBg ? 'rgba(60,160,200,0.85)'  : 'rgba(126,200,227,0.7)');
+        ? (whiteBg ? 'rgba(190,85,55,1)'   : 'rgba(232,146,124,0.8)')
+        : (whiteBg ? 'rgba(40,140,185,1)'  : 'rgba(126,200,227,0.7)');
       ctx.font = Math.round(Math.min(w,h) * 0.023) + 'px DM Mono, monospace';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(spokeNum3, cx + labelR3 * Math.cos(a3), cy + labelR3 * Math.sin(a3));
@@ -10201,8 +10202,8 @@ function _snapRenderRadarCanvasColored(snap, w, h, whiteBg) {
       ctx.fillStyle = stroke; ctx.fill();
     });
   }
-  var foFill = whiteBg ? 'rgba(232,146,124,0.12)' : 'rgba(232,146,124,0.06)';
-  var faFill = whiteBg ? 'rgba(126,200,227,0.12)' : 'rgba(126,200,227,0.06)';
+  var foFill = whiteBg ? 'rgba(232,146,124,0.18)' : 'rgba(232,146,124,0.06)';
+  var faFill = whiteBg ? 'rgba(126,200,227,0.18)' : 'rgba(126,200,227,0.06)';
   drawPoly(faKgfs, 1, 'rgba(126,200,227,0.8)', faFill);
   drawPoly(foKgfs, 0, 'rgba(232,146,124,0.8)', foFill);
   ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
@@ -10459,7 +10460,7 @@ async function snapCompareJPEG() {
   if (_snapCompareSelected.length !== 2) return;
   var whiteBg = _snapCmpBg === 'light';
 
-  await new Promise(function(resolve) { setTimeout(resolve, 30); });
+  await document.fonts.ready;
   var snaps = _snapCompareSnaps;
   var selPair = [snaps[_snapCompareSelected[0]], snaps[_snapCompareSelected[1]]];
   selPair.sort(function(a, b) { return a.ts - b.ts; }); // plus ancien à gauche
