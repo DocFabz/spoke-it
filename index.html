@@ -405,6 +405,13 @@ select option             { background:#161b27 }
 .pdfopt-generate.loading { opacity:.6; pointer-events:none; cursor:default }
 @keyframes spin { to { transform:rotate(360deg) } }
 .btn-spinner { width:13px; height:13px; border:2px solid rgba(126,200,227,.3); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0 }
+.screenshot-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9992; opacity:0; transition:opacity .22s; display:none }
+.screenshot-overlay.show { display:block; opacity:1 }
+.screenshot-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9993; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.4rem 1.4rem 1.1rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:88%; max-width:300px; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
+.screenshot-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+.screenshot-bg-btn { padding:.5rem .75rem; background:transparent; border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.8rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:all .2s }
+.screenshot-bg-btn:hover { border-color:rgba(126,200,227,.5); color:var(--accent2) }
+.screenshot-bg-btn--active { border-color:rgba(126,200,227,.7); color:var(--accent2); background:rgba(126,200,227,.08) }
 
 /* ── Modale Diagnostic ─────────────────────────────────────────────────────── */
 .diag-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
@@ -2025,7 +2032,7 @@ input[type=number] { -moz-appearance:textfield }
             <line x1="5" y1="20" x2="19" y2="20"/>
           </svg>
         </button>
-        <button class="tm-screenshot-btn" id="tm-screenshot-btn" onclick="tmScreenshot(event)" title="Screenshot">
+        <button class="tm-screenshot-btn" id="tm-screenshot-btn" onclick="tmScreenshotOpen(event)" title="Screenshot">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
             <circle cx="12" cy="13" r="4"/>
@@ -2417,6 +2424,7 @@ const i18n = {
     snapCompareDesc:'Sélectionner deux snapshots.',
     snapCompareBtn:'Générer le PDF',
     snapCompareJpegBtn:'Générer le JPEG',
+    screenshotTitle:'Screenshot', screenshotDark:'Noir', screenshotLight:'Blanc', screenshotGenerate:'Générer le JPEG',
     snapNameError:'Veuillez saisir un nom.',
   },
   en: {
@@ -2552,6 +2560,7 @@ const i18n = {
     snapCompareDesc:'Select two snapshots.',
     snapCompareBtn:'Generate PDF',
     snapCompareJpegBtn:'Generate JPEG',
+    screenshotTitle:'Screenshot', screenshotDark:'Dark', screenshotLight:'Light', screenshotGenerate:'Generate JPEG',
     snapNameError:'Please enter a name.',
   }
 };
@@ -2776,6 +2785,10 @@ function _applyLangModals() {
   el = $id('snapcompare-desc');     if (el) el.textContent = tr.snapCompareDesc  || (L==='fr' ? 'Sélectionner deux snapshots.' : 'Select two snapshots.');
   el = $id('snapcompare-btn-label');if (el) el.textContent = tr.snapCompareBtn   || (L==='fr' ? 'Générer le PDF'              : 'Generate PDF');
   el = $id('snapcompare-jpeg-label');if (el) el.textContent = tr.snapCompareJpegBtn || (L==='fr' ? 'Générer le JPEG'           : 'Generate JPEG');
+  document.querySelectorAll('[data-i18n="screenshotTitle"]').forEach(function(e)    { e.textContent = tr.screenshotTitle    || (L==='fr' ? 'Screenshot'      : 'Screenshot'); });
+  document.querySelectorAll('[data-i18n="screenshotDark"]').forEach(function(e)     { e.textContent = tr.screenshotDark     || (L==='fr' ? 'Noir'            : 'Dark'); });
+  document.querySelectorAll('[data-i18n="screenshotLight"]').forEach(function(e)    { e.textContent = tr.screenshotLight    || (L==='fr' ? 'Blanc'           : 'Light'); });
+  document.querySelectorAll('[data-i18n="screenshotGenerate"]').forEach(function(e) { e.textContent = tr.screenshotGenerate || (L==='fr' ? 'Générer le JPEG' : 'Generate JPEG'); });
 }
 
 function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; localStorage.setItem('spoke-it-lang', lang); applyLang(); }
@@ -7380,8 +7393,167 @@ async function tmExportPdfWithOpts(opts) {
   if (btn2) { btn2.classList.add('flash'); setTimeout(() => btn2.classList.remove('flash'), 800); }
 }
 
-async function tmScreenshot(e) {
+function tmRenderRadarOffscreen(w, h, whiteBg) {
+  // Récupère les données kgf depuis le radar DOM existant
+  const radar = $id('tm-radar');
+  if (!radar) return null;
+  // Lire les kgfs depuis tmData (déjà calculés)
+  const nb      = parseInt(document.getElementById('nb-rayons').value) || 0;
+  const perSide = Math.floor(nb / 2);
+  if (!perSide) return null;
+  const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v));
+  const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v));
+
+  const dpr = Math.max(window.devicePixelRatio || 1, 2);
+  const off  = document.createElement('canvas');
+  off.width  = Math.round(w * dpr);
+  off.height = Math.round(h * dpr);
+  const ctx  = off.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const W = w, H = h;
+  const cx = W / 2, cy = H / 2;
+  const R  = Math.min(W, H) * 0.38;
+  const N  = perSide * 2;
+  const angleStep = (2 * Math.PI) / N;
+
+  const allVals  = [...foKgfs, ...faKgfs].filter(v => v !== null);
+  if (!allVals.length) return null;
+  const maxVal   = Math.max(...allVals);
+  const scaleMax = Math.ceil(maxVal / 20) * 20 || 20;
+
+  const ringColor  = whiteBg ? 'rgba(0,0,0,0.12)'     : 'rgba(255,255,255,0.15)';
+  const labelColor = whiteBg ? 'rgba(60,80,100,0.75)'  : 'rgba(150,170,190,0.7)';
+
+  // Rings
+  for (let r = 1; r <= 5; r++) {
+    const rr = (r / 5) * R;
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const a = i * angleStep - Math.PI / 2;
+      i === 0 ? ctx.moveTo(cx + rr * Math.cos(a), cy + rr * Math.sin(a))
+              : ctx.lineTo(cx + rr * Math.cos(a), cy + rr * Math.sin(a));
+    }
+    ctx.closePath();
+    ctx.strokeStyle = ringColor; ctx.lineWidth = 1; ctx.stroke();
+    if (r === 2 || r === 4 || r === 5) {
+      ctx.fillStyle    = labelColor;
+      ctx.font         = `${Math.round(W * 0.026)}px 'DM Mono', monospace`;
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(Math.round((r / 5) * scaleMax), cx, cy - rr - 3);
+    }
+  }
+
+  // Axes
+  for (let i = 0; i < N; i++) {
+    const a    = i * angleStep - Math.PI / 2;
+    const isFo = (i % 2 === 0);
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
+    ctx.strokeStyle = isFo
+      ? (whiteBg ? 'rgba(232,146,124,0.35)' : 'rgba(232,146,124,0.22)')
+      : (whiteBg ? 'rgba(126,200,227,0.35)' : 'rgba(126,200,227,0.22)');
+    ctx.lineWidth = 1; ctx.stroke();
+    if (perSide <= 16 || i % 2 === 0) {
+      const spokeNum = Math.floor(i / 2) + 1;
+      const labelR   = R + Math.max(10, W * 0.032);
+      ctx.fillStyle  = isFo
+        ? (whiteBg ? 'rgba(200,100,70,0.85)'  : 'rgba(232,146,124,0.75)')
+        : (whiteBg ? 'rgba(60,160,200,0.85)'  : 'rgba(126,200,227,0.65)');
+      ctx.font         = `${Math.round(W * 0.023)}px 'DM Mono', monospace`;
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(spokeNum, cx + labelR * Math.cos(a), cy + labelR * Math.sin(a));
+    }
+  }
+
+  // Polygones
+  function drawPoly(vals, angleOffset, stroke, fill) {
+    const pts = vals.map((v, i) => {
+      const a  = (i * 2 + angleOffset) * angleStep - Math.PI / 2;
+      const rr = v !== null ? (v / scaleMax) * R : 0;
+      return [cx + rr * Math.cos(a), cy + rr * Math.sin(a)];
+    });
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+    ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill();
+    ctx.strokeStyle = stroke; ctx.lineWidth = 1.8; ctx.stroke();
+    vals.forEach((v, i) => {
+      if (v === null) return;
+      const a  = (i * 2 + angleOffset) * angleStep - Math.PI / 2;
+      const rr = (v / scaleMax) * R;
+      ctx.beginPath(); ctx.arc(cx + rr * Math.cos(a), cy + rr * Math.sin(a), 3, 0, 2 * Math.PI);
+      ctx.fillStyle = stroke; ctx.fill();
+    });
+  }
+
+  const foFill = whiteBg ? 'rgba(232,146,124,0.12)' : 'rgba(232,146,124,0.06)';
+  const faFill = whiteBg ? 'rgba(126,200,227,0.12)' : 'rgba(126,200,227,0.06)';
+  drawPoly(faKgfs, 1, 'rgba(126,200,227,0.8)', faFill);
+  drawPoly(foKgfs, 0, 'rgba(232,146,124,0.8)', foFill);
+
+  ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
+  ctx.fillStyle = whiteBg ? 'rgba(100,120,140,0.4)' : 'rgba(150,170,190,0.35)'; ctx.fill();
+
+  return off;
+}
+
+var _screenshotBg = 'dark';
+
+function tmScreenshotSelectBg(bg) {
+  _screenshotBg = bg;
+  $id('screenshot-bg-dark').classList.toggle('screenshot-bg-btn--active',  bg === 'dark');
+  $id('screenshot-bg-light').classList.toggle('screenshot-bg-btn--active', bg === 'light');
+}
+
+var _snapCmpBg = 'dark';
+
+function snapCmpBgOpen() {
+  snapCompareClose();
+  $id('snapcmp-bg-overlay').classList.add('show');
+  $id('snapcmp-bg-modal').classList.add('show');
+}
+
+function snapCmpBgClose() {
+  $id('snapcmp-bg-overlay').classList.remove('show');
+  $id('snapcmp-bg-modal').classList.remove('show');
+}
+
+function snapCmpSelectBg(bg) {
+  _snapCmpBg = bg;
+  $id('snapcmp-bg-dark').classList.toggle('screenshot-bg-btn--active',  bg === 'dark');
+  $id('snapcmp-bg-light').classList.toggle('screenshot-bg-btn--active', bg === 'light');
+}
+
+async function snapCmpBgGo() {
+  var btn = $id('snapcmp-generate-btn');
+  if (btn) { btn.classList.add('loading'); btn.innerHTML = '<span class="btn-spinner"></span><span>' + (typeof lang !== 'undefined' && lang === 'en' ? 'Generating…' : 'Génération…') + '</span>'; }
+  await new Promise(function(resolve) { setTimeout(resolve, 30); });
+  // Fermer sans rouvrir la modale évolution
+  $id('snapcmp-bg-overlay').classList.remove('show');
+  $id('snapcmp-bg-modal').classList.remove('show');
+  await new Promise(function(resolve) { setTimeout(resolve, 30); });
+  await snapCompareJPEG();
+}
+
+function tmScreenshotOpen(e) {
   if (e) e.stopPropagation();
+  $id('tm-screenshot-overlay').classList.add('show');
+  $id('tm-screenshot-modal').classList.add('show');
+}
+
+function tmScreenshotClose() {
+  $id('tm-screenshot-overlay').classList.remove('show');
+  $id('tm-screenshot-modal').classList.remove('show');
+}
+
+async function tmScreenshotGo() {
+  tmScreenshotClose();
+  await tmScreenshot(_screenshotBg === 'light');
+}
+
+async function tmScreenshot(whiteBg) {
 
   const radar   = document.getElementById('tm-radar');
   const statsEl = document.getElementById('tm-stats');
@@ -7457,9 +7629,14 @@ async function tmScreenshot(e) {
   const ctx  = off.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  ctx.fillStyle = '#0d1017';
+  ctx.fillStyle = whiteBg ? '#ffffff' : '#0d1017';
   ctx.fillRect(0, 0, W, totalH);
   const cardX = 0, cardY = 0;
+
+  const C_title  = 'rgba(126,200,227,1)';
+  const C_label  = whiteBg ? 'rgba(20,30,45,0.88)'  : 'rgba(255,255,255,0.92)';
+  const C_legend = whiteBg ? 'rgba(30,40,55,0.95)'  : 'rgba(220,228,237,0.95)';
+  const C_stat   = whiteBg ? '#1e2837'               : '#dce4ed';
 
   // Header — 2 lignes gauche/droite + tensiomètre centré
   const hLine1 = cardY + headerH * 0.30;
@@ -7470,35 +7647,37 @@ async function tmScreenshot(e) {
 
   // Gauche ligne 1 : DIAGRAMME DE TENSION
   ctx.font         = '600 42px DM Sans, sans-serif';
-  ctx.fillStyle    = 'rgba(126,200,227,1)';
+  ctx.fillStyle    = C_title;
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillText(lang === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', cardX + PAD + 34, hLine1);
 
   // Gauche ligne 2 : nom du workshop
   ctx.font      = '600 42px DM Sans, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.fillStyle = C_label;
   ctx.textAlign = 'left';
   ctx.fillText(workshopLabel, cardX + PAD + 34, hLine2);
 
   // Droite ligne 1 : type de roue
   ctx.font      = '600 42px DM Sans, sans-serif';
-  ctx.fillStyle = 'rgba(126,200,227,1)';
+  ctx.fillStyle = C_title;
   ctx.textAlign = 'right';
   ctx.fillText(wheelLabel.toUpperCase(), cardX + cardW - PAD, hLine1);
 
   // Droite ligne 2 : nom de la roue
   if (wheelName) {
     ctx.font      = '600 42px DM Sans, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.fillStyle = C_label;
     ctx.textAlign = 'right';
     ctx.fillText(wheelName, cardX + cardW - PAD, hLine2);
   }
 
 
-  // Radar
+  // Radar — re-rendu off-screen pour respecter le fond
   const radarY = cardY + headerH + 10;
-  ctx.drawImage(radar, rX, radarY, rW, rH);
+  const radarOff = tmRenderRadarOffscreen(rW, rH, whiteBg);
+  if (radarOff) ctx.drawImage(radarOff, rX, radarY, rW, rH);
+  else          ctx.drawImage(radar,    rX, radarY, rW, rH);
 
   // Légende
   const legY   = radarY + rH + legendH / 2;
@@ -7523,14 +7702,14 @@ async function tmScreenshot(e) {
 
   ctx.fillStyle = leftColor;
   ctx.beginPath(); ctx.arc(xLeft + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = 'rgba(220,228,237,0.95)';
+  ctx.fillStyle = C_legend;
   ctx.textAlign = 'left';
   ctx.fillText(legLeft, xLeft + DOT_R * 2 + 15, legY);
 
 
   ctx.fillStyle = rightColor;
   ctx.beginPath(); ctx.arc(xRight + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = 'rgba(220,228,237,0.95)';
+  ctx.fillStyle = C_legend;
   ctx.textAlign = 'left';
   ctx.fillText(legRight, xRight + DOT_R * 2 + 15, legY);
 
@@ -7559,11 +7738,11 @@ async function tmScreenshot(e) {
       block.entries.forEach((row, ri) => {
         const ry = curY + BPADY + LABELH + ri * LINE_H;
         ctx.font      = '400 42px DM Sans, sans-serif';
-        ctx.fillStyle = '#dce4ed';
+        ctx.fillStyle = C_stat;
         ctx.textAlign = 'left';
         ctx.fillText(row.key, bx + PAD, ry);
         ctx.font      = '400 42px DM Mono, monospace';
-        ctx.fillStyle = '#dce4ed';
+        ctx.fillStyle = C_stat;
         ctx.textAlign = 'right';
         ctx.fillText(row.val, bx + bw - PAD, ry);
       });
@@ -9940,6 +10119,95 @@ function _snapRenderRadarCanvas(snap, size) {
   return { canvas: canvas, foKgfs: foKgfs, faKgfs: faKgfs };
 }
 
+// ── Radar off-screen coloré pour fond blanc/noir (évolution JPEG) ──────────────
+function _snapRenderRadarCanvasColored(snap, w, h, whiteBg) {
+  var rend    = _snapRenderRadarCanvas(snap, Math.max(w, h));
+  var foKgfs  = rend.foKgfs;
+  var faKgfs  = rend.faKgfs;
+  var perSide = Math.max(foKgfs.length, faKgfs.length);
+  if (!perSide) return null;
+
+  var dpr = Math.max(window.devicePixelRatio || 1, 2);
+  var off = document.createElement('canvas');
+  off.width  = Math.round(w * dpr);
+  off.height = Math.round(h * dpr);
+  var ctx = off.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  var cx = w / 2, cy = h / 2, R = Math.min(w, h) * 0.38;
+  var N = perSide * 2, angleStep = (2 * Math.PI) / N;
+  var allVals = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
+  if (!allVals.length) return null;
+  var maxVal   = Math.max.apply(null, allVals);
+  var scaleMax = Math.ceil(maxVal / 20) * 20 || 20;
+
+  var ringColor  = whiteBg ? 'rgba(0,0,0,0.12)'    : 'rgba(80,100,130,0.33)';
+  var labelColor = whiteBg ? 'rgba(60,80,100,0.75)' : 'rgba(100,120,150,0.8)';
+
+  for (var r = 1; r <= 5; r++) {
+    var rr = (r / 5) * R;
+    ctx.beginPath();
+    for (var i2 = 0; i2 < N; i2++) {
+      var a2 = i2 * angleStep - Math.PI / 2;
+      i2 === 0 ? ctx.moveTo(cx + rr * Math.cos(a2), cy + rr * Math.sin(a2))
+               : ctx.lineTo(cx + rr * Math.cos(a2), cy + rr * Math.sin(a2));
+    }
+    ctx.closePath();
+    ctx.strokeStyle = ringColor; ctx.lineWidth = 1; ctx.stroke();
+    if (r === 2 || r === 4 || r === 5) {
+      ctx.fillStyle    = labelColor;
+      ctx.font         = Math.round(Math.min(w,h) * 0.026) + 'px DM Mono, monospace';
+      ctx.textAlign    = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(Math.round((r / 5) * scaleMax), cx, cy - rr - 3);
+    }
+  }
+  for (var i3 = 0; i3 < N; i3++) {
+    var a3 = i3 * angleStep - Math.PI / 2;
+    var isFo3 = i3 % 2 === 0;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(a3), cy + R * Math.sin(a3));
+    ctx.strokeStyle = isFo3
+      ? (whiteBg ? 'rgba(232,146,124,0.35)' : 'rgba(232,146,124,0.25)')
+      : (whiteBg ? 'rgba(126,200,227,0.35)' : 'rgba(126,200,227,0.25)');
+    ctx.lineWidth = 1; ctx.stroke();
+    if (perSide <= 16 || i3 % 2 === 0) {
+      var spokeNum3 = Math.floor(i3 / 2) + 1;
+      var labelR3   = R + Math.max(10, Math.min(w,h) * 0.032);
+      ctx.fillStyle = isFo3
+        ? (whiteBg ? 'rgba(200,100,70,0.85)'  : 'rgba(232,146,124,0.8)')
+        : (whiteBg ? 'rgba(60,160,200,0.85)'  : 'rgba(126,200,227,0.7)');
+      ctx.font = Math.round(Math.min(w,h) * 0.023) + 'px DM Mono, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(spokeNum3, cx + labelR3 * Math.cos(a3), cy + labelR3 * Math.sin(a3));
+    }
+  }
+  function drawPoly(vals, angleOff, stroke, fill) {
+    var pts = vals.map(function(v, i) {
+      var a = (i * 2 + angleOff) * angleStep - Math.PI / 2;
+      var rp = v !== null ? (v / scaleMax) * R : 0;
+      return [cx + rp * Math.cos(a), cy + rp * Math.sin(a)];
+    });
+    ctx.beginPath();
+    pts.forEach(function(p, i) { i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]); });
+    ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill();
+    ctx.strokeStyle = stroke; ctx.lineWidth = 1.8; ctx.stroke();
+    vals.forEach(function(v, i) {
+      if (v === null) return;
+      var a = (i * 2 + angleOff) * angleStep - Math.PI / 2;
+      var rp = (v / scaleMax) * R;
+      ctx.beginPath(); ctx.arc(cx + rp * Math.cos(a), cy + rp * Math.sin(a), 3, 0, 2 * Math.PI);
+      ctx.fillStyle = stroke; ctx.fill();
+    });
+  }
+  var foFill = whiteBg ? 'rgba(232,146,124,0.12)' : 'rgba(232,146,124,0.06)';
+  var faFill = whiteBg ? 'rgba(126,200,227,0.12)' : 'rgba(126,200,227,0.06)';
+  drawPoly(faKgfs, 1, 'rgba(126,200,227,0.8)', faFill);
+  drawPoly(foKgfs, 0, 'rgba(232,146,124,0.8)', foFill);
+  ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
+  ctx.fillStyle = whiteBg ? 'rgba(100,120,140,0.4)' : 'rgba(150,170,190,0.35)'; ctx.fill();
+  return off;
+}
+
 // ── Stats d'un snapshot ────────────────────────────────────────────────────────
 // ── Génération PDF ─────────────────────────────────────────────────────────────
 function snapComparePDF() {
@@ -10187,15 +10455,8 @@ function snapComparePDF() {
 // ── Génération JPEG évolution (deux JPEG côte à côte) ──────────────────────────
 async function snapCompareJPEG() {
   if (_snapCompareSelected.length !== 2) return;
+  var whiteBg = _snapCmpBg === 'light';
 
-  // Spinner
-  var jpegBtn = document.getElementById('snapcompare-jpeg-btn');
-  if (jpegBtn) {
-    jpegBtn.classList.add('loading');
-    jpegBtn.innerHTML = '<span class="btn-spinner"></span><span>' + (typeof lang !== 'undefined' && lang === 'en' ? 'Generating…' : 'Génération…') + '</span>';
-  }
-
-  // Laisser le navigateur peindre le spinner avant de bloquer le thread
   await new Promise(function(resolve) { setTimeout(resolve, 30); });
   var snaps = _snapCompareSnaps;
   var selPair = [snaps[_snapCompareSelected[0]], snaps[_snapCompareSelected[1]]];
@@ -10247,19 +10508,6 @@ async function snapCompareJPEG() {
     return blocks;
   }
 
-  function roundRect(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-  }
 
   function buildSnapCanvas(snap) {
     var rend = _snapRenderRadarCanvas(snap, RADAR_SIZE);
@@ -10286,7 +10534,12 @@ async function snapCompareJPEG() {
     var ctx = off.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    ctx.fillStyle = '#0d1017';
+    var C_title  = 'rgba(126,200,227,1)';
+    var C_label  = whiteBg ? 'rgba(20,30,45,0.88)'  : 'rgba(255,255,255,0.92)';
+    var C_legend = whiteBg ? 'rgba(30,40,55,0.95)'  : 'rgba(220,228,237,0.95)';
+    var C_stat   = whiteBg ? '#1e2837'               : '#dce4ed';
+
+    ctx.fillStyle = whiteBg ? '#ffffff' : '#0d1017';
     ctx.fillRect(0, 0, W, totalH);
 
     // Étiquette snapshot (S1, S2…)
@@ -10297,35 +10550,32 @@ async function snapCompareJPEG() {
     var hLine2 = headerH * 0.72;
 
     // Icône hex gauche
-    if (typeof drawHexIcon === 'function') drawHexIcon(ctx, PAD + 12, hLine1, 11, 'rgba(126,200,227,0.85)');
+    drawHexIcon(ctx, PAD + 12, hLine1, 11, 'rgba(126,200,227,0.85)');
 
     ctx.font         = '600 42px DM Sans, sans-serif';
-    ctx.fillStyle    = 'rgba(126,200,227,1)';
+    ctx.fillStyle    = C_title;
     ctx.textAlign    = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(snapLbl + ' — ' + dateStr, PAD + 34, hLine1);
 
     ctx.font      = '600 42px DM Sans, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.fillStyle = C_label;
     ctx.fillText(workshopLabel, PAD + 34, hLine2);
 
     ctx.textAlign = 'right';
-    ctx.fillStyle = 'rgba(126,200,227,1)';
+    ctx.fillStyle = C_title;
     ctx.fillText(wheelLabel.toUpperCase(), W - PAD, hLine1);
     if (wheelName) {
-      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.fillStyle = C_label;
       ctx.fillText(wheelName, W - PAD, hLine2);
     }
 
-    // Radar
+    // Radar — re-rendu off-screen adapté au fond
     var radarY = headerH + 10;
-    ctx.drawImage(radar, rX, radarY, rW, rH);
+    var radarOff = _snapRenderRadarCanvasColored(snap, rW, rH, whiteBg);
+    ctx.drawImage(radarOff || radar, rX, radarY, rW, rH);
 
     // Légende
-    // NDS toujours à gauche, DS toujours à droite
-    // fo=orange : NDS si avant, DS si arrière — fa=bleu : inverse
-    // → gauche=NDS : orange si avant (fo), bleu si arrière (fa)
-    // → droite=DS  : bleu si avant (fa), orange si arrière (fo)
     var leftColor  = isAvant ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
     var rightColor = isAvant ? 'rgba(126,200,227,1)' : 'rgba(232,146,124,1)';
     var legY  = radarY + rH + legendH / 2;
@@ -10345,13 +10595,13 @@ async function snapCompareJPEG() {
 
     ctx.fillStyle = leftColor;
     ctx.beginPath(); ctx.arc(xLeft2 + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = 'rgba(220,228,237,0.95)';
+    ctx.fillStyle = C_legend;
     ctx.textAlign = 'left';
     ctx.fillText('NDS', xLeft2 + DOT_R * 2 + 15, legY);
 
     ctx.fillStyle = rightColor;
     ctx.beginPath(); ctx.arc(xRight2 + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = 'rgba(220,228,237,0.95)';
+    ctx.fillStyle = C_legend;
     ctx.fillText('DS', xRight2 + DOT_R * 2 + 15, legY);
 
     // Blocs stats
@@ -10377,7 +10627,7 @@ async function snapCompareJPEG() {
         block.entries.forEach(function(row, ri) {
           var ry = curY + BPADY + LABELH + ri * LINE_H;
           ctx.font      = '400 42px DM Sans, sans-serif';
-          ctx.fillStyle = '#dce4ed';
+          ctx.fillStyle = C_stat;
           ctx.textAlign = 'left';
           ctx.fillText(row.key, bx + PAD, ry);
           ctx.font      = '400 42px DM Mono, monospace';
@@ -10398,8 +10648,7 @@ async function snapCompareJPEG() {
   // Canvas final : côte à côte, hauteur = max des deux
   var dpr      = resA.dpr;
   var totalH   = Math.max(resA.totalH, resB.totalH);
-  var SEPARATOR = 4; // px logiques entre les deux images
-  var finalW   = W * 2 + SEPARATOR;
+  var finalW   = W * 2;
   var finalCanvas  = document.createElement('canvas');
   finalCanvas.width  = Math.round(finalW * dpr);
   finalCanvas.height = Math.round(totalH * dpr);
@@ -10410,11 +10659,7 @@ async function snapCompareJPEG() {
 
   // Coller snapA (gauche) et snapB (droite) en coordonnées pixel natif
   fctx.drawImage(resA.canvas, 0, 0);
-  fctx.drawImage(resB.canvas, Math.round((W + SEPARATOR) * dpr), 0);
-
-  // Ligne séparatrice
-  fctx.fillStyle = 'rgba(255,255,255,0.07)';
-  fctx.fillRect(Math.round(W * dpr), 0, Math.round(SEPARATOR * dpr), finalCanvas.height);
+  fctx.drawImage(resB.canvas, Math.round(W * dpr), 0);
 
   // Export
   var jpeg     = finalCanvas.toDataURL('image/jpeg', 0.96);
@@ -10443,7 +10688,6 @@ async function snapCompareJPEG() {
     a.click();
   }
 
-  snapCompareClose();
   var btn3 = document.getElementById('tm-snapcompare-btn');
   if (btn3) { btn3.classList.add('flash'); setTimeout(function(){ btn3.classList.remove('flash'); }, 800); }
 }
@@ -10461,9 +10705,43 @@ async function snapCompareJPEG() {
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
     <span id="snapcompare-btn-label">Générer le PDF</span>
   </button>
-  <button id="snapcompare-jpeg-btn" class="pdfopt-generate" onclick="snapCompareJPEG()" style="opacity:.4;pointer-events:none;display:flex;align-items:center;justify-content:center;gap:.45rem">
+  <button id="snapcompare-jpeg-btn" class="pdfopt-generate" onclick="snapCmpBgOpen()" style="opacity:.4;pointer-events:none;display:flex;align-items:center;justify-content:center;gap:.45rem">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
     <span id="snapcompare-jpeg-label">Générer le JPEG</span>
+  </button>
+</div>
+
+<!-- ── Modale options screenshot ── -->
+<div class="screenshot-overlay" id="tm-screenshot-overlay" onclick="tmScreenshotClose()"></div>
+<div class="screenshot-modal" id="tm-screenshot-modal">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div style="font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)" data-i18n="screenshotTitle">Screenshot</div>
+    <button onclick="tmScreenshotClose()" style="background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--text3);font-size:.8rem;cursor:pointer;padding:.25rem .5rem;line-height:1;transition:all .2s">✕</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+    <button id="screenshot-bg-dark" onclick="tmScreenshotSelectBg('dark')" class="screenshot-bg-btn screenshot-bg-btn--active" data-i18n="screenshotDark">Noir</button>
+    <button id="screenshot-bg-light" onclick="tmScreenshotSelectBg('light')" class="screenshot-bg-btn" data-i18n="screenshotLight">Blanc</button>
+  </div>
+  <button class="pdfopt-generate" onclick="tmScreenshotGo()" style="display:flex;align-items:center;justify-content:center;gap:.45rem">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    <span data-i18n="screenshotGenerate">Générer le JPEG</span>
+  </button>
+</div>
+
+<!-- ── Modale choix fond JPEG évolution ── -->
+<div class="screenshot-overlay" id="snapcmp-bg-overlay" onclick="snapCmpBgClose()"></div>
+<div class="screenshot-modal" id="snapcmp-bg-modal">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div style="font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)" data-i18n="screenshotTitle">JPEG</div>
+    <button onclick="snapCmpBgClose()" style="background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--text3);font-size:.8rem;cursor:pointer;padding:.25rem .5rem;line-height:1;transition:all .2s">✕</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+    <button id="snapcmp-bg-dark"  onclick="snapCmpSelectBg('dark')"  class="screenshot-bg-btn screenshot-bg-btn--active" data-i18n="screenshotDark">Noir</button>
+    <button id="snapcmp-bg-light" onclick="snapCmpSelectBg('light')" class="screenshot-bg-btn" data-i18n="screenshotLight">Blanc</button>
+  </div>
+  <button id="snapcmp-generate-btn" class="pdfopt-generate" onclick="snapCmpBgGo()" style="display:flex;align-items:center;justify-content:center;gap:.45rem">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    <span data-i18n="screenshotGenerate">Générer le JPEG</span>
   </button>
 </div>
 
