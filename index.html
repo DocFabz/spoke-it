@@ -3646,12 +3646,12 @@ function renderArb(side) {
       ? (Math.abs(roundedThreads) <= 1 ? 'filet' : 'filets')
       : (Math.abs(roundedThreads) <= 1 ? 'thread' : 'threads');
     const threadStr = '≈ ' + (roundedThreads === 0 ? '' : roundedThreads > 0 ? '+' : '') + roundedThreads + ' ' + threadWord;
-    const clickAttr = isMuted ? '' : ` onclick="applyArbLen('${side}',${sz},this)"`;
+    const clickAttr = isMuted ? '' : ` onclick="applyArbLen('${side}',${sz})"`;
     return `<div class="${cls}"${clickAttr}><div class="arb-left"><span class="arb-sz">${sz}</span><span class="arb-unit">mm</span>${arbSelected[side] === sz ? '<span style="color:var(--success);font-size:.7rem;line-height:1">✓</span>' : ''}</div><div class="arb-right"><span class="arb-delta">${delta>=0?'+':''}${delta.toFixed(2)} mm</span><span class="arb-lbl" style="margin-bottom:.08rem">${t('gapTarget')}</span><span class="arb-lbl" style="color:var(--text2);font-size:.58rem">${threadStr}</span></div></div>`;
   }).join('');
 }
 
-function applyArbLen(side, sz, el) {
+function applyArbLen(side, sz) {
   if (!summaryData) return;
   const d = summaryData;
   // side here is 'fo' or 'fa' from the arb grid
@@ -3720,6 +3720,19 @@ function slenConfirm() {
   if (isOrange) d.lenFo = String(raw); else d.lenFa = String(raw);
   slenClose();
   renderSummary();
+  // Sync arbSelected : check si la valeur saisie correspond à une case du suggested rounding
+  const arbSide = isOrange ? 'fo' : 'fa';
+  if (arbData[arbSide]) {
+    const ad = arbData[arbSide];
+    const base = Math.round(ad.exactLen - ad.elongation);
+    const sizes = [base - 1, base, base + 1];
+    if (sizes.includes(raw)) {
+      arbSelected[arbSide] = raw;
+    } else {
+      arbSelected[arbSide] = null;
+    }
+    renderArb(arbSide);
+  }
 }
 
 // Fermer sur Entrée / Escape depuis l'input
