@@ -137,8 +137,6 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .ateliermgr-inp:focus { border-color:rgba(126,200,227,.4) }
 .ateliermgr-clear { background:none; border:none; color:var(--text3); font-size:.72rem; cursor:pointer; padding:.28rem .5rem; line-height:1; transition:all .2s; flex-shrink:0 }
 .ateliermgr-clear:hover { color:var(--warm) }
-.ateliermgr-save { background:transparent; border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:500; padding:.6rem 1rem; cursor:pointer; touch-action:manipulation; transition:all .22s; text-align:center }
-.ateliermgr-save:hover { border-color:rgba(126,200,227,.5); color:var(--accent2); background:rgba(126,200,227,.05) }
 
 /* ── Save manager modal ── */
 .savemgr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
@@ -151,8 +149,8 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .savemgr-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
 .savemgr-desc { font-size:.72rem; color:var(--text2); line-height:1.5 }
 .savemgr-btns { display:flex; flex-direction:column; gap:.5rem }
-.savemgr-action-btn { display:flex; align-items:center; gap:.6rem; padding:.75rem 1rem; background:transparent; border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:500; cursor:pointer; touch-action:manipulation; transition:all .22s; text-align:left }
-.savemgr-export:hover, .savemgr-import:hover { border-color:rgba(126,200,227,.5); color:var(--accent2); background:rgba(126,200,227,.05) }
+.savemgr-action-btn { display:flex; align-items:center; gap:.6rem; padding:.45rem .85rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:all .25s; text-align:left }
+.savemgr-export:hover, .savemgr-import:hover { border-color:rgba(126,200,227,.65); color:var(--accent2); background:rgba(126,200,227,.06) }
 .savemgr-warning { font-size:.65rem; color:var(--text3); font-style:italic; line-height:1.5 }
 
 /* ── Picker popup ── */
@@ -160,8 +158,8 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .picker-popup.show { display:flex; animation:conv-in .15s ease both }
 .picker-overlay { position:fixed; inset:0; z-index:9978; display:none }
 .picker-overlay.show { display:block }
-.picker-btn { display:flex; align-items:center; gap:.6rem; padding:.6rem .85rem; background:transparent; border:1px solid var(--border); border-radius:var(--rs); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500; cursor:pointer; touch-action:manipulation; transition:all .2s; text-align:left; white-space:nowrap }
-.picker-btn:hover { border-color:var(--border-s); color:var(--text); background:rgba(255,255,255,.03) }
+.picker-btn { display:flex; align-items:center; gap:.6rem; padding:.45rem .85rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:all .25s; text-align:left; white-space:nowrap }
+.picker-btn:hover { border-color:rgba(126,200,227,.65); color:var(--accent2); background:rgba(126,200,227,.06) }
 
 /* ── Modal suppression tensiomètre perso ── */
 .erasemgr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9982; opacity:0; transition:opacity .22s; display:none }
@@ -177,7 +175,7 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .erasemgr-acc-head:hover:not(.disabled) { border-color:var(--border-s) }
 .erasemgr-acc-head.disabled { opacity:.4; cursor:default; pointer-events:none }
 .erasemgr-acc-label { font-size:.6rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--text2); flex:1 }
-.erasemgr-acc-count { font-family:'DM Mono',monospace; font-size:.6rem; color:var(--text3); background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:.08rem .45rem }
+.erasemgr-acc-count { font-family:'DM Mono',monospace; font-size:.6rem; color:var(--accent); background:var(--bg2); border:1px solid var(--accent); border-radius:10px; padding:.08rem .45rem }
 .erasemgr-acc-chevron { font-size:.7rem; color:var(--text3); transition:transform .2s; display:inline-block }
 .erasemgr-acc-body { display:none; flex-direction:column; gap:.05rem; padding:.2rem 0 .1rem }
 .erasemgr-acc-body.open { display:flex }
@@ -649,9 +647,9 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .module-nav-btn { flex:1; padding:.6rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500; cursor:pointer; touch-action:manipulation; transition:all .3s cubic-bezier(.22,1,.36,1); display:flex; align-items:center; justify-content:center; gap:.4rem; letter-spacing:0; text-transform:uppercase; position:relative; overflow:hidden }
 .module-nav-btn::before { content:''; position:absolute; inset:0; border-radius:inherit; opacity:0; transition:opacity .3s }
 .module-nav-btn::after  { content:''; position:absolute; inset:0; border-radius:inherit; background:radial-gradient(ellipse 80% 60% at 50% 120%, rgba(126,200,227,.35) 0%, transparent 70%); opacity:0; transition:opacity .4s }
-.module-nav-btn.active { background:var(--bg2); color:var(--accent); box-shadow:0 2px 16px rgba(0,0,0,.45), 0 0 0 1px rgba(126,200,227,.15) inset }
-.module-nav-btn.active::before { background:linear-gradient(135deg, rgba(126,200,227,.06) 0%, transparent 60%); opacity:1 }
-.module-nav-btn.active::after  { opacity:1 }
+.module-nav-btn.active { background:var(--bg2); color:var(--accent); box-shadow:0 2px 16px rgba(0,0,0,.45) }
+.module-nav-btn.active::before { opacity:0 }
+.module-nav-btn.active::after  { opacity:0 }
 .module-nav-btn.active .nav-icon { filter:drop-shadow(0 0 4px rgba(126,200,227,.6)); color:var(--accent) }
 .module-nav-btn:hover:not(.active) { color:var(--text2) }
 .module-nav-btn:hover:not(.active)::before { background:linear-gradient(135deg, rgba(126,200,227,.03) 0%, transparent 60%); opacity:1 }
@@ -1016,6 +1014,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 /* ── Bouton déclencheur chartes ───────────────────────────────────────────────────── */
 .tm-conv-btn { display:inline-flex; align-items:center; gap:.3rem; padding:.18rem .65rem; border:1px solid var(--border-s); border-radius:20px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.65rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:border-color .2s, color .2s, background .2s }
 .tm-conv-btn.lit { border-color:rgba(126,200,227,.5); color:var(--accent); background:rgba(126,200,227,.07) }
+#tm-charts-picker-btn:hover { border-color:rgba(126,200,227,.65) !important; background:rgba(126,200,227,.06) !important; color:var(--accent2) !important }
 #tm-charts-popup .picker-btn.locked { opacity:.38; pointer-events:none; cursor:not-allowed }
 #tm-charts-popup .picker-btn.lit { border-color:rgba(126,200,227,.4); color:var(--accent2); background:rgba(126,200,227,.05) }
 
@@ -1261,7 +1260,9 @@ input[type=number] { -moz-appearance:textfield }
       <button class="ateliermgr-clear" onclick="atelierClear('atelier-insta')">✕</button>
     </div>
   </div>
-  <button class="ateliermgr-save" onclick="saveAtelierInfo()" data-i18n="saveOk">OK</button>
+  <button class="ct-save-btn" onclick="saveAtelierInfo()" style="margin-top:1.28rem">
+    <span data-i18n="atelierSave">✓ Sauvegarder</span>
+  </button>
 </div>
 
 <!-- ── Save manager modal ── -->
@@ -1284,7 +1285,7 @@ input[type=number] { -moz-appearance:textfield }
     <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="importConfigs(event)">
   </div>
   <p class="savemgr-warning" data-i18n="saveMgrWarning">&#9888;&#65038; L'import fusionne les données. En cas de nom identique, la version importée écrase l'existante.</p>
-  <p class="help" id="import-feedback" style="min-height:.9rem;text-align:center"></p>
+
 </div>
 
 <!-- ── Module nav ── -->
@@ -1878,7 +1879,7 @@ input[type=number] { -moz-appearance:textfield }
 
     <!-- Bouton chartes (picker) -->
     <div style="margin-bottom:1rem;margin-top:-.5rem;position:relative" id="tm-charts-picker-wrap">
-      <button class="tm-conv-btn" id="tm-charts-picker-btn" onclick="tmChartsPickerToggle()" style="border-radius:var(--rs);padding:.45rem .85rem;gap:.45rem;">
+      <button class="tm-conv-btn" id="tm-charts-picker-btn" onclick="tmChartsPickerToggle()" style="border-radius:var(--rs);padding:.45rem .85rem;gap:.45rem;border:1px solid rgba(126,200,227,.3);color:var(--accent2);font-weight:600;letter-spacing:.12em;transition:all .25s;">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="2" width="13" height="12" rx="1.5"/><line x1="1.5" y1="5.5" x2="14.5" y2="5.5"/><line x1="1.5" y1="9" x2="14.5" y2="9"/><line x1="6" y1="5.5" x2="6" y2="14"/><line x1="11" y1="5.5" x2="11" y2="14"/></svg>
         <span data-i18n="tmChartsBtn">Chartes</span>
         <svg id="tm-charts-chevron" viewBox="0 0 10 7" fill="none" stroke="currentColor" stroke-width="1.4" style="width:8px;height:8px;transition:transform .2s;flex-shrink:0"><path d="M1 1l4 4 4-4"/></svg>
@@ -2374,6 +2375,7 @@ const i18n = {
     pickerDataMgr:'Data manager',
     atelierTitle:'Atelier',
     atelierName:'Atelier',
+    atelierSave:'✓ Sauvegarder',
     eraseMgrTitle:'Supprimer des données',
     eraseMgrWheels:'Roues',
     eraseMgrCustomTensios:'Tensiomètres perso',
@@ -2507,6 +2509,7 @@ const i18n = {
     pickerDataMgr:'Data manager',
     atelierTitle:'Workshop',
     atelierName:'Workshop',
+    atelierSave:'✓ Save',
     eraseMgrTitle:'Delete data',
     eraseMgrWheels:'Wheels',
     eraseMgrCustomTensios:'Custom tensiometers',
@@ -3924,7 +3927,6 @@ function closePicker() {
 function openSaveMgr() {
   $id('savemgr-overlay').classList.add('show');
   $id('savemgr-modal').classList.add('show');
-  $id('import-feedback').textContent = '';
 }
 function closeSaveMgr() {
   $id('savemgr-overlay').classList.remove('show');
@@ -3946,11 +3948,24 @@ function exportConfigs() {
   const a    = document.createElement('a');
   a.href = url; a.download = 'Spokeit-Backup.json'; a.click();
   URL.revokeObjectURL(url);
+  closeSaveMgr();
+}
+
+function showImportToast(msg, isError) {
+  var toast = document.getElementById('import-toast');
+  toast.textContent = msg;
+  toast.style.color  = isError ? '#f08080' : 'var(--success)';
+  toast.style.borderColor = isError ? 'rgba(240,128,128,.35)' : 'rgba(126,207,168,.35)';
+  toast.style.opacity = '1';
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(function() {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+  }, 2000);
 }
 
 function importConfigs(event) {
   const file = event.target.files[0]; if (!file) return;
-  const fb = $id('import-feedback');
   const reader = new FileReader();
   reader.onload = e => {
     try {
@@ -4014,10 +4029,10 @@ function importConfigs(event) {
       renderConfigsList(); showConfigsPanel();
       hrUpdateButtons();
 
-      fb.style.color = 'var(--success)'; fb.textContent = t('importSuccess');
-      setTimeout(() => { fb.textContent = ''; }, 3500);
+      closeSaveMgr();
+      showImportToast(t('importSuccess'), false);
     } catch(err) {
-      fb.style.color = '#f08080'; fb.textContent = t('importError');
+      showImportToast(t('importError'), true);
     }
     event.target.value = '';
   };
@@ -10158,6 +10173,9 @@ function snapComparePDF() {
     <span id="snapcompare-btn-label">Générer le PDF</span>
   </button>
 </div>
+
+<!-- ── Toast import ── -->
+<div id="import-toast" style="position:fixed;top:2rem;left:50%;transform:translateX(-50%);z-index:10000;background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:.75rem 1.3rem;box-shadow:0 8px 32px rgba(0,0,0,.45);font-size:.78rem;font-weight:500;letter-spacing:.04em;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .25s ease;display:flex;align-items:center;gap:.5rem"></div>
 
 <!-- ── Modale confirmation écrasement ── -->
 <div id="confirm-overlay"></div>
