@@ -402,6 +402,9 @@ select option             { background:#161b27 }
 .pdfopt-generate { background:transparent; border:1px solid rgba(126,200,227,.4); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.84rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; padding:.75rem 1rem; cursor:pointer; touch-action:manipulation; transition:all .22s; text-align:center }
 .pdfopt-generate:hover { border-color:rgba(126,200,227,.75); background:rgba(126,200,227,.07) }
 .pdfopt-generate:active { transform:scale(.98) }
+.pdfopt-generate.loading { opacity:.6; pointer-events:none; cursor:default }
+@keyframes spin { to { transform:rotate(360deg) } }
+.btn-spinner { width:13px; height:13px; border:2px solid rgba(126,200,227,.3); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0 }
 
 /* ── Modale Diagnostic ─────────────────────────────────────────────────────── */
 .diag-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
@@ -10184,6 +10187,18 @@ function snapComparePDF() {
 // ── Génération JPEG évolution (deux JPEG côte à côte) ──────────────────────────
 async function snapCompareJPEG() {
   if (_snapCompareSelected.length !== 2) return;
+
+  // Spinner
+  var jpegBtn = document.getElementById('snapcompare-jpeg-btn');
+  var jpegLbl = document.getElementById('snapcompare-jpeg-label');
+  var originalContent = jpegBtn ? jpegBtn.innerHTML : '';
+  if (jpegBtn) {
+    jpegBtn.classList.add('loading');
+    jpegBtn.innerHTML = '<span class="btn-spinner"></span><span>' + (typeof lang !== 'undefined' && lang === 'en' ? 'Generating…' : 'Génération…') + '</span>';
+  }
+
+  // Laisser le navigateur peindre le spinner avant de bloquer le thread
+  await new Promise(function(resolve) { setTimeout(resolve, 30); });
   var snaps = _snapCompareSnaps;
   var selPair = [snaps[_snapCompareSelected[0]], snaps[_snapCompareSelected[1]]];
   selPair.sort(function(a, b) { return a.ts - b.ts; }); // plus ancien à gauche
@@ -10417,7 +10432,12 @@ async function snapCompareJPEG() {
         await navigator.share({ files: [file], title: 'Tension Evolution' });
         shared = true;
       }
-    } catch(err) { if (err.name === 'AbortError') return; }
+    } catch(err) {
+      if (err.name === 'AbortError') {
+        if (jpegBtn) { jpegBtn.innerHTML = originalContent; jpegBtn.classList.remove('loading'); }
+        return;
+      }
+    }
   }
   if (!shared) {
     var a = document.createElement('a');
