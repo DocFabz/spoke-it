@@ -2591,8 +2591,8 @@ function flashWheelCard(configName) {
   const card = getCards()[0];
   clearTimeout(_flashTimer);
   card.style.transition = 'box-shadow .2s, border-color .2s';
-  card.style.borderColor = 'rgba(126,207,168,.7)';
-  card.style.boxShadow   = '0 0 0 2px rgba(126,207,168,.18)';
+  card.style.borderColor = 'rgba(126,200,227,.7)';
+  card.style.boxShadow   = '0 0 0 2px rgba(126,200,227,.18)';
   if (configName) {
     _loadedConfigName[wtype] = configName;
     _lastLoadTime = Date.now();
