@@ -2441,7 +2441,6 @@ const i18n = {
     snapCompareDesc:'Sélectionner deux snapshots.',
     snapCompareBtn:'Générer le PDF',
     snapCompareJpegBtn:'Générer le JPEG',
-    snapCompareVideoBtn:'Générer la Vidéo',
     screenshotTitle:'Screenshot', screenshotDark:'Dark', screenshotLight:'Light', screenshotGenerate:'Générer le JPEG',
     snapNameError:'Veuillez saisir un nom.',
   },
@@ -2578,7 +2577,6 @@ const i18n = {
     snapCompareDesc:'Select two snapshots.',
     snapCompareBtn:'Generate PDF',
     snapCompareJpegBtn:'Generate JPEG',
-    snapCompareVideoBtn:'Generate Video',
     screenshotTitle:'Screenshot', screenshotDark:'Dark', screenshotLight:'Light', screenshotGenerate:'Generate JPEG',
     snapNameError:'Please enter a name.',
   }
@@ -2804,7 +2802,6 @@ function _applyLangModals() {
   el = $id('snapcompare-desc');     if (el) el.textContent = tr.snapCompareDesc  || (L==='fr' ? 'Sélectionner deux snapshots.' : 'Select two snapshots.');
   el = $id('snapcompare-btn-label');if (el) el.textContent = tr.snapCompareBtn   || (L==='fr' ? 'Générer le PDF'              : 'Generate PDF');
   el = $id('snapcompare-jpeg-label');if (el) el.textContent = tr.snapCompareJpegBtn || (L==='fr' ? 'Générer le JPEG'           : 'Generate JPEG');
-  el = $id('snapcompare-video-label');if (el) el.textContent = tr.snapCompareVideoBtn || (L==='fr' ? 'Générer la Vidéo'         : 'Generate Video');
   document.querySelectorAll('[data-i18n="screenshotTitle"]').forEach(function(e)    { e.textContent = tr.screenshotTitle    || (L==='fr' ? 'Screenshot'      : 'Screenshot'); });
   document.querySelectorAll('[data-i18n="screenshotDark"]').forEach(function(e)     { e.textContent = tr.screenshotDark     || 'Dark'; });
   document.querySelectorAll('[data-i18n="screenshotLight"]').forEach(function(e)    { e.textContent = tr.screenshotLight    || 'Light'; });
@@ -10029,7 +10026,6 @@ function _snapCompareSetItemStyle(idx, selected) {
 function _snapCompareUpdateUI() {
   var btn = document.getElementById('snapcompare-go-btn');
   var btnJpeg = document.getElementById('snapcompare-jpeg-btn');
-  var btnVideo = document.getElementById('snapcompare-video-btn');
   var ready = _snapCompareSelected.length === 2;
   if (btn) {
     btn.style.opacity      = ready ? '1' : '.4';
@@ -10038,10 +10034,6 @@ function _snapCompareUpdateUI() {
   if (btnJpeg) {
     btnJpeg.style.opacity       = ready ? '1' : '.4';
     btnJpeg.style.pointerEvents = ready ? 'auto' : 'none';
-  }
-  if (btnVideo) {
-    btnVideo.style.opacity       = ready ? '1' : '.4';
-    btnVideo.style.pointerEvents = ready ? 'auto' : 'none';
   }
 }
 
@@ -10712,162 +10704,6 @@ async function snapCompareJPEG() {
   var btn3 = document.getElementById('tm-snapcompare-btn');
   if (btn3) { btn3.classList.add('flash'); setTimeout(function(){ btn3.classList.remove('flash'); }, 800); }
 }
-
-// ── Génération Vidéo de transition entre deux snapshots ────────────────────────
-async function snapCompareVideo() {
-  if (_snapCompareSelected.length !== 2) return;
-
-  var L = typeof lang !== 'undefined' ? lang : 'fr';
-  var snaps = _snapCompareSnaps;
-  var selPair = [snaps[_snapCompareSelected[0]], snaps[_snapCompareSelected[1]]];
-  selPair.sort(function(a, b) { return a.ts - b.ts; });
-  var snapA = selPair[0], snapB = selPair[1];
-
-  var videoBtnEl = document.getElementById('snapcompare-video-btn');
-  var origLabel  = document.getElementById('snapcompare-video-label');
-  var origText   = origLabel ? origLabel.textContent : '';
-  function setStatus(txt) { if(origLabel) origLabel.textContent = txt; }
-  function setBusy(busy) { if(videoBtnEl){ videoBtnEl.style.opacity=busy?'.6':'1'; videoBtnEl.style.pointerEvents=busy?'none':'auto'; } }
-
-  setStatus(L==='fr' ? '⏳ Génération…' : '⏳ Generating…');
-  setBusy(true);
-  snapCompareClose();
-  await document.fonts.ready;
-
-  // Détection format supporté
-  var mimeType =
-    MediaRecorder.isTypeSupported('video/mp4;codecs=h264') ? 'video/mp4;codecs=h264' :
-    MediaRecorder.isTypeSupported('video/mp4;codecs=avc1') ? 'video/mp4;codecs=avc1' :
-    MediaRecorder.isTypeSupported('video/mp4')             ? 'video/mp4'              :
-    MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' :
-    'video/webm';
-  var ext = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm';
-
-  // Paramètres
-  var VW = 1080, VH = 1080, FPS = 30;
-  var dpr = Math.max(window.devicePixelRatio || 1, 2);
-  var HOLD_FRAMES  = Math.round(FPS * 1.5);
-  var MORPH_FRAMES = Math.round(FPS * 4);
-  var HOLD2_FRAMES = Math.round(FPS * 1.5);
-  var TOTAL_FRAMES = HOLD_FRAMES + MORPH_FRAMES + HOLD2_FRAMES;
-
-  var canvas = document.createElement('canvas');
-  canvas.width = VW * dpr; canvas.height = VH * dpr;
-  var ctx = canvas.getContext('2d');
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  // Extraction kgf
-  function extractKgfs(snap) { var r = _snapRenderRadarCanvas(snap, 400); return { fo: r.foKgfs, fa: r.faKgfs }; }
-  var kgfA = extractKgfs(snapA), kgfB = extractKgfs(snapB);
-  var perSide = Math.max(kgfA.fo.length, kgfA.fa.length, kgfB.fo.length, kgfB.fa.length);
-  if (!perSide) { setStatus(origText); setBusy(false); return; }
-  function padArr(arr, len) { var o = arr.slice(0, len); while (o.length < len) o.push(null); return o; }
-  var foA = padArr(kgfA.fo, perSide), faA = padArr(kgfA.fa, perSide);
-  var foB = padArr(kgfB.fo, perSide), faB = padArr(kgfB.fa, perSide);
-  var allVals = foA.concat(faA, foB, faB).filter(function(v) { return v !== null; });
-  if (!allVals.length) { setStatus(origText); setBusy(false); return; }
-  var scaleMax = Math.ceil(Math.max.apply(null, allVals) / 20) * 20 || 20;
-  function lerp(a, b, t) { if (a === null && b === null) return null; if (a === null) return b * t; if (b === null) return a * (1 - t); return a + (b - a) * t; }
-
-  // Dessin radar
-  var frameIdx = 0;
-  function drawRadarFrame(t) {
-    var w = VW, h = VH, cx = w / 2, cy = h / 2, R = Math.min(w, h) * 0.38, N = perSide * 2, step = (2 * Math.PI) / N;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#0d1017'; ctx.fillRect(0, 0, w, h);
-    for (var r = 1; r <= 5; r++) {
-      var rr = (r / 5) * R;
-      ctx.beginPath();
-      for (var i = 0; i < N; i++) { var a = i * step - Math.PI / 2; i === 0 ? ctx.moveTo(cx + rr * Math.cos(a), cy + rr * Math.sin(a)) : ctx.lineTo(cx + rr * Math.cos(a), cy + rr * Math.sin(a)); }
-      ctx.closePath(); ctx.strokeStyle = 'rgba(80,100,130,0.33)'; ctx.lineWidth = 1; ctx.stroke();
-      if (r === 2 || r === 4 || r === 5) { ctx.fillStyle = 'rgba(100,120,150,0.8)'; ctx.font = Math.round(Math.min(w, h) * 0.026) + 'px DM Mono,monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(Math.round((r / 5) * scaleMax), cx, cy - rr - 3); }
-    }
-    for (var i3 = 0; i3 < N; i3++) {
-      var a3 = i3 * step - Math.PI / 2, isFo = i3 % 2 === 0;
-      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(a3), cy + R * Math.sin(a3));
-      ctx.strokeStyle = isFo ? 'rgba(232,146,124,0.25)' : 'rgba(126,200,227,0.25)'; ctx.lineWidth = 1; ctx.stroke();
-      if (perSide <= 16 || i3 % 2 === 0) { var lr = R + Math.max(10, Math.min(w, h) * 0.032); ctx.fillStyle = isFo ? 'rgba(232,146,124,0.8)' : 'rgba(126,200,227,0.7)'; ctx.font = Math.round(Math.min(w, h) * 0.023) + 'px DM Mono,monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(Math.floor(i3 / 2) + 1, cx + lr * Math.cos(a3), cy + lr * Math.sin(a3)); }
-    }
-    function drawPoly(arrA, arrB, aOff, stroke, fill) {
-      var pts = arrA.map(function(vA, i) { var v = lerp(vA, arrB[i], t), a = (i * 2 + aOff) * step - Math.PI / 2, rp = v !== null ? (v / scaleMax) * R : 0; return [cx + rp * Math.cos(a), cy + rp * Math.sin(a), v]; });
-      ctx.beginPath(); pts.forEach(function(p, i) { i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]); }); ctx.closePath();
-      ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = stroke; ctx.lineWidth = 1.8; ctx.stroke();
-      pts.forEach(function(p) { if (p[2] === null) return; ctx.beginPath(); ctx.arc(p[0], p[1], 3.5, 0, 2 * Math.PI); ctx.fillStyle = stroke; ctx.fill(); });
-    }
-    drawPoly(faA, faB, 1, 'rgba(126,200,227,0.9)', 'rgba(126,200,227,0.07)');
-    drawPoly(foA, foB, 0, 'rgba(232,146,124,0.9)', 'rgba(232,146,124,0.07)');
-    ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 2 * Math.PI); ctx.fillStyle = 'rgba(150,170,190,0.35)'; ctx.fill();
-    // Textes overlays
-    var FADE_F = Math.round(FPS * 0.4), alphaA, alphaB;
-    if (frameIdx < HOLD_FRAMES) { alphaA = 1; alphaB = 0; }
-    else if (frameIdx < HOLD_FRAMES + FADE_F) { alphaA = 1 - (frameIdx - HOLD_FRAMES) / FADE_F; alphaB = 0; }
-    else if (frameIdx < HOLD_FRAMES + MORPH_FRAMES - FADE_F) { alphaA = 0; alphaB = 0; }
-    else if (frameIdx < HOLD_FRAMES + MORPH_FRAMES) { alphaA = 0; alphaB = (frameIdx - (HOLD_FRAMES + MORPH_FRAMES - FADE_F)) / FADE_F; }
-    else { alphaA = 0; alphaB = 1; }
-    function fmtDate(ts) { var d = new Date(ts); return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear(); }
-    var PAD = 24;
-    ctx.font = '500 14px DM Mono,monospace'; ctx.textBaseline = 'top';
-    var ai = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
-    var wname = (ai.name && ai.name.trim()) ? ai.name.trim() : 'Spoke It';
-    ctx.globalAlpha = 1; ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.textAlign = 'left'; ctx.fillText(wname, PAD, PAD);
-    ctx.textAlign = 'right';
-    if (alphaA > 0) { ctx.globalAlpha = alphaA; ctx.fillStyle = 'rgba(126,200,227,1)'; ctx.fillText(fmtDate(snapA.ts), w - PAD, PAD); }
-    if (alphaB > 0) { ctx.globalAlpha = alphaB; ctx.fillStyle = 'rgba(126,200,227,1)'; ctx.fillText(fmtDate(snapB.ts), w - PAD, PAD); }
-    ctx.globalAlpha = 1;
-  }
-
-  // MediaRecorder
-  var stream = canvas.captureStream(FPS);
-  var recorder = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 6000000 });
-  var chunks = [];
-  recorder.ondataavailable = function(e) { if (e.data.size > 0) chunks.push(e.data); };
-
-  drawRadarFrame(0);
-  recorder.start();
-
-  await new Promise(function(resolve) {
-    var iv = setInterval(function() {
-      var t;
-      if (frameIdx < HOLD_FRAMES) { t = 0; }
-      else if (frameIdx < HOLD_FRAMES + MORPH_FRAMES) {
-        var p = (frameIdx - HOLD_FRAMES) / MORPH_FRAMES;
-        t = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
-      } else { t = 1; }
-      drawRadarFrame(t);
-      frameIdx++;
-      if (frameIdx >= TOTAL_FRAMES) { clearInterval(iv); resolve(); }
-    }, 1000 / FPS);
-  });
-
-  recorder.stop();
-  await new Promise(function(resolve) { recorder.onstop = resolve; });
-
-  setStatus(origText); setBusy(false);
-
-  var blob = new Blob(chunks, { type: mimeType });
-  var wheelName = document.getElementById('tm-cfg-loaded-text')
-    ? document.getElementById('tm-cfg-loaded-text').textContent.trim() : '';
-  var filename = wheelName
-    ? 'spoke-it-evolution-' + wheelName.replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.' + ext
-    : 'spoke-it-evolution-tension.' + ext;
-
-  var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  var shared = false;
-  if (isMobile && navigator.canShare) {
-    try {
-      var file = new File([blob], filename, { type: mimeType });
-      if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Tension Evolution' }); shared = true; }
-    } catch(err) { if (err.name === 'AbortError') return; }
-  }
-  if (!shared) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a'); a.download = filename; a.href = url; a.click();
-    setTimeout(function() { URL.revokeObjectURL(url); }, 10000);
-  }
-
-  var btn4 = document.getElementById('tm-snapcompare-btn');
-  if (btn4) { btn4.classList.add('flash'); setTimeout(function() { btn4.classList.remove('flash'); }, 800); }
-}
 </script>
 <!-- ── Modale Évolution Tension ── -->
 <div class="snap-overlay" id="snapcompare-overlay" onclick="snapCompareClose()"></div>
@@ -10885,10 +10721,6 @@ async function snapCompareVideo() {
   <button id="snapcompare-jpeg-btn" class="pdfopt-generate" onclick="snapCmpBgOpen()" style="opacity:.4;pointer-events:none;display:flex;align-items:center;justify-content:center;gap:.45rem">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
     <span id="snapcompare-jpeg-label">Générer le JPEG</span>
-  </button>
-  <button id="snapcompare-video-btn" class="pdfopt-generate" onclick="snapCompareVideo()" style="opacity:.4;pointer-events:none;display:flex;align-items:center;justify-content:center;gap:.45rem">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-    <span id="snapcompare-video-label">Générer la Vidéo</span>
   </button>
 </div>
 
