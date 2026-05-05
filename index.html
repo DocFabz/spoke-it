@@ -1004,6 +1004,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 @media (hover: hover) { .cfg-item:hover { border-color:var(--border-s); background:rgba(126,200,227,.03) } }
 .cfg-name       { flex:1; font-size:.82rem; color:var(--accent2); font-weight:400; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
 .cfg-meta       { font-family:'DM Mono',monospace; font-size:.63rem; color:var(--text3); white-space:nowrap; margin-right:.3rem }
+.cfg-date       { margin-left:auto }
 .cfg-del        { background:transparent; border:none; color:var(--text3); font-size:.95rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
 .cfg-del:hover  { color:#f08080 }
 
@@ -3954,12 +3955,14 @@ function renderConfigsList() {
   const filtered = configs.map((cfg, i) => ({ cfg, i })).filter(({ cfg }) => (cfg.state.wtype || 'avant') === wtype);
   if (filtered.length === 0) { hideConfigsPanel(); return; }
   showConfigsPanel();
-  list.innerHTML = filtered.map(({ cfg, i }) =>
-    `<div class="cfg-item" onclick="loadConfig(${i})">`
+  list.innerHTML = filtered.map(({ cfg, i }) => {
+    const dateStr = cfg.ts ? (() => { const d = new Date(cfg.ts); return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear(); })() : '';
+    return `<div class="cfg-item" onclick="loadConfig(${i})">`
     + `<span class="cfg-name">${escHtml(cfg.name)}</span>`
     + (cfg.metaKey ? `<span class="cfg-meta">${t(cfg.metaKey)}</span>` : '')
-    + `<button class="cfg-del" onclick="event.stopPropagation();deleteConfig(${i})" title="Supprimer">×</button></div>`
-  ).join('');
+    + (dateStr ? `<span class="cfg-meta cfg-date">${dateStr}</span>` : '')
+    + `<button class="cfg-del" onclick="event.stopPropagation();deleteConfig(${i})" title="Supprimer">×</button></div>`;
+  }).join('');
 }
 
 // ── Save manager modal ────────────────────────────────────────────────────────
