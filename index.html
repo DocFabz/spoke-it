@@ -2445,7 +2445,7 @@ const i18n = {
     snapCompareDesc:'Sélectionner deux snapshots.',
     snapCompareBtn:'Générer le PDF',
     snapCompareJpegBtn:'Générer le JPEG',
-    snapCompareAnimBtn:'Voir l\u2019animation',
+    snapCompareAnimBtn:'Évolution',
     screenshotTitle:'Screenshot', screenshotDark:'Dark', screenshotLight:'Light', screenshotGenerate:'Générer le JPEG',
     snapNameError:'Veuillez saisir un nom.',
   },
@@ -2582,7 +2582,7 @@ const i18n = {
     snapCompareDesc:'Select two snapshots.',
     snapCompareBtn:'Generate PDF',
     snapCompareJpegBtn:'Generate JPEG',
-    snapCompareAnimBtn:'View animation',
+    snapCompareAnimBtn:'Evolution',
     screenshotTitle:'Screenshot', screenshotDark:'Dark', screenshotLight:'Light', screenshotGenerate:'Generate JPEG',
     snapNameError:'Please enter a name.',
   }
@@ -2808,7 +2808,7 @@ function _applyLangModals() {
   el = $id('snapcompare-desc');     if (el) el.textContent = tr.snapCompareDesc  || (L==='fr' ? 'Sélectionner deux snapshots.' : 'Select two snapshots.');
   el = $id('snapcompare-btn-label');if (el) el.textContent = tr.snapCompareBtn   || (L==='fr' ? 'Générer le PDF'              : 'Generate PDF');
   el = $id('snapcompare-jpeg-label');if (el) el.textContent = tr.snapCompareJpegBtn || (L==='fr' ? 'Générer le JPEG'           : 'Generate JPEG');
-  el = $id('snapcompare-video-label');if (el) el.textContent = tr.snapCompareAnimBtn || (L==='fr' ? 'Voir l\u2019animation'    : 'View animation');
+  el = $id('snapcompare-video-label');if (el) el.textContent = tr.snapCompareAnimBtn || (L==='fr' ? 'Évolution' : 'Evolution');
   document.querySelectorAll('[data-i18n="screenshotTitle"]').forEach(function(e)    { e.textContent = tr.screenshotTitle    || (L==='fr' ? 'Screenshot'      : 'Screenshot'); });
   document.querySelectorAll('[data-i18n="screenshotDark"]').forEach(function(e)     { e.textContent = tr.screenshotDark     || 'Dark'; });
   document.querySelectorAll('[data-i18n="screenshotLight"]').forEach(function(e)    { e.textContent = tr.screenshotLight    || 'Light'; });
@@ -10749,9 +10749,8 @@ var _snapAnimRAF = null;
 
 function snapAnimClose() {
   if (_snapAnimRAF) { cancelAnimationFrame(_snapAnimRAF); _snapAnimRAF = null; }
-  document.getElementById('snapanim-overlay').style.display = 'none';
-  var m = document.getElementById('snapanim-modal');
-  m.style.display = 'none';
+  document.getElementById('snapanim-overlay').classList.remove('show');
+  document.getElementById('snapanim-modal').classList.remove('show');
 }
 
 async function snapCompareAnim() {
@@ -10772,9 +10771,7 @@ async function snapCompareAnim() {
 
   var canvasEl = document.getElementById('snapanim-canvas');
   var dpr = window.devicePixelRatio || 1;
-  var SIZE = Math.min(window.innerWidth, window.innerHeight) * 0.83;
-  canvasEl.style.width  = SIZE + 'px';
-  canvasEl.style.height = SIZE + 'px';
+  var SIZE = canvasEl.offsetWidth || 340;
   canvasEl.width  = Math.round(SIZE * dpr);
   canvasEl.height = Math.round(SIZE * dpr);
   var VW = Math.round(SIZE), VH = Math.round(SIZE);
@@ -10795,7 +10792,8 @@ async function snapCompareAnim() {
   function fmtDate(ts) { var d = new Date(ts); return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear(); }
 
   function drawFrame(elapsed) {
-    var w = VW, h = VH, cx = w/2, cy = h/2, R = Math.min(w,h)*0.38, N = perSide*2, step = (2*Math.PI)/N;
+    var w = VW, h = VH, radarH = w; // zone radar = carré du haut
+    var cx = w/2, cy = radarH/2, R = w*0.38, N = perSide*2, step = (2*Math.PI)/N;
     var t, alphaA, alphaB;
     var FADE_MS = 400;
     if (elapsed < HOLD_MS) {
@@ -10822,14 +10820,14 @@ async function snapCompareAnim() {
       ctx.beginPath();
       for (var i = 0; i < N; i++) { var a = i*step - Math.PI/2; i===0 ? ctx.moveTo(cx+rr*Math.cos(a), cy+rr*Math.sin(a)) : ctx.lineTo(cx+rr*Math.cos(a), cy+rr*Math.sin(a)); }
       ctx.closePath(); ctx.strokeStyle = 'rgba(80,100,130,0.33)'; ctx.lineWidth = 1; ctx.stroke();
-      if (r===2||r===4||r===5) { ctx.fillStyle='rgba(100,120,150,0.8)'; ctx.font=Math.round(Math.min(w,h)*0.026)+'px DM Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillText(Math.round((r/5)*scaleMax), cx, cy-rr-3); }
+      if (r===2||r===4||r===5) { ctx.fillStyle='rgba(100,120,150,0.8)'; ctx.font=Math.round(w*0.026)+'px DM Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillText(Math.round((r/5)*scaleMax), cx, cy-rr-3); }
     }
 
     for (var i3 = 0; i3 < N; i3++) {
       var a3 = i3*step - Math.PI/2, isFo = i3%2===0;
       ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx+R*Math.cos(a3), cy+R*Math.sin(a3));
       ctx.strokeStyle = isFo ? 'rgba(232,146,124,0.25)' : 'rgba(126,200,227,0.25)'; ctx.lineWidth=1; ctx.stroke();
-      if (perSide<=16||i3%2===0) { var lr=R+Math.max(10,Math.min(w,h)*0.032); ctx.fillStyle=isFo?'rgba(232,146,124,0.8)':'rgba(126,200,227,0.7)'; ctx.font=Math.round(Math.min(w,h)*0.023)+'px DM Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(Math.floor(i3/2)+1, cx+lr*Math.cos(a3), cy+lr*Math.sin(a3)); }
+      if (perSide<=16||i3%2===0) { var lr=R+Math.max(10,w*0.032); ctx.fillStyle=isFo?'rgba(232,146,124,0.8)':'rgba(126,200,227,0.7)'; ctx.font=Math.round(w*0.023)+'px DM Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(Math.floor(i3/2)+1, cx+lr*Math.cos(a3), cy+lr*Math.sin(a3)); }
     }
 
     function drawPoly(arrA, arrB, aOff, stroke, fill) {
@@ -10842,8 +10840,8 @@ async function snapCompareAnim() {
     drawPoly(foA, foB, 0, 'rgba(232,146,124,0.9)', 'rgba(232,146,124,0.07)');
     ctx.beginPath(); ctx.arc(cx,cy,3,0,2*Math.PI); ctx.fillStyle='rgba(150,170,190,0.35)'; ctx.fill();
 
-    var PAD = Math.round(Math.min(w,h)*0.025);
-    ctx.font='500 '+Math.round(Math.min(w,h)*0.018)+'px DM Mono,monospace'; ctx.textBaseline='top';
+    var PAD = Math.round(w*0.025);
+    ctx.font='500 '+Math.round(w*0.018)+'px DM Mono,monospace'; ctx.textBaseline='top';
     var ai = (typeof loadAtelierInfo==='function') ? loadAtelierInfo() : {};
     var wname = (ai.name&&ai.name.trim()) ? ai.name.trim() : 'Spoke It';
     ctx.globalAlpha=1; ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.textAlign='left'; ctx.fillText(wname, PAD, PAD);
@@ -10853,23 +10851,139 @@ async function snapCompareAnim() {
     ctx.globalAlpha=1;
   }
 
-  document.getElementById('snapanim-overlay').style.display = 'block';
+  // Afficher la modale d'abord pour que le canvas ait une taille réelle
+  document.getElementById('snapanim-overlay').classList.add('show');
   var modal = document.getElementById('snapanim-modal');
-  modal.style.display = 'flex';
+  modal.classList.add('show');
 
-  var startTime = null;
-  function loop(ts) {
-    if (!startTime) startTime = ts;
-    var elapsed = ts - startTime;
-    if (elapsed > TOTAL_MS) elapsed = TOTAL_MS;
-    drawFrame(elapsed);
-    if (elapsed < TOTAL_MS) {
-      _snapAnimRAF = requestAnimationFrame(loop);
-    } else {
-      _snapAnimRAF = null;
-    }
+  // Attendre un frame pour que le layout soit calculé
+  await new Promise(function(r) { requestAnimationFrame(r); });
+  var SIZE2   = canvasEl.offsetWidth || 340;
+  var RECAP_H = Math.round(SIZE2 * 0.26); // zone récap sous le radar
+  canvasEl.width  = Math.round(SIZE2 * dpr);
+  canvasEl.height = Math.round((SIZE2 + RECAP_H) * dpr);
+  canvasEl.style.height = (SIZE2 + RECAP_H) + 'px';
+  VW = SIZE2; VH = SIZE2 + RECAP_H;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // Calcul récap moyennes + écart-type
+  function avg(arr) {
+    var vals = arr.filter(function(v) { return v !== null; });
+    return vals.length ? vals.reduce(function(a,b){ return a+b; }, 0) / vals.length : null;
   }
-  _snapAnimRAF = requestAnimationFrame(loop);
+  function std(arr) {
+    var vals = arr.filter(function(v) { return v !== null; });
+    if (!vals.length) return null;
+    var m = vals.reduce(function(a,b){ return a+b; }, 0) / vals.length;
+    return Math.sqrt(vals.reduce(function(s,x){ return s + Math.pow(x-m,2); }, 0) / vals.length);
+  }
+  var avgFoA = avg(foA), avgFoB = avg(foB);
+  var avgFaA = avg(faA), avgFaB = avg(faB);
+  var stdFoA = std(foA), stdFoB = std(foB);
+  var stdFaA = std(faA), stdFaB = std(faB);
+  var isAvant = (typeof wtype !== 'undefined') ? wtype !== 'arriere' : true;
+  // fo=orange, fa=bleu — roue arrière : fo=DS / fa=NDS — roue avant : fo=NDS / fa=DS
+  var avgDS_A  = isAvant ? avgFaA : avgFoA;
+  var avgDS_B  = isAvant ? avgFaB : avgFoB;
+  var avgNDS_A = isAvant ? avgFoA : avgFaA;
+  var avgNDS_B = isAvant ? avgFoB : avgFaB;
+  var stdDS_A  = isAvant ? stdFaA : stdFoA;
+  var stdDS_B  = isAvant ? stdFaB : stdFoB;
+  var stdNDS_A = isAvant ? stdFoA : stdFaA;
+  var stdNDS_B = isAvant ? stdFoB : stdFaB;
+  var colorDS  = isAvant ? 'rgba(126,200,227,1)' : 'rgba(232,146,124,1)';
+  var colorNDS = isAvant ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
+
+  function fmtDiff(a, b) {
+    if (a === null || b === null) return '—';
+    var d = b - a, pct = a !== 0 ? (d / a * 100) : 0;
+    var sign = d >= 0 ? '+' : '';
+    return sign + d.toFixed(1) + ' kgf  (' + sign + pct.toFixed(0) + '%)';
+  }
+  function fmtStd(stdA, stdB, avgA, avgB) {
+    if (stdA === null || stdB === null || !avgA || !avgB) return '—';
+    function f(n) { var s = n.toFixed(1); return s.endsWith('.0') ? String(Math.round(n)) : s; }
+    var cvA = stdA / avgA * 100;
+    var cvB = stdB / avgB * 100;
+    var diff = cvB - cvA;
+    var sign = diff >= 0 ? '+' : '';
+    return 'σ  ' + f(cvA) + '% → ' + f(cvB) + '%  (' + sign + f(diff) + '%)';
+  }
+
+  function drawRecap(alpha) {
+    var w = VW, h = VH, radarH = w;
+    var fs    = Math.round(w * 0.036);
+    var fsLbl = Math.round(w * 0.028);
+    var fsStd = Math.round(w * 0.026);
+    var zoneH = h - radarH;
+    var midY  = radarH + zoneH / 2;
+
+    // Fond zone récap
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#0d1017';
+    ctx.fillRect(0, radarH, w, zoneH);
+
+    // Séparateur
+    ctx.strokeStyle = 'rgba(80,100,130,0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(w*0.1, radarH); ctx.lineTo(w*0.9, radarH); ctx.stroke();
+
+    ctx.textBaseline = 'middle';
+    var lineGap = fs * 1.5;
+
+    // NDS à gauche
+    var cx1 = w * 0.27;
+    ctx.font = '600 ' + fsLbl + 'px DM Mono,monospace';
+    ctx.fillStyle = colorNDS; ctx.textAlign = 'center';
+    ctx.fillText('NDS', cx1, midY - lineGap);
+    ctx.font = '500 ' + fs + 'px DM Sans,sans-serif';
+    ctx.fillStyle = 'rgba(220,228,237,0.92)';
+    ctx.fillText(fmtDiff(avgNDS_A, avgNDS_B), cx1, midY);
+    ctx.font = '400 ' + fsStd + 'px DM Mono,monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.fillText(fmtStd(stdNDS_A, stdNDS_B, avgNDS_A, avgNDS_B), cx1, midY + lineGap);
+
+    // DS à droite
+    var cx2 = w * 0.73;
+    ctx.font = '600 ' + fsLbl + 'px DM Mono,monospace';
+    ctx.fillStyle = colorDS; ctx.textAlign = 'center';
+    ctx.fillText('DS', cx2, midY - lineGap);
+    ctx.font = '500 ' + fs + 'px DM Sans,sans-serif';
+    ctx.fillStyle = 'rgba(220,228,237,0.92)';
+    ctx.fillText(fmtDiff(avgDS_A, avgDS_B), cx2, midY);
+    ctx.font = '400 ' + fsStd + 'px DM Mono,monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.fillText(fmtStd(stdDS_A, stdDS_B, avgDS_A, avgDS_B), cx2, midY + lineGap);
+
+    ctx.globalAlpha = 1;
+  }
+
+  function play() {
+    if (_snapAnimRAF) { cancelAnimationFrame(_snapAnimRAF); _snapAnimRAF = null; }
+    var startTime = null;
+    var FADE_IN_MS = 600;
+    function loop(ts) {
+      if (!startTime) startTime = ts;
+      var elapsed = ts - startTime;
+      var animElapsed = Math.min(elapsed, TOTAL_MS);
+      drawFrame(animElapsed);
+      if (elapsed >= TOTAL_MS) {
+        var recapT = Math.min((elapsed - TOTAL_MS) / FADE_IN_MS, 1);
+        drawRecap(recapT);
+      }
+      if (elapsed < TOTAL_MS + FADE_IN_MS) {
+        _snapAnimRAF = requestAnimationFrame(loop);
+      } else {
+        drawRecap(1);
+        _snapAnimRAF = null;
+      }
+    }
+    _snapAnimRAF = requestAnimationFrame(loop);
+  }
+
+  // Exposer pour le bouton replay
+  document.getElementById('snapanim-replay').onclick = play;
+  play();
 }
 </script>
 <!-- ── Modale Évolution Tension ── -->
@@ -10891,17 +11005,23 @@ async function snapCompareAnim() {
   </button>
   <button id="snapcompare-video-btn" class="pdfopt-generate" onclick="snapCompareAnim()" style="opacity:.4;pointer-events:none;display:flex;align-items:center;justify-content:center;gap:.45rem">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-    <span id="snapcompare-video-label">Voir l&#x2019;animation</span>
+    <span id="snapcompare-video-label">Évolution</span>
   </button>
 </div>
 
 <!-- ── Modale Animation Évolution ── -->
-<div id="snapanim-overlay" onclick="snapAnimClose()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2000"></div>
-<div id="snapanim-modal" style="display:none;position:fixed;inset:0;z-index:2001;align-items:center;justify-content:center;flex-direction:column;gap:1rem;padding:env(safe-area-inset-top,1rem) env(safe-area-inset-right,1rem) env(safe-area-inset-bottom,1rem) env(safe-area-inset-left,1rem)">
-  <div style="position:relative;width:min(85vw,85vh)">
-    <button onclick="snapAnimClose()" class="snap-close" style="position:absolute;top:.5rem;right:.5rem;z-index:1">&#x2715;</button>
-    <canvas id="snapanim-canvas" style="width:100%;height:min(85vw,85vh);border-radius:8px;display:block"></canvas>
+<div class="snap-overlay" id="snapanim-overlay" onclick="snapAnimClose()"></div>
+<div class="snap-modal" id="snapanim-modal" style="max-width:420px">
+  <div class="snap-header">
+    <div class="snap-title">Animation</div>
+    <div style="display:flex;align-items:center;gap:.4rem">
+      <button id="snapanim-replay" class="snap-close" title="Rejouer">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+      </button>
+      <button onclick="snapAnimClose()" class="snap-close">&#x2715;</button>
+    </div>
   </div>
+  <canvas id="snapanim-canvas" style="width:100%;border-radius:calc(var(--r) - 4px);display:block"></canvas>
 </div>
 
 <!-- ── Modale options screenshot ── -->
