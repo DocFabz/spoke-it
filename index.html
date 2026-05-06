@@ -647,6 +647,9 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .snap-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
 .snap-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
 .snap-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+.snap-close:focus, .snap-close:active { outline:none; border-color:var(--border); color:var(--text3); background:none }
+#snapanim-replay:hover { border-color:rgba(126,200,227,.6); color:rgba(126,200,227,1) }
+#snapanim-replay:focus, #snapanim-replay:active { outline:none; border-color:var(--border); color:var(--text3); background:none }
 .snap-save-row { display:flex; gap:.4rem; flex-shrink:0 }
 .snap-save-btn {
   background:transparent; border:1px solid var(--border-s); border-radius:var(--rs);
@@ -10858,10 +10861,15 @@ async function snapCompareAnim() {
 
   // Attendre un frame pour que le layout soit calculé
   await new Promise(function(r) { requestAnimationFrame(r); });
-  var SIZE2   = canvasEl.offsetWidth || 340;
-  var RECAP_H = Math.round(SIZE2 * 0.26); // zone récap sous le radar
+  var RECAP_H_RATIO = 0.32;
+  // En paysage, limiter la taille pour que le canvas reste carré + récap dans la fenêtre
+  var maxW = canvasEl.offsetWidth || 340;
+  var maxH = Math.round(window.innerHeight * 0.75); // max 75vh
+  var SIZE2 = Math.min(maxW, Math.round(maxH / (1 + RECAP_H_RATIO)));
+  var RECAP_H = Math.round(SIZE2 * RECAP_H_RATIO);
   canvasEl.width  = Math.round(SIZE2 * dpr);
   canvasEl.height = Math.round((SIZE2 + RECAP_H) * dpr);
+  canvasEl.style.width  = SIZE2 + 'px';
   canvasEl.style.height = (SIZE2 + RECAP_H) + 'px';
   VW = SIZE2; VH = SIZE2 + RECAP_H;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -10900,23 +10908,17 @@ async function snapCompareAnim() {
     var sign = d >= 0 ? '+' : '';
     return sign + d.toFixed(1) + ' kgf  (' + sign + pct.toFixed(0) + '%)';
   }
-  function fmtStd(stdA, stdB, avgA, avgB) {
-    if (stdA === null || stdB === null || !avgA || !avgB) return '—';
-    function f(n) { var s = n.toFixed(1); return s.endsWith('.0') ? String(Math.round(n)) : s; }
-    var cvA = stdA / avgA * 100;
-    var cvB = stdB / avgB * 100;
-    var diff = cvB - cvA;
-    var sign = diff >= 0 ? '+' : '';
-    return 'σ  ' + f(cvA) + '% → ' + f(cvB) + '%  (' + sign + f(diff) + '%)';
-  }
+
 
   function drawRecap(alpha) {
     var w = VW, h = VH, radarH = w;
     var fs    = Math.round(w * 0.036);
     var fsLbl = Math.round(w * 0.028);
-    var fsStd = Math.round(w * 0.026);
     var zoneH = h - radarH;
-    var midY  = radarH + zoneH / 2;
+    var lineH = fs * 1.5;
+    // 3 lignes : label, kgf, std ligne1, std ligne2
+    var totalH = fsLbl + lineH * 3;
+    var startY = radarH + (zoneH - totalH) / 2 + fsLbl;
 
     // Fond zone récap
     ctx.globalAlpha = alpha;
@@ -10929,31 +10931,35 @@ async function snapCompareAnim() {
     ctx.beginPath(); ctx.moveTo(w*0.1, radarH); ctx.lineTo(w*0.9, radarH); ctx.stroke();
 
     ctx.textBaseline = 'middle';
-    var lineGap = fs * 1.5;
 
-    // NDS à gauche
-    var cx1 = w * 0.27;
-    ctx.font = '600 ' + fsLbl + 'px DM Mono,monospace';
-    ctx.fillStyle = colorNDS; ctx.textAlign = 'center';
-    ctx.fillText('NDS', cx1, midY - lineGap);
-    ctx.font = '500 ' + fs + 'px DM Sans,sans-serif';
-    ctx.fillStyle = 'rgba(220,228,237,0.92)';
-    ctx.fillText(fmtDiff(avgNDS_A, avgNDS_B), cx1, midY);
-    ctx.font = '400 ' + fsStd + 'px DM Mono,monospace';
-    ctx.fillStyle = 'rgba(255,255,255,0.95)';
-    ctx.fillText(fmtStd(stdNDS_A, stdNDS_B, avgNDS_A, avgNDS_B), cx1, midY + lineGap);
+    function drawSide(cx, label, color, diffStr, stdLine1, stdLine2) {
+      ctx.font = '600 ' + fsLbl + 'px DM Mono,monospace';
+      ctx.fillStyle = color; ctx.textAlign = 'center';
+      ctx.fillText(label, cx, startY);
 
-    // DS à droite
-    var cx2 = w * 0.73;
-    ctx.font = '600 ' + fsLbl + 'px DM Mono,monospace';
-    ctx.fillStyle = colorDS; ctx.textAlign = 'center';
-    ctx.fillText('DS', cx2, midY - lineGap);
-    ctx.font = '500 ' + fs + 'px DM Sans,sans-serif';
-    ctx.fillStyle = 'rgba(220,228,237,0.92)';
-    ctx.fillText(fmtDiff(avgDS_A, avgDS_B), cx2, midY);
-    ctx.font = '400 ' + fsStd + 'px DM Mono,monospace';
-    ctx.fillStyle = 'rgba(255,255,255,0.95)';
-    ctx.fillText(fmtStd(stdDS_A, stdDS_B, avgDS_A, avgDS_B), cx2, midY + lineGap);
+      ctx.font = '500 ' + fs + 'px DM Sans,sans-serif';
+      ctx.fillStyle = 'rgba(220,228,237,0.92)';
+      ctx.fillText(diffStr, cx, startY + lineH);
+
+      ctx.font = '500 ' + fs + 'px DM Sans,sans-serif';
+      ctx.fillStyle = 'rgba(220,228,237,0.92)';
+      ctx.fillText(stdLine1, cx, startY + lineH * 2);
+      ctx.fillText(stdLine2, cx, startY + lineH * 3);
+    }
+
+    function fmtStdLines(stdA, stdB, avgA, avgB) {
+      if (stdA === null || stdB === null || !avgA || !avgB) return ['—', ''];
+      function f(n) { var s = n.toFixed(1); return s.endsWith('.0') ? String(Math.round(n)) : s; }
+      var cvA = stdA / avgA * 100, cvB = stdB / avgB * 100, diff = cvB - cvA;
+      var sign = diff >= 0 ? '+' : '';
+      return ['σ  ' + f(cvA) + '% → ' + f(cvB) + '%', '(' + sign + f(diff) + '%)'];
+    }
+
+    var ndsLines = fmtStdLines(stdNDS_A, stdNDS_B, avgNDS_A, avgNDS_B);
+    var dsLines  = fmtStdLines(stdDS_A,  stdDS_B,  avgDS_A,  avgDS_B);
+
+    drawSide(w * 0.27, 'NDS', colorNDS, fmtDiff(avgNDS_A, avgNDS_B), ndsLines[0], ndsLines[1]);
+    drawSide(w * 0.73, 'DS',  colorDS,  fmtDiff(avgDS_A,  avgDS_B),  dsLines[0],  dsLines[1]);
 
     ctx.globalAlpha = 1;
   }
