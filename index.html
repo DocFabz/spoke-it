@@ -10871,15 +10871,19 @@ async function snapCompareAnim() {
   // Attendre un frame pour que le layout soit calculé
   await new Promise(function(r) { requestAnimationFrame(r); });
   var RECAP_H_RATIO = 0.32;
-  // En paysage, limiter la taille pour que le canvas reste carré + récap dans la fenêtre
+  var isLandscape = window.innerWidth > window.innerHeight;
+  // Hauteur dispo = fenêtre moins header modale (~60px) moins padding
+  var headerH = 60;
   var maxW = canvasEl.offsetWidth || 340;
-  var maxH = Math.round(window.innerHeight * 0.75); // max 75vh
+  var maxH = Math.round((window.innerHeight - headerH) * (isLandscape ? 0.88 : 0.78));
   var SIZE2 = Math.min(maxW, Math.round(maxH / (1 + RECAP_H_RATIO)));
   var RECAP_H = Math.round(SIZE2 * RECAP_H_RATIO);
   canvasEl.width  = Math.round(SIZE2 * dpr);
   canvasEl.height = Math.round((SIZE2 + RECAP_H) * dpr);
   canvasEl.style.width  = SIZE2 + 'px';
   canvasEl.style.height = (SIZE2 + RECAP_H) + 'px';
+  canvasEl.style.display = 'block';
+  canvasEl.style.margin  = '0 auto'; // centré horizontalement si plus petit que la modale
   VW = SIZE2; VH = SIZE2 + RECAP_H;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
@@ -11026,7 +11030,7 @@ async function snapCompareAnim() {
 
 <!-- ── Modale Animation Évolution ── -->
 <div class="snap-overlay" id="snapanim-overlay" onclick="snapAnimClose()"></div>
-<div class="snap-modal" id="snapanim-modal" style="max-width:420px">
+<div class="snap-modal" id="snapanim-modal" style="max-width:420px;max-height:92vh;overflow-y:auto">
   <div class="snap-header">
     <div class="snap-title">Animation</div>
     <div style="display:flex;align-items:center;gap:.4rem">
