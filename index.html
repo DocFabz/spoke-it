@@ -10011,6 +10011,15 @@ function snapCompareOpen() {
   _snapCompareSnaps = snaps;
   _snapCompareRenderList(snaps);
   _snapCompareUpdateUI();
+  // Appliquer les labels i18n à l'ouverture
+  var L = typeof lang !== 'undefined' ? lang : 'fr';
+  var tr = (typeof i18n !== 'undefined' && i18n[L]) ? i18n[L] : {};
+  var el;
+  el = $id('snapcompare-title');     if (el) el.textContent = tr.snapCompareTitle   || (L==='fr' ? 'Évolution Tension'          : 'Tension Evolution');
+  el = $id('snapcompare-desc');      if (el) el.textContent = tr.snapCompareDesc    || (L==='fr' ? 'Sélectionner deux snapshots.' : 'Select two snapshots.');
+  el = $id('snapcompare-btn-label'); if (el) el.textContent = tr.snapCompareBtn     || (L==='fr' ? 'Générer le PDF'              : 'Generate PDF');
+  el = $id('snapcompare-jpeg-label');if (el) el.textContent = tr.snapCompareJpegBtn || (L==='fr' ? 'Générer le JPEG'             : 'Generate JPEG');
+  el = $id('snapcompare-video-label');if (el) el.textContent = tr.snapCompareAnimBtn || (L==='fr' ? 'Évolution'                  : 'Evolution');
   document.getElementById('snapcompare-overlay').classList.add('show');
   document.getElementById('snapcompare-modal').classList.add('show');
 }
