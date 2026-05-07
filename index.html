@@ -148,7 +148,7 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .savemgr-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
 .savemgr-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
 .savemgr-desc { font-size:.72rem; color:var(--text2); line-height:1.5 }
-.savemgr-btns { display:flex; flex-direction:column; gap:.5rem }
+.savemgr-btns { display:flex; flex-direction:row; gap:.5rem }
 .savemgr-action-btn { display:flex; align-items:center; gap:.6rem; padding:.45rem .85rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:all .25s; text-align:left }
 .savemgr-export:hover, .savemgr-import:hover { border-color:rgba(126,200,227,.65); color:var(--accent2); background:rgba(126,200,227,.06) }
 .savemgr-warning { font-size:.65rem; color:var(--text3); font-style:italic; line-height:1.5 }
@@ -1290,13 +1290,13 @@ input[type=number] { -moz-appearance:textfield }
   </div>
   <p class="savemgr-desc" data-i18n="saveMgrDesc">Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.</p>
   <div class="savemgr-btns">
-    <button class="savemgr-action-btn savemgr-export" onclick="exportConfigs()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <span data-i18n="exportBtn">Exporter (.json)</span>
-    </button>
     <button class="savemgr-action-btn savemgr-import" onclick="$id('import-file-input').click()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 14 12 9 17 14"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <span data-i18n="importBtn">Importer (.json)</span>
+      <span data-i18n="importBtn">Importer</span>
+    </button>
+    <button class="savemgr-action-btn savemgr-export" onclick="exportConfigs()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span data-i18n="exportBtn">Exporter</span>
     </button>
     <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="importConfigs(event)">
   </div>
@@ -2326,7 +2326,7 @@ const i18n = {
     saveOk:'OK', saveError:'Veuillez saisir un nom.',
     configsTitle:'Configurations sauvegardées', loadBtn:'Charger',
     saveWarning:'⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.',
-    exportBtn:'Exporter (.json)', importBtn:'Importer (.json)',
+    exportBtn:'Exporter', importBtn:'Importer',
     importSuccess:'✓ Données importées avec succès.', importError:'Fichier invalide ou corrompu.',
     saveMgrTitle:'Gestion des sauvegardes',
     saveMgrDesc:'Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.',
@@ -2464,7 +2464,7 @@ const i18n = {
     saveOk:'OK', saveError:'Please enter a name.',
     configsTitle:'Saved configurations', loadBtn:'Load',
     saveWarning:'⚠︎ Locally stored in browser cache. Clearing the cache will erase all data.',
-    exportBtn:'Export (.json)', importBtn:'Import (.json)',
+    exportBtn:'Export', importBtn:'Import',
     importSuccess:'✓ Data imported successfully.', importError:'Invalid or corrupted file.',
     saveMgrTitle:'Backup manager',
     saveMgrDesc:'The JSON file contains all your data: wheel configurations, tension charts and custom tensiometers.',
