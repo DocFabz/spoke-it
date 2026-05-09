@@ -9309,7 +9309,7 @@ function openHrSaveModal(type) {
   if (titleEl) titleEl.textContent = isHub
     ? (lang === 'fr' ? 'Enregistrer le moyeu' : 'Save hub')
     : (lang === 'fr' ? 'Enregistrer la jante' : 'Save rim');
-  if (inp) { inp.value = ''; }
+  if (inp) { inp.value = ''; inp.placeholder = lang === 'fr' ? 'Nom…' : 'Name…'; }
   if (fb)  { fb.textContent = ''; }
   document.getElementById('hr-save-overlay').classList.add('show');
   document.getElementById('hr-save-modal').classList.add('show');
