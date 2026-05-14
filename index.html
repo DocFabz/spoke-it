@@ -534,6 +534,28 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 /* ── Defl cell layout ─────────────────────────────────────────────────── */
 .defl-cell { display:flex; flex-direction:column; align-items:center; gap:.08rem }
 .defl-td   { padding:.22rem .35rem }
+/* ── Hooke modal ─────────────────────────────────────────────────────────── */
+.hooke-overlay { position:fixed; inset:0; background:rgba(0,0,0,.72); backdrop-filter:blur(6px); z-index:9995; opacity:0; transition:opacity .25s; display:none }
+.hooke-overlay.show { display:block; opacity:1 }
+.hooke-modal {
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-48%) scale(.97);
+  z-index:9996; background:var(--card); border:1px solid var(--border-s);
+  border-radius:var(--r); padding:1.4rem 1.4rem 1.2rem;
+  box-shadow:0 32px 80px rgba(0,0,0,.55);
+  width:92%; max-width:460px;
+  display:none; flex-direction:column; gap:.9rem;
+  opacity:0; transition:opacity .25s, transform .25s;
+}
+.hooke-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+.hooke-header { display:flex; align-items:center; justify-content:space-between }
+.hooke-title { font-size:.58rem; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--accent) }
+.hooke-close { background:none; border:none; color:var(--text3); font-size:1rem; cursor:pointer; padding:.2rem .3rem; line-height:1; opacity:.5; transition:opacity .18s }
+.hooke-close:hover { opacity:1 }
+.hooke-legend { display:flex; gap:.5rem }
+.hooke-leg-card { flex:1; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); padding:.55rem .8rem; display:flex; flex-direction:column; gap:.18rem }
+.hooke-leg-label { font-size:.58rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase }
+.hooke-leg-val { font-family:'DM Mono',monospace; font-size:.6rem; color:var(--text) }
+
 
 /* ── En-tête colonne : bouton inversion ────────────────────────────────── */
 .tm-th-invert { display:none; background:none; border:none; outline:1px solid rgba(255,255,255,0.35); cursor:pointer; padding:.1rem .25rem; border-radius:4px; opacity:.5; font-size:.78rem; color:inherit; line-height:1; transition:opacity .15s, color .15s; flex-shrink:0 }
@@ -1690,6 +1712,11 @@ input[type=number] { -moz-appearance:textfield }
             <svg class="rc-tap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V4.5a1.5 1.5 0 013 0V12"/><path d="M11 11.5V10a1.5 1.5 0 013 0v1.5"/><path d="M14 12v-1a1.5 1.5 0 013 0v4.5a6 6 0 01-6 6h-1a6 6 0 01-6-6V9a1.5 1.5 0 013 0v4"/></svg>
           </div>
         </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:.6rem">
+          <button id="hooke-btn" onclick="openHookeModal()" title="Courbe de Hooke" style="display:none;background:transparent;border:1px solid rgba(126,200,227,.4);border-radius:var(--rs);padding:.28rem .32rem;cursor:pointer;color:var(--accent);line-height:0;touch-action:manipulation;transition:all .2s" onmouseenter="this.style.borderColor='rgba(126,200,227,.8)'" onmouseleave="this.style.borderColor='rgba(126,200,227,.4)'">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -2764,6 +2791,7 @@ function _applyLangModals() {
   var L  = typeof lang !== 'undefined' ? lang : 'fr';
   var tr = (typeof i18n !== 'undefined' && i18n[L]) ? i18n[L] : {};
   var el;
+  el = document.getElementById('hooke-modal-title'); if (el) el.textContent = L === 'en' ? "Hooke's Law (steel spokes)" : 'Loi de Hooke (rayons aciers)';
 
   // ── Modale Diagnostic ──
   el = $id('diag-modal-title'); if (el) el.textContent = tr.diagTitle      || 'Spoke It Diagnostic';
@@ -2912,6 +2940,7 @@ function applyState(s) {
     wtype === 'arriere' ? rg.appendChild(rcFo) : rg.insertBefore(rcFo, rcFa);
     $id('results').classList.add('show');
   const resCard = $id('results').querySelector('.card'); if (resCard) resCard.classList.add('card-done');
+    { const hb = document.getElementById('hooke-btn'); if (hb) hb.style.display = 'flex'; }
     if (s.summaryData) { summaryData = s.summaryData; renderSummary(); $id('summary-wrap').classList.add('show'); }
     if (s.arbData && s.arbData.fo && s.arbData.fa) {
       arbData = s.arbData;
@@ -3469,6 +3498,7 @@ function calc() {
     if (body.style.display === 'none') {
       body.style.display = 'block'; chevron.style.transform = 'rotate(180deg)';
     }
+    const hb = document.getElementById('hooke-btn'); if (hb) hb.style.display = 'flex';
     setTimeout(() => $id('results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     return;
   }
@@ -3601,6 +3631,7 @@ function calc() {
   $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
 
   $id('save-feedback').textContent = '';
+  { const hb = document.getElementById('hooke-btn'); if (hb) hb.style.display = 'flex'; }
   setTimeout(() => $id('results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
 }
 
@@ -11106,5 +11137,192 @@ document.addEventListener('keydown', function(e) {
 });
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- ── Modale Loi de Hooke ── -->
+<div class="hooke-overlay" id="hooke-overlay" onclick="closeHookeModal()"></div>
+<div class="hooke-modal" id="hooke-modal">
+  <div class="hooke-header">
+    <div class="hooke-title" id="hooke-modal-title">Loi de Hooke (rayons aciers)</div>
+    <button class="hooke-close" onclick="closeHookeModal()">&#x2715;</button>
+  </div>
+  <canvas id="hooke-canvas" role="img" aria-label="Courbe de Hooke" style="width:100%;display:block;border-radius:6px"></canvas>
+  <div id="hooke-legend" class="hooke-legend"></div>
+</div>
+
+<script>
+(function(){
+
+  function getSide(side) {
+    var mEl = document.getElementById('m-' + side);
+    if (!mEl) return null;
+    var evSpan = mEl.querySelector('.ev');
+    if (!evSpan) return null;
+    var eTot = parseFloat(evSpan.textContent.replace('+','').replace('mm','').trim());
+    var strongEl = mEl.querySelector('strong');
+    if (!strongEl) return null;
+    var T = parseFloat(strongEl.textContent.replace('kgf','').trim());
+    var rEl = document.getElementById('r-' + side);
+    var L = rEl ? parseFloat(rEl.textContent) : null;
+    if (!L || isNaN(L) || !T || isNaN(T) || isNaN(eTot)) return null;
+    var sdVal = (typeof sd !== 'undefined' && sd) ? sd : 2;
+    var saVal = (typeof sa !== 'undefined' && sa) ? sa : sdVal;
+    var A = Math.PI / 4 * sdVal * saVal;
+    var k = (A * 210000) / L;
+    var label = document.getElementById('rtag-' + side);
+    // fo = orange toujours, fa = bleu toujours
+    var color = side === 'fo' ? '#e8927c' : '#7ec8e3';
+    return { L:L, T:T, eTotal:eTot, k:k, color:color,
+             label: label ? label.textContent : (side==='fo'?'DS':'NDS') };
+  }
+
+  window.openHookeModal = function() {
+    var dFo = getSide('fo'), dFa = getSide('fa');
+    if (!dFo && !dFa) return;
+    var sides = [dFo, dFa].filter(Boolean);
+
+    // Titre traduit
+    var titleEl = document.getElementById('hooke-modal-title');
+    if (titleEl) titleEl.textContent = (typeof lang !== 'undefined' && lang === 'en')
+      ? "Hooke's Law (steel spokes)"
+      : 'Loi de Hooke (rayons aciers)';
+
+    // Cards légende : avant→fo gauche fa droite, arrière→fa gauche fo droite
+    var legEl = document.getElementById('hooke-legend');
+    if (legEl) {
+      var isArr = (typeof wtype !== 'undefined') && wtype === 'arriere';
+      var ordered = isArr ? [dFa, dFo] : [dFo, dFa];
+      ordered = ordered.filter(Boolean);
+      legEl.innerHTML = '';
+      ordered.forEach(function(d) {
+        var card = document.createElement('div');
+        card.className = 'hooke-leg-card';
+        card.style.borderColor = d.color + '44';
+        card.innerHTML =
+          '<div class="hooke-leg-label" style="color:'+d.color+'">'+d.label+'</div>' +
+          '<div class="hooke-leg-val">'+d.T.toFixed(1)+' kgf</div>' +
+          '<div class="hooke-leg-val">+'+d.eTotal.toFixed(3)+' mm</div>';
+        legEl.appendChild(card);
+      });
+    }
+
+    document.getElementById('hooke-overlay').classList.add('show');
+    document.getElementById('hooke-modal').classList.add('show');
+    requestAnimationFrame(function(){ drawHookeCurve(dFo, dFa); });
+  };
+
+  window.closeHookeModal = function() {
+    document.getElementById('hooke-overlay').classList.remove('show');
+    document.getElementById('hooke-modal').classList.remove('show');
+  };
+
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeHookeModal(); });
+
+  function niceMax(val, n) {
+    var step = val / n;
+    var mag = Math.pow(10, Math.floor(Math.log10(step)));
+    var nice = Math.ceil(step / mag) * mag;
+    return nice * n;
+  }
+
+  function drawHookeCurve(dFo, dFa) {
+    var canvas = document.getElementById('hooke-canvas');
+    var dpr = window.devicePixelRatio || 1;
+    var W = canvas.offsetWidth || 400;
+    var H = Math.round(W * 0.52);
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    var sides   = [dFo, dFa].filter(Boolean);
+    var bg      = '#1a2030';
+    var gridC   = 'rgba(255,255,255,.06)';
+    var axisC   = 'rgba(255,255,255,.15)';
+    var tickC   = '#4a5668';
+    var monoFont = "10px 'DM Mono',monospace";
+
+    var pad = { top:16, right:18, bottom:42, left:54 };
+    var pw = W - pad.left - pad.right;
+    var ph = H - pad.top  - pad.bottom;
+
+    ctx.fillStyle = bg;
+    if (ctx.roundRect) ctx.roundRect(0,0,W,H,8); else ctx.rect(0,0,W,H);
+    ctx.fill();
+
+    var rawMaxF = Math.max.apply(null, sides.map(function(d){ return d.T; })) * 1.5;
+    var rawMaxE = Math.max.apply(null, sides.map(function(d){ return d.eTotal; })) * 1.5;
+    var maxF = niceMax(rawMaxF, 5);
+    var maxE = niceMax(rawMaxE, 5);
+
+    function xp(f) { return pad.left + (f/maxF)*pw; }
+    function yp(e) { return pad.top  + ph - (e/maxE)*ph; }
+
+    // Grille
+    ctx.strokeStyle = gridC; ctx.lineWidth = 0.7;
+    for (var i=0; i<=5; i++) {
+      ctx.beginPath(); ctx.moveTo(pad.left+(i/5)*pw, pad.top);    ctx.lineTo(pad.left+(i/5)*pw, pad.top+ph); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(pad.left, pad.top+(i/5)*ph);    ctx.lineTo(pad.left+pw, pad.top+(i/5)*ph); ctx.stroke();
+    }
+
+    // Axes
+    ctx.strokeStyle = axisC; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.left, pad.top);    ctx.lineTo(pad.left, pad.top+ph); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad.left, pad.top+ph); ctx.lineTo(pad.left+pw, pad.top+ph); ctx.stroke();
+
+    // Ticks
+    ctx.fillStyle = tickC; ctx.font = monoFont;
+    ctx.textAlign = 'center';
+    for (var i=0; i<=5; i++) ctx.fillText((maxF*i/5).toFixed(1), xp(maxF*i/5), pad.top+ph+13);
+    ctx.textAlign = 'right';
+    for (var i=0; i<=5; i++) {
+      var v = maxE*i/5;
+      var s = v === 0 ? '+0' : ('+' + v.toFixed(3).replace(/0+$/,'').replace(/\.$/,''));
+      ctx.fillText(s, pad.left-5, yp(v)+3);
+    }
+
+    // Labels axes
+    ctx.fillStyle = tickC; ctx.textAlign = 'center';
+    ctx.fillText('kgf', pad.left+pw/2, H-4);
+    ctx.save(); ctx.translate(11, pad.top+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('mm', 0, 0); ctx.restore();
+
+    // Courbe blanche unique (k du premier côté)
+    var kKgf = sides[0].k / 9.81;
+    var steps = 60;
+
+    var fg = ctx.createLinearGradient(0, pad.top, 0, pad.top+ph);
+    fg.addColorStop(0, 'rgba(255,255,255,.07)');
+    fg.addColorStop(1, 'rgba(255,255,255,.01)');
+    ctx.beginPath(); ctx.moveTo(xp(0), yp(0));
+    for (var i=1; i<=steps; i++) { var f=i/steps*maxF; ctx.lineTo(xp(f), yp(f/kKgf)); }
+    ctx.lineTo(xp(maxF), pad.top+ph); ctx.lineTo(pad.left, pad.top+ph); ctx.closePath();
+    ctx.fillStyle = fg; ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (var i=0; i<=steps; i++) { var f=i/steps*maxF; i===0?ctx.moveTo(xp(f),yp(f/kKgf)):ctx.lineTo(xp(f),yp(f/kKgf)); }
+    ctx.stroke();
+
+    // Points de travail
+    sides.forEach(function(d) {
+      var hex = d.color;
+      var kk = d.k / 9.81;
+      var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+
+      ctx.strokeStyle = 'rgba('+r+','+g+','+b+',.25)'; ctx.lineWidth=0.8; ctx.setLineDash([3,4]);
+      ctx.beginPath(); ctx.moveTo(xp(d.T), pad.top+ph); ctx.lineTo(xp(d.T), yp(d.eTotal)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(pad.left, yp(d.eTotal)); ctx.lineTo(xp(d.T), yp(d.eTotal)); ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.beginPath(); ctx.arc(xp(d.T), yp(d.eTotal), 5, 0, Math.PI*2);
+      ctx.fillStyle = '#1a2030'; ctx.fill();
+      ctx.beginPath(); ctx.arc(xp(d.T), yp(d.eTotal), 3, 0, Math.PI*2);
+      ctx.fillStyle = hex; ctx.fill();
+    });
+  }
+
+})();
+</script>
+
 </body>
 </html>
