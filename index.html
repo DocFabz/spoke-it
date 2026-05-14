@@ -538,6 +538,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 /* ── En-tête colonne : bouton inversion ────────────────────────────────── */
 .tm-th-invert { display:none; background:none; border:none; outline:1px solid rgba(255,255,255,0.35); cursor:pointer; padding:.1rem .25rem; border-radius:4px; opacity:.5; font-size:.78rem; color:inherit; line-height:1; transition:opacity .15s, color .15s; flex-shrink:0 }
 .tm-th-invert:hover { opacity:1 }
+@media (hover: none) { .tm-th-invert:hover { opacity:.5 } }
 .tm-th-invert.visible { display:inline-flex }
 .tm-th-invert.flash { animation:inv-flash .6s ease forwards }
 @keyframes inv-flash { 0%{opacity:.5;color:inherit;outline-color:rgba(255,255,255,0.35)} 20%{opacity:1;color:#ffffff;outline-color:rgba(255,255,255,0.7)} 70%{opacity:1;color:#ffffff;outline-color:rgba(255,255,255,0.7)} 100%{opacity:.5;color:inherit;outline-color:rgba(255,255,255,0.35)} }
