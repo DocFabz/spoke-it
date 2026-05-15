@@ -576,19 +576,15 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .arb-wrap          { display:none; animation:fu .5s cubic-bezier(.22,1,.36,1) }
 .arb-wrap.show     { display:block }
 .arb-cols          { display:grid; grid-template-columns:1fr 1fr; gap:1rem }
-.arb-col-head      { font-size:.56rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; margin-bottom:.7rem }
+.arb-col-head      { font-size:.56rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; margin-bottom:.7rem; text-align:center }
 .arb-col-head.fo   { color:var(--warm) }
 .arb-col-head.fa   { color:var(--accent) }
-.arb-even-btn      { margin-bottom:.6rem; padding:.28rem .8rem; background:transparent; border:1px solid var(--border); border-radius:20px; color:var(--text3); font-family:'DM Mono',monospace; font-size:.61rem; font-weight:400; letter-spacing:.14em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:all .22s }
-.arb-even-btn:hover  { border-color:var(--border-s); color:var(--text2) }
-.arb-even-btn.active { border-color:rgba(126,200,227,.4); color:var(--accent2); background:rgba(126,200,227,.06) }
 .arb-grid          { display:flex; flex-direction:column; gap:.3rem }
 .arb-row           { display:flex; align-items:center; justify-content:space-between; padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--rs); background:var(--card-alt); cursor:pointer; touch-action:manipulation; transition:border-color .18s, background .18s, box-shadow .18s }
 .arb-row:hover     { background:rgba(255,255,255,.04); box-shadow:0 0 0 1px var(--border-s) }
 @media (hover: none) { .arb-row:hover { background:var(--card-alt); box-shadow:none } }
 .arb-row.best-fo  { border-color:var(--warm) }
 .arb-row.best-fa  { border-color:var(--accent) }
-.arb-row.arb-muted { opacity:.25; border-color:transparent; pointer-events:none; cursor:default }
 .arb-row.arb-flash { border-color:var(--success) !important; box-shadow:0 0 0 1px var(--success) !important }
 .arb-left          { display:flex; flex-direction:column; align-items:flex-start; gap:.05rem }
 .arb-sz            { font-family:'DM Mono',monospace; font-size:.88rem; font-weight:500; color:var(--text); line-height:1 }
@@ -1766,16 +1762,14 @@ input[type=number] { -moz-appearance:textfield }
         <div class="arb-cols" id="arb-cols">
           <div id="arb-col-fo">
             <div class="arb-col-head fo" id="arb-head-fo">Côté Droit (DS)</div>
-            <button class="arb-even-btn" id="arb-even-fo" onclick="toggleEven('fo')" data-i18n="evenSizes">Tailles paires</button>
             <div class="arb-grid" id="arb-grid-fo"></div>
           </div>
           <div id="arb-col-fa">
             <div class="arb-col-head fa" id="arb-head-fa">Côté Gauche (NDS)</div>
-            <button class="arb-even-btn" id="arb-even-fa" onclick="toggleEven('fa')" data-i18n="evenSizes">Tailles paires</button>
             <div class="arb-grid" id="arb-grid-fa"></div>
           </div>
         </div>
-        <p class="help" style="margin-top:1rem" data-i18n="spokeThread">⚠ La suggestion d'arrondi détermine la taille de rayon avec le plus faible écart avec la cible, en tenant compte de l'élongation estimée. Vérifiez toujours la base de calcul de votre ERD.</p>
+        <p class="help" style="margin-top:1rem" data-i18n="spokeThread">⚠ La suggestion d'arrondi propose la taille de rayon ayant le moins d'écart avec la cible, en prenant en compte l'élongation estimée. Vérifiez toujours la base de calcul de votre ERD et le positionnement du rayon dans l'écrou qui a servi à le définir.</p>
       </div>
     </div>
   </div>
@@ -2377,8 +2371,8 @@ const i18n = {
     errTension:'Veuillez choisir la tension cible du côté fort.',
     errOffset:'Les déports doivent être positifs.',
     errSO:'Veuillez renseigner le Spoke Offset (SO) pour les deux côtés.',
-    arbitrage:'Arrondi suggéré', evenSizes:'Tailles paires', gapTarget:'écart cible',
-    spokeThread:'⚠ La suggestion d\'arrondi propose la taille de rayon ayant le moins d\'écart avec la cible, en prenant en compte l\'élongation estimée. Vérifiez toujours la base de calcul de votre ERD !',
+    arbitrage:'Arrondi suggéré', gapTarget:'écart cible',
+    spokeThread:'⚠ La suggestion d\'arrondi propose la taille de rayon ayant le moins d\'écart avec la cible, en prenant en compte l\'élongation estimée. Vérifiez toujours la base de calcul de votre ERD et le positionnement du rayon dans l\'écrou qui a servi à le définir.',
     saveLabel:'Sauvegarder', savePlaceholder:'Nom de la configuration…',
     saveOk:'OK', saveError:'Veuillez saisir un nom.',
     configsTitle:'Configurations sauvegardées', loadBtn:'Charger',
@@ -2518,8 +2512,8 @@ const i18n = {
     errTension:'Please select the tension target for the strong side.',
     errOffset:'Offsets must be positive values.',
     errSO:'Please enter Spoke Offset (SO) for both sides.',
-    arbitrage:'Suggested rounding', evenSizes:'Even sizes', gapTarget:'gap to target',
-    spokeThread:'⚠ The rounding suggestion finds the spoke length with the smallest gap from target, accounting for estimated elongation. Always verify the calculation basis of your ERD.',
+    arbitrage:'Suggested rounding', gapTarget:'gap to target',
+    spokeThread:'⚠ The rounding suggestion finds the spoke length with the smallest gap from target, accounting for estimated elongation. Always verify the calculation basis of your ERD and the spoke positioning in the nipple used to define it.',
     saveLabel:'Save', savePlaceholder:'Configuration name…',
     saveOk:'OK', saveError:'Please enter a name.',
     configsTitle:'Saved configurations', loadBtn:'Load',
@@ -2742,7 +2736,6 @@ const saved = { avant: null, arriere: null };
 let currentErrKey = null;
 let summaryData = null;
 let arbData     = { fo: null, fa: null };
-let evenMode    = { fo: false, fa: false };
 let arbSelected = { fo: null, fa: null };
 let ccPoints = [];       // [{kgf, reading}] — état charte personnalisée
 let ccInputOrder = null; // null | 'kgf-first' | 'read-first'
@@ -3128,7 +3121,7 @@ function clearFormSilent() {
   $id('arb-card-body').style.display  = 'none'; $id('arb-card-chevron').style.transform  = '';
   $id('sum-card-body').style.display  = 'none'; $id('sum-card-chevron').style.transform  = '';
   $id('save-card-body').style.display = 'none'; $id('save-card-chevron').style.transform = '';
-  summaryData = null; arbData.fo = null; arbData.fa = null; evenMode.fo = false; evenMode.fa = false; arbSelected.fo = null; arbSelected.fa = null;
+  summaryData = null; arbData.fo = null; arbData.fa = null; arbSelected.fo = null; arbSelected.fa = null;
   saved[wtype] = null;
   renderConfigsList();
   updateAsymField();
@@ -3711,8 +3704,6 @@ function calc() {
 
   // readState APRÈS l'assignation des rtags pour capturer les bonnes clés
   saved[wtype] = readState(); saved[wtype].wtype = wtype;
-  evenMode.fo = false; evenMode.fa = false;
-  $id('arb-even-fo').classList.remove('active'); $id('arb-even-fa').classList.remove('active');
   $id('arb-wrap').classList.remove('show');
   $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
 
@@ -3808,25 +3799,22 @@ function updateSumCardState() {
 function buildArb(side, exactLen, elongation) { arbData[side] = { exactLen, elongation }; arbSelected[side] = null; renderArb(side); }
 
 function renderArb(side) {
-  const d = arbData[side], onlyEven = evenMode[side];
+  const d = arbData[side];
   const base = Math.round(d.exactLen - d.elongation), sizes = [base-1, base, base+1];
   const deltas = sizes.map(s => (s + d.elongation) - d.exactLen);
   let minAbs = Infinity;
-  sizes.forEach((s, i) => { if (onlyEven && s%2!==0) return; if (Math.abs(deltas[i]) < minAbs) minAbs = Math.abs(deltas[i]); });
+  sizes.forEach((s, i) => { if (Math.abs(deltas[i]) < minAbs) minAbs = Math.abs(deltas[i]); });
   $id('arb-grid-' + side).innerHTML = sizes.map((sz, i) => {
     const delta = deltas[i];
     let cls = 'arb-row';
-    const isMuted = onlyEven && sz%2!==0;
-    if (isMuted) cls += ' arb-muted';
-    else if (Math.abs(delta) <= minAbs + 0.0001) cls += ' best-' + side;
+    if (Math.abs(delta) <= minAbs + 0.0001) cls += ' best-' + side;
     const rawThreads = delta / 0.45;
     const roundedThreads = Math.round(rawThreads * 2) / 2;
     const threadWord = lang === 'fr'
       ? (Math.abs(roundedThreads) <= 1 ? 'filet' : 'filets')
       : (Math.abs(roundedThreads) <= 1 ? 'thread' : 'threads');
     const threadStr = '≈ ' + (roundedThreads === 0 ? '' : roundedThreads > 0 ? '+' : '') + roundedThreads + ' ' + threadWord;
-    const clickAttr = isMuted ? '' : ` onclick="applyArbLen('${side}',${sz})"`;
-    return `<div class="${cls}"${clickAttr}><div class="arb-left"><span class="arb-sz">${sz}</span><span class="arb-unit">mm</span>${arbSelected[side] === sz ? '<span style="color:var(--success);font-size:.7rem;line-height:1">✓</span>' : ''}</div><div class="arb-right"><span class="arb-delta">${delta>=0?'+':''}${delta.toFixed(2)} mm</span><span class="arb-lbl" style="margin-bottom:.08rem">${t('gapTarget')}</span><span class="arb-lbl" style="color:var(--text2);font-size:.58rem">${threadStr}</span></div></div>`;
+    return `<div class="${cls}" onclick="applyArbLen('${side}',${sz})"><div class="arb-left"><span class="arb-sz">${sz}</span><span class="arb-unit">mm</span>${arbSelected[side] === sz ? '<span style="color:var(--success);font-size:.7rem;line-height:1">✓</span>' : ''}</div><div class="arb-right"><span class="arb-delta">${delta>=0?'+':''}${delta.toFixed(2)} mm</span><span class="arb-lbl" style="margin-bottom:.08rem">${t('gapTarget')}</span><span class="arb-lbl" style="color:var(--text2);font-size:.58rem">${threadStr}</span></div></div>`;
   }).join('');
 }
 
@@ -3843,8 +3831,6 @@ function applyArbLen(side, sz) {
   const newEl = [...$id('arb-grid-' + side).querySelectorAll('.arb-row')].find(r => parseInt(r.querySelector('.arb-sz').textContent) === sz);
   if (newEl) { newEl.classList.add('arb-flash'); setTimeout(() => newEl.classList.remove('arb-flash'), 700); }
 }
-
-function toggleEven(side) { evenMode[side] = !evenMode[side]; $id('arb-even-'+side).classList.toggle('active', evenMode[side]); renderArb(side); }
 
 // ── Modale saisie taille rayon ──────────────────────────────────────────────────
 let _slenSide = null; // 'left' ou 'right'
