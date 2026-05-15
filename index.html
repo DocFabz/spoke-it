@@ -492,7 +492,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .fo .rnum { color:var(--warm2) }
 .fa .rnum { color:var(--accent2) }
 .runit    { font-family:'DM Mono',monospace; font-size:.68rem; font-weight:300; color:var(--text3); margin:.08rem 0 .9rem }
-.rrows    { border-top:1px solid var(--border); padding-top:.8rem; display:flex; flex-direction:column; gap:.32rem }
+.rrows    { display:flex; flex-direction:column; gap:.32rem }
+.rrows:not(:empty) { border-top:1px solid var(--border); padding-top:.8rem }
 .rrow     { display:flex; justify-content:space-between; align-items:baseline; font-size:.72rem; color:var(--text2) }
 .rrow strong { font-family:'DM Mono',monospace; font-weight:400; font-size:.77rem; color:var(--text) }
 .ev       { font-family:'DM Mono',monospace; font-weight:500; color:var(--success); font-size:.8rem }
@@ -2480,6 +2481,8 @@ const i18n = {
     snapCompareAnimBtn:'Évolution',
     screenshotTitle:'Screenshot', screenshotDark:'Dark', screenshotLight:'Light', screenshotGenerate:'Générer le JPEG',
     snapNameError:'Veuillez saisir un nom.',
+    estStretch:'Est. Stretch',
+    hookeSectionLabel:'Section de rayon',
   },
   en: {
     wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -2617,6 +2620,8 @@ const i18n = {
     snapCompareAnimBtn:'Evolution',
     screenshotTitle:'Screenshot', screenshotDark:'Dark', screenshotLight:'Light', screenshotGenerate:'Generate JPEG',
     snapNameError:'Please enter a name.',
+    estStretch:'Est. Stretch',
+    hookeSectionLabel:'Spoke section',
   }
 };
 
@@ -3644,8 +3649,9 @@ function calc() {
   // Sub-results (elongation + kgf) only shown if steel + section selected
   const hasSpokeSection = spokeMatType === 'steel' && sd !== null && !isNaN(sd);
   if (hasSpokeSection) {
-    $id('m-fo').innerHTML = `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFoDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFoDisplay.toFixed(1)} kgf</strong></div>`;
-    $id('m-fa').innerHTML = `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFaDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFaDisplay.toFixed(1)} kgf</strong></div>`;
+    const stretchLabel = t('estStretch');
+    $id('m-fo').innerHTML = `<div class="rrow"><span>${stretchLabel}</span><span class="ev">+${eFoDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFoDisplay.toFixed(1)} kgf</strong></div>`;
+    $id('m-fa').innerHTML = `<div class="rrow"><span>${stretchLabel}</span><span class="ev">+${eFaDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFaDisplay.toFixed(1)} kgf</strong></div>`;
   } else {
     $id('m-fo').innerHTML = '';
     $id('m-fa').innerHTML = '';
@@ -11214,6 +11220,7 @@ document.addEventListener('keydown', function(e) {
     <div class="hooke-title" id="hooke-modal-title">Loi de Hooke (rayons aciers)</div>
     <button class="hooke-close" onclick="closeHookeModal()">&#x2715;</button>
   </div>
+  <div id="hooke-modal-subtitle" style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text3);letter-spacing:.08em;margin-top:-.4rem"></div>
   <canvas id="hooke-canvas" role="img" aria-label="Courbe de Hooke" style="width:100%;display:block;border-radius:6px"></canvas>
   <div id="hooke-legend" class="hooke-legend"></div>
 </div>
@@ -11254,6 +11261,15 @@ document.addEventListener('keydown', function(e) {
     if (titleEl) titleEl.textContent = (typeof lang !== 'undefined' && lang === 'en')
       ? "Hooke's Law (steel spokes)"
       : 'Loi de Hooke (rayons aciers)';
+
+    // Sous-titre : section de rayon sélectionnée
+    var subEl = document.getElementById('hooke-modal-subtitle');
+    if (subEl) {
+      var sdVal = (typeof sd !== 'undefined' && sd) ? sd : null;
+      var saVal = (typeof sa !== 'undefined' && sa) ? sa : null;
+      var sectionVal = sdVal ? (saVal ? sdVal + ' \xd7 ' + saVal + ' mm' : sdVal + ' mm') : '\u2014';
+      subEl.textContent = t('hookeSectionLabel') + ' : ' + sectionVal;
+    }
 
     // Cards légende : avant→fo gauche fa droite, arrière→fa gauche fo droite
     var legEl = document.getElementById('hooke-legend');
