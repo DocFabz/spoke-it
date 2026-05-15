@@ -1492,27 +1492,26 @@ input[type=number] { -moz-appearance:textfield }
       <div class="clabel" data-i18n="spokeCard">Rayons</div>
     </div>
 
-    <div class="f">
-      <div class="crow" style="margin-bottom:1rem">
-        <button class="cp active" id="btn-spoke-steel" onclick="setSpokeMatType('steel')" data-i18n="spokeMaterialSteel">ACIER</button>
-        <button class="cp"        id="btn-spoke-other" onclick="setSpokeMatType('other')" data-i18n="spokeMaterialOther">AUTRE MATÉRIAU</button>
+    <div class="prow">
+      <button class="pill pill-icon active" id="btn-spoke-steel" onclick="setSpokeMatType('steel')" data-i18n="spokeMaterialSteel">ACIER</button>
+      <button class="pill pill-icon"        id="btn-spoke-other" onclick="setSpokeMatType('other')" data-i18n="spokeMaterialOther">AUTRE MATÉRIAU</button>
+    </div>
+
+    <div class="g2">
+      <div class="f" id="spoke-section-field">
+        <label class="tip-wrap"><span data-i18n="spokeSection">Section de rayon (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="spokeSectionTip">Permet de calculer l'élongation</span></label>
+        <select id="spoke-select" onchange="setSpokeFromSelect(this)">
+          <option value="" selected>—</option>
+          <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
+          <option value="1.7|">1.7</option>  <option value="1.8|">1.8</option>
+          <option value="2.0|">2.0</option>
+          <option value="2.3|">2.3</option>
+          <option value="0.9|2.2">0.9×2.2</option>
+          <option value="0.9|2.3">0.9×2.3</option>
+          <option value="1.2|2.0">1.2×2.0</option>
+        </select>
       </div>
-      <div class="g2">
-        <div id="spoke-section-field">
-          <label class="tip-wrap"><span data-i18n="spokeSection">Section de rayon (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="spokeSectionTip">Permet de calculer l'élongation</span></label>
-          <select id="spoke-select" onchange="setSpokeFromSelect(this)">
-            <option value="" disabled selected hidden>—</option>
-            <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
-            <option value="1.7|">1.7</option>  <option value="1.8|">1.8</option>
-            <option value="2.0|">2.0</option>
-            <option value="2.3|">2.3</option>
-            <option value="0.9|2.2">0.9×2.2</option>
-            <option value="0.9|2.3">0.9×2.3</option>
-            <option value="1.2|2.0">1.2×2.0</option>
-          </select>
-        </div>
-        <div></div>
-      </div>
+      <div></div>
     </div>
   </div>
 
@@ -3292,6 +3291,7 @@ function calcNsd() {
 }
 
 function setSpokeFromSelect(sel) {
+  if (!sel.value) { sd = null; sa = null; markModified(); updateCalcBtn(); return; }
   const parts = sel.value.split('|');
   sd = parseFloat(parts[0]); sa = parts[1] ? parseFloat(parts[1]) : null;
   markModified();
