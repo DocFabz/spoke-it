@@ -1478,22 +1478,44 @@ input[type=number] { -moz-appearance:textfield }
     </div>
     <p class="offset-coherence-warn" id="offset-coherence-warn" data-i18n="offsetCoherenceWarn">⚠ Vérifier cohérence des déports</p>
 
-    <div class="g2" style="margin-top:1.2rem">
-      <div class="f">
-        <label class="tip-wrap"><span data-i18n="spokeSection">Section de rayon (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="spokeSectionTip">Permet de calculer l'élongation</span></label>
-        <select id="spoke-select" onchange="setSpokeFromSelect(this)">
-          <option value="" disabled selected hidden>—</option>
-          <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
-          <option value="1.7|">1.7</option>  <option value="1.8|">1.8</option>
-          <option value="2.0|">2.0</option>
-          <option value="2.3|">2.3</option>
-          <option value="0.9|2.2">0.9×2.2</option>
-          <option value="0.9|2.3">0.9×2.3</option>
-          <option value="1.2|2.0">1.2×2.0</option>
-        </select>
+  </div>
+
+  <!-- ── Rayon ── -->
+  <div class="card" id="card-rayon">
+    <div class="ch">
+      <svg class="cicon" viewBox="0 0 24 10" fill="none" stroke="currentColor" stroke-width="1.2">
+        <line x1="3" y1="8" x2="3" y2="4"/>
+        <path d="M3 4 Q3 1.5 5.5 1.5" stroke-linecap="round"/>
+        <line x1="5.5" y1="1.5" x2="20" y2="1.5"/>
+        <line x1="19" y1="1" x2="22" y2="1"/>  <line x1="19.5" y1="1.5" x2="22" y2="1.5"/>  <line x1="19" y1="2" x2="22" y2="2"/>
+      </svg>
+      <div class="clabel" data-i18n="spokeCard">Rayons</div>
+    </div>
+
+    <div class="f">
+      <div class="crow" style="margin-bottom:1rem">
+        <button class="cp active" id="btn-spoke-steel" onclick="setSpokeMatType('steel')" data-i18n="spokeMaterialSteel">ACIER</button>
+        <button class="cp"        id="btn-spoke-other" onclick="setSpokeMatType('other')" data-i18n="spokeMaterialOther">AUTRE MATÉRIAU</button>
+      </div>
+      <div class="g2">
+        <div id="spoke-section-field">
+          <label class="tip-wrap"><span data-i18n="spokeSection">Section de rayon (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="spokeSectionTip">Permet de calculer l'élongation</span></label>
+          <select id="spoke-select" onchange="setSpokeFromSelect(this)">
+            <option value="" disabled selected hidden>—</option>
+            <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
+            <option value="1.7|">1.7</option>  <option value="1.8|">1.8</option>
+            <option value="2.0|">2.0</option>
+            <option value="2.3|">2.3</option>
+            <option value="0.9|2.2">0.9×2.2</option>
+            <option value="0.9|2.3">0.9×2.3</option>
+            <option value="1.2|2.0">1.2×2.0</option>
+          </select>
+        </div>
+        <div></div>
       </div>
     </div>
   </div>
+
   <div class="card" id="card-rim">
     <div class="ch">
       <svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
@@ -2331,6 +2353,7 @@ const i18n = {
     soLeft:'SO gauche', soRight:'SO droit',
     erdDirect:'ERD DIRECT', addonTip:"Dépend de l'ecrou utilisé",
     erdCalc:'ERD calculé (mm)', rimAsym:'ASYM. JANTE (mm)', spokeSection:'Section de rayon (mm)', spokeSectionTip:"Permet de calculer l'élongation", cross:'Croisement',
+    spokeCard:'Rayons', spokeMaterialSteel:'ACIER', spokeMaterialOther:'AUTRE MATÉRIAU',
     driveSide:'Côté Droit (DS)', nonDriveSide:'Côté Gauche (NDS)',
     rtagDriveSideFront:'CÔTÉ DROIT (DS)', rtagNonDriveSideFront:'CÔTÉ GAUCHE (NDS)',
     rtagDriveSideRear:'CÔTÉ DROIT (DS)',  rtagNonDriveSideRear:'CÔTÉ GAUCHE (NDS)',
@@ -2341,7 +2364,6 @@ const i18n = {
     hubType:'Type moyeu', spokeSection2:'Section rayon', rimAsym2:'Asym. jante',
     tensionRatio:'Tension ratio', frontLabel:'Avant', rearLabel:'Arrière', radial:'Radial',
     errSpokes:'Veuillez choisir le nombre de rayons.',
-    errSpoke:'Veuillez choisir la section de rayon.',
     errPcd:'Veuillez renseigner PCD et déport pour les deux côtés.',
     errErd:'ERD invalide ou non renseigné.', errCross:'Veuillez choisir un croisement.',
     errTension:'Veuillez choisir la tension cible du côté fort.',
@@ -2469,6 +2491,7 @@ const i18n = {
     soLeft:'SO left', soRight:'SO right',
     erdDirect:'ERD DIRECT', addonTip:'Depends on the nipple used',
     erdCalc:'Calculated ERD (mm)', rimAsym:'RIM ASYM. (mm)', spokeSection:'Spoke section (mm)', spokeSectionTip:'Used to calculate elongation', cross:'Lacing',
+    spokeCard:'Spokes', spokeMaterialSteel:'STEEL', spokeMaterialOther:'OTHER MATERIAL',
     driveSide:'Right Side (DS)', nonDriveSide:'Left Side (NDS)',
     rtagDriveSideFront:'RIGHT SIDE (DS)', rtagNonDriveSideFront:'LEFT SIDE (NDS)',
     rtagDriveSideRear:'RIGHT SIDE (DS)',  rtagNonDriveSideRear:'LEFT SIDE (NDS)',
@@ -2479,7 +2502,6 @@ const i18n = {
     hubType:'Hub type', spokeSection2:'Spoke section', rimAsym2:'Rim asym.',
     tensionRatio:'Tension ratio', frontLabel:'Front', rearLabel:'Rear', radial:'Radial',
     errSpokes:'Please select the number of spokes.',
-    errSpoke:'Please select the spoke section.',
     errPcd:'Please enter PCD and offset for both sides.',
     errErd:'ERD is invalid or missing.', errCross:'Please select a lacing pattern.',
     errTension:'Please select the tension target for the strong side.',
@@ -2662,6 +2684,7 @@ function clearLoadedConfigName() {
 
 // ── State ────────────────────────────────────────────────────────────────────
 let wtype = 'avant', erdMode = 'direct', sd = null, sa = null, cross = null, hubType = 'jbend';
+let spokeMatType = 'steel'; // 'steel' | 'other'
 let diffMode = false, crossFo = null, crossFa = null;
 const hubTypeByWheel = { avant: 'jbend', arriere: 'jbend' }; // hubType indépendant par roue
 let tmType = null;
@@ -2857,7 +2880,7 @@ function readState() {
     nsdVal: $id('nsd-val').value, ecrouType: $id('ecrou-type').value,
     erdNsdResult: $id('erd-nsd-result').value,
     asym: $id('asym').value, spokeSelect: $id('spoke-select').value,
-    cross, crossFo, crossFa, diffMode, hubType, sd, sa,
+    cross, crossFo, crossFa, diffMode, hubType, sd, sa, spokeMatType,
     soLeft: $id('sp-so-left').value, soRight: $id('sp-so-right').value,
     tensionForte: $id('tension-forte').value,
     hasResult: $id('results').classList.contains('show'),
@@ -2895,6 +2918,7 @@ function applyState(s) {
   $id('spoke-select').value   = s.spokeSelect;
   $id('tension-forte').value  = s.tensionForte;
   sd = s.sd; sa = s.sa; cross = s.cross;
+  if (s.spokeMatType) setSpokeMatType(s.spokeMatType);
   diffMode = s.diffMode || false; crossFo = s.crossFo ?? null; crossFa = s.crossFa ?? null;
   if (s.hubType) { hubType = s.hubType; hubTypeByWheel[wtype] = s.hubType; setHubType(hubType, true); }
   $id('sp-so-left').value  = s.soLeft  || '';
@@ -3049,6 +3073,7 @@ function resetFields() {
   const soR = $id('sp-so-right'); soR.value = ''; soR._prevVal = undefined;
   $id('spoke-select').value = ''; syncSelectPlaceholder($id('spoke-select'));
   sd = null; sa = null; cross = null; crossFo = null; crossFa = null;
+  setSpokeMatType('steel');
   diffMode = false;
   const diffBtn = $id('diff-toggle');
   if (diffBtn) diffBtn.setAttribute('aria-checked', 'false');
@@ -3273,6 +3298,21 @@ function setSpokeFromSelect(sel) {
   updateCalcBtn();
 }
 
+function setSpokeMatType(type) {
+  spokeMatType = type;
+  document.getElementById('btn-spoke-steel').classList.toggle('active', type === 'steel');
+  document.getElementById('btn-spoke-other').classList.toggle('active', type === 'other');
+  const field = document.getElementById('spoke-section-field');
+  if (field) field.closest('.g2').style.display = type === 'steel' ? '' : 'none';
+  if (type === 'other') {
+    sd = null; sa = null;
+    const sel = document.getElementById('spoke-select');
+    if (sel) { sel.value = ''; if (typeof syncSelectPlaceholder === 'function') syncSelectPlaceholder(sel); }
+  }
+  markModified();
+  updateCalcBtn();
+}
+
 function setCross(b) {
   document.querySelectorAll('#cross-row-single .cp').forEach(x => x.classList.remove('active','invalid'));
   b.classList.add('active');
@@ -3410,7 +3450,6 @@ function updateAsymField() {
 // ── Validation ────────────────────────────────────────────────────────────────
 function checkReady() {
   const n = parseInt($id('nb-rayons').value); if (!n) return false;
-  if (sd === null || isNaN(sd)) return false;
   const pL = parseFloat($id('pcd-left').value),  pR = parseFloat($id('pcd-right').value);
   const oL = parseFloat($id('offset-left').value), oR = parseFloat($id('offset-right').value);
   if ([pL,pR,oL,oR].some(isNaN) || pL <= 0 || pR <= 0) return false;
@@ -3455,6 +3494,10 @@ function updateCardStatus() {
   // ── Tension : tension forte saisie
   const tensionDone = !isNaN(parseFloat($id('tension-forte').value));
   setCardDone('card-tension', tensionDone);
+
+  // ── Rayon : steel + section choisie, ou autre matériau
+  const rayonDone = spokeMatType === 'other' || (spokeMatType === 'steel' && sd !== null && !isNaN(sd));
+  setCardDone('card-rayon', rayonDone);
 }
 
 function setCardDone(id, done) {
@@ -3486,6 +3529,7 @@ function area() {
   return Math.PI / 4 * sd * a;
 }
 function el(F, L) {
+  if (!sd || isNaN(sd)) return 0;
   return (F * 9.81 * L) / (area() * 210000);
 }
 
@@ -3498,7 +3542,8 @@ function calc() {
     if (body.style.display === 'none') {
       body.style.display = 'block'; chevron.style.transform = 'rotate(180deg)';
     }
-    const hb = document.getElementById('hooke-btn'); if (hb) hb.style.display = 'flex';
+    const _hss = spokeMatType === 'steel' && sd !== null && !isNaN(sd);
+    const hb = document.getElementById('hooke-btn'); if (hb) hb.style.display = _hss ? 'flex' : 'none';
     setTimeout(() => $id('results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     return;
   }
@@ -3507,8 +3552,6 @@ function calc() {
 
   const n = parseInt($id('nb-rayons').value);
   if (!n) { setInvalid('nb-rayons'); return showErr('errSpokes'); }
-
-  if (sd === null || isNaN(sd)) { setInvalid('spoke-select'); return showErr('errSpoke'); }
 
   const pL = parseFloat($id('pcd-left').value),  pR = parseFloat($id('pcd-right').value);
   const oL = parseFloat($id('offset-left').value), oR = parseFloat($id('offset-right').value);
@@ -3597,10 +3640,32 @@ function calc() {
   const arbKeyFa = isArriere ? 'nonDriveSide' : 'driveSide';
 
   $id('r-fo').textContent = LfoDisplay.toFixed(2); $id('r-fa').textContent = LfaDisplay.toFixed(2);
-  $id('m-fo').innerHTML = `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFoDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFoDisplay.toFixed(1)} kgf</strong></div>`;
-  $id('m-fa').innerHTML = `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFaDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFaDisplay.toFixed(1)} kgf</strong></div>`;
 
-  const sl = sa ? `${sd}×${sa} mm` : `${sd} mm`;
+  // Sub-results (elongation + kgf) only shown if steel + section selected
+  const hasSpokeSection = spokeMatType === 'steel' && sd !== null && !isNaN(sd);
+  if (hasSpokeSection) {
+    $id('m-fo').innerHTML = `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFoDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFoDisplay.toFixed(1)} kgf</strong></div>`;
+    $id('m-fa').innerHTML = `<div class="rrow"><span>Est. Stretch</span><span class="ev">+${eFaDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFaDisplay.toFixed(1)} kgf</strong></div>`;
+  } else {
+    $id('m-fo').innerHTML = '';
+    $id('m-fa').innerHTML = '';
+  }
+
+  // Result cards clickable only if hasSpokeSection
+  const rcAll = document.querySelectorAll('.rc');
+  rcAll.forEach(rc => {
+    if (hasSpokeSection) {
+      rc.style.cursor = 'pointer';
+      rc.style.pointerEvents = '';
+    } else {
+      rc.style.cursor = 'default';
+      rc.style.pointerEvents = 'none';
+    }
+  });
+  // Hide tap icon when not clickable
+  document.querySelectorAll('.rc-tap').forEach(t => { t.style.display = hasSpokeSection ? '' : 'none'; });
+
+  const sl = (sd !== null && !isNaN(sd)) ? (sa ? `${sd}×${sa} mm` : `${sd} mm`) : '—';
   // Conserver les longueurs saisies manuellement si elles existent
   summaryData = { erd: erd.toFixed(1), wtype, n, h, cross, crossFo, crossFa, diffMode, isSP, sl, asym, ratio, lenFo: null, lenFa: null };
   resetSumCardState();
@@ -3626,12 +3691,16 @@ function calc() {
   saved[wtype] = readState(); saved[wtype].wtype = wtype;
   evenMode.fo = false; evenMode.fa = false;
   $id('arb-even-fo').classList.remove('active'); $id('arb-even-fa').classList.remove('active');
-  buildArb('fo', LfoDisplay, eFoDisplay); buildArb('fa', LfaDisplay, eFaDisplay);
   $id('arb-wrap').classList.remove('show');
   $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
 
   $id('save-feedback').textContent = '';
-  { const hb = document.getElementById('hooke-btn'); if (hb) hb.style.display = 'flex'; }
+  { const hb = document.getElementById('hooke-btn'); if (hb) hb.style.display = hasSpokeSection ? 'flex' : 'none'; }
+  if (hasSpokeSection) {
+    buildArb('fo', LfoDisplay, eFoDisplay); buildArb('fa', LfaDisplay, eFaDisplay);
+  } else {
+    $id('arb-wrap').classList.remove('show');
+  }
   setTimeout(() => $id('results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
 }
 
@@ -4158,8 +4227,7 @@ function checkHubComplete() {
   const nb  = $id('nb-rayons').value, pL = $id('pcd-left').value, oL = $id('offset-left').value;
   const pR  = $id('pcd-right').value, oR = $id('offset-right').value;
   const soL = $id('sp-so-left').value, soR = $id('sp-so-right').value;
-  const spoke = $id('spoke-select').value;
-  if (nb && pL && oL && pR && oR && spoke && (hubType !== 'straightpull' || (soL !== '' && soR !== ''))) {
+  if (nb && pL && oL && pR && oR && (hubType !== 'straightpull' || (soL !== '' && soR !== ''))) {
     _hubScrolled = true; scrollToCard(getCards()[2]);
   }
 }
@@ -4186,9 +4254,10 @@ function checkTensionComplete() {
 
 // ── Live validation listeners ─────────────────────────────────────────────────
 const FIELD_GROUPS = {
-  hub:     ['nb-rayons','diam-trou','pcd-left','pcd-right','offset-left','offset-right','sp-so-left','sp-so-right','spoke-select'],
+  hub:     ['nb-rayons','diam-trou','pcd-left','pcd-right','offset-left','offset-right','sp-so-left','sp-so-right'],
   rim:     ['erd-direct','nsd-val','erd-nsd-result','ecrou-type'],
   tension: ['tension-forte','asym'],
+  rayon:   ['spoke-select'],
 };
 
 function resetScrollFlagFor(id) {
@@ -9229,7 +9298,7 @@ function hrApplyRim(d) {
   _hrApplying = false;
 }
 
-// ── Check if hub is complete (sans spoke section) ────────────────────────────
+// ── Check if hub is complete ──────────────────────────────────────────────────
 function hrIsHubComplete() {
   var nbR = parseInt(document.getElementById('nb-rayons').value);
   var pL  = parseFloat(document.getElementById('pcd-left').value);
