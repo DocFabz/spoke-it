@@ -485,9 +485,15 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .rc       { border-radius:var(--rs); padding:1.4rem 1.5rem }
 .rc.fo    { background:linear-gradient(145deg,rgba(232,146,124,.07),rgba(232,146,124,.025)); border:1px solid rgba(232,146,124,.28) }
 .rc.fa    { background:linear-gradient(145deg,rgba(126,200,227,.07),rgba(126,200,227,.025)); border:1px solid rgba(126,200,227,.28) }
-.rtag     { font-size:.59rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; margin-bottom:.65rem }
+.rtag     { font-size:.59rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; margin-bottom:.2rem }
 .fo .rtag { color:var(--warm) }
 .fa .rtag { color:var(--accent) }
+.rcible   { font-family:'DM Mono',monospace; font-size:.52rem; font-weight:400; letter-spacing:.25em; text-transform:uppercase; margin-bottom:.45rem }
+.fo .rcible { color:var(--warm) }
+.fa .rcible { color:var(--accent) }
+.rincluant{ font-family:'DM Mono',monospace; font-size:.52rem; font-weight:400; letter-spacing:.25em; text-transform:uppercase; margin-top:0; margin-bottom:0 }
+.fo .rincluant { color:var(--warm) }
+.fa .rincluant { color:var(--accent) }
 .rnum     { font-family:'Cormorant Garamond',serif; font-size:2.4rem; font-weight:300; line-height:1 }
 .fo .rnum { color:var(--warm2) }
 .fa .rnum { color:var(--accent2) }
@@ -1721,6 +1727,7 @@ input[type=number] { -moz-appearance:textfield }
         <div class="rg">
           <div class="rc fo" onclick="openArbCard()" style="cursor:pointer;position:relative">
             <div class="rtag" id="rtag-fo">Côté Droit (DS)</div>
+            <div class="rcible" data-i18n="target">CIBLE</div>
             <div class="rnum" id="r-fo">—</div>
             <div class="runit">mm</div>
             <div class="rrows" id="m-fo"></div>
@@ -1728,6 +1735,7 @@ input[type=number] { -moz-appearance:textfield }
           </div>
           <div class="rc fa" onclick="openArbCard()" style="cursor:pointer;position:relative">
             <div class="rtag" id="rtag-fa">Côté Gauche (NDS)</div>
+            <div class="rcible" data-i18n="target">CIBLE</div>
             <div class="rnum" id="r-fa">—</div>
             <div class="runit">mm</div>
             <div class="rrows" id="m-fa"></div>
@@ -2482,6 +2490,7 @@ const i18n = {
     screenshotTitle:'Screenshot', screenshotDark:'Dark', screenshotLight:'Light', screenshotGenerate:'Générer le JPEG',
     snapNameError:'Veuillez saisir un nom.',
     estStretch:'Est. Stretch',
+    target:'Cible', including:'Incluant',
     hookeSectionLabel:'Section de rayon',
   },
   en: {
@@ -2621,6 +2630,7 @@ const i18n = {
     screenshotTitle:'Screenshot', screenshotDark:'Dark', screenshotLight:'Light', screenshotGenerate:'Generate JPEG',
     snapNameError:'Please enter a name.',
     estStretch:'Est. Stretch',
+    target:'Target', including:'Including',
     hookeSectionLabel:'Spoke section',
   }
 };
@@ -2771,6 +2781,7 @@ function applyLang() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     if (!el.children.length) el.textContent = t(el.dataset.i18n);
   });
+  document.querySelectorAll('.rincluant').forEach(el => { el.textContent = t('including'); });
   reorderTensionFields(wtype); // réapplique les bons labels DS/NDS après la retraduction
   onTension();                 // met à jour tension-help-text en dernier
   $id('lang-btn').textContent = lang === 'fr' ? 'EN' : 'FR';
@@ -2955,7 +2966,12 @@ function applyState(s) {
 
   if (s.hasResult) {
     $id('r-fo').textContent = s.rFo; $id('r-fa').textContent = s.rFa;
-    $id('m-fo').innerHTML   = s.mFo; $id('m-fa').innerHTML   = s.mFa;
+    function injectIncluant(html) {
+      if (!html) return html;
+      if (html.indexOf('rincluant') === -1) html = '<div class="rincluant">' + t('including') + '</div>' + html;
+      return html;
+    }
+    $id('m-fo').innerHTML = injectIncluant(s.mFo); $id('m-fa').innerHTML = injectIncluant(s.mFa);
     // Compatibilité : anciennes saves utilisent 'driveSide'/'nonDriveSide', nouvelles utilisent 'rtagDriveSide...'
     const isArriere = (s.wtype || wtype) === 'arriere';
     const foKey = s.rtagFoKey || (isArriere ? 'rtagDriveSideRear'    : 'rtagNonDriveSideFront');
@@ -3650,8 +3666,8 @@ function calc() {
   const hasSpokeSection = spokeMatType === 'steel' && sd !== null && !isNaN(sd);
   if (hasSpokeSection) {
     const stretchLabel = t('estStretch');
-    $id('m-fo').innerHTML = `<div class="rrow"><span>${stretchLabel}</span><span class="ev">${eFoDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFoDisplay.toFixed(1)} kgf</strong></div>`;
-    $id('m-fa').innerHTML = `<div class="rrow"><span>${stretchLabel}</span><span class="ev">${eFaDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFaDisplay.toFixed(1)} kgf</strong></div>`;
+    $id('m-fo').innerHTML = `<div class="rincluant">${t('including')}</div><div class="rrow"><span>${stretchLabel}</span><span class="ev">${eFoDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFoDisplay.toFixed(1)} kgf</strong></div>`;
+    $id('m-fa').innerHTML = `<div class="rincluant">${t('including')}</div><div class="rrow"><span>${stretchLabel}</span><span class="ev">${eFaDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFaDisplay.toFixed(1)} kgf</strong></div>`;
   } else {
     $id('m-fo').innerHTML = '';
     $id('m-fa').innerHTML = '';
