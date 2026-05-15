@@ -3650,8 +3650,8 @@ function calc() {
   const hasSpokeSection = spokeMatType === 'steel' && sd !== null && !isNaN(sd);
   if (hasSpokeSection) {
     const stretchLabel = t('estStretch');
-    $id('m-fo').innerHTML = `<div class="rrow"><span>${stretchLabel}</span><span class="ev">+${eFoDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFoDisplay.toFixed(1)} kgf</strong></div>`;
-    $id('m-fa').innerHTML = `<div class="rrow"><span>${stretchLabel}</span><span class="ev">+${eFaDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFaDisplay.toFixed(1)} kgf</strong></div>`;
+    $id('m-fo').innerHTML = `<div class="rrow"><span>${stretchLabel}</span><span class="ev">${eFoDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFoDisplay.toFixed(1)} kgf</strong></div>`;
+    $id('m-fa').innerHTML = `<div class="rrow"><span>${stretchLabel}</span><span class="ev">${eFaDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFaDisplay.toFixed(1)} kgf</strong></div>`;
   } else {
     $id('m-fo').innerHTML = '';
     $id('m-fa').innerHTML = '';
