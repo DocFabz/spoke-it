@@ -2907,6 +2907,8 @@ function readState() {
     tmSpokeKey,
     tmDataFo: tmData.fo.slice(),
     tmDataFa: tmData.fa.slice(),
+    loadedHubName: _loadedHubName[wtype] || null,
+    loadedRimName: _loadedRimName[wtype] || null,
   };
 }
 
@@ -3070,6 +3072,36 @@ function applyState(s) {
     } else {
       _tmLoadedType  = null;
       _tmLoadedSpoke = null;
+    }
+  }
+
+  // ── Restaurer noms hub/rim + recréation automatique si absent ──
+  if (typeof hrLoadAll === 'function') {
+    if (s.loadedHubName) {
+      var _hubs = hrLoadAll('hub');
+      var _hubFound = _hubs.some(function(e) { return e.name === s.loadedHubName; });
+      if (!_hubFound && typeof hrReadHub === 'function') {
+        // Le hub a été supprimé du data manager → on le recrée silencieusement
+        var _hubData = hrReadHub();
+        _hubs.unshift({ name: s.loadedHubName, data: _hubData, ts: Date.now() });
+        hrPersist('hub', _hubs);
+      }
+      hrSetLoadedHub(s.loadedHubName);
+    } else {
+      hrClearLoadedHub();
+    }
+    if (s.loadedRimName) {
+      var _rims = hrLoadAll('rim');
+      var _rimFound = _rims.some(function(e) { return e.name === s.loadedRimName; });
+      if (!_rimFound && typeof hrReadRim === 'function') {
+        // La jante a été supprimée du data manager → on la recrée silencieusement
+        var _rimData = hrReadRim();
+        _rims.unshift({ name: s.loadedRimName, data: _rimData, ts: Date.now() });
+        hrPersist('rim', _rims);
+      }
+      hrSetLoadedRim(s.loadedRimName);
+    } else {
+      hrClearLoadedRim();
     }
   }
 
