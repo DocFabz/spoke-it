@@ -204,9 +204,13 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
   padding: 0;
 }
 .card-icon-btn:hover { border-color: var(--border-s); color: var(--text2) }
+@media (hover: none) { .card-icon-btn:hover { border-color: var(--border); color: var(--text3) } }
 .card-icon-btn.active { border-color: rgba(126,200,227,.5); color: var(--accent) }
 .card-icon-btn.has-data { border-color: rgba(126,200,227,.4); color: var(--accent) }
 .card-icon-btn:disabled { opacity: .3; cursor: default; pointer-events: none }
+.wheel-reset-btn { background:none; border:1px solid rgba(232,146,124,.35); border-radius:7px; font-family:'DM Mono',monospace; font-size:.58rem; font-weight:400; letter-spacing:.15em; text-transform:uppercase; color:rgba(232,146,124,.7); cursor:pointer; padding:.2rem .55rem; line-height:1.6; transition:all .2s; touch-action:manipulation }
+.wheel-reset-btn:hover { border-color:rgba(232,146,124,.65); color:var(--warm2) }
+@media (hover: none) { .wheel-reset-btn:hover { border-color:rgba(232,146,124,.35); color:rgba(232,146,124,.7) } }
 
 /* ── Hub/Rim save modal ─────────────────────────────────────────────────────── */
 .hr-save-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
@@ -241,7 +245,39 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .hr-load-item-del:hover { color:var(--warm) }
 .hr-load-empty { font-size:.72rem; color:var(--text3); font-style:italic; text-align:center; padding:.5rem }
 
-/* ── Layout ────────────────────────────────────────────────────────────────── */
+/* ── Wheel save/load modals ─────────────────────────────────────────────────── */
+.wheel-save-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
+.wheel-save-overlay.show { display:block; opacity:1 }
+.wheel-save-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; display:none; flex-direction:column; gap:.85rem; opacity:0; transition:opacity .2s, transform .2s }
+.wheel-save-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+.wheel-save-header { display:flex; align-items:center; justify-content:space-between }
+.wheel-save-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
+.wheel-save-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
+.wheel-save-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+.wheel-save-inp-row { display:flex; gap:.4rem }
+.wheel-save-inp { flex:1; font-family:'DM Mono',monospace; font-size:.85rem; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text); padding:.5rem .75rem; outline:none; transition:border-color .2s }
+.wheel-save-inp:focus { border-color:rgba(126,200,227,.4) }
+.wheel-save-btn { background:transparent; border:1px solid var(--border-s); border-radius:var(--rs); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:500; padding:.5rem .9rem; cursor:pointer; touch-action:manipulation; transition:all .22s; white-space:nowrap }
+.wheel-save-btn:hover { border-color:rgba(126,200,227,.5); color:var(--accent2); background:rgba(126,200,227,.05) }
+.wheel-save-feedback { font-size:.67rem; color:#f08080; min-height:.85rem }
+.wheel-save-warning { font-size:.65rem; color:var(--text3); font-style:italic; line-height:1.45 }
+
+.wheel-load-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
+.wheel-load-overlay.show { display:block; opacity:1 }
+.wheel-load-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:360px; display:none; flex-direction:column; gap:.75rem; opacity:0; transition:opacity .2s, transform .2s; max-height:80vh }
+.wheel-load-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+.wheel-load-header { display:flex; align-items:center; justify-content:space-between; flex-shrink:0 }
+.wheel-load-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
+.wheel-load-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
+.wheel-load-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+.wheel-load-list { display:flex; flex-direction:column; gap:.35rem; overflow-y:auto; flex:1 }
+.wheel-load-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; touch-action:manipulation; transition:all .2s }
+.wheel-load-item:hover { border-color:var(--border-s); background:rgba(126,200,227,.03) }
+.wheel-load-item-name { flex:1; font-family:'DM Mono',monospace; font-size:.78rem; color:var(--accent2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.wheel-load-item-meta { font-family:'DM Mono',monospace; font-size:.63rem; color:var(--text3); white-space:nowrap }
+.wheel-load-item-del { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; touch-action:manipulation; padding:.1rem .25rem; transition:color .2s; flex-shrink:0 }
+.wheel-load-item-del:hover { color:var(--warm) }
+.wheel-load-empty { font-size:.72rem; color:var(--text3); font-style:italic; text-align:center; padding:.5rem }
 .wrap { max-width:880px; margin:0 auto; padding:0 1.2rem 4rem; display:flex; flex-direction:column; gap:1rem }
 
 /* ── Card ──────────────────────────────────────────────────────────────────── */
@@ -297,7 +333,7 @@ input[type=number], select {
 }
 /* Prevent iOS auto-zoom */
 @supports (-webkit-touch-callout: none) {
-  input[type=number], input[type=text], select, .save-input { font-size:16px }
+  input[type=number], input[type=text], select { font-size:16px }
 }
 input:focus, select:not(#tension-forte):focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
 input::placeholder        { color:var(--text2); opacity:1 }
@@ -462,14 +498,11 @@ select option             { background:#161b27 }
 .btn:hover     { border-color:rgba(255,255,255,.2); transform:translateY(-1px) }
 .btn:hover::before { opacity:1 }
 .btn:active    { transform:translateY(0) }
+@media (hover: none) { .btn:hover { border-color:var(--border-s); transform:none } .btn:hover::before { opacity:0 } }
 .btn.ready     { border-color:rgba(126,200,227,.6); color:var(--accent2); transition:border-color .3s, transform .25s }
 .btn.ready:hover { border-color:rgba(126,200,227,.9); transform:translateY(-1px) }
-.btn-reset     { width:auto; padding:1rem 1.6rem; border-color:rgba(232,146,124,.35); color:var(--warm2) }
-.btn-reset:hover { border-color:rgba(232,146,124,.65) }
-.btn-row       { display:grid; grid-template-columns:1fr auto; gap:.75rem; align-items:stretch }
-.btn-save      { padding:.55rem 1.1rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:all .22s; white-space:nowrap }
-.btn-save:hover  { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06) }
-.btn-save:active { transform:scale(.97) }
+@media (hover: none) { .btn.ready:hover { border-color:rgba(126,200,227,.6); transform:none } }
+.btn-row       { display:block }
 
 /* ── Error ─────────────────────────────────────────────────────────────────── */
 .err       { background:rgba(240,100,100,.08); border:1px solid rgba(240,100,100,.2); border-radius:var(--rs); padding:.7rem 1rem; color:#f08080; font-family:'DM Mono',monospace; font-size:.77rem; display:none }
@@ -1003,24 +1036,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ef-sw-btn.fa.active { background:rgba(126,200,227,.1);  border-color:rgba(126,200,227,.3);  color:var(--accent) }
 .ef-sw-btn.both.active { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.15); }
 
-/* ── Save ──────────────────────────────────────────────────────────────────── */
-.save-wrap       { display:none; animation:fu .5s cubic-bezier(.22,1,.36,1) }
-.save-wrap.show  { display:block }
-.save-row        { display:flex; gap:.5rem; align-items:stretch }
-.save-input      { flex:1; background:var(--inp); border:1px solid var(--border); border-radius:var(--rs); color:var(--text); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:400; padding:.55rem .9rem; transition:border-color .2s }
-.save-input:focus        { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
-.save-input::placeholder { color:var(--text3) }
-
-/* ── Configs ───────────────────────────────────────────────────────────────── */
-.cfg-list       { display:flex; flex-direction:column; gap:.4rem; margin-top:1.1rem }
-.cfg-item       { display:flex; align-items:center; gap:.5rem; padding:.6rem .9rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; touch-action:manipulation; transition:border-color .2s, background .2s }
-@media (hover: hover) { .cfg-item:hover { border-color:var(--border-s); background:rgba(126,200,227,.03) } }
-.cfg-name       { flex:1; font-size:.82rem; color:var(--accent2); font-weight:400; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
-.cfg-meta       { font-family:'DM Mono',monospace; font-size:.63rem; color:var(--text3); white-space:nowrap; margin-right:.3rem }
-.cfg-date       { margin-left:auto }
-.cfg-del        { background:transparent; border:none; color:var(--text3); font-size:.95rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
-.cfg-del:hover  { color:#f08080 }
-
 /* ── Loaded config name ────────────────────────────────────────────────────── */
 .cfg-loaded-name {
   display:none; align-items:center; gap:.3rem;
@@ -1359,14 +1374,33 @@ input[type=number] { -moz-appearance:textfield }
         <line x1="19.1" y1="5.1"  x2="13.4" y2="10.6"/>  <line x1="10.6" y1="13.4" x2="4.9"  y2="18.9"/>
         <line x1="4.9"  y1="5.1"  x2="10.6" y2="10.6"/>  <line x1="13.4" y1="13.4" x2="19.1" y2="18.9"/>
       </svg>
-      <div class="clabel" data-i18n="wheelType">Type de roue</div>
+      <div class="clabel" data-i18n="wheelLabel">Roue</div>
       <div class="cfg-loaded-name" id="cfg-loaded-name">
         <span class="cfg-loaded-text" id="cfg-loaded-text"></span>
+      </div>
+      <div style="display:flex;gap:.35rem;margin-left:auto">
+        <button class="card-icon-btn" id="wheel-load-btn" onclick="openWheelLoadModal()" title="Charger une roue" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </button>
+        <button class="card-icon-btn" id="wheel-save-btn" onclick="openWheelSaveModal()" title="Enregistrer cette roue" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+        </button>
       </div>
     </div>
     <div class="seg">
       <button class="sb active" id="btn-avant"   onclick="setWheel('avant')"   data-i18n="frontWheel">ROUE AVANT</button>
       <button class="sb"        id="btn-arriere" onclick="setWheel('arriere')" data-i18n="rearWheel">ROUE ARRIÈRE</button>
+    </div>
+    <div style="text-align:right;margin-top:.5rem">
+      <button class="wheel-reset-btn" onclick="clearForm()">Reset</button>
     </div>
   </div>
 
@@ -1697,7 +1731,6 @@ input[type=number] { -moz-appearance:textfield }
   <div class="err" id="err"></div>
   <div class="btn-row">
     <button class="btn" onclick="calc()" data-i18n="calcBtn">Calculer</button>
-    <button class="btn btn-reset" onclick="clearForm()">Reset</button>
   </div>
 
   <!-- ── Results ── -->
@@ -1791,43 +1824,6 @@ input[type=number] { -moz-appearance:textfield }
     </div>
   </div>
 
-  <!-- ── Save ── -->
-  <div class="save-wrap" id="save-wrap">
-    <div class="card card-muted">
-      <div class="ch ch-toggle" onclick="toggleSaveCard()">
-        <svg class="cicon cicon-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-          <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-          <polyline points="17 21 17 13 7 13 7 21"/>
-          <polyline points="7 3 7 8 15 8"/>
-        </svg>
-        <div class="clabel clabel-muted" data-i18n="saveLabel">Sauvegarder</div>
-        <em id="save-card-chevron" class="chevron chevron-muted">&#8964;</em>
-      </div>
-      <div id="save-card-body" style="display:none;margin-top:1.1rem">
-        <div class="save-row">
-          <input class="save-input" type="text" id="save-name" placeholder="Nom de la configuration…" maxlength="60">
-          <button class="btn-save" onclick="saveConfig()" data-i18n="saveOk">OK</button>
-        </div>
-        <p class="help" style="margin-top:.55rem" id="save-feedback"></p>
-        <p class="help" style="margin-top:.8rem" data-i18n="saveWarning">⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Saved configs ── -->
-  <div class="card configs-wrap" id="configs-wrap" style="display:none">
-    <div class="ch ch-toggle" onclick="toggleConfigsCard()">
-      <svg class="cicon cicon-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-        <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
-      </svg>
-      <div class="clabel clabel-muted" data-i18n="configsTitle">Configurations sauvegardées</div>
-      <em id="configs-chevron" class="chevron chevron-muted">&#8964;</em>
-    </div>
-    <div id="configs-body" style="display:none">
-      <div class="cfg-list" id="cfg-list"></div>
-    </div>
-  </div>
-
 <!-- ── Modale saisie taille rayon ── -->
 <div class="slen-overlay" id="slen-overlay" onclick="slenClose()"></div>
 <div class="slen-modal" id="slen-modal">
@@ -1864,14 +1860,33 @@ input[type=number] { -moz-appearance:textfield }
         <line x1="19.1" y1="5.1"  x2="13.4" y2="10.6"/>  <line x1="10.6" y1="13.4" x2="4.9"  y2="18.9"/>
         <line x1="4.9"  y1="5.1"  x2="10.6" y2="10.6"/>  <line x1="13.4" y1="13.4" x2="19.1" y2="18.9"/>
       </svg>
-      <div class="clabel" data-i18n="wheelType">Type de roue</div>
+      <div class="clabel" data-i18n="wheelLabel">Roue</div>
       <div class="cfg-loaded-name" id="tm-cfg-loaded-name">
         <span class="cfg-loaded-text" id="tm-cfg-loaded-text"></span>
+      </div>
+      <div style="display:flex;gap:.35rem;margin-left:auto">
+        <button class="card-icon-btn" id="tm-wheel-load-btn" onclick="openWheelLoadModal()" title="Charger une roue" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </button>
+        <button class="card-icon-btn" id="tm-wheel-save-btn" onclick="openWheelSaveModal()" title="Enregistrer cette roue" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+        </button>
       </div>
     </div>
     <div class="seg">
       <button class="sb active" id="tm-btn-avant"   onclick="tmSetWheel('avant')"   data-i18n="frontWheel">ROUE AVANT</button>
       <button class="sb"        id="tm-btn-arriere" onclick="tmSetWheel('arriere')" data-i18n="rearWheel">ROUE ARRIÈRE</button>
+    </div>
+    <div style="text-align:right;margin-top:.5rem">
+      <button class="wheel-reset-btn" onclick="clearForm()">Reset</button>
     </div>
   </div>
 
@@ -2328,7 +2343,31 @@ input[type=number] { -moz-appearance:textfield }
   <div class="hr-load-list" id="hr-load-list"></div>
 </div>
 
-<!-- ── Erase manager modal ── -->
+<!-- ── Wheel save modal ── -->
+<div class="wheel-save-overlay" id="wheel-save-overlay" onclick="closeWheelSaveModal()"></div>
+<div class="wheel-save-modal" id="wheel-save-modal" onclick="event.stopPropagation()">
+  <div class="wheel-save-header">
+    <div class="wheel-save-title" id="wheel-save-title">Enregistrer la roue</div>
+    <button class="wheel-save-close" onclick="closeWheelSaveModal()">✕</button>
+  </div>
+  <div class="wheel-save-inp-row">
+    <input class="wheel-save-inp" id="wheel-save-inp" type="text" placeholder="Nom…" maxlength="60" autocomplete="off"
+      onkeydown="if(event.key==='Enter') confirmWheelSave()">
+    <button class="wheel-save-btn" onclick="confirmWheelSave()">OK</button>
+  </div>
+  <div class="wheel-save-feedback" id="wheel-save-feedback"></div>
+  <p class="wheel-save-warning" id="wheel-save-warning">⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.</p>
+</div>
+
+<!-- ── Wheel load modal ── -->
+<div class="wheel-load-overlay" id="wheel-load-overlay" onclick="closeWheelLoadModal()"></div>
+<div class="wheel-load-modal" id="wheel-load-modal" onclick="event.stopPropagation()">
+  <div class="wheel-load-header">
+    <div class="wheel-load-title" id="wheel-load-title">Charger une roue</div>
+    <button class="wheel-load-close" onclick="closeWheelLoadModal()">✕</button>
+  </div>
+  <div class="wheel-load-list" id="wheel-load-list"></div>
+</div>
 <div class="erasemgr-overlay" id="erasemgr-overlay" onclick="closeEraseMgr()"></div>
 <div class="erasemgr-modal" id="erasemgr-modal" onclick="event.stopPropagation()">
   <div class="erasemgr-header">
@@ -2347,7 +2386,7 @@ let lang = _storedLang || (_browserLang.startsWith('fr') ? 'fr' : 'en');
 
 const i18n = {
   fr: {
-    wheelType:'Type de roue', hub:'Moyeu', rim:'Jante', targetTensions:'Tensions cibles', results:'Résultats',
+    wheelLabel:'Roue',hub:'Moyeu', rim:'Jante', targetTensions:'Tensions cibles', results:'Résultats',
     frontWheel:'ROUE AVANT', rearWheel:'ROUE ARRIÈRE',
     totalSpokes:'Nb total de rayons', holeDiam:'Ø trous de bride (mm)',
     left:'Gauche', right:'Droit',
@@ -2373,10 +2412,8 @@ const i18n = {
     errSO:'Veuillez renseigner le Spoke Offset (SO) pour les deux côtés.',
     arbitrage:'Arrondi suggéré', gapTarget:'écart cible',
     spokeThread:'⚠ La suggestion d\'arrondi propose la taille de rayon ayant le moins d\'écart avec la cible, en prenant en compte l\'élongation estimée. Vérifiez toujours la base de calcul de votre ERD et le positionnement du rayon dans l\'écrou qui a servi à le définir.',
-    saveLabel:'Sauvegarder', savePlaceholder:'Nom de la configuration…',
-    saveOk:'OK', saveError:'Veuillez saisir un nom.',
-    configsTitle:'Configurations sauvegardées', loadBtn:'Charger',
     saveWarning:'⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.',
+    loadBtn:'Charger',
     exportBtn:'Exporter', importBtn:'Importer',
     importSuccess:'✓ Données importées avec succès.', importError:'Fichier invalide ou corrompu.',
     saveMgrTitle:'Gestion des sauvegardes',
@@ -2488,7 +2525,7 @@ const i18n = {
     hookeSectionLabel:'Section de rayon',
   },
   en: {
-    wheelType:'Wheel Type', hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
+    hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
     frontWheel:'FRONT WHEEL', rearWheel:'REAR WHEEL',
     totalSpokes:'Total spoke count', holeDiam:'Flange hole Ø (mm)',
     left:'Left', right:'Right',
@@ -2514,10 +2551,8 @@ const i18n = {
     errSO:'Please enter Spoke Offset (SO) for both sides.',
     arbitrage:'Suggested rounding', gapTarget:'gap to target',
     spokeThread:'⚠ The rounding suggestion finds the spoke length with the smallest gap from target, accounting for estimated elongation. Always verify the calculation basis of your ERD and the spoke positioning in the nipple used to define it.',
-    saveLabel:'Save', savePlaceholder:'Configuration name…',
-    saveOk:'OK', saveError:'Please enter a name.',
-    configsTitle:'Saved configurations', loadBtn:'Load',
     saveWarning:'⚠︎ Locally stored in browser cache. Clearing the cache will erase all data.',
+    loadBtn:'Load',
     exportBtn:'Export', importBtn:'Import',
     importSuccess:'✓ Data imported successfully.', importError:'Invalid or corrupted file.',
     saveMgrTitle:'Backup manager',
@@ -2660,8 +2695,6 @@ function markModified() {
     // Première modification = nouvelle roue : reset complet du module tension
     tmClearTensio();
     Object.keys(tmStore).forEach(k => delete tmStore[k]);
-    // Vider le champ save-name puisqu'on n'est plus sur la config chargée
-    const saveNameEl = $id('save-name'); if (saveNameEl) saveNameEl.value = '';
   }
   _loadedConfigName[wtype] = null;
   _refreshLoadedBadges();
@@ -2795,8 +2828,6 @@ function applyLang() {
   if ($id('summary-wrap').classList.contains('show')) renderSummary();
   const errEl = $id('err');
   if (errEl.classList.contains('show') && currentErrKey) errEl.textContent = t(currentErrKey);
-  const saveNameEl = $id('save-name');
-  if (saveNameEl) saveNameEl.placeholder = t('savePlaceholder');
   // Update tensio select placeholders
   ['tm-tensio-select', 'cc-tensio'].forEach(id => {
     const sel = $id(id);
@@ -3005,11 +3036,6 @@ function applyState(s) {
   updateAsymField();
   checkOffsetCoherence();
   updateCalcBtn();
-  // Afficher le bloc sauvegarde si un nombre de rayons est déjà renseigné
-  if (parseInt($id('nb-rayons').value)) {
-    $id('save-wrap').classList.add('show');
-    $id('save-feedback').textContent = '';
-  }
   if (s.hasResult) {
     $id('results-card-body').style.display = 'block';
     $id('results-card-chevron').style.transform = 'rotate(180deg)';
@@ -3081,7 +3107,6 @@ function applyState(s) {
       var _hubs = hrLoadAll('hub');
       var _hubFound = _hubs.some(function(e) { return e.name === s.loadedHubName; });
       if (!_hubFound && typeof hrReadHub === 'function') {
-        // Le hub a été supprimé du data manager → on le recrée silencieusement
         var _hubData = hrReadHub();
         _hubs.unshift({ name: s.loadedHubName, data: _hubData, ts: Date.now() });
         hrPersist('hub', _hubs);
@@ -3094,7 +3119,6 @@ function applyState(s) {
       var _rims = hrLoadAll('rim');
       var _rimFound = _rims.some(function(e) { return e.name === s.loadedRimName; });
       if (!_rimFound && typeof hrReadRim === 'function') {
-        // La jante a été supprimée du data manager → on la recrée silencieusement
         var _rimData = hrReadRim();
         _rims.unshift({ name: s.loadedRimName, data: _rimData, ts: Date.now() });
         hrPersist('rim', _rims);
@@ -3154,7 +3178,6 @@ function clearFormSilent() {
   $id('results-card-body').style.display = '';    $id('results-card-chevron').style.transform = '';
   $id('arb-card-body').style.display  = 'none'; $id('arb-card-chevron').style.transform  = '';
   $id('sum-card-body').style.display  = 'none'; $id('sum-card-chevron').style.transform  = '';
-  $id('save-card-body').style.display = 'none'; $id('save-card-chevron').style.transform = '';
   summaryData = null; arbData.fo = null; arbData.fa = null; arbSelected.fo = null; arbSelected.fa = null;
   saved[wtype] = null;
   renderConfigsList();
@@ -3196,8 +3219,6 @@ function setWheel(wh) {
   const isNew = wh !== wtype;
   if (isNew) diagSaveWheel(wtype);
   switchTo(wh);
-  renderConfigsList();
-  closeConfigsCardIfOpen();
   $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
   // Flash de lumière sur le bouton activé
   const activeBtn = wh === 'avant' ? $id('btn-avant') : $id('btn-arriere');
@@ -3741,7 +3762,7 @@ function calc() {
   $id('arb-wrap').classList.remove('show');
   $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
 
-  $id('save-feedback').textContent = '';
+
   { const hb = document.getElementById('hooke-btn'); if (hb) hb.style.display = hasSpokeSection ? 'flex' : 'none'; }
   if (hasSpokeSection) {
     buildArb('fo', LfoDisplay, eFoDisplay); buildArb('fa', LfaDisplay, eFaDisplay);
@@ -4029,35 +4050,14 @@ function openArbCard() {
   setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
 }
 function toggleSummaryCard() { toggleCard('sum-card-body',  'sum-card-chevron'); }
-function toggleSaveCard() {
-  toggleCard('save-card-body', 'save-card-chevron');
-  // Pré-remplir le nom si une roue est chargée et que le panneau vient de s'ouvrir
-  const body = $id('save-card-body');
-  if (body && body.style.display !== 'none') {
-    const nameEl = $id('save-name');
-    if (nameEl && !nameEl.value.trim()) {
-      const loaded = _loadedConfigName[wtype];
-      if (loaded) { nameEl.value = loaded; nameEl.select(); }
-    }
-  }
-}
-function toggleConfigsCard() { toggleCard('configs-body',   'configs-chevron'); }
-
-function closeConfigsCardIfOpen() {
-  const body = $id('configs-body');
-  if (body && body.style.display !== 'none') { body.style.display = 'none'; $id('configs-chevron').style.transform = ''; }
-}
-
 // ── Configs (localStorage) ────────────────────────────────────────────────────
 const LS_KEY = 'spokeit_configs';
 function loadConfigs()        { try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch(e) { return []; } }
 function persistConfigs(cfg)  { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); }
-function showConfigsPanel()   { $id('configs-wrap').style.display = ''; }
-function hideConfigsPanel()   { $id('configs-wrap').style.display = 'none'; }
 
-function saveConfig() {
-  const nameEl = $id('save-name'), name = nameEl.value.trim(), fb = $id('save-feedback');
-  if (!name) { fb.textContent = t('saveError'); fb.style.color = '#f08080'; return; }
+function saveConfig(nameOverride) {
+  const name = (nameOverride || '').trim();
+  if (!name) return;
   const configs = loadConfigs();
   const existIdx = configs.findIndex(c => c.name === name && (c.state.wtype || 'avant') === wtype);
   function doSave() {
@@ -4078,10 +4078,7 @@ function saveConfig() {
     if (ei2 >= 0) configs2.splice(ei2, 1, entry);
     else configs2.unshift(entry);
     persistConfigs(configs2);
-    nameEl.value = ''; fb.textContent = '';
-    renderConfigsList(); showConfigsPanel();
-    $id('save-card-body').style.display = 'none'; $id('save-card-chevron').style.transform = '';
-    const top = document.querySelector('header').getBoundingClientRect().bottom + window.pageYOffset - 30; window.scrollTo({ top, behavior: 'smooth' });
+    hrUpdateButtons();
     flashWheelCard(name);
   }
   if (existIdx >= 0) {
@@ -4105,9 +4102,8 @@ function loadConfig(idx) {
   applyState(cfg.state);
   saved[wh] = JSON.parse(JSON.stringify(cfg.state));
   diagClearData();
-  ['configs-body','save-card-body','arb-card-body','sum-card-body'].forEach(id => { $id(id).style.display = 'none'; });
-  ['configs-chevron','save-card-chevron','arb-card-chevron','sum-card-chevron'].forEach(id => { $id(id).style.transform = ''; });
-  const saveNameEl = $id('save-name'); if (saveNameEl) saveNameEl.value = '';
+  ['arb-card-body','sum-card-body'].forEach(id => { $id(id).style.display = 'none'; });
+  ['arb-card-chevron','sum-card-chevron'].forEach(id => { $id(id).style.transform = ''; });
   resetScrollFlags();
   const top = document.querySelector('header').getBoundingClientRect().bottom + window.pageYOffset - 30; window.scrollTo({ top, behavior: 'smooth' });
   flashWheelCard(cfg.name);
@@ -4116,18 +4112,7 @@ function loadConfig(idx) {
 function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function renderConfigsList() {
-  const configs  = loadConfigs(), list = $id('cfg-list');
-  const filtered = configs.map((cfg, i) => ({ cfg, i })).filter(({ cfg }) => (cfg.state.wtype || 'avant') === wtype);
-  if (filtered.length === 0) { hideConfigsPanel(); return; }
-  showConfigsPanel();
-  list.innerHTML = filtered.map(({ cfg, i }) => {
-    const dateStr = cfg.ts ? (() => { const d = new Date(cfg.ts); return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear(); })() : '';
-    return `<div class="cfg-item" onclick="loadConfig(${i})">`
-    + `<span class="cfg-name">${escHtml(cfg.name)}</span>`
-    + (cfg.metaKey ? `<span class="cfg-meta">${t(cfg.metaKey)}</span>` : '')
-    + (dateStr ? `<span class="cfg-meta cfg-date">${dateStr}</span>` : '')
-    + `<button class="cfg-del" onclick="event.stopPropagation();deleteConfig(${i})" title="Supprimer">×</button></div>`;
-  }).join('');
+  if (typeof hrUpdateButtons === 'function') hrUpdateButtons();
 }
 
 // ── Save manager modal ────────────────────────────────────────────────────────
@@ -4244,7 +4229,7 @@ function importConfigs(event) {
       tmPopulateSpokeSelect();
       if (typeof ctRenderList === 'function') ctRenderList();
       if (typeof ccRenderExisting === 'function') ccRenderExisting();
-      renderConfigsList(); showConfigsPanel();
+      renderConfigsList();
       hrUpdateButtons();
 
       closeSaveMgr();
@@ -4351,7 +4336,6 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
   const el = $id(id); if (!el) return;
   ['input','change'].forEach(ev => {
     el.addEventListener(ev, updateCalcBtn);
-    el.addEventListener(ev, closeConfigsCardIfOpen);
     el.addEventListener(ev, markModified);
     if (id === 'offset-left' || id === 'offset-right') {
       el.addEventListener(ev, updateAsymField);
@@ -4360,7 +4344,6 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
 });
 const ecrouEl = $id('ecrou-type');
 ecrouEl.addEventListener('change', updateCalcBtn);
-ecrouEl.addEventListener('change', closeConfigsCardIfOpen);
 ecrouEl.addEventListener('change', markModified);
 
 // ── Module tension : toute saisie efface le badge (sauf tolérance, nb rayons, rayon) ──
@@ -4382,12 +4365,6 @@ $id('nb-rayons').addEventListener('change', function() {
     diagClearData();
   }
   // Afficher le bloc sauvegarde dès qu'un nombre de rayons est choisi
-  if (parseInt(this.value)) {
-    $id('save-wrap').classList.add('show');
-    $id('save-feedback').textContent = '';
-  } else {
-    $id('save-wrap').classList.remove('show');
-  }
 });
 
 // ── iOS focus: select field content ──────────────────────────────────────────
@@ -4513,7 +4490,7 @@ window.addEventListener('resize', function() {
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function() {
   const configs = loadConfigs();
-  if (configs.length > 0) { renderConfigsList(); $id('configs-wrap').style.display = ''; }
+  if (configs.length > 0) { renderConfigsList(); }
   applyLang();       // initialise labels, texte d'aide, ordre DS/NDS, tout en une fois
   updateAsymField(); // initialise l'état du champ asymétrie
 
@@ -9367,28 +9344,28 @@ function hrUpdateButtons() {
   var rimOk  = hrIsRimComplete();
   var hubs   = hrLoadAll('hub').filter(function(e) { return (e.data && e.data.wtype ? e.data.wtype : 'avant') === wtype; });
   var rims   = hrLoadAll('rim');
+  var configs = (typeof loadConfigs === 'function') ? loadConfigs() : [];
+  var wheelOk   = !!parseInt((document.getElementById('nb-rayons') || {}).value);
+  var hasWheels = configs.some(function(c) { return (c.state.wtype || 'avant') === wtype; });
 
-  var hubSaveBtn = document.getElementById('hub-save-btn');
-  var hubLoadBtn = document.getElementById('hub-load-btn');
-  var rimSaveBtn = document.getElementById('rim-save-btn');
-  var rimLoadBtn = document.getElementById('rim-load-btn');
+  var hubSaveBtn  = document.getElementById('hub-save-btn');
+  var hubLoadBtn  = document.getElementById('hub-load-btn');
+  var rimSaveBtn  = document.getElementById('rim-save-btn');
+  var rimLoadBtn  = document.getElementById('rim-load-btn');
 
-  if (hubSaveBtn) {
-    hubSaveBtn.disabled = !hubOk;
-    hubSaveBtn.classList.toggle('active', hubOk);
-  }
-  if (hubLoadBtn) {
-    hubLoadBtn.disabled = hubs.length === 0;
-    hubLoadBtn.classList.toggle('has-data', hubs.length > 0);
-  }
-  if (rimSaveBtn) {
-    rimSaveBtn.disabled = !rimOk;
-    rimSaveBtn.classList.toggle('active', rimOk);
-  }
-  if (rimLoadBtn) {
-    rimLoadBtn.disabled = rims.length === 0;
-    rimLoadBtn.classList.toggle('has-data', rims.length > 0);
-  }
+  if (hubSaveBtn) { hubSaveBtn.disabled = !hubOk;          hubSaveBtn.classList.toggle('active',   hubOk); }
+  if (hubLoadBtn) { hubLoadBtn.disabled = hubs.length === 0; hubLoadBtn.classList.toggle('has-data', hubs.length > 0); }
+  if (rimSaveBtn) { rimSaveBtn.disabled = !rimOk;          rimSaveBtn.classList.toggle('active',   rimOk); }
+  if (rimLoadBtn) { rimLoadBtn.disabled = rims.length === 0; rimLoadBtn.classList.toggle('has-data', rims.length > 0); }
+
+  ['wheel-save-btn','tm-wheel-save-btn'].forEach(function(id) {
+    var btn = document.getElementById(id);
+    if (btn) { btn.disabled = !wheelOk; btn.classList.toggle('active', wheelOk); }
+  });
+  ['wheel-load-btn','tm-wheel-load-btn'].forEach(function(id) {
+    var btn = document.getElementById(id);
+    if (btn) { btn.disabled = !hasWheels; btn.classList.toggle('has-data', hasWheels); }
+  });
 }
 
 
@@ -11442,6 +11419,140 @@ document.addEventListener('keydown', function(e) {
       ctx.fillStyle = hex; ctx.fill();
     });
   }
+
+})();
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// WHEEL SAVE / LOAD MODAL
+// ══════════════════════════════════════════════════════════════════════════════
+(function() {
+
+  // ── Open / close save modal ──────────────────────────────────────────────
+  window.openWheelSaveModal = function() {
+    var inp = document.getElementById('wheel-save-inp');
+    var fb  = document.getElementById('wheel-save-feedback');
+    var warn = document.getElementById('wheel-save-warning');
+    var title = document.getElementById('wheel-save-title');
+    // Pré-remplir avec le nom déjà chargé s'il y en a un
+    if (inp) inp.value = (typeof _loadedConfigName !== 'undefined' && _loadedConfigName[wtype]) ? _loadedConfigName[wtype] : '';
+    if (fb) fb.textContent = '';
+    if (title) title.textContent = lang === 'fr' ? 'Enregistrer la roue' : 'Save wheel';
+    if (warn) warn.textContent = t('saveWarning');
+    document.getElementById('wheel-save-overlay').classList.add('show');
+    document.getElementById('wheel-save-modal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+    setTimeout(function() { if (inp) inp.focus(); }, 120);
+  };
+
+  window.closeWheelSaveModal = function() {
+    document.getElementById('wheel-save-overlay').classList.remove('show');
+    document.getElementById('wheel-save-modal').classList.remove('show');
+    document.body.style.overflow = '';
+  };
+
+  // ── Confirm save (délègue à saveConfig après avoir pré-rempli le champ) ──
+  window.confirmWheelSave = function() {
+    var modalInp = document.getElementById('wheel-save-inp');
+    var fb       = document.getElementById('wheel-save-feedback');
+    var name     = (modalInp ? modalInp.value : '').trim();
+    if (!name) {
+      if (fb) { fb.textContent = lang === 'fr' ? 'Veuillez saisir un nom.' : 'Please enter a name.'; }
+      return;
+    }
+    closeWheelSaveModal();
+    if (typeof saveConfig === 'function') saveConfig(name);
+  };
+
+  // ── Open / close load modal ───────────────────────────────────────────────
+  window.openWheelLoadModal = function() {
+    var title = document.getElementById('wheel-load-title');
+    if (title) title.textContent = lang === 'fr' ? 'Charger une roue' : 'Load wheel';
+    wheelRenderLoadList();
+    document.getElementById('wheel-load-overlay').classList.add('show');
+    document.getElementById('wheel-load-modal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeWheelLoadModal = function() {
+    document.getElementById('wheel-load-overlay').classList.remove('show');
+    document.getElementById('wheel-load-modal').classList.remove('show');
+    document.body.style.overflow = '';
+  };
+
+  // ── Render load list (filtre par wtype courant) ───────────────────────────
+  function wheelRenderLoadList() {
+    var list = document.getElementById('wheel-load-list');
+    if (!list) return;
+    var configs = (typeof loadConfigs === 'function') ? loadConfigs() : [];
+    // Filtrer par roue courante (avant / arrière)
+    var filtered = configs.map(function(cfg, i) { return { cfg: cfg, i: i }; })
+      .filter(function(o) { return (o.cfg.state.wtype || 'avant') === wtype; });
+
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="wheel-load-empty">' +
+        (lang === 'fr' ? 'Aucune roue enregistrée.' : 'No saved wheels.') + '</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    filtered.forEach(function(o) {
+      var cfg = o.cfg, i = o.i;
+      var item = document.createElement('div');
+      item.className = 'wheel-load-item';
+
+      var nameEl = document.createElement('div');
+      nameEl.className = 'wheel-load-item-name';
+      nameEl.textContent = cfg.name;
+
+      var dateStr = '';
+      if (cfg.ts) {
+        var d = new Date(cfg.ts);
+        dateStr = String(d.getDate()).padStart(2,'0') + '/' +
+                  String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+      }
+      var metaEl = document.createElement('div');
+      metaEl.className = 'wheel-load-item-meta';
+      metaEl.textContent = dateStr;
+
+      var delBtn = document.createElement('button');
+      delBtn.className = 'wheel-load-item-del';
+      delBtn.textContent = '×';
+      delBtn.title = lang === 'fr' ? 'Supprimer' : 'Delete';
+      delBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (typeof deleteConfig === 'function') deleteConfig(i);
+        wheelRenderLoadList(); // re-render
+        // Mettre à jour aussi la liste principale si visible
+        if (typeof renderConfigsList === 'function') renderConfigsList();
+      });
+
+      item.appendChild(nameEl);
+      if (dateStr) item.appendChild(metaEl);
+      item.appendChild(delBtn);
+
+      item.addEventListener('click', function() {
+        if (typeof loadConfig === 'function') loadConfig(i);
+        closeWheelLoadModal();
+      });
+
+      list.appendChild(item);
+    });
+  }
+
+  // ── Keyboard close ────────────────────────────────────────────────────────
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      if (document.getElementById('wheel-save-modal').classList.contains('show')) {
+        e.preventDefault(); closeWheelSaveModal();
+      }
+      if (document.getElementById('wheel-load-modal').classList.contains('show')) {
+        e.preventDefault(); closeWheelLoadModal();
+      }
+    }
+  });
+
 
 })();
 </script>
