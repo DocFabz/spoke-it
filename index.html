@@ -4073,6 +4073,7 @@ function loadConfig(idx) {
   diagClearData();
   ['configs-body','save-card-body','arb-card-body','sum-card-body'].forEach(id => { $id(id).style.display = 'none'; });
   ['configs-chevron','save-card-chevron','arb-card-chevron','sum-card-chevron'].forEach(id => { $id(id).style.transform = ''; });
+  const saveNameEl = $id('save-name'); if (saveNameEl) saveNameEl.value = '';
   resetScrollFlags();
   const top = document.querySelector('header').getBoundingClientRect().bottom + window.pageYOffset - 30; window.scrollTo({ top, behavior: 'smooth' });
   flashWheelCard(cfg.name);
