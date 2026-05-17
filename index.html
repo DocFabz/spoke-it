@@ -2660,6 +2660,8 @@ function markModified() {
     // Première modification = nouvelle roue : reset complet du module tension
     tmClearTensio();
     Object.keys(tmStore).forEach(k => delete tmStore[k]);
+    // Vider le champ save-name puisqu'on n'est plus sur la config chargée
+    const saveNameEl = $id('save-name'); if (saveNameEl) saveNameEl.value = '';
   }
   _loadedConfigName[wtype] = null;
   _refreshLoadedBadges();
