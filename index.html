@@ -307,12 +307,8 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 
 /* ── Segment control ───────────────────────────────────────────────────────── */
 .seg         { display:flex; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); padding:3px; gap:3px }
-.sb          { flex:1; padding:.6rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500; cursor:pointer; touch-action:manipulation; transition:all .3s cubic-bezier(.22,1,.36,1); position:relative; overflow:hidden }
-.sb::before  { content:''; position:absolute; inset:0; border-radius:inherit; background:linear-gradient(135deg, rgba(126,200,227,.06) 0%, transparent 60%); opacity:0; transition:opacity .3s }
-.sb::after   { content:''; position:absolute; inset:0; border-radius:inherit; background:radial-gradient(ellipse 80% 60% at 50% 120%, rgba(126,200,227,.3) 0%, transparent 70%); opacity:0; transition:opacity .4s }
+.sb          { flex:1; padding:.6rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500; cursor:pointer; touch-action:manipulation; transition:all .2s }
 .sb.active   { background:var(--bg2); color:var(--accent); box-shadow:0 2px 16px rgba(0,0,0,.45), 0 0 0 1px rgba(126,200,227,.15) inset }
-.sb.active::before { opacity:1 }
-.sb.active::after  { opacity:1 }
 @keyframes sb-click-flash {
   0%   { box-shadow:0 2px 16px rgba(0,0,0,.45), 0 0 0 1px rgba(126,200,227,.15) inset, 0 0 22px rgba(126,200,227,.32) }
   40%  { box-shadow:0 2px 16px rgba(0,0,0,.45), 0 0 0 1px rgba(126,200,227,.15) inset, 0 0 10px rgba(126,200,227,.16) }
