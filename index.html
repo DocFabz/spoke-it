@@ -289,23 +289,19 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 /* ── Card ──────────────────────────────────────────────────────────────────── */
 .card         { background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:1.6rem 1.8rem; box-shadow:var(--sh); transition:border-color .3s }
 .card:hover   { border-color:var(--border-s) }
-.card-success { border-color:rgba(126,207,168,.35); box-shadow:0 0 0 1px rgba(126,207,168,.1) }
 .card-done    { border-color:rgba(126,200,227,.45); box-shadow:0 0 0 1px rgba(126,200,227,.08), var(--sh) }
 .card-muted   { border-color:rgba(255,255,255,.06) }
 
 /* ── Card header ───────────────────────────────────────────────────────────── */
 .ch            { display:flex; align-items:center; gap:.5rem; margin-bottom:.75rem }
 .ch-toggle     { cursor:pointer; user-select:none; margin-bottom:0 }.clabel        { font-size:.63rem; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--accent) }
-.clabel-success { color:var(--success) }
 .clabel-muted   { color:var(--text2) }
 .clabel-done    { color:var(--accent) }
 .cicon         { width:13px; height:13px; flex-shrink:0; opacity:.7; color:var(--accent) }
-.cicon-success  { color:var(--success); opacity:.7 }
 .cicon-muted    { color:var(--text2); opacity:.7 }
 .cicon-done     { color:var(--accent); opacity:.7 }
 .cicon-hub     { width:26px; height:13px }
 .chevron       { margin-left:auto; font-style:normal; font-size:.75rem; transition:transform .22s; display:inline-block }
-.chevron-success { color:var(--success) }
 .chevron-muted   { color:var(--text2) }
 .chevron-done    { color:var(--accent) }
 
@@ -1743,7 +1739,7 @@ input[type=number] { -moz-appearance:textfield }
   <div class="rw" id="results">
     <div class="card">
       <div class="ch ch-toggle" onclick="toggleResultsCard()">
-        <svg class="cicon cicon-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+        <svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
           <rect x="4" y="2" width="16" height="20" rx="2"/>
           <rect x="7" y="5" width="10" height="4" rx="1" fill="currentColor" opacity=".3" stroke="none"/>
           <line x1="7" y1="5" x2="17" y2="5"/>  <line x1="7" y1="9" x2="17" y2="9"/>
@@ -1755,8 +1751,8 @@ input[type=number] { -moz-appearance:textfield }
           <circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/>
           <circle cx="16" cy="17" r=".9" fill="currentColor" stroke="none"/>
         </svg>
-        <div class="clabel clabel-success" data-i18n="results">Résultats</div>
-        <em id="results-card-chevron" class="chevron chevron-success">&#8964;</em>
+        <div class="clabel" data-i18n="results">Résultats</div>
+        <em id="results-card-chevron" class="chevron chevron-done">&#8964;</em>
       </div>
       <div id="results-card-body" style="margin-top:1.35rem">
         <div class="rg">
