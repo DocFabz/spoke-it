@@ -208,9 +208,15 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .card-icon-btn.active { border-color: rgba(126,200,227,.5); color: var(--accent) }
 .card-icon-btn.has-data { border-color: rgba(126,200,227,.4); color: var(--accent) }
 .card-icon-btn:disabled { opacity: .3; cursor: default; pointer-events: none }
-.wheel-reset-btn { background:none; border:1px solid rgba(232,146,124,.35); border-radius:7px; height:26px; display:inline-flex; align-items:center; font-family:'DM Mono',monospace; font-size:.58rem; font-weight:400; letter-spacing:.15em; text-transform:uppercase; color:rgba(232,146,124,.7); cursor:pointer; padding:0 .55rem; line-height:1; transition:all .2s; touch-action:manipulation }
-.wheel-reset-btn:hover { border-color:rgba(232,146,124,.65); color:var(--warm2) }
-@media (hover: none) { .wheel-reset-btn:hover { border-color:rgba(232,146,124,.35); color:rgba(232,146,124,.7) } }
+.wheel-reset-btn { position:relative; background:none; border:1px solid rgba(232,146,124,.3); border-radius:7px; height:26px; display:inline-flex; align-items:center; gap:.35rem; font-family:'DM Mono',monospace; font-size:.58rem; font-weight:400; letter-spacing:.15em; text-transform:uppercase; color:rgba(232,146,124,.55); cursor:pointer; padding:0 .6rem 0 .45rem; line-height:1; transition:color .2s, border-color .2s, background .2s, box-shadow .2s; touch-action:manipulation; overflow:hidden }
+.wheel-reset-btn::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(232,146,124,.07) 0%,rgba(240,180,154,.04) 100%); opacity:0; transition:opacity .2s }
+.wheel-reset-btn:hover { border-color:rgba(232,146,124,.6); color:var(--warm2); box-shadow:0 0 10px rgba(232,146,124,.12),inset 0 0 6px rgba(232,146,124,.05) }
+.wheel-reset-btn:hover::before { opacity:1 }
+.wheel-reset-btn:active { border-color:var(--warm2); color:#fff; box-shadow:0 0 18px rgba(232,146,124,.25) }
+.wheel-reset-btn .reset-icon { flex-shrink:0; opacity:.75; transition:transform .35s cubic-bezier(.22,1,.36,1) }
+.wheel-reset-btn:hover .reset-icon { transform:rotate(-180deg); opacity:1 }
+@keyframes reset-tap-flash { 0% { border-color:var(--warm2); color:#fff; box-shadow:0 0 18px rgba(232,146,124,.35) } 100% { border-color:rgba(232,146,124,.3); color:rgba(232,146,124,.55); box-shadow:none } }
+@media (hover: none) { .wheel-reset-btn:hover { border-color:rgba(232,146,124,.3); color:rgba(232,146,124,.55); box-shadow:none } .wheel-reset-btn:hover::before { opacity:0 } .wheel-reset-btn:active { animation:reset-tap-flash .55s cubic-bezier(.22,1,.36,1) forwards } }
 
 /* ── Hub/Rim save modal ─────────────────────────────────────────────────────── */
 .hr-save-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
@@ -1399,8 +1405,8 @@ input[type=number] { -moz-appearance:textfield }
       <button class="sb active" id="btn-avant"   onclick="setWheel('avant')"   data-i18n="frontWheel">ROUE AVANT</button>
       <button class="sb"        id="btn-arriere" onclick="setWheel('arriere')" data-i18n="rearWheel">ROUE ARRIÈRE</button>
     </div>
-    <div style="text-align:right;margin-top:.5rem">
-      <button class="wheel-reset-btn" onclick="clearForm()">Reset</button>
+    <div style="text-align:right;margin-top:.75rem">
+      <button class="wheel-reset-btn" onclick="clearForm()"><svg class="reset-icon" width="9" height="9" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.5 5a3.5 3.5 0 1 0 .7-2.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><polyline points="1.5,1.5 1.5,3 3,3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>Reset</button>
     </div>
   </div>
 
@@ -1885,8 +1891,8 @@ input[type=number] { -moz-appearance:textfield }
       <button class="sb active" id="tm-btn-avant"   onclick="tmSetWheel('avant')"   data-i18n="frontWheel">ROUE AVANT</button>
       <button class="sb"        id="tm-btn-arriere" onclick="tmSetWheel('arriere')" data-i18n="rearWheel">ROUE ARRIÈRE</button>
     </div>
-    <div style="text-align:right;margin-top:.5rem">
-      <button class="wheel-reset-btn" onclick="clearForm()">Reset</button>
+    <div style="text-align:right;margin-top:.75rem">
+      <button class="wheel-reset-btn" onclick="clearForm()"><svg class="reset-icon" width="9" height="9" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.5 5a3.5 3.5 0 1 0 .7-2.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><polyline points="1.5,1.5 1.5,3 3,3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>Reset</button>
     </div>
   </div>
 
