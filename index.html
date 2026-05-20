@@ -3715,8 +3715,8 @@ function calc() {
   const hasSpokeSection = spokeMatType === 'steel' && sd !== null && !isNaN(sd);
   if (hasSpokeSection) {
     const stretchLabel = t('estStretch');
-    $id('m-fo').innerHTML = `<div class="rincluant">${t('including')}</div><div class="rrow"><span>${stretchLabel}</span><span class="ev">${eFoDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFoDisplay.toFixed(1)} kgf</strong></div>`;
-    $id('m-fa').innerHTML = `<div class="rincluant">${t('including')}</div><div class="rrow"><span>${stretchLabel}</span><span class="ev">${eFaDisplay.toFixed(3)} mm</span></div><div class="rrow"><strong>${tFaDisplay.toFixed(1)} kgf</strong></div>`;
+    $id('m-fo').innerHTML = `<div class="rincluant">${t('including')}</div><div class="rrow"><span>${stretchLabel}</span><span class="ev">${(Math.round(eFoDisplay * 100) / 100).toFixed(2)} mm</span></div><div class="rrow"><strong>${tFoDisplay.toFixed(1)} kgf</strong></div>`;
+    $id('m-fa').innerHTML = `<div class="rincluant">${t('including')}</div><div class="rrow"><span>${stretchLabel}</span><span class="ev">${(Math.round(eFaDisplay * 100) / 100).toFixed(2)} mm</span></div><div class="rrow"><strong>${tFaDisplay.toFixed(1)} kgf</strong></div>`;
   } else {
     $id('m-fo').innerHTML = '';
     $id('m-fa').innerHTML = '';
@@ -11310,7 +11310,7 @@ document.addEventListener('keydown', function(e) {
         card.innerHTML =
           '<div class="hooke-leg-label" style="color:'+d.color+'">'+d.label+'</div>' +
           '<div class="hooke-leg-val">'+d.T.toFixed(1)+' kgf</div>' +
-          '<div class="hooke-leg-val">+'+d.eTotal.toFixed(3)+' mm</div>';
+          '<div class="hooke-leg-val">+'+(Math.round(d.eTotal * 100) / 100).toFixed(2)+' mm</div>';
         legEl.appendChild(card);
       });
     }
@@ -11386,7 +11386,7 @@ document.addEventListener('keydown', function(e) {
     ctx.textAlign = 'right';
     for (var i=0; i<=5; i++) {
       var v = maxE*i/5;
-      var s = v === 0 ? '+0' : ('+' + v.toFixed(3).replace(/0+$/,'').replace(/\.$/,''));
+      var s = v === 0 ? '+0.00' : ('+' + (Math.round(v * 100) / 100).toFixed(2));
       ctx.fillText(s, pad.left-5, yp(v)+3);
     }
 
