@@ -3237,7 +3237,6 @@ function setWheel(wh) {
   activeBtn.addEventListener('animationend', () => activeBtn.classList.remove('sb-flash'), { once: true });
   if (isNew) {
     _refreshLoadedBadges();
-    scrollToCard(getCards()[1]);
   }
   // Sync tension module badges if visible
   if ($id('tension-module').style.display !== 'none') tmUpdateBadges();
