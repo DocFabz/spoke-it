@@ -1999,7 +1999,7 @@ input[type=number] { -moz-appearance:textfield }
         <line x1="3" y1="9" x2="21" y2="9"/>
         <line x1="12" y1="9" x2="12" y2="20"/>
       </svg>
-      <div class="clabel" data-i18n="tmDeflLabel">Déflections mesurées</div>
+      <div class="clabel" id="tm-defl-label">Déflections mesurées</div>
       <em id="tm-input-card-chevron" class="chevron">&#8964;</em>
     </div>
 
@@ -2807,6 +2807,14 @@ function applyLang() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     if (!el.children.length) el.textContent = t(el.dataset.i18n);
   });
+  // Titre "Déflections mesurées" / "Measured deflections" + suffixe roue
+  var deflEl = $id('tm-defl-label');
+  if (deflEl) {
+    var deflSide = (typeof wtype !== 'undefined' && wtype === 'arriere')
+      ? (lang === 'fr' ? 'Roue arrière' : 'Rear wheel')
+      : (lang === 'fr' ? 'Roue avant'   : 'Front wheel');
+    deflEl.textContent = t('tmDeflLabel') + ' — ' + deflSide;
+  }
   document.querySelectorAll('.rincluant').forEach(el => { el.textContent = t('including'); });
   reorderTensionFields(wtype); // réapplique les bons labels DS/NDS après la retraduction
   onTension();                 // met à jour tension-help-text en dernier
@@ -3233,6 +3241,13 @@ function setWheel(wh) {
   }
   // Sync tension module badges if visible
   if ($id('tension-module').style.display !== 'none') tmUpdateBadges();
+  // Mettre à jour le titre "Déflections mesurées" (visible en permanence)
+  var L = typeof lang !== 'undefined' ? lang : 'fr';
+  var side = wh === 'arriere'
+    ? (L === 'fr' ? 'Roue arrière' : 'Rear wheel')
+    : (L === 'fr' ? 'Roue avant'   : 'Front wheel');
+  var deflEl = $id('tm-defl-label');
+  if (deflEl) deflEl.textContent = (L === 'fr' ? 'Déflections mesurées' : 'Measured deflections') + ' — ' + side;
 }
 
 function reorderTensionFields(wh) {
@@ -8014,7 +8029,7 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 
   <!-- Header -->
   <div class="ef-header">
-    <div class="ef-title">Easy Fill</div>
+    <div class="ef-title" id="ef-title">Easy Fill</div>
     <div style="display:flex;align-items:center;gap:.4rem">
       <button class="ef-bt-btn" id="ef-bt-btn" onclick="efToggleBt()" title="Clavier Bluetooth">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -8143,6 +8158,12 @@ function efOpen() {
 
   efReorderSwitcher();
   efUpdateSwitcher();
+  var efTitleEl = $id('ef-title');
+  if (efTitleEl) {
+    var L = typeof lang !== 'undefined' ? lang : 'fr';
+    var side = wtype === 'arriere' ? (L === 'fr' ? 'Roue arrière' : 'Rear wheel') : (L === 'fr' ? 'Roue avant' : 'Front wheel');
+    efTitleEl.textContent = 'Easy Fill — ' + side;
+  }
   $id('ef-overlay').classList.add('show');
   document.body.style.overflow = 'hidden';
   efRenderStep();
