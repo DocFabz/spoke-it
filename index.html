@@ -1548,6 +1548,7 @@ input[type=number] { -moz-appearance:textfield }
       </div>
       <div></div>
     </div>
+    <div id="spoke-other-info" style="display:none;font-size:.67rem;font-style:italic;color:var(--text3);line-height:1.5;margin-top:.1rem" data-i18n="spokeMaterialOtherInfo">L'estimation de l'élongation des rayons par la loi de Hooke n'est disponible que pour les rayons aciers.</div>
   </div>
 
   <div class="card" id="card-rim">
@@ -2393,6 +2394,7 @@ const i18n = {
     erdDirect:'ERD DIRECT', addonTip:"Dépend de l'ecrou utilisé",
     erdCalc:'ERD calculé (mm)', rimAsym:'ASYM. JANTE (mm)', spokeSection:'Section de rayon (mm)', spokeSectionTip:"Permet de calculer l'élongation", cross:'Croisement',
     spokeCard:'Rayons', spokeMaterialSteel:'ACIER', spokeMaterialOther:'AUTRE MATÉRIAU',
+    spokeMaterialOtherInfo:"L'estimation de l'élongation des rayons par la loi de Hooke n'est disponible que pour les rayons aciers.",
     driveSide:'Côté Droit (DS)', nonDriveSide:'Côté Gauche (NDS)',
     rtagDriveSideFront:'CÔTÉ DROIT (DS)', rtagNonDriveSideFront:'CÔTÉ GAUCHE (NDS)',
     rtagDriveSideRear:'CÔTÉ DROIT (DS)',  rtagNonDriveSideRear:'CÔTÉ GAUCHE (NDS)',
@@ -2532,6 +2534,7 @@ const i18n = {
     erdDirect:'ERD DIRECT', addonTip:'Depends on the nipple used',
     erdCalc:'Calculated ERD (mm)', rimAsym:'RIM ASYM. (mm)', spokeSection:'Spoke section (mm)', spokeSectionTip:'Used to calculate elongation', cross:'Lacing',
     spokeCard:'Spokes', spokeMaterialSteel:'STEEL', spokeMaterialOther:'OTHER MATERIAL',
+    spokeMaterialOtherInfo:'Spoke elongation estimation using Hooke\'s law is only available for steel spokes.',
     driveSide:'Right Side (DS)', nonDriveSide:'Left Side (NDS)',
     rtagDriveSideFront:'RIGHT SIDE (DS)', rtagNonDriveSideFront:'LEFT SIDE (NDS)',
     rtagDriveSideRear:'RIGHT SIDE (DS)',  rtagNonDriveSideRear:'LEFT SIDE (NDS)',
@@ -3387,7 +3390,9 @@ function setSpokeMatType(type) {
   document.getElementById('btn-spoke-steel').classList.toggle('active', type === 'steel');
   document.getElementById('btn-spoke-other').classList.toggle('active', type === 'other');
   const field = document.getElementById('spoke-section-field');
+  const info  = document.getElementById('spoke-other-info');
   if (field) field.closest('.g2').style.display = type === 'steel' ? '' : 'none';
+  if (info)  info.style.display = type === 'other' ? '' : 'none';
   if (type === 'other') {
     sd = null; sa = null;
     const sel = document.getElementById('spoke-select');
