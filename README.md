@@ -9,7 +9,7 @@
 
 **Spoke It** is a free web app for calculating spoke lengths and analyzing spoke tension on bicycle wheels — no installation required, works entirely in your browser.
 
-🔗 **[→ Open the app](https://docfabz.github.io/spoke-it/)**
+🔗 **[→ Open the app](https://spokeit.fr)**
 
 ---
 
@@ -31,7 +31,7 @@ Available in **French** and **English** — toggle in the interface.
 
 ## Usage
 
-1. Open [https://docfabz.github.io/spoke-it/](https://docfabz.github.io/spoke-it/) in your browser.
+1. Open [https://spokeit.fr](https://spokeit.fr) in your browser.
 2. Select **Calculator** or **Tension** from the navigation.
 3. Fill in your parameters and get instant results.
 
@@ -65,7 +65,7 @@ Issues and pull requests are welcome — bug reports, feature requests, or new t
 
 **Spoke It** est une application web gratuite pour calculer les longueurs de rayons et analyser la tension des rayons de roues de vélo — sans installation, directement dans votre navigateur.
 
-🔗 **[→ Ouvrir l'application](https://docfabz.github.io/spoke-it/)**
+🔗 **[→ Ouvrir l'application](https://spokeit.fr)**
 
 ---
 
@@ -87,7 +87,7 @@ Disponible en **français** et en **anglais** — bascule directement dans l'int
 
 ## Utilisation
 
-1. Ouvrez [https://docfabz.github.io/spoke-it/](https://docfabz.github.io/spoke-it/) dans votre navigateur.
+1. Ouvrez [https://spokeit.fr](https://spokeit.fr) dans votre navigateur.
 2. Sélectionnez **Calculateur** ou **Tension** dans la navigation.
 3. Renseignez vos paramètres et obtenez les résultats instantanément.
 
