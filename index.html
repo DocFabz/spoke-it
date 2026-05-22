@@ -334,6 +334,7 @@ input[type=number], select {
   input[type=number], input[type=text], select { font-size:16px }
 }
 input:focus, select:not(#tension-forte):focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
+#spoke-mat-select:focus { outline:none; border-color:var(--border); background:var(--inp) }
 input::placeholder        { color:var(--text2); opacity:1 }
 select.placeholder        { color:var(--text2) }
 select option             { background:#161b27 }
@@ -1527,14 +1528,16 @@ input[type=number] { -moz-appearance:textfield }
       <div class="clabel" data-i18n="spokeCard">Rayons</div>
     </div>
 
-    <div class="prow">
-      <button class="pill pill-icon active" id="btn-spoke-steel" onclick="setSpokeMatType('steel')" data-i18n="spokeMaterialSteel">ACIER</button>
-      <button class="pill pill-icon"        id="btn-spoke-other" onclick="setSpokeMatType('other')" data-i18n="spokeMaterialOther">AUTRE MATÉRIAU</button>
-    </div>
-
-    <div class="g2">
-      <div class="f" id="spoke-section-field">
-        <label class="tip-wrap"><span data-i18n="spokeSection">Section de rayon (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="spokeSectionTip">Permet de calculer l'élongation</span></label>
+    <div style="display:flex;gap:1rem;align-items:flex-end">
+      <div class="f" style="flex:0 0 calc(50% - .5rem)">
+        <label data-i18n="spokeMaterial">Matériau</label>
+        <select id="spoke-mat-select" onchange="setSpokeMatType(this.value)">
+          <option value="steel" data-i18n="spokeMaterialSteel">Acier</option>
+          <option value="other" data-i18n="spokeMaterialOther">Autre matériau</option>
+        </select>
+      </div>
+      <div class="f" id="spoke-section-field" style="flex:0 0 calc(50% - .5rem)">
+        <label class="tip-wrap"><span data-i18n="spokeSection">Section rayon (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="spokeSectionTip">Permet de calculer l'élongation</span></label>
         <select id="spoke-select" onchange="setSpokeFromSelect(this)">
           <option value="" selected>—</option>
           <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
@@ -1546,9 +1549,8 @@ input[type=number] { -moz-appearance:textfield }
           <option value="1.2|2.0">1.2×2.0</option>
         </select>
       </div>
-      <div></div>
+      <div id="spoke-other-info" style="display:none;flex:0 0 calc(50% - .5rem);font-size:.67rem;font-style:italic;color:var(--text3);line-height:1.4;align-self:flex-end" data-i18n="spokeMaterialOtherInfo">L'estimation de l'élongation des rayons par la loi de Hooke n'est disponible que pour les rayons aciers.</div>
     </div>
-    <div id="spoke-other-info" style="display:none;font-size:.67rem;font-style:italic;color:var(--text3);line-height:1.5;margin-top:.1rem" data-i18n="spokeMaterialOtherInfo">L'estimation de l'élongation des rayons par la loi de Hooke n'est disponible que pour les rayons aciers.</div>
   </div>
 
   <div class="card" id="card-rim">
@@ -2392,8 +2394,8 @@ const i18n = {
     pcdTipLeft:'Pitch Circle Diameter Gauche', pcdTipRight:'Pitch Circle Diameter Droit', offset:'Déport', offsetTipLeft:'Centre-Flasque Gauche', offsetTipRight:'Centre-Flasque Droite',
     soLeft:'SO gauche', soRight:'SO droit',
     erdDirect:'ERD DIRECT', addonTip:"Dépend de l'ecrou utilisé",
-    erdCalc:'ERD calculé (mm)', rimAsym:'ASYM. JANTE (mm)', spokeSection:'Section de rayon (mm)', spokeSectionTip:"Permet de calculer l'élongation", cross:'Croisement',
-    spokeCard:'Rayons', spokeMaterialSteel:'ACIER', spokeMaterialOther:'AUTRE MATÉRIAU',
+    erdCalc:'ERD calculé (mm)', rimAsym:'ASYM. JANTE (mm)', spokeSection:'Section rayon (mm)', spokeSectionTip:"Permet de calculer l'élongation", cross:'Croisement',
+    spokeCard:'Rayons', spokeMaterialSteel:'Acier', spokeMaterialOther:'Autre matériau', spokeMaterial:'Matériau',
     spokeMaterialOtherInfo:"L'estimation de l'élongation des rayons par la loi de Hooke n'est disponible que pour les rayons aciers.",
     driveSide:'Côté Droit (DS)', nonDriveSide:'Côté Gauche (NDS)',
     rtagDriveSideFront:'CÔTÉ DROIT (DS)', rtagNonDriveSideFront:'CÔTÉ GAUCHE (NDS)',
@@ -2522,7 +2524,7 @@ const i18n = {
     snapNameError:'Veuillez saisir un nom.',
     estStretch:'Est. Stretch',
     target:'Cible', including:'Incluant',
-    hookeSectionLabel:'Section de rayon',
+    hookeSectionLabel:'Section rayon',
   },
   en: {
     hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -2533,7 +2535,7 @@ const i18n = {
     soLeft:'SO left', soRight:'SO right',
     erdDirect:'ERD DIRECT', addonTip:'Depends on the nipple used',
     erdCalc:'Calculated ERD (mm)', rimAsym:'RIM ASYM. (mm)', spokeSection:'Spoke section (mm)', spokeSectionTip:'Used to calculate elongation', cross:'Lacing',
-    spokeCard:'Spokes', spokeMaterialSteel:'STEEL', spokeMaterialOther:'OTHER MATERIAL',
+    spokeCard:'Spokes', spokeMaterialSteel:'Steel', spokeMaterialOther:'Other material', spokeMaterial:'Material',
     spokeMaterialOtherInfo:'Spoke elongation estimation using Hooke\'s law is only available for steel spokes.',
     driveSide:'Right Side (DS)', nonDriveSide:'Left Side (NDS)',
     rtagDriveSideFront:'RIGHT SIDE (DS)', rtagNonDriveSideFront:'LEFT SIDE (NDS)',
@@ -3387,11 +3389,11 @@ function setSpokeFromSelect(sel) {
 
 function setSpokeMatType(type) {
   spokeMatType = type;
-  document.getElementById('btn-spoke-steel').classList.toggle('active', type === 'steel');
-  document.getElementById('btn-spoke-other').classList.toggle('active', type === 'other');
+  const matSel = document.getElementById('spoke-mat-select');
+  if (matSel && matSel.value !== type) matSel.value = type;
   const field = document.getElementById('spoke-section-field');
   const info  = document.getElementById('spoke-other-info');
-  if (field) field.closest('.g2').style.display = type === 'steel' ? '' : 'none';
+  if (field) field.style.display = type === 'steel' ? '' : 'none';
   if (info)  info.style.display = type === 'other' ? '' : 'none';
   if (type === 'other') {
     sd = null; sa = null;
