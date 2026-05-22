@@ -3620,7 +3620,7 @@ function area() {
 }
 function el(F, L) {
   if (!sd || isNaN(sd)) return 0;
-  return (F * 9.81 * L) / (area() * 210000);
+  return (F * 9.81 * L) / (area() * 200000);
 }
 
 // ── Calc ──────────────────────────────────────────────────────────────────────
@@ -11294,7 +11294,7 @@ document.addEventListener('keydown', function(e) {
     var sdVal = (typeof sd !== 'undefined' && sd) ? sd : 2;
     var saVal = (typeof sa !== 'undefined' && sa) ? sa : sdVal;
     var A = Math.PI / 4 * sdVal * saVal;
-    var k = (A * 210000) / L;
+    var k = (A * 200000) / L;
     var label = document.getElementById('rtag-' + side);
     // fo = orange toujours, fa = bleu toujours
     var color = side === 'fo' ? '#e8927c' : '#7ec8e3';
@@ -11313,13 +11313,14 @@ document.addEventListener('keydown', function(e) {
       ? "Hooke's Law (steel spokes)"
       : 'Loi de Hooke (rayons aciers)';
 
-    // Sous-titre : section de rayon sélectionnée
+    // Sous-titre : section de rayon sélectionnée + module de Young
     var subEl = document.getElementById('hooke-modal-subtitle');
     if (subEl) {
       var sdVal = (typeof sd !== 'undefined' && sd) ? sd : null;
       var saVal = (typeof sa !== 'undefined' && sa) ? sa : null;
       var sectionVal = sdVal ? (saVal ? sdVal + ' \xd7 ' + saVal + ' mm' : sdVal + ' mm') : '\u2014';
-      subEl.textContent = t('hookeSectionLabel') + ' : ' + sectionVal;
+      var youngLabel = (typeof lang !== 'undefined' && lang === 'en') ? 'Young\'s modulus' : 'Module de Young';
+      subEl.innerHTML = t('hookeSectionLabel') + ' : ' + sectionVal + '<br>' + youngLabel + ' : 200 GPa';
     }
 
     // Cards légende : avant→fo gauche fa droite, arrière→fa gauche fo droite
