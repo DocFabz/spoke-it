@@ -334,7 +334,6 @@ input[type=number], select {
   input[type=number], input[type=text], select { font-size:16px }
 }
 input:focus, select:not(#tension-forte):focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
-#spoke-mat-select:focus { outline:none; border-color:var(--border); background:var(--inp) }
 input::placeholder        { color:var(--text2); opacity:1 }
 select.placeholder        { color:var(--text2) }
 select option             { background:#161b27 }
@@ -1532,8 +1531,8 @@ input[type=number] { -moz-appearance:textfield }
       <div class="f" style="flex:0 0 calc(50% - .5rem)">
         <label data-i18n="spokeMaterial">Matériau</label>
         <select id="spoke-mat-select" onchange="setSpokeMatType(this.value)">
-          <option value="steel" data-i18n="spokeMaterialSteel">Acier</option>
-          <option value="other" data-i18n="spokeMaterialOther">Autre matériau</option>
+          <option value="steel" data-i18n="spokeMaterialSteel">ACIER</option>
+          <option value="other" data-i18n="spokeMaterialOther">AUTRE</option>
         </select>
       </div>
       <div class="f" id="spoke-section-field" style="flex:0 0 calc(50% - .5rem)">
@@ -2395,7 +2394,7 @@ const i18n = {
     soLeft:'SO gauche', soRight:'SO droit',
     erdDirect:'ERD DIRECT', addonTip:"Dépend de l'ecrou utilisé",
     erdCalc:'ERD calculé (mm)', rimAsym:'ASYM. JANTE (mm)', spokeSection:'Section rayon (mm)', spokeSectionTip:"Permet de calculer l'élongation", cross:'Croisement',
-    spokeCard:'Rayons', spokeMaterialSteel:'Acier', spokeMaterialOther:'Autre matériau', spokeMaterial:'Matériau',
+    spokeCard:'Rayons', spokeMaterialSteel:'ACIER', spokeMaterialOther:'AUTRE', spokeMaterial:'Matériau',
     spokeMaterialOtherInfo:"L'estimation de l'élongation des rayons par la loi de Hooke n'est disponible que pour les rayons aciers.",
     driveSide:'Côté Droit (DS)', nonDriveSide:'Côté Gauche (NDS)',
     rtagDriveSideFront:'CÔTÉ DROIT (DS)', rtagNonDriveSideFront:'CÔTÉ GAUCHE (NDS)',
@@ -2535,7 +2534,7 @@ const i18n = {
     soLeft:'SO left', soRight:'SO right',
     erdDirect:'ERD DIRECT', addonTip:'Depends on the nipple used',
     erdCalc:'Calculated ERD (mm)', rimAsym:'RIM ASYM. (mm)', spokeSection:'Spoke section (mm)', spokeSectionTip:'Used to calculate elongation', cross:'Lacing',
-    spokeCard:'Spokes', spokeMaterialSteel:'Steel', spokeMaterialOther:'Other material', spokeMaterial:'Material',
+    spokeCard:'Spokes', spokeMaterialSteel:'STEEL', spokeMaterialOther:'OTHER', spokeMaterial:'Material',
     spokeMaterialOtherInfo:'Spoke elongation estimation using Hooke\'s law is only available for steel spokes.',
     driveSide:'Right Side (DS)', nonDriveSide:'Left Side (NDS)',
     rtagDriveSideFront:'RIGHT SIDE (DS)', rtagNonDriveSideFront:'LEFT SIDE (NDS)',
