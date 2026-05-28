@@ -8673,6 +8673,7 @@ function efStartMic() {
     inp.value = num;
     efUpdateKgf();
     efPendingReplace = false;
+    efBeep();
     setTimeout(function() { if (efMicActive) efNext(); }, 150);
   };
   r.onerror = function(e) {
@@ -8696,6 +8697,21 @@ function efStartMic() {
   r.start();
   efSetMicActive(true);
   efRequestWakeLock();
+}
+
+function efBeep() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 440;
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.12);
+  } catch(e) {}
 }
 
 function efStopMic() {
