@@ -8536,19 +8536,51 @@ var efMicActive = false;
 var efMicRecog  = null;
 
 function efVoiceToNumber(txt) {
-  var map = {
+  var units = {
     'zéro':0,'zero':0,'un':1,'une':1,'one':1,'deux':2,'two':2,
     'trois':3,'three':3,'quatre':4,'four':4,'cinq':5,'five':5,
-    'six':6,'sept':7,'seven':7,'huit':8,'eight':8,'neuf':9,'nine':9
+    'six':6,'sept':7,'seven':7,'huit':8,'eight':8,'neuf':9,'nine':9,
+    'dix':10,'ten':10,'onze':11,'eleven':11,'douze':12,'twelve':12,
+    'treize':13,'thirteen':13,'quatorze':14,'fourteen':14,'quinze':15,'fifteen':15,
+    'seize':16,'sixteen':16,'vingt':20,'twenty':20,'trente':30,'thirty':30,
+    'quarante':40,'forty':40,'cinquante':50,'fifty':50,
+    'soixante':60,'sixty':60,'soixante-dix':70,'seventy':70,
+    'quatre-vingt':80,'eighty':80,'quatre-vingts':80,
+    'quatre-vingt-dix':90,'ninety':90,'cent':100,'hundred':100
   };
   var s = txt.toLowerCase()
-    .replace(/virgule|point décimal/g, '.')
-    .replace(/[^a-zéàèùâêîôûäëïöü0-9.\s]/g, '');
-  s = s.split(/\s+/).map(function(w) {
-    return (map[w] !== undefined) ? String(map[w]) : w;
-  }).join('');
-  s = s.replace(/[^0-9.]/g, '').replace(/\.(?=.*\.)/g, '');
-  return s;
+    .replace(/virgule|point décimal/g, '§')
+    .replace(/-/g, ' ')
+    .replace(/et\s/g, '')
+    .replace(/\s+/g, ' ').trim();
+  var parts = s.split('§');
+  var intPart = parts[0].trim();
+  var decPart = parts[1] ? parts[1].trim() : null;
+  function parseWords(str) {
+    var words = str.split(' ');
+    var total = 0, current = 0;
+    for (var i = 0; i < words.length; i++) {
+      var w = words[i];
+      if (/^\d+$/.test(w)) { current += parseInt(w); continue; }
+      var v = units[w];
+      if (v === undefined) continue;
+      if (v === 100) { current = (current === 0 ? 1 : current) * 100; }
+      else { current += v; }
+    }
+    total += current;
+    return total > 0 ? total : null;
+  }
+  var intVal = parseWords(intPart);
+  if (intVal === null) {
+    var raw = s.replace(/[^0-9]/g, '');
+    return raw || null;
+  }
+  var result = String(intVal);
+  if (decPart !== null) {
+    var decVal = parseWords(decPart);
+    result += '.' + (decVal !== null ? String(decVal) : decPart.replace(/[^0-9]/g, ''));
+  }
+  return result || null;
 }
 
 function efSetMicActive(val) {
@@ -8583,22 +8615,45 @@ function efStartMic() {
   r.lang           = (typeof lang !== 'undefined' && lang === 'en') ? 'en-US' : 'fr-FR';
   r.continuous     = true;
   r.interimResults = false;
+  var grammar = '#JSGF V1.0; grammar numbers; public <number> = ' +
+    '0|1|2|3|4|5|6|7|8|9|dix|vingt|trente|quarante|cinquante|soixante|cent|virgule|' +
+    'suivant|next|retour|back|précédent|effacer|supprimer|clear;';
+  try {
+    var gl = new (window.SpeechGrammarList || window.webkitSpeechGrammarList)();
+    gl.addFromString(grammar, 1);
+    r.grammars = gl;
+  } catch(e) {}
+  r.interimResults = false;
   r.onresult = function(e) {
-    var raw = e.results[e.results.length - 1][0].transcript.trim();
-    var num = efVoiceToNumber(raw);
+    var result = e.results[e.results.length - 1];
+    var txt = result[0].transcript.trim().toLowerCase();
+    // Commandes vocales
+    if (txt === 'suivant' || txt === 'next')                          { efNext(); return; }
+    if (txt === 'retour'  || txt === 'back' || txt === 'précédent')   { efBack(); return; }
+    if (txt === 'effacer' || txt === 'supprimer' || txt === 'clear')  { $id('ef-inp').value = ''; efUpdateKgf(); return; }
+    var num = efVoiceToNumber(txt);
     if (!num) return;
+    if (result[0].confidence > 0 && result[0].confidence < 0.6) return;
     var inp = $id('ef-inp');
-    inp.value = '';
+    inp.value = num;
+    efUpdateKgf();
     efPendingReplace = false;
-    for (var i = 0; i < num.length; i++) efNumpadKey(num[i]);
-    setTimeout(function() { if (efMicActive) efNext(); }, 600);
+    setTimeout(function() { if (efMicActive) efNext(); }, 150);
   };
   r.onerror = function(e) {
-    if (e.error !== 'aborted') efSetMicActive(false);
+    if (e.error === 'not-allowed') {
+      efSetMicActive(false);
+      var btn = $id('ef-mic-btn');
+      if (btn) btn.style.display = 'none';
+    } else if (e.error !== 'aborted') {
+      efSetMicActive(false);
+    }
   };
   r.onend = function() {
     if (efMicActive && efMicRecog) {
-      try { efMicRecog.start(); } catch(err) {}
+      setTimeout(function() {
+        try { efMicRecog.start(); } catch(err) {}
+      }, 50);
     }
   };
   efMicRecog = r;
@@ -8610,6 +8665,20 @@ function efStopMic() {
   if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
   efSetMicActive(false);
 }
+
+// Afficher le bouton micro seulement si supporté et online
+(function() {
+  function efMicUpdateBtn() {
+    var btn = $id('ef-mic-btn');
+    if (!btn) return;
+    var supported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    btn.style.display = (supported && navigator.onLine) ? '' : 'none';
+    if (!navigator.onLine && efMicActive) efStopMic();
+  }
+  window.addEventListener('online',  efMicUpdateBtn);
+  window.addEventListener('offline', efMicUpdateBtn);
+  document.addEventListener('DOMContentLoaded', efMicUpdateBtn);
+})();
 
 // ── Patch toggleCard ─────────────────────────────────────────────────────────
 (function() {
