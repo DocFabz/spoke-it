@@ -8695,12 +8695,14 @@ function efStartMic() {
   r.onend = function() {
     if (efMicActive && efMicRecog) {
       setTimeout(function() {
-        try { efMicRecog.start(); } catch(err) {}
-      }, 50);
+        try { efMicRecog.start(); } catch(err) {
+          console.warn('efMicRecog restart failed:', err);
+        }
+      }, 350);
     }
   };
   efMicRecog = r;
-  efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
   efSaveState();
   r.start();
   efSetMicActive(true);
