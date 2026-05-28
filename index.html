@@ -8532,11 +8532,10 @@ function efNumpadDel() {
 }
 
 // ── Saisie vocale Easy Fill ──────────────────────────────────────────────────
-var efMicActive    = false;
-var efMicRecog     = null;
-var efWakeLock     = null;
-var efAudioCtx     = null;
-var efLastResultTs = 0;  // timestamp du dernier onresult, pour distinguer restart normal vs interruption système
+var efMicActive = false;
+var efMicRecog  = null;
+var efWakeLock  = null;
+var efAudioCtx  = null;
 
 function efSaveState() {
   try {
@@ -8668,7 +8667,6 @@ function efStartMic() {
   } catch(e) {}
   r.interimResults = false;
   r.onresult = function(e) {
-    efLastResultTs = Date.now();
     var result = e.results[e.results.length - 1];
     var txt = result[0].transcript.trim().toLowerCase();
     // Commandes vocales
@@ -8696,17 +8694,13 @@ function efStartMic() {
   };
   r.onend = function() {
     if (efMicActive && efMicRecog) {
-      // Restart normal après reconnaissance : 50ms. Interruption système (pas de result récent) : 350ms pour laisser iOS libérer l'audio.
-      var delay = (Date.now() - efLastResultTs < 500) ? 50 : 350;
       setTimeout(function() {
-        try { efMicRecog.start(); } catch(err) {
-          console.warn('efMicRecog restart failed:', err);
-        }
-      }, delay);
+        try { efMicRecog.start(); } catch(err) {}
+      }, 50);
     }
   };
   efMicRecog = r;
-  if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
   efSaveState();
   r.start();
   efSetMicActive(true);
