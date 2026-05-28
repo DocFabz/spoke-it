@@ -8561,8 +8561,14 @@ function efRestoreState() {
   } catch(e) {}
 }
 
+function efIsIPad() {
+  return /iPad/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
 async function efRequestWakeLock() {
   if (!('wakeLock' in navigator)) return;
+  if (efIsIPad()) return;
   try { efWakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
 }
 
