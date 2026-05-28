@@ -8702,15 +8702,22 @@ function efStartMic() {
 function efBeep() {
   try {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var osc = ctx.createOscillator();
-    var gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 440;
-    gain.gain.setValueAtTime(0.12, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.12);
+    var resume = (ctx.state === 'suspended') ? ctx.resume() : Promise.resolve();
+    resume.then(function() {
+      function bip(startTime) {
+        var osc  = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 440;
+        gain.gain.setValueAtTime(0.12, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.08);
+        osc.start(startTime);
+        osc.stop(startTime + 0.08);
+      }
+      bip(ctx.currentTime);
+      bip(ctx.currentTime + 0.13);
+    });
   } catch(e) {}
 }
 
