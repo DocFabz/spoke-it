@@ -8535,6 +8535,7 @@ function efNumpadDel() {
 var efMicActive = false;
 var efMicRecog  = null;
 var efWakeLock  = null;
+var efAudioCtx  = null;
 
 function efSaveState() {
   try {
@@ -8699,6 +8700,7 @@ function efStartMic() {
     }
   };
   efMicRecog = r;
+  efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
   efSaveState();
   r.start();
   efSetMicActive(true);
@@ -8706,8 +8708,9 @@ function efStartMic() {
 }
 
 function efBeep() {
+  if (!efAudioCtx) return;
   try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var ctx = efAudioCtx;
     var resume = (ctx.state === 'suspended') ? ctx.resume() : Promise.resolve();
     resume.then(function() {
       function bip(startTime) {
