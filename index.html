@@ -8584,7 +8584,7 @@ function efVoiceToNumber(txt) {
     'quatre-vingt-dix':90,'ninety':90,'cent':100,'hundred':100
   };
   var s = txt.toLowerCase()
-    .replace(/virgule|point décimal/g, '§')
+    .replace(/virgule|point décimal|point|dot/g, '§')
     .replace(/-/g, ' ')
     .replace(/et\s/g, '')
     .replace(/\s+/g, ' ').trim();
