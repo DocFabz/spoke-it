@@ -8536,6 +8536,31 @@ var efMicActive = false;
 var efMicRecog  = null;
 var efWakeLock  = null;
 
+function efSaveState() {
+  try {
+    sessionStorage.setItem('ef_restore', JSON.stringify({
+      active: true,
+      current: efCurrent,
+      sideMode: efSideMode
+    }));
+  } catch(e) {}
+}
+
+function efRestoreState() {
+  try {
+    var s = sessionStorage.getItem('ef_restore');
+    if (!s) return;
+    sessionStorage.removeItem('ef_restore');
+    var state = JSON.parse(s);
+    if (!state.active) return;
+    efSideMode = state.sideMode;
+    efOpen();
+    efCurrent = state.current;
+    efRenderStep();
+    efStartMic();
+  } catch(e) {}
+}
+
 async function efRequestWakeLock() {
   if (!('wakeLock' in navigator)) return;
   try { efWakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
@@ -8667,6 +8692,7 @@ function efStartMic() {
     }
   };
   efMicRecog = r;
+  efSaveState();
   r.start();
   efSetMicActive(true);
   efRequestWakeLock();
@@ -8689,7 +8715,10 @@ function efStopMic() {
   }
   window.addEventListener('online',  efMicUpdateBtn);
   window.addEventListener('offline', efMicUpdateBtn);
-  document.addEventListener('DOMContentLoaded', efMicUpdateBtn);
+  document.addEventListener('DOMContentLoaded', function() {
+    efMicUpdateBtn();
+    efRestoreState();
+  });
 })();
 
 // ── Patch toggleCard ─────────────────────────────────────────────────────────
