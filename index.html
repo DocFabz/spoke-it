@@ -8036,6 +8036,12 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
   <div class="ef-header">
     <div class="ef-title" id="ef-title">Easy Fill</div>
     <div style="display:flex;align-items:center;gap:.4rem">
+      <button class="ef-bt-btn" id="ef-mic-btn" onclick="efToggleMic()" title="Saisie vocale">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="1" width="6" height="11" rx="3"/>
+          <path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
       <button class="ef-bt-btn" id="ef-bt-btn" onclick="efToggleBt()" title="Clavier Bluetooth">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/>
@@ -8210,6 +8216,7 @@ function efSwitchSide(mode) {
 }
 
 function efClose() {
+  efStopMic();
   $id('ef-overlay').classList.remove('show');
   efHideNumpad();
   efSetBtMode(false);
@@ -8522,6 +8529,86 @@ function efNumpadDel() {
   if (efPendingReplace) { inp.value = ''; efPendingReplace = false; efUpdateKgf(); return; }
   inp.value = inp.value.slice(0, -1);
   efUpdateKgf();
+}
+
+// ── Saisie vocale Easy Fill ──────────────────────────────────────────────────
+var efMicActive = false;
+var efMicRecog  = null;
+
+function efVoiceToNumber(txt) {
+  var map = {
+    'zéro':0,'zero':0,'un':1,'une':1,'one':1,'deux':2,'two':2,
+    'trois':3,'three':3,'quatre':4,'four':4,'cinq':5,'five':5,
+    'six':6,'sept':7,'seven':7,'huit':8,'eight':8,'neuf':9,'nine':9
+  };
+  var s = txt.toLowerCase()
+    .replace(/virgule|point décimal/g, '.')
+    .replace(/[^a-zéàèùâêîôûäëïöü0-9.\s]/g, '');
+  s = s.split(/\s+/).map(function(w) {
+    return (map[w] !== undefined) ? String(map[w]) : w;
+  }).join('');
+  s = s.replace(/[^0-9.]/g, '').replace(/\.(?=.*\.)/g, '');
+  return s;
+}
+
+function efSetMicActive(val) {
+  efMicActive = val;
+  var btn = $id('ef-mic-btn');
+  if (!btn) return;
+  if (val) {
+    btn.style.color       = 'var(--warm)';
+    btn.style.borderColor = 'rgba(232,146,124,.6)';
+    btn.style.background  = 'rgba(232,146,124,.08)';
+  } else {
+    btn.style.color       = 'var(--text3)';
+    btn.style.borderColor = 'rgba(255,255,255,0.07)';
+    btn.style.background  = 'none';
+  }
+}
+
+function efToggleMic() {
+  if (efMicActive) { efStopMic(); } else { efStartMic(); }
+}
+
+function efStartMic() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    alert(lang === 'fr'
+      ? 'Reconnaissance vocale non supportée sur ce navigateur.'
+      : 'Speech recognition not supported in this browser.');
+    return;
+  }
+  if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
+  var r = new SR();
+  r.lang           = (typeof lang !== 'undefined' && lang === 'en') ? 'en-US' : 'fr-FR';
+  r.continuous     = true;
+  r.interimResults = false;
+  r.onresult = function(e) {
+    var raw = e.results[e.results.length - 1][0].transcript.trim();
+    var num = efVoiceToNumber(raw);
+    if (!num) return;
+    var inp = $id('ef-inp');
+    inp.value = '';
+    efPendingReplace = false;
+    for (var i = 0; i < num.length; i++) efNumpadKey(num[i]);
+    setTimeout(function() { if (efMicActive) efNext(); }, 600);
+  };
+  r.onerror = function(e) {
+    if (e.error !== 'aborted') efSetMicActive(false);
+  };
+  r.onend = function() {
+    if (efMicActive && efMicRecog) {
+      try { efMicRecog.start(); } catch(err) {}
+    }
+  };
+  efMicRecog = r;
+  r.start();
+  efSetMicActive(true);
+}
+
+function efStopMic() {
+  if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
+  efSetMicActive(false);
 }
 
 // ── Patch toggleCard ─────────────────────────────────────────────────────────
