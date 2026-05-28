@@ -8534,6 +8534,16 @@ function efNumpadDel() {
 // ── Saisie vocale Easy Fill ──────────────────────────────────────────────────
 var efMicActive = false;
 var efMicRecog  = null;
+var efWakeLock  = null;
+
+async function efRequestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try { efWakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+}
+
+function efReleaseWakeLock() {
+  if (efWakeLock) { efWakeLock.release(); efWakeLock = null; }
+}
 
 function efVoiceToNumber(txt) {
   var units = {
@@ -8659,11 +8669,13 @@ function efStartMic() {
   efMicRecog = r;
   r.start();
   efSetMicActive(true);
+  efRequestWakeLock();
 }
 
 function efStopMic() {
   if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
   efSetMicActive(false);
+  efReleaseWakeLock();
 }
 
 // Afficher le bouton micro seulement si supporté et online
