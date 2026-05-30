@@ -8675,16 +8675,16 @@ function efStartMic() {
   } catch(e) {}
   r.interimResults = true;
   r.onresult = function(e) {
-    if (efPendingNext) return;
+    if (efPendingNext) return; // avance en cours, ignorer tout résultat
     var result = e.results[e.results.length - 1];
     var txt = result[0].transcript.trim().toLowerCase();
-    // Intermédiaire : affichage uniquement, jamais de validation
+    // Résultat intermédiaire : affichage uniquement
     if (!result.isFinal) {
       var numInterim = efVoiceToNumber(txt);
       if (numInterim) { $id('ef-inp').value = numInterim; efUpdateKgf(); }
       return;
     }
-    // Final : validation
+    // Résultat final : commandes vocales + validation
     if (txt === 'suivant' || txt === 'next')                          { efNext(); return; }
     if (txt === 'retour'  || txt === 'back' || txt === 'précédent')   { efBack(); return; }
     if (txt === 'effacer' || txt === 'supprimer' || txt === 'clear')  { $id('ef-inp').value = ''; efUpdateKgf(); return; }
@@ -8697,7 +8697,7 @@ function efStartMic() {
     efPendingReplace = false;
     efPendingNext = true;
     efBeep();
-    setTimeout(function() { if (efMicActive) { efNext(); } efPendingNext = false; }, 0);
+    setTimeout(function() { if (efMicActive) { efNext(); } efPendingNext = false; }, 150);
   };
   r.onerror = function(e) {
     if (e.error === 'not-allowed') {
