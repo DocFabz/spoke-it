@@ -8650,6 +8650,9 @@ function efSetMicActive(val) {
 }
 
 function efToggleMic() {
+  // Créer/reprendre l'AudioContext sur geste utilisateur (requis sur iOS)
+  if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (efAudioCtx.state === 'suspended') efAudioCtx.resume();
   if (efMicActive) { efStopMic(); } else { efStartMic(); }
 }
 
@@ -8720,7 +8723,7 @@ function efStartMic() {
     }
   };
   efMicRecog = r;
-  efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
   efSaveState();
   r.start();
   efSetMicActive(true);
