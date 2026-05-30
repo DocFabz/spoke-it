@@ -8697,7 +8697,7 @@ function efStartMic() {
     efPendingReplace = false;
     efPendingNext = true;
     efBeep();
-    setTimeout(function() { if (efMicActive) { efNext(); } efPendingNext = false; }, 150);
+    setTimeout(function() { if (efMicActive) { efNext(); } efPendingNext = false; }, 0);
   };
   r.onerror = function(e) {
     if (e.error === 'not-allowed') {
