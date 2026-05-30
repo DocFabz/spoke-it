@@ -8601,6 +8601,14 @@ function efVoiceToNumber(txt) {
   var decPart = parts[1] ? parts[1].trim() : null;
   function parseWords(str) {
     var words = str.split(' ');
+    // Si la chaîne contient plusieurs tokens numériques (ex: "32 32" ou "270 270"),
+    // la reconnaissance vocale a répété le même nombre : on prend le dernier.
+    var digitTokens = words.filter(function(w) { return /^\d+$/.test(w); });
+    var wordTokens  = words.filter(function(w) { return !(/^\d+$/.test(w)) && units[w] !== undefined; });
+    if (digitTokens.length > 1 && wordTokens.length === 0) {
+      var last = parseInt(digitTokens[digitTokens.length - 1]);
+      return last > 0 ? last : null;
+    }
     var total = 0, current = 0;
     for (var i = 0; i < words.length; i++) {
       var w = words[i];
@@ -8693,7 +8701,7 @@ function efStartMic() {
     efPendingReplace = false;
     efPendingNext = true;
     efBeep();
-    setTimeout(function() { if (efMicActive) { efNext(); efPendingNext = false; } }, 0);
+    setTimeout(function() { if (efMicActive) { efNext(); } efPendingNext = false; }, 150);
   };
   r.onerror = function(e) {
     if (e.error === 'not-allowed') {
