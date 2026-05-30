@@ -8674,9 +8674,23 @@ function efStartMic() {
     r.grammars = gl;
   } catch(e) {}
   r.interimResults = true;
-  var efInterimTimer = null;
-  function efCommitNum(num) {
+  r.onresult = function(e) {
     if (efPendingNext) return;
+    var result = e.results[e.results.length - 1];
+    var txt = result[0].transcript.trim().toLowerCase();
+    // Intermédiaire : affichage uniquement, jamais de validation
+    if (!result.isFinal) {
+      var numInterim = efVoiceToNumber(txt);
+      if (numInterim) { $id('ef-inp').value = numInterim; efUpdateKgf(); }
+      return;
+    }
+    // Final : validation
+    if (txt === 'suivant' || txt === 'next')                          { efNext(); return; }
+    if (txt === 'retour'  || txt === 'back' || txt === 'précédent')   { efBack(); return; }
+    if (txt === 'effacer' || txt === 'supprimer' || txt === 'clear')  { $id('ef-inp').value = ''; efUpdateKgf(); return; }
+    var num = efVoiceToNumber(txt);
+    if (!num) return;
+    if (result[0].confidence > 0 && result[0].confidence < 0.6) return;
     var inp = $id('ef-inp');
     inp.value = num;
     efUpdateKgf();
@@ -8684,32 +8698,6 @@ function efStartMic() {
     efPendingNext = true;
     efBeep();
     setTimeout(function() { if (efMicActive) { efNext(); } efPendingNext = false; }, 150);
-  }
-  r.onresult = function(e) {
-    if (efPendingNext) return; // avance en cours, ignorer tout résultat
-    var result = e.results[e.results.length - 1];
-    var txt = result[0].transcript.trim().toLowerCase();
-    // Résultat intermédiaire : afficher + debounce pour valider sans attendre le final
-    if (!result.isFinal) {
-      var numInterim = efVoiceToNumber(txt);
-      if (numInterim) {
-        var inp = $id('ef-inp');
-        inp.value = numInterim;
-        efUpdateKgf();
-        clearTimeout(efInterimTimer);
-        efInterimTimer = setTimeout(function() { efCommitNum(numInterim); }, 350);
-      }
-      return;
-    }
-    // Résultat final : annuler le debounce (on prend la main ici)
-    clearTimeout(efInterimTimer);
-    if (txt === 'suivant' || txt === 'next')                          { efNext(); return; }
-    if (txt === 'retour'  || txt === 'back' || txt === 'précédent')   { efBack(); return; }
-    if (txt === 'effacer' || txt === 'supprimer' || txt === 'clear')  { $id('ef-inp').value = ''; efUpdateKgf(); return; }
-    var num = efVoiceToNumber(txt);
-    if (!num) return;
-    if (result[0].confidence > 0 && result[0].confidence < 0.6) return;
-    efCommitNum(num);
   };
   r.onerror = function(e) {
     if (e.error === 'not-allowed') {
