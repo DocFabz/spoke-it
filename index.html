@@ -8800,15 +8800,7 @@ function efCreateRecog() {
       if (kgfFinal !== null) efFeedback(kgfFinal); else efBeep();
     }
     efBeeped = false;
-    setTimeout(function() {
-      if (!efMicActive) return;
-      // Relancer le micro avant de passer à la valeur suivante
-      if (!efMicRecog) {
-        var fresh = efCreateRecog();
-        if (fresh) { efMicRecog = fresh; try { fresh.start(); } catch(e) {} }
-      }
-      efNext(); efPendingNext = false;
-    }, 0);
+    setTimeout(function() { if (efMicActive) { efNext(); efPendingNext = false; } }, 0);
   };
   r.onerror = function(e) {
     if (e.error === 'not-allowed') {
@@ -8897,9 +8889,23 @@ function efSpeakKgf(kgf) {
     utt.rate   = isFr ? 1.1 : 0.9;
     utt.pitch  = 1;
     utt.volume = 1;
-    // Couper le micro pendant la synthèse pour éviter l'écho sur HP.
-    // Il sera relancé juste avant efNext() dans onresult.
-    if (efMicRecog) { efMicRecog.abort(); }
+    // Sur PC avec HP : couper le micro pendant la synthèse pour éviter l'écho.
+    // utt.onend le relance. Sur iOS le micro est déjà coupé par le système,
+    // et r.onend (dans efCreateRecog) gère le redémarrage — on ne l'écrase pas.
+    var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (!isIOS && efMicRecog) {
+      efMicRecog.onend = null;
+      efMicRecog.abort();
+      efMicRecog = null;
+      utt.onend = utt.onerror = function() {
+        if (!efMicActive) return;
+        var fresh = efCreateRecog();
+        if (!fresh) return;
+        efMicRecog = fresh;
+        try { fresh.start(); } catch(e) {}
+      };
+    }
     window.speechSynthesis.speak(utt);
   } catch(e) { efBeep(); }
 }
