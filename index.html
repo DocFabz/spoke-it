@@ -8537,8 +8537,8 @@ var efMicRecog    = null;
 var efWakeLock    = null;
 var efAudioCtx    = null;
 var efPendingNext = false; // true = valeur validée, avance en cours, ignorer les résultats suivants
-var efBeepTimer   = null;  // debounce 600ms pour beep sur valeur stable
-var efBeeped      = false; // true = beep déjà émis par le timer sur cette valeur
+var efBeepTimer   = null;  // debounce 600ms pour beep/voix sur valeur stable
+var efBeeped      = false; // true = feedback déjà émis par le timer sur cette valeur
 
 function efSaveState() {
   try {
@@ -8694,10 +8694,11 @@ function efStartMic() {
         efBeeped = false;
         var parsedInterim = tmParseInput(numInterim);
         if (parsedInterim !== null && toKgf(parsedInterim) !== null) {
+          var kgfInterim = toKgf(parsedInterim);
           efBeepTimer = setTimeout(function() {
             efBeepTimer = null;
             efBeeped = true;
-            efBeep();
+            efSpeakKgf(kgfInterim);
           }, 600);
         }
       }
@@ -8716,7 +8717,11 @@ function efStartMic() {
     efUpdateKgf();
     efPendingReplace = false;
     efPendingNext = true;
-    if (!efBeeped) efBeep(); // beep seulement si le timer ne l'a pas déjà fait
+    if (!efBeeped) {
+      var parsedFinal = tmParseInput(num);
+      var kgfFinal = parsedFinal !== null ? toKgf(parsedFinal) : null;
+      if (kgfFinal !== null) efSpeakKgf(kgfFinal); else efBeep();
+    }
     efBeeped = false;
     setTimeout(function() { if (efMicActive) { efNext(); efPendingNext = false; } }, 0);
   };
@@ -8765,6 +8770,26 @@ function efBeep() {
       bip(ctx.currentTime + 0.13);
     });
   } catch(e) {}
+}
+
+function efSpeakKgf(kgf) {
+  if (!window.speechSynthesis || isNaN(kgf)) { efBeep(); return; }
+  var isFr    = (typeof lang === 'undefined' || lang !== 'en');
+  var intPart = Math.floor(kgf);
+  var decPart = Math.round((kgf - intPart) * 10);
+  var phrase  = decPart === 0
+    ? intPart + ' kilos'
+    : (isFr ? intPart + ' virgule ' + decPart + ' kilos'
+             : intPart + ' point '   + decPart + ' kilos');
+  try {
+    window.speechSynthesis.cancel();
+    var utt    = new SpeechSynthesisUtterance(phrase);
+    utt.lang   = isFr ? 'fr-FR' : 'en-US';
+    utt.rate   = isFr ? 1.1 : 0.9;
+    utt.pitch  = 1;
+    utt.volume = 1;
+    window.speechSynthesis.speak(utt);
+  } catch(e) { efBeep(); }
 }
 
 function efStopMic() {
