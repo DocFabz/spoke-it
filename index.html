@@ -8756,10 +8756,10 @@ function efCreateRecog() {
   } catch(e) {}
   r.onresult = function(e) {
     if (efPendingNext) return;
-    if (efSpeaking)    return; // ignorer le micro pendant le retour vocal
     var result = e.results[e.results.length - 1];
     var txt = result[0].transcript.trim().toLowerCase();
     if (!result.isFinal) {
+      if (efSpeaking) return; // ignorer les interims pendant le retour vocal
       var numInterim = efVoiceToNumber(txt);
       if (numInterim) {
         var inp = $id('ef-inp');
