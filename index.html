@@ -8660,6 +8660,12 @@ function efToggleMic() {
   // Créer/reprendre l'AudioContext sur geste utilisateur (requis sur iOS)
   if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (efAudioCtx.state === 'suspended') efAudioCtx.resume();
+  // Amorcer speechSynthesis sur geste utilisateur (requis sur iOS)
+  if (window.speechSynthesis) {
+    var primer = new SpeechSynthesisUtterance('');
+    primer.volume = 0;
+    window.speechSynthesis.speak(primer);
+  }
   if (efMicActive) { efStopMic(); } else { efStartMic(); }
 }
 
