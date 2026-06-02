@@ -8743,32 +8743,26 @@ function efFeedback(kgf) {
 }
 
 
-function efStartMic() {
+// ── Création d'une instance de reconnaissance fraîche (iOS exige un nouvel objet à chaque start)
+function efCreateRecog() {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    alert(lang === 'fr'
-      ? 'Reconnaissance vocale non supportée sur ce navigateur.'
-      : 'Speech recognition not supported in this browser.');
-    return;
-  }
-  if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
+  if (!SR) return null;
   var r = new SR();
   r.lang           = (typeof lang !== 'undefined' && lang === 'en') ? 'en-US' : 'fr-FR';
   r.continuous     = true;
-  var grammar = '#JSGF V1.0; grammar numbers; public <number> = ' +
-    '0|1|2|3|4|5|6|7|8|9|dix|vingt|trente|quarante|cinquante|soixante|cent|virgule|' +
-    'suivant|next|retour|back|précédent|effacer|supprimer|clear;';
+  r.interimResults = true;
   try {
+    var grammar = '#JSGF V1.0; grammar numbers; public <number> = ' +
+      '0|1|2|3|4|5|6|7|8|9|dix|vingt|trente|quarante|cinquante|soixante|cent|virgule|' +
+      'suivant|next|retour|back|précédent|effacer|supprimer|clear;';
     var gl = new (window.SpeechGrammarList || window.webkitSpeechGrammarList)();
     gl.addFromString(grammar, 1);
     r.grammars = gl;
   } catch(e) {}
-  r.interimResults = true;
   r.onresult = function(e) {
-    if (efPendingNext) return; // avance en cours, ignorer tout résultat
+    if (efPendingNext) return;
     var result = e.results[e.results.length - 1];
     var txt = result[0].transcript.trim().toLowerCase();
-    // Résultat intermédiaire : afficher + beep si valeur stable 600ms
     if (!result.isFinal) {
       var numInterim = efVoiceToNumber(txt);
       if (numInterim) {
@@ -8789,7 +8783,6 @@ function efStartMic() {
       }
       return;
     }
-    // Résultat final : annuler le timer, commandes vocales + validation
     if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
     if (txt === 'suivant' || txt === 'next')                          { efNext(); return; }
     if (txt === 'retour'  || txt === 'back' || txt === 'précédent')   { efBack(); return; }
@@ -8815,21 +8808,46 @@ function efStartMic() {
       efSetMicActive(false);
       var btn = $id('ef-mic-btn');
       if (btn) btn.style.display = 'none';
-    } else if (e.error !== 'aborted') {
-      efSetMicActive(false);
     }
+    // Sur iOS, 'no-speech' et 'audio-capture' sont normaux — on recrée silencieusement
+    // Les autres erreurs non fatales : on laisse onend gérer le redémarrage
   };
   r.onend = function() {
-    if (efMicActive && efMicRecog) {
-      setTimeout(function() {
-        try { efMicRecog.start(); } catch(err) {}
-      }, 50);
-    }
+    // iOS arrête la reconnaissance après chaque phrase ou silence — on recrée un objet frais
+    if (!efMicActive) return;
+    efMicRecog = null; // libérer la référence à l'objet terminé
+    setTimeout(function() {
+      if (!efMicActive) return;
+      var fresh = efCreateRecog();
+      if (!fresh) return;
+      efMicRecog = fresh;
+      try { fresh.start(); } catch(err) {}
+    }, 100);
   };
-  efMicRecog = r;
+  return r;
+}
+
+function efStartMic() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    alert(lang === 'fr'
+      ? 'Reconnaissance vocale non supportée sur ce navigateur.'
+      : 'Speech recognition not supported in this browser.');
+    return;
+  }
+  // Arrêter proprement toute instance précédente
+  if (efMicRecog) {
+    efMicRecog.onend = null; // empêcher le redémarrage automatique pendant le reset
+    efMicRecog.abort();
+    efMicRecog = null;
+  }
   if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (efAudioCtx.state === 'suspended') efAudioCtx.resume();
   efSaveState();
-  r.start();
+  var r = efCreateRecog();
+  if (!r) return;
+  efMicRecog = r;
+  try { r.start(); } catch(e) {}
   efSetMicActive(true);
   efRequestWakeLock();
 }
@@ -8867,12 +8885,32 @@ function efSpeakKgf(kgf) {
     : (isFr ? intPart + ' virgule ' + decPart + ' kilos'
              : intPart + ' point '   + decPart + ' kilos');
   try {
+    // Suspendre la reconnaissance pendant la synthèse (iOS ne peut pas faire les deux)
+    if (efMicRecog) {
+      efMicRecog.onend = null; // bloquer le redémarrage automatique
+      efMicRecog.abort();
+      efMicRecog = null;
+    }
     window.speechSynthesis.cancel();
+    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
     var utt    = new SpeechSynthesisUtterance(phrase);
     utt.lang   = isFr ? 'fr-FR' : 'en-US';
     utt.rate   = isFr ? 1.1 : 0.9;
     utt.pitch  = 1;
     utt.volume = 1;
+    var relancer = function() {
+      // Relancer la reconnaissance avec un objet frais après la synthèse
+      if (!efMicActive) return;
+      setTimeout(function() {
+        if (!efMicActive) return;
+        var fresh = efCreateRecog();
+        if (!fresh) return;
+        efMicRecog = fresh;
+        try { fresh.start(); } catch(e) {}
+      }, 150);
+    };
+    utt.onend   = relancer;
+    utt.onerror = relancer;
     window.speechSynthesis.speak(utt);
   } catch(e) { efBeep(); }
 }
