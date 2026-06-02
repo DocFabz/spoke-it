@@ -8884,18 +8884,25 @@ function efSpeakKgf(kgf) {
     utt.rate   = isFr ? 1.1 : 0.9;
     utt.pitch  = 1;
     utt.volume = 1;
-    // Couper le micro pendant la synthèse pour éviter que le retour vocal
-    // soit capté comme saisie. onend/onerror le redémarre.
-    if (efMicRecog) { efMicRecog.onend = null; efMicRecog.abort(); efMicRecog = null; }
-    utt.onend = utt.onerror = function() {
-      if (!efMicActive) return;
-      var fresh = efCreateRecog();
-      if (!fresh) return;
-      efMicRecog = fresh;
-      try { fresh.start(); } catch(err) {}
-    };
+    var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isIOS) {
+      // iOS coupe le micro tout seul pendant la synthèse et déclenche r.onend
+      // qui recrée automatiquement le micro — rien à faire ici.
+    } else {
+      // PC/Android : couper le micro avant de parler pour éviter l'écho,
+      // puis le relancer à la fin de la synthèse.
+      if (efMicRecog) { efMicRecog.onend = null; efMicRecog.abort(); efMicRecog = null; }
+      utt.onend = utt.onerror = function() {
+        if (!efMicActive) return;
+        var fresh = efCreateRecog();
+        if (!fresh) return;
+        efMicRecog = fresh;
+        try { fresh.start(); } catch(err) {}
+      };
+    }
     window.speechSynthesis.speak(utt);
-  } catch(e) { efLastSpoken = null; efBeep(); }
+  } catch(e) { efBeep(); }
 }
 
 function efStopMic() {
