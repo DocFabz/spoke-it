@@ -8704,12 +8704,6 @@ function efToggleMic() {
   // Créer/reprendre l'AudioContext sur geste utilisateur (requis sur iOS)
   if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (efAudioCtx.state === 'suspended') efAudioCtx.resume();
-  // Amorcer speechSynthesis sur geste utilisateur (requis sur iOS)
-  if (window.speechSynthesis) {
-    var primer = new SpeechSynthesisUtterance('');
-    primer.volume = 0;
-    window.speechSynthesis.speak(primer);
-  }
   if (efMicActive) { efStopMic(); return; }
   efOpenFeedbackModal();
 }
@@ -8809,13 +8803,12 @@ function efCreateRecog() {
       var btn = $id('ef-mic-btn');
       if (btn) btn.style.display = 'none';
     }
-    // Sur iOS, 'no-speech' et 'audio-capture' sont normaux — on recrée silencieusement
-    // Les autres erreurs non fatales : on laisse onend gérer le redémarrage
+    // Les autres erreurs (no-speech, audio-capture…) sont gérées par onend
   };
   r.onend = function() {
-    // iOS arrête la reconnaissance après chaque phrase ou silence — on recrée un objet frais
+    // iOS termine la reconnaissance après chaque silence — recréer un objet frais
     if (!efMicActive) return;
-    efMicRecog = null; // libérer la référence à l'objet terminé
+    efMicRecog = null;
     setTimeout(function() {
       if (!efMicActive) return;
       var fresh = efCreateRecog();
@@ -8835,9 +8828,8 @@ function efStartMic() {
       : 'Speech recognition not supported in this browser.');
     return;
   }
-  // Arrêter proprement toute instance précédente
   if (efMicRecog) {
-    efMicRecog.onend = null; // empêcher le redémarrage automatique pendant le reset
+    efMicRecog.onend = null; // empêcher le redémarrage auto pendant le reset
     efMicRecog.abort();
     efMicRecog = null;
   }
@@ -8885,12 +8877,6 @@ function efSpeakKgf(kgf) {
     : (isFr ? intPart + ' virgule ' + decPart + ' kilos'
              : intPart + ' point '   + decPart + ' kilos');
   try {
-    // Suspendre la reconnaissance pendant la synthèse (iOS ne peut pas faire les deux)
-    if (efMicRecog) {
-      efMicRecog.onend = null; // bloquer le redémarrage automatique
-      efMicRecog.abort();
-      efMicRecog = null;
-    }
     window.speechSynthesis.cancel();
     if (window.speechSynthesis.paused) window.speechSynthesis.resume();
     var utt    = new SpeechSynthesisUtterance(phrase);
@@ -8898,19 +8884,9 @@ function efSpeakKgf(kgf) {
     utt.rate   = isFr ? 1.1 : 0.9;
     utt.pitch  = 1;
     utt.volume = 1;
-    var relancer = function() {
-      // Relancer la reconnaissance avec un objet frais après la synthèse
-      if (!efMicActive) return;
-      setTimeout(function() {
-        if (!efMicActive) return;
-        var fresh = efCreateRecog();
-        if (!fresh) return;
-        efMicRecog = fresh;
-        try { fresh.start(); } catch(e) {}
-      }, 150);
-    };
-    utt.onend   = relancer;
-    utt.onerror = relancer;
+    // iOS coupe le micro pendant la synthèse et déclenche onend → le mécanisme
+    // efCreateRecog/onend recrée automatiquement le micro après la fin de la parole.
+    // Pas besoin d'abort() manuel ici : ça évite les bips système iOS.
     window.speechSynthesis.speak(utt);
   } catch(e) { efBeep(); }
 }
