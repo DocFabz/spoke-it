@@ -8274,13 +8274,8 @@ function efUpdateKgf() {
   var parsed = tmParseInput(raw);
   if (parsed === null) { prev.textContent = '—'; prev.className = 'ef-kgf-preview'; return; }
   var kgf = toKgf(parsed);
-  if (kgf !== null) {
-    prev.textContent = kgf + ' kgf';
-    prev.className = 'ef-kgf-preview has-val ' + side;
-  } else {
-    prev.textContent = '';
-    prev.className = 'ef-kgf-preview';
-  }
+  if (kgf !== null) { prev.textContent = kgf + ' kgf'; prev.className = 'ef-kgf-preview has-val ' + side; }
+  else              { prev.textContent = ''; prev.className = 'ef-kgf-preview'; }
 }
 
 // Retourne true si valide (ou vide), false si hors plage
@@ -8541,9 +8536,9 @@ var efMicActive   = false;
 var efMicRecog    = null;
 var efWakeLock    = null;
 var efAudioCtx    = null;
-var efPendingNext = false;
-var efInterimSpeakTimer = null;
-var efInterimSpokenKgf  = null;
+var efPendingNext = false; // true = valeur validée, avance en cours, ignorer les résultats suivants
+var efBeepTimer   = null;  // debounce 600ms pour beep sur valeur stable
+var efBeeped      = false; // true = beep déjà émis par le timer sur cette valeur
 
 function efSaveState() {
   try {
@@ -8660,12 +8655,6 @@ function efToggleMic() {
   // Créer/reprendre l'AudioContext sur geste utilisateur (requis sur iOS)
   if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (efAudioCtx.state === 'suspended') efAudioCtx.resume();
-  // Amorcer speechSynthesis sur geste utilisateur (requis sur iOS)
-  if (window.speechSynthesis) {
-    var primer = new SpeechSynthesisUtterance('');
-    primer.volume = 0;
-    window.speechSynthesis.speak(primer);
-  }
   if (efMicActive) { efStopMic(); } else { efStartMic(); }
 }
 
@@ -8694,45 +8683,41 @@ function efStartMic() {
     if (efPendingNext) return; // avance en cours, ignorer tout résultat
     var result = e.results[e.results.length - 1];
     var txt = result[0].transcript.trim().toLowerCase();
-    // Résultat intermédiaire : afficher + déclencher parole si stable 600ms
+    // Résultat intermédiaire : afficher + beep si valeur stable 600ms
     if (!result.isFinal) {
       var numInterim = efVoiceToNumber(txt);
       if (numInterim) {
         var inp = $id('ef-inp');
         inp.value = numInterim;
         efUpdateKgf();
-        // Parole anticipée : si la valeur ne change plus pendant 600ms, on parle
-        if (efInterimSpeakTimer) { clearTimeout(efInterimSpeakTimer); efInterimSpeakTimer = null; }
+        if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
+        efBeeped = false;
         var parsedInterim = tmParseInput(numInterim);
-        var kgfInterim = parsedInterim !== null ? toKgf(parsedInterim) : null;
-        if (kgfInterim !== null) {
-          efInterimSpeakTimer = setTimeout(function() {
-            efInterimSpeakTimer = null;
-            efInterimSpokenKgf = kgfInterim;
-            efSpeakKgf(kgfInterim);
-          }, 500);
+        if (parsedInterim !== null && toKgf(parsedInterim) !== null) {
+          efBeepTimer = setTimeout(function() {
+            efBeepTimer = null;
+            efBeeped = true;
+            efBeep();
+          }, 600);
         }
       }
       return;
     }
-    // Résultat final : annuler le timer anticipé, commandes vocales + validation
-    if (efInterimSpeakTimer) { clearTimeout(efInterimSpeakTimer); efInterimSpeakTimer = null; }
+    // Résultat final : annuler le timer, commandes vocales + validation
+    if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
     if (txt === 'suivant' || txt === 'next')                          { efNext(); return; }
     if (txt === 'retour'  || txt === 'back' || txt === 'précédent')   { efBack(); return; }
     if (txt === 'effacer' || txt === 'supprimer' || txt === 'clear')  { $id('ef-inp').value = ''; efUpdateKgf(); return; }
     var num = efVoiceToNumber(txt);
     if (!num) return;
     if (result[0].confidence > 0 && result[0].confidence < 0.6) return;
-    var parsed = tmParseInput(num);
-    var kgf = parsed !== null ? toKgf(parsed) : null;
-    // Parler seulement si pas déjà énoncé par le timer anticipé
-    if (kgf !== null && kgf !== efInterimSpokenKgf) efSpeakKgf(kgf);
     var inp = $id('ef-inp');
     inp.value = num;
     efUpdateKgf();
-    efInterimSpokenKgf = null;
     efPendingReplace = false;
     efPendingNext = true;
+    if (!efBeeped) efBeep(); // beep seulement si le timer ne l'a pas déjà fait
+    efBeeped = false;
     setTimeout(function() { if (efMicActive) { efNext(); efPendingNext = false; } }, 0);
   };
   r.onerror = function(e) {
@@ -8771,7 +8756,7 @@ function efBeep() {
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.frequency.value = 440;
-        gain.gain.setValueAtTime(0.12, startTime);
+        gain.gain.setValueAtTime(0.4, startTime);
         gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.08);
         osc.start(startTime);
         osc.stop(startTime + 0.08);
@@ -8780,37 +8765,6 @@ function efBeep() {
       bip(ctx.currentTime + 0.13);
     });
   } catch(e) {}
-}
-
-function efSpeakKgf(kgfVal) {
-  // kgfVal peut être passé directement, sinon on lit le preview
-  var valKg;
-  if (kgfVal !== undefined) {
-    valKg = kgfVal;
-  } else {
-    var prev = $id('ef-kgf-preview');
-    var kgfText = prev ? prev.textContent.trim() : '';
-    var match = kgfText.match(/^([\d.]+)\s*kgf$/);
-    if (!match || !window.speechSynthesis) { efBeep(); return; }
-    valKg = parseFloat(match[1]);
-  }
-  if (!window.speechSynthesis || isNaN(valKg)) { efBeep(); return; }
-  var isFr = (typeof lang === 'undefined' || lang !== 'en');
-  var intPart = Math.floor(valKg);
-  var decPart = Math.round((valKg - intPart) * 10);
-  var phrase = decPart === 0
-    ? intPart + ' kilos'
-    : (isFr ? intPart + ' virgule ' + decPart + ' kilos'
-             : intPart + ' point '   + decPart + ' kilos');
-  try {
-    window.speechSynthesis.cancel();
-    var utt = new SpeechSynthesisUtterance(phrase);
-    utt.lang   = isFr ? 'fr-FR' : 'en-US';
-    utt.rate   = isFr ? 1.1 : 0.9;
-    utt.pitch  = 1;
-    utt.volume = 1;
-    window.speechSynthesis.speak(utt);
-  } catch(e) { efBeep(); }
 }
 
 function efStopMic() {
