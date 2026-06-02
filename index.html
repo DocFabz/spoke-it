@@ -8586,6 +8586,7 @@ var efAudioCtx    = null;
 var efPendingNext = false; // true = valeur validée, avance en cours, ignorer les résultats suivants
 var efBeepTimer   = null;  // debounce 600ms pour beep/voix sur valeur stable
 var efBeeped      = false; // true = feedback déjà émis par le timer sur cette valeur
+var efSpeaking    = false; // true = synthèse vocale en cours, ignorer le micro
 
 function efSaveState() {
   try {
@@ -8755,6 +8756,7 @@ function efCreateRecog() {
   } catch(e) {}
   r.onresult = function(e) {
     if (efPendingNext) return;
+    if (efSpeaking)    return; // ignorer le micro pendant le retour vocal
     var result = e.results[e.results.length - 1];
     var txt = result[0].transcript.trim().toLowerCase();
     if (!result.isFinal) {
@@ -8887,8 +8889,11 @@ function efSpeakKgf(kgf) {
     // iOS coupe le micro pendant la synthèse et déclenche onend → le mécanisme
     // efCreateRecog/onend recrée automatiquement le micro après la fin de la parole.
     // Pas besoin d'abort() manuel ici : ça évite les bips système iOS.
+    efSpeaking = true;
+    utt.onend  = function() { efSpeaking = false; };
+    utt.onerror = function() { efSpeaking = false; };
     window.speechSynthesis.speak(utt);
-  } catch(e) { efBeep(); }
+  } catch(e) { efSpeaking = false; efBeep(); }
 }
 
 function efStopMic() {
