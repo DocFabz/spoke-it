@@ -941,31 +941,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   display:inline-flex; align-items:center; justify-content:center;
 }
 
-/* ── Easy Fill feedback modal ── */
-.ef-feedback-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(4px); z-index:9996; display:none }
-.ef-feedback-overlay.show { display:block }
-.ef-feedback-modal {
-  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97);
-  z-index:9997; background:var(--card); border:1px solid var(--border-s);
-  border-radius:var(--r); padding:1.4rem 1.3rem 1.2rem;
-  box-shadow:0 16px 64px rgba(0,0,0,.55); width:88%; max-width:300px;
-  display:none; flex-direction:column; gap:1rem;
-  opacity:0; transition:opacity .18s, transform .18s;
-}
-.ef-feedback-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
-.ef-feedback-title { font-size:.6rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); text-align:center }
-.ef-feedback-btns { display:flex; gap:.6rem }
-.ef-feedback-btn {
-  flex:1; padding:.75rem .5rem; background:transparent;
-  border:1px solid var(--border-s); border-radius:var(--rs);
-  color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.72rem;
-  font-weight:500; cursor:pointer; touch-action:manipulation;
-  transition:all .22s; display:flex; flex-direction:column;
-  align-items:center; gap:.45rem; line-height:1.3;
-}
-.ef-feedback-btn:hover { border-color:rgba(126,200,227,.5); color:var(--accent) }
-.ef-feedback-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(126,200,227,.07) }
-
 .ef-progress-wrap { display:flex; flex-direction:column; gap:.12rem; margin-top:.6rem; margin-bottom:.7rem }
 .ef-progress-label {
   font-family:'DM Mono',monospace; font-size:.6rem; color:var(--text3);
@@ -8052,28 +8027,6 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 <!-- ── Easy Fill overlay + modal ── -->
 <div class="ef-overlay" id="ef-overlay" onclick="efClose()"></div>
 
-<!-- ── Modale choix feedback vocal ── -->
-<div class="ef-feedback-overlay" id="ef-feedback-overlay"></div>
-<div class="ef-feedback-modal" id="ef-feedback-modal">
-  <div class="ef-feedback-title">Feedback</div>
-  <div class="ef-feedback-btns">
-    <button class="ef-feedback-btn" id="ef-feedback-beep" onclick="efSetFeedback('beep')">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18 8a6 6 0 0 1 0 8"/><path d="M14 9.4a3 3 0 0 1 0 5.2"/>
-        <circle cx="8" cy="12" r="3"/><line x1="8" y1="9" x2="8" y2="3"/><line x1="8" y1="15" x2="8" y2="21"/>
-      </svg>
-      Beep
-    </button>
-    <button class="ef-feedback-btn" id="ef-feedback-voice" onclick="efSetFeedback('voice')">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
-      </svg>
-      Vocal
-    </button>
-  </div>
-</div>
-
 <!-- ── Wrapper Easy Fill (modale + pavé côte à côte en paysage) ── -->
 <div id="ef-wrapper">
 
@@ -8584,8 +8537,8 @@ var efMicRecog    = null;
 var efWakeLock    = null;
 var efAudioCtx    = null;
 var efPendingNext = false; // true = valeur validée, avance en cours, ignorer les résultats suivants
-var efBeepTimer   = null;  // debounce 600ms pour beep/voix sur valeur stable
-var efBeeped      = false; // true = feedback déjà émis par le timer sur cette valeur
+var efBeepTimer   = null;  // debounce 600ms pour beep sur valeur stable
+var efBeeped      = false; // true = beep déjà émis par le timer sur cette valeur
 
 function efSaveState() {
   try {
@@ -8698,70 +8651,39 @@ function efSetMicActive(val) {
   }
 }
 
-var efFeedbackMode = null; // 'beep' | 'voice' | null
-
 function efToggleMic() {
   // Créer/reprendre l'AudioContext sur geste utilisateur (requis sur iOS)
   if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (efAudioCtx.state === 'suspended') efAudioCtx.resume();
-  if (efMicActive) { efStopMic(); return; }
-  efOpenFeedbackModal();
+  if (efMicActive) { efStopMic(); } else { efStartMic(); }
 }
 
-function efOpenFeedbackModal() {
-  var beepBtn  = $id('ef-feedback-beep');
-  var voiceBtn = $id('ef-feedback-voice');
-  if (beepBtn)  beepBtn.classList.toggle('active',  efFeedbackMode === 'beep');
-  if (voiceBtn) voiceBtn.classList.toggle('active', efFeedbackMode === 'voice');
-  // Sur PC (pas d'écran tactile) : le retour vocal serait capté par le micro
-  // via les haut-parleurs. On masque l'option et on force le beep.
-  var isTouchDevice = navigator.maxTouchPoints > 0;
-  if (voiceBtn) voiceBtn.style.display = isTouchDevice ? '' : 'none';
-  if (!isTouchDevice) { efSetFeedback('beep'); return; }
-  $id('ef-feedback-overlay').classList.add('show');
-  $id('ef-feedback-modal').classList.add('show');
-}
-
-function efCloseFeedbackModal() {
-  $id('ef-feedback-overlay').classList.remove('show');
-  $id('ef-feedback-modal').classList.remove('show');
-}
-
-function efSetFeedback(mode) {
-  efFeedbackMode = mode;
-  efCloseFeedbackModal();
-  efStartMic();
-}
-
-function efFeedback(kgf) {
-  if (efFeedbackMode === 'voice') {
-    efSpeakKgf(kgf);
-  } else {
-    efBeep();
-  }
-}
-
-
-// ── Création d'une instance de reconnaissance fraîche (iOS exige un nouvel objet à chaque start)
-function efCreateRecog() {
+function efStartMic() {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return null;
+  if (!SR) {
+    alert(lang === 'fr'
+      ? 'Reconnaissance vocale non supportée sur ce navigateur.'
+      : 'Speech recognition not supported in this browser.');
+    return;
+  }
+  if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
   var r = new SR();
   r.lang           = (typeof lang !== 'undefined' && lang === 'en') ? 'en-US' : 'fr-FR';
   r.continuous     = true;
-  r.interimResults = true;
+  var grammar = '#JSGF V1.0; grammar numbers; public <number> = ' +
+    '0|1|2|3|4|5|6|7|8|9|dix|vingt|trente|quarante|cinquante|soixante|cent|virgule|' +
+    'suivant|next|retour|back|précédent|effacer|supprimer|clear;';
   try {
-    var grammar = '#JSGF V1.0; grammar numbers; public <number> = ' +
-      '0|1|2|3|4|5|6|7|8|9|dix|vingt|trente|quarante|cinquante|soixante|cent|virgule|' +
-      'suivant|next|retour|back|précédent|effacer|supprimer|clear;';
     var gl = new (window.SpeechGrammarList || window.webkitSpeechGrammarList)();
     gl.addFromString(grammar, 1);
     r.grammars = gl;
   } catch(e) {}
+  r.interimResults = true;
   r.onresult = function(e) {
-    if (efPendingNext) return;
+    if (efPendingNext) return; // avance en cours, ignorer tout résultat
     var result = e.results[e.results.length - 1];
     var txt = result[0].transcript.trim().toLowerCase();
+    // Résultat intermédiaire : afficher + beep si valeur stable 600ms
     if (!result.isFinal) {
       var numInterim = efVoiceToNumber(txt);
       if (numInterim) {
@@ -8772,16 +8694,16 @@ function efCreateRecog() {
         efBeeped = false;
         var parsedInterim = tmParseInput(numInterim);
         if (parsedInterim !== null && toKgf(parsedInterim) !== null) {
-          var kgfInterim = toKgf(parsedInterim);
           efBeepTimer = setTimeout(function() {
             efBeepTimer = null;
             efBeeped = true;
-            efFeedback(kgfInterim);
+            efBeep();
           }, 600);
         }
       }
       return;
     }
+    // Résultat final : annuler le timer, commandes vocales + validation
     if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
     if (txt === 'suivant' || txt === 'next')                          { efNext(); return; }
     if (txt === 'retour'  || txt === 'back' || txt === 'précédent')   { efBack(); return; }
@@ -8794,11 +8716,7 @@ function efCreateRecog() {
     efUpdateKgf();
     efPendingReplace = false;
     efPendingNext = true;
-    if (!efBeeped) {
-      var parsedFinal = tmParseInput(num);
-      var kgfFinal = parsedFinal !== null ? toKgf(parsedFinal) : null;
-      if (kgfFinal !== null) efFeedback(kgfFinal); else efBeep();
-    }
+    if (!efBeeped) efBeep(); // beep seulement si le timer ne l'a pas déjà fait
     efBeeped = false;
     setTimeout(function() { if (efMicActive) { efNext(); efPendingNext = false; } }, 0);
   };
@@ -8807,44 +8725,21 @@ function efCreateRecog() {
       efSetMicActive(false);
       var btn = $id('ef-mic-btn');
       if (btn) btn.style.display = 'none';
+    } else if (e.error !== 'aborted') {
+      efSetMicActive(false);
     }
-    // Les autres erreurs (no-speech, audio-capture…) sont gérées par onend
   };
   r.onend = function() {
-    // iOS termine la reconnaissance après chaque silence — recréer un objet frais
-    if (!efMicActive) return;
-    efMicRecog = null;
-    setTimeout(function() {
-      if (!efMicActive) return;
-      var fresh = efCreateRecog();
-      if (!fresh) return;
-      efMicRecog = fresh;
-      try { fresh.start(); } catch(err) {}
-    }, 100);
+    if (efMicActive && efMicRecog) {
+      setTimeout(function() {
+        try { efMicRecog.start(); } catch(err) {}
+      }, 50);
+    }
   };
-  return r;
-}
-
-function efStartMic() {
-  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    alert(lang === 'fr'
-      ? 'Reconnaissance vocale non supportée sur ce navigateur.'
-      : 'Speech recognition not supported in this browser.');
-    return;
-  }
-  if (efMicRecog) {
-    efMicRecog.onend = null; // empêcher le redémarrage auto pendant le reset
-    efMicRecog.abort();
-    efMicRecog = null;
-  }
-  if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (efAudioCtx.state === 'suspended') efAudioCtx.resume();
-  efSaveState();
-  var r = efCreateRecog();
-  if (!r) return;
   efMicRecog = r;
-  try { r.start(); } catch(e) {}
+  if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  efSaveState();
+  r.start();
   efSetMicActive(true);
   efRequestWakeLock();
 }
@@ -8870,44 +8765,6 @@ function efBeep() {
       bip(ctx.currentTime + 0.13);
     });
   } catch(e) {}
-}
-
-function efSpeakKgf(kgf) {
-  if (!window.speechSynthesis || isNaN(kgf)) { efBeep(); return; }
-  var isFr    = (typeof lang === 'undefined' || lang !== 'en');
-  var intPart = Math.floor(kgf);
-  var decPart = Math.round((kgf - intPart) * 10);
-  var phrase  = decPart === 0
-    ? intPart + ' kilos'
-    : (isFr ? intPart + ' virgule ' + decPart + ' kilos'
-             : intPart + ' point '   + decPart + ' kilos');
-  try {
-    window.speechSynthesis.cancel();
-    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-    var utt    = new SpeechSynthesisUtterance(phrase);
-    utt.lang   = isFr ? 'fr-FR' : 'en-US';
-    utt.rate   = isFr ? 1.1 : 0.9;
-    utt.pitch  = 1;
-    utt.volume = 1;
-    // Sur PC avec HP : couper le micro pendant la synthèse pour éviter l'écho.
-    // utt.onend le relance. Sur iOS le micro est déjà coupé par le système,
-    // et r.onend (dans efCreateRecog) gère le redémarrage — on ne l'écrase pas.
-    var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
-                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    if (!isIOS && efMicRecog) {
-      efMicRecog.onend = null;
-      efMicRecog.abort();
-      efMicRecog = null;
-      utt.onend = utt.onerror = function() {
-        if (!efMicActive) return;
-        var fresh = efCreateRecog();
-        if (!fresh) return;
-        efMicRecog = fresh;
-        try { fresh.start(); } catch(e) {}
-      };
-    }
-    window.speechSynthesis.speak(utt);
-  } catch(e) { efBeep(); }
 }
 
 function efStopMic() {
