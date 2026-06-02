@@ -8274,8 +8274,13 @@ function efUpdateKgf() {
   var parsed = tmParseInput(raw);
   if (parsed === null) { prev.textContent = '—'; prev.className = 'ef-kgf-preview'; return; }
   var kgf = toKgf(parsed);
-  if (kgf !== null) { prev.textContent = kgf + ' kgf'; prev.className = 'ef-kgf-preview has-val ' + side; }
-  else              { prev.textContent = ''; prev.className = 'ef-kgf-preview'; }
+  if (kgf !== null) {
+    prev.textContent = kgf + ' kgf';
+    prev.className = 'ef-kgf-preview has-val ' + side;
+  } else {
+    prev.textContent = '';
+    prev.className = 'ef-kgf-preview';
+  }
 }
 
 // Retourne true si valide (ou vide), false si hors plage
@@ -8536,7 +8541,9 @@ var efMicActive   = false;
 var efMicRecog    = null;
 var efWakeLock    = null;
 var efAudioCtx    = null;
-var efPendingNext = false; // true = valeur validée, avance en cours, ignorer les résultats suivants
+var efPendingNext = false;
+var efInterimSpeakTimer = null;
+var efInterimSpokenKgf  = null;
 
 function efSaveState() {
   try {
@@ -8681,29 +8688,45 @@ function efStartMic() {
     if (efPendingNext) return; // avance en cours, ignorer tout résultat
     var result = e.results[e.results.length - 1];
     var txt = result[0].transcript.trim().toLowerCase();
-    // Résultat intermédiaire : afficher la valeur en temps réel sans valider
+    // Résultat intermédiaire : afficher + déclencher parole si stable 600ms
     if (!result.isFinal) {
       var numInterim = efVoiceToNumber(txt);
       if (numInterim) {
         var inp = $id('ef-inp');
         inp.value = numInterim;
         efUpdateKgf();
+        // Parole anticipée : si la valeur ne change plus pendant 600ms, on parle
+        if (efInterimSpeakTimer) { clearTimeout(efInterimSpeakTimer); efInterimSpeakTimer = null; }
+        var parsedInterim = tmParseInput(numInterim);
+        var kgfInterim = parsedInterim !== null ? toKgf(parsedInterim) : null;
+        if (kgfInterim !== null) {
+          efInterimSpeakTimer = setTimeout(function() {
+            efInterimSpeakTimer = null;
+            efInterimSpokenKgf = kgfInterim;
+            efSpeakKgf(kgfInterim);
+          }, 500);
+        }
       }
       return;
     }
-    // Résultat final : commandes vocales + validation
+    // Résultat final : annuler le timer anticipé, commandes vocales + validation
+    if (efInterimSpeakTimer) { clearTimeout(efInterimSpeakTimer); efInterimSpeakTimer = null; }
     if (txt === 'suivant' || txt === 'next')                          { efNext(); return; }
     if (txt === 'retour'  || txt === 'back' || txt === 'précédent')   { efBack(); return; }
     if (txt === 'effacer' || txt === 'supprimer' || txt === 'clear')  { $id('ef-inp').value = ''; efUpdateKgf(); return; }
     var num = efVoiceToNumber(txt);
     if (!num) return;
     if (result[0].confidence > 0 && result[0].confidence < 0.6) return;
+    var parsed = tmParseInput(num);
+    var kgf = parsed !== null ? toKgf(parsed) : null;
+    // Parler seulement si pas déjà énoncé par le timer anticipé
+    if (kgf !== null && kgf !== efInterimSpokenKgf) efSpeakKgf(kgf);
     var inp = $id('ef-inp');
     inp.value = num;
     efUpdateKgf();
+    efInterimSpokenKgf = null;
     efPendingReplace = false;
     efPendingNext = true;
-    efBeep();
     setTimeout(function() { if (efMicActive) { efNext(); efPendingNext = false; } }, 0);
   };
   r.onerror = function(e) {
@@ -8751,6 +8774,37 @@ function efBeep() {
       bip(ctx.currentTime + 0.13);
     });
   } catch(e) {}
+}
+
+function efSpeakKgf(kgfVal) {
+  // kgfVal peut être passé directement, sinon on lit le preview
+  var valKg;
+  if (kgfVal !== undefined) {
+    valKg = kgfVal;
+  } else {
+    var prev = $id('ef-kgf-preview');
+    var kgfText = prev ? prev.textContent.trim() : '';
+    var match = kgfText.match(/^([\d.]+)\s*kgf$/);
+    if (!match || !window.speechSynthesis) { efBeep(); return; }
+    valKg = parseFloat(match[1]);
+  }
+  if (!window.speechSynthesis || isNaN(valKg)) { efBeep(); return; }
+  var isFr = (typeof lang === 'undefined' || lang !== 'en');
+  var intPart = Math.floor(valKg);
+  var decPart = Math.round((valKg - intPart) * 10);
+  var phrase = decPart === 0
+    ? intPart + ' kilos'
+    : (isFr ? intPart + ' virgule ' + decPart + ' kilos'
+             : intPart + ' point '   + decPart + ' kilos');
+  try {
+    window.speechSynthesis.cancel();
+    var utt = new SpeechSynthesisUtterance(phrase);
+    utt.lang   = isFr ? 'fr-FR' : 'en-US';
+    utt.rate   = isFr ? 1.1 : 0.9;
+    utt.pitch  = 1;
+    utt.volume = 1;
+    window.speechSynthesis.speak(utt);
+  } catch(e) { efBeep(); }
 }
 
 function efStopMic() {
