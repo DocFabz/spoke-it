@@ -8713,6 +8713,11 @@ function efOpenFeedbackModal() {
   var voiceBtn = $id('ef-feedback-voice');
   if (beepBtn)  beepBtn.classList.toggle('active',  efFeedbackMode === 'beep');
   if (voiceBtn) voiceBtn.classList.toggle('active', efFeedbackMode === 'voice');
+  // Sur PC (pas d'écran tactile) : le retour vocal serait capté par le micro
+  // via les haut-parleurs. On masque l'option et on force le beep.
+  var isTouchDevice = navigator.maxTouchPoints > 0;
+  if (voiceBtn) voiceBtn.style.display = isTouchDevice ? '' : 'none';
+  if (!isTouchDevice) { efSetFeedback('beep'); return; }
   $id('ef-feedback-overlay').classList.add('show');
   $id('ef-feedback-modal').classList.add('show');
 }
@@ -8795,7 +8800,15 @@ function efCreateRecog() {
       if (kgfFinal !== null) efFeedback(kgfFinal); else efBeep();
     }
     efBeeped = false;
-    setTimeout(function() { if (efMicActive) { efNext(); efPendingNext = false; } }, 0);
+    setTimeout(function() {
+      if (!efMicActive) return;
+      // Relancer le micro avant de passer à la valeur suivante
+      if (!efMicRecog) {
+        var fresh = efCreateRecog();
+        if (fresh) { efMicRecog = fresh; try { fresh.start(); } catch(e) {} }
+      }
+      efNext(); efPendingNext = false;
+    }, 0);
   };
   r.onerror = function(e) {
     if (e.error === 'not-allowed') {
@@ -8884,23 +8897,9 @@ function efSpeakKgf(kgf) {
     utt.rate   = isFr ? 1.1 : 0.9;
     utt.pitch  = 1;
     utt.volume = 1;
-    var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
-                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    if (isIOS) {
-      // iOS coupe le micro tout seul pendant la synthèse et déclenche r.onend
-      // qui recrée automatiquement le micro — rien à faire ici.
-    } else {
-      // PC/Android : couper le micro avant de parler pour éviter l'écho,
-      // puis le relancer à la fin de la synthèse.
-      if (efMicRecog) { efMicRecog.onend = null; efMicRecog.abort(); efMicRecog = null; }
-      utt.onend = utt.onerror = function() {
-        if (!efMicActive) return;
-        var fresh = efCreateRecog();
-        if (!fresh) return;
-        efMicRecog = fresh;
-        try { fresh.start(); } catch(err) {}
-      };
-    }
+    // Couper le micro pendant la synthèse pour éviter l'écho sur HP.
+    // Il sera relancé juste avant efNext() dans onresult.
+    if (efMicRecog) { efMicRecog.abort(); }
     window.speechSynthesis.speak(utt);
   } catch(e) { efBeep(); }
 }
