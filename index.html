@@ -8792,9 +8792,14 @@ function efOpenMicLangModal() {
     efStartMic();
     return;
   }
-  var browserLang = navigator.languages?.[0] || navigator.language || 'en-US';
-  var codeEl  = document.getElementById('ef-mic-lang-browser-code');
-  var nameEl  = document.getElementById('ef-mic-lang-browser-name');
+  var browserLang = navigator.languages?.[0] || navigator.language || '';
+  // Si non détectée ou déjà en-US : démarrer directement sans modale
+  if (!browserLang || browserLang.toLowerCase() === 'en-us') {
+    efStartMic();
+    return;
+  }
+  var codeEl = document.getElementById('ef-mic-lang-browser-code');
+  var nameEl = document.getElementById('ef-mic-lang-browser-name');
   if (codeEl) codeEl.textContent = browserLang;
   if (nameEl) nameEl.textContent = efLangDisplayName(browserLang);
 
