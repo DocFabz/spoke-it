@@ -8922,7 +8922,6 @@ function efStartMic(forceLang) {
     if (txt === 'effacer' || txt === 'supprimer' || txt === 'clear')  { $id('ef-inp').value = ''; efUpdateKgf(); return; }
     var num = efVoiceToNumber(txt);
     if (!num) return;
-    if (result[0].confidence > 0 && result[0].confidence < 0.6) return;
     var inp = $id('ef-inp');
     inp.value = num;
     efUpdateKgf();
