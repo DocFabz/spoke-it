@@ -8632,6 +8632,7 @@ var efAudioCtx    = null;
 var efPendingNext = false; // true = valeur validée, avance en cours, ignorer les résultats suivants
 var efBeepTimer   = null;  // debounce 500ms pour beep sur valeur stable
 var efBeeped      = false; // true = beep déjà émis par le timer sur cette valeur
+var efLastInterimNum = null; // dernier nombre intermédiaire valide (fallback isFinal)
 
 function efSaveState() {
   try {
@@ -8899,6 +8900,7 @@ function efStartMic(forceLang) {
     if (!result.isFinal) {
       var numInterim = efVoiceToNumber(txt);
       if (numInterim) {
+        efLastInterimNum = numInterim;
         var inp = $id('ef-inp');
         inp.value = numInterim;
         efUpdateKgf();
@@ -8921,7 +8923,13 @@ function efStartMic(forceLang) {
     if (txt === 'retour'  || txt === 'back' || txt === 'précédent')   { efBack(); return; }
     if (txt === 'effacer' || txt === 'supprimer' || txt === 'clear')  { $id('ef-inp').value = ''; efUpdateKgf(); return; }
     var num = efVoiceToNumber(txt);
-    if (!num) return;
+    // Si le transcript final ne donne rien, utiliser le dernier résultat
+    // intermédiaire valide (plus fiable que le contenu du champ).
+    if (!num) {
+      if (efLastInterimNum) num = efLastInterimNum;
+      else return;
+    }
+    efLastInterimNum = null;
     var inp = $id('ef-inp');
     inp.value = num;
     efUpdateKgf();
