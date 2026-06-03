@@ -8674,6 +8674,28 @@ function efReleaseWakeLock() {
 }
 
 function efVoiceToNumber(txt) {
+  if (!txt) return null;
+  var s = txt.trim().toLowerCase();
+
+  // ── Étape 1 : normaliser tous les séparateurs décimaux en '.'
+  // Couvre: virgule (fr/it/de/es/pt…), point, separateurs unicode arabes/persans
+  s = s.replace(/[,،٫]/g, '.');
+
+  // ── Étape 2 : si le transcript contient déjà un nombre en chiffres arabes,
+  // l'utiliser directement (cas le plus fréquent avec tous les moteurs vocaux
+  // quelle que soit la langue : fr, it, de, es, pt, nl, pl, ru, ja, zh…)
+  // Gère : "32", "0.32", "1.65", "270", "0.55", etc.
+  // Si le moteur a répété le nombre (ex: "32 32"), on prend le dernier.
+  var numMatches = s.match(/\d+\.?\d*/g);
+  if (numMatches && numMatches.length > 0) {
+    // Chercher d'abord un nombre décimal (avec point)
+    var decMatch = s.match(/\d+\.\d+/);
+    if (decMatch) return decMatch[0];
+    // Sinon prendre le dernier entier (déduplication si répétition)
+    return numMatches[numMatches.length - 1];
+  }
+
+  // ── Étape 3 : fallback sur dictionnaire fr/en (mots épelés)
   var units = {
     'zéro':0,'zero':0,'un':1,'une':1,'one':1,'deux':2,'two':2,
     'trois':3,'three':3,'quatre':4,'four':4,'cinq':5,'five':5,
@@ -8686,8 +8708,8 @@ function efVoiceToNumber(txt) {
     'quatre-vingt':80,'eighty':80,'quatre-vingts':80,
     'quatre-vingt-dix':90,'ninety':90,'cent':100,'hundred':100
   };
-  var s = txt.toLowerCase()
-    .replace(/virgule|point décimal|point|dot/g, '§')
+  s = s
+    .replace(/virgule|virgola|virgola decimale|point décimal|point|komma|coma|dot/g, '§')
     .replace(/-/g, ' ')
     .replace(/et\s/g, '')
     .replace(/\s+/g, ' ').trim();
@@ -8696,8 +8718,6 @@ function efVoiceToNumber(txt) {
   var decPart = parts[1] ? parts[1].trim() : null;
   function parseWords(str) {
     var words = str.split(' ');
-    // Si la chaîne contient plusieurs tokens numériques (ex: "32 32" ou "270 270"),
-    // la reconnaissance vocale a répété le même nombre : on prend le dernier.
     var digitTokens = words.filter(function(w) { return /^\d+$/.test(w); });
     var wordTokens  = words.filter(function(w) { return !(/^\d+$/.test(w)) && units[w] !== undefined; });
     if (digitTokens.length > 1 && wordTokens.length === 0) {
@@ -8717,10 +8737,7 @@ function efVoiceToNumber(txt) {
     return total > 0 ? total : null;
   }
   var intVal = parseWords(intPart);
-  if (intVal === null) {
-    var raw = s.replace(/[^0-9]/g, '');
-    return raw || null;
-  }
+  if (intVal === null) return null;
   var result = String(intVal);
   if (decPart !== null) {
     var decVal = parseWords(decPart);
