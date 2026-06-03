@@ -8852,9 +8852,39 @@ function efStartMic(forceLang) {
   var r = new SR();
   r.lang = forceLang || efGetRecogLang();
   r.continuous     = true;
-  var grammar = '#JSGF V1.0; grammar numbers; public <number> = ' +
-    '0|1|2|3|4|5|6|7|8|9|dix|vingt|trente|quarante|cinquante|soixante|cent|virgule|' +
-    'suivant|next|retour|back|précédent|effacer|supprimer|clear;';
+  // Grammaire JSGF construite dynamiquement selon la langue active.
+  // Inclut les chiffres arabes (universels), les mots-nombres et commandes
+  // dans la langue du moteur → confiance correcte quelle que soit la langue.
+  var recogLang = (forceLang || efGetRecogLang() || '').toLowerCase().split(/[-_]/)[0];
+  var langWords = {
+    fr: { dec:'virgule', nav:'suivant retour précédent effacer supprimer',
+          nums:'zéro un une deux trois quatre cinq six sept huit neuf dix vingt trente quarante cinquante soixante cent' },
+    en: { dec:'point dot', nav:'next back clear',
+          nums:'zero one two three four five six seven eight nine ten twenty thirty forty fifty sixty hundred' },
+    it: { dec:'virgola punto', nav:'avanti indietro cancella',
+          nums:'zero uno una due tre quattro cinque sei sette otto nove dieci venti trenta quaranta cinquanta sessanta cento' },
+    de: { dec:'komma punkt', nav:'weiter zurück löschen',
+          nums:'null ein eins zwei drei vier fünf sechs sieben acht neun zehn zwanzig dreißig vierzig fünfzig sechzig hundert' },
+    es: { dec:'coma punto', nav:'siguiente atrás borrar',
+          nums:'cero uno una dos tres cuatro cinco seis siete ocho nueve diez veinte treinta cuarenta cincuenta sesenta cien' },
+    pt: { dec:'vírgula ponto', nav:'próximo voltar apagar',
+          nums:'zero um uma dois duas três quatro cinco seis sete oito nove dez vinte trinta quarenta cinquenta sessenta cem' },
+    nl: { dec:'komma punt', nav:'volgende terug wissen',
+          nums:'nul een twee drie vier vijf zes zeven acht negen tien twintig dertig veertig vijftig zestig honderd' },
+    pl: { dec:'przecinek punkt', nav:'dalej wstecz wyczyść',
+          nums:'zero jeden jedna dwa trzy cztery pięć sześć siedem osiem dziewięć dziesięć dwadzieścia trzydzieści sto' },
+    ru: { dec:'запятая точка', nav:'далее назад очистить',
+          nums:'ноль один одна два две три четыре пять шесть семь восемь девять десять двадцать тридцать сто' }
+  };
+  var lw = langWords[recogLang] || langWords['en'];
+  // Toujours inclure les chiffres arabes (universels) + fr/en comme fallback
+  var allWords = '0|1|2|3|4|5|6|7|8|9|' +
+    lw.dec.split(' ').join('|') + '|' +
+    lw.nav.split(' ').join('|') + '|' +
+    lw.nums.split(' ').join('|') +
+    (recogLang !== 'fr' ? '|virgule|suivant|retour|précédent|effacer|supprimer' : '') +
+    (recogLang !== 'en' ? '|point|next|back|clear' : '');
+  var grammar = '#JSGF V1.0; grammar numbers; public <number> = ' + allWords + ';';
   try {
     var gl = new (window.SpeechGrammarList || window.webkitSpeechGrammarList)();
     gl.addFromString(grammar, 1);
