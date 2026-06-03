@@ -8625,14 +8625,17 @@ function efNumpadDel() {
 }
 
 // ── Saisie vocale Easy Fill ──────────────────────────────────────────────────
-var efMicActive   = false;
-var efMicRecog    = null;
-var efWakeLock    = null;
-var efAudioCtx    = null;
-var efPendingNext = false; // true = valeur validée, avance en cours, ignorer les résultats suivants
-var efBeepTimer   = null;  // debounce 500ms pour beep sur valeur stable
-var efBeeped      = false; // true = beep déjà émis par le timer sur cette valeur
-var efLastInterimNum = null; // dernier nombre intermédiaire valide (fallback isFinal)
+var efMicActive      = false;
+var efMicRecog       = null;
+var efWakeLock       = null;
+var efAudioCtx       = null;
+var efPendingNext    = false; // true = valeur validée, avance en cours, ignorer les résultats suivants
+var efBeepTimer      = null;  // debounce 500ms pour beep sur valeur stable
+var efBeeped         = false; // true = beep déjà émis par le timer sur cette valeur
+var efLastInterimNum = null;  // dernier nombre intermédiaire valide (fallback isFinal)
+var efRestartCount   = 0;     // pb1/2 : compteur de tentatives de redémarrage consécutives
+var efPendingQueue   = null;  // pb3  : valeur reçue pendant efPendingNext (ne pas jeter)
+var efKgfDebounce    = null;  // pb4  : timer debounce pour efUpdateKgf sur résultats interim
 
 function efSaveState() {
   try {
@@ -8661,6 +8664,13 @@ function efRestoreState() {
 
 function efIsIPad() {
   return /iPad/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+// Détecte tout appareil iOS (iPhone + iPad) — Safari ne supporte pas continuous=true,
+// onend se déclenche normalement toutes les 2-3s sans qu'il y ait d'erreur réelle.
+function efIsIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
@@ -8893,9 +8903,18 @@ function efStartMic(forceLang) {
   } catch(e) {}
   r.interimResults = true;
   r.onresult = function(e) {
-    if (efPendingNext) return; // avance en cours, ignorer tout résultat
     var result = e.results[e.results.length - 1];
     var txt = result[0].transcript.trim().toLowerCase();
+
+    // pb3 : pendant la transition vers le champ suivant, mémoriser plutôt que jeter
+    if (efPendingNext) {
+      if (result.isFinal) {
+        var numQueued = efVoiceToNumber(txt);
+        if (numQueued) efPendingQueue = numQueued;
+      }
+      return;
+    }
+
     // Résultat intermédiaire : afficher + beep si valeur stable 600ms
     if (!result.isFinal) {
       var numInterim = efVoiceToNumber(txt);
@@ -8903,7 +8922,9 @@ function efStartMic(forceLang) {
         efLastInterimNum = numInterim;
         var inp = $id('ef-inp');
         inp.value = numInterim;
-        efUpdateKgf();
+        // pb4 : debounce 100ms pour ne pas recalculer à chaque syllabe
+        if (efKgfDebounce) { clearTimeout(efKgfDebounce); }
+        efKgfDebounce = setTimeout(function() { efKgfDebounce = null; efUpdateKgf(); }, 100);
         if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
         efBeeped = false;
         var parsedInterim = tmParseInput(numInterim);
@@ -8917,8 +8938,10 @@ function efStartMic(forceLang) {
       }
       return;
     }
-    // Résultat final : annuler le timer, commandes vocales + validation
-    if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
+
+    // Résultat final : annuler les timers debounce, commandes vocales + validation
+    if (efKgfDebounce) { clearTimeout(efKgfDebounce); efKgfDebounce = null; }
+    if (efBeepTimer)   { clearTimeout(efBeepTimer);   efBeepTimer = null; }
     if (txt === 'suivant' || txt === 'next')                          { efNext(); return; }
     if (txt === 'retour'  || txt === 'back' || txt === 'précédent')   { efBack(); return; }
     if (txt === 'effacer' || txt === 'supprimer' || txt === 'clear')  { $id('ef-inp').value = ''; efUpdateKgf(); return; }
@@ -8937,6 +8960,12 @@ function efStartMic(forceLang) {
     efPendingNext = true;
     setTimeout(function() {
       if (efMicActive) {
+        // pb3 : appliquer la valeur mise en file pendant la transition
+        if (efPendingQueue) {
+          inp.value = efPendingQueue;
+          efUpdateKgf();
+          efPendingQueue = null;
+        }
         var ok = efNext();
         if (ok) {
           if (!efBeeped) {
@@ -8953,19 +8982,52 @@ function efStartMic(forceLang) {
   };
   r.onerror = function(e) {
     if (e.error === 'not-allowed') {
+      efRestartCount = 0;
       efSetMicActive(false);
       var btn = $id('ef-mic-btn');
       if (btn) btn.style.display = 'none';
     } else if (e.error !== 'aborted') {
+      // pb7 : erreur réseau/audio — onend va suivre et tenter le redémarrage avec backoff
+      efRestartCount = 0; // laisser onend gérer les tentatives
       efSetMicActive(false);
     }
   };
   r.onend = function() {
-    if (efMicActive && efMicRecog) {
+    // pb6 : si cette instance n'est plus la courante, ne pas relancer
+    if (r !== efMicRecog) return;
+    if (!efMicActive) return;
+
+    // iOS : continuous=true est ignoré par Safari, onend se déclenche normalement
+    // toutes les 2-3s sans erreur réelle → on redémarre toujours sans compter.
+    if (efIsIOS()) {
       setTimeout(function() {
+        if (r !== efMicRecog || !efMicActive) return;
         try { efMicRecog.start(); } catch(err) {}
-      }, 50);
+      }, 80); // délai légèrement plus long pour laisser Safari libérer le micro
+      return;
     }
+
+    efRestartCount++;
+    if (efRestartCount > 3) {
+      // pb2 : abandon après 3 tentatives consécutives échouées
+      efRestartCount = 0;
+      efSetMicActive(false);
+      efReleaseWakeLock();
+      return;
+    }
+
+    // pb1 : backoff progressif — 50ms, 100ms, 150ms
+    var delay = 50 * efRestartCount;
+    setTimeout(function() {
+      // pb6 : vérifier à nouveau que l'instance est toujours la courante
+      if (r !== efMicRecog || !efMicActive) return;
+      try {
+        efMicRecog.start();
+        efRestartCount = 0; // succès → réinitialiser le compteur
+      } catch(err) {
+        // start() a échoué : onend se redéclenchera, le compteur continuera
+      }
+    }, delay);
   };
   efMicRecog = r;
   if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -9045,6 +9107,9 @@ function efBeepNext() {
 
 function efStopMic() {
   if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
+  efRestartCount = 0;
+  efPendingQueue = null;
+  if (efKgfDebounce) { clearTimeout(efKgfDebounce); efKgfDebounce = null; }
   efSetMicActive(false);
   efReleaseWakeLock();
 }
