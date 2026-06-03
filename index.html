@@ -8670,7 +8670,10 @@ function efStartMic() {
   }
   if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
   var r = new SR();
-  r.lang           = (typeof lang !== 'undefined' && lang === 'en') ? 'en-US' : 'fr-FR';
+  var _recogLang = (typeof lang !== 'undefined' && lang === 'fr')
+    ? 'fr-FR'
+    : (navigator.languages?.[0] || navigator.language || 'en-US');
+  r.lang           = _recogLang;
   r.continuous     = true;
   var grammar = '#JSGF V1.0; grammar numbers; public <number> = ' +
     '0|1|2|3|4|5|6|7|8|9|dix|vingt|trente|quarante|cinquante|soixante|cent|virgule|' +
