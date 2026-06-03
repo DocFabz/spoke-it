@@ -941,6 +941,67 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   display:inline-flex; align-items:center; justify-content:center;
 }
 
+/* ── Mic language modal ──────────────────────────────────────────────────── */
+.ef-mic-lang-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.7);
+  backdrop-filter:blur(6px); z-index:9998;
+  opacity:0; transition:opacity .2s; display:none;
+}
+.ef-mic-lang-overlay.show { display:block; opacity:1 }
+.ef-mic-lang-modal {
+  position:fixed; top:50%; left:50%;
+  transform:translate(-50%,-50%) scale(.96);
+  z-index:9999; background:var(--card);
+  border:1px solid var(--border-s); border-radius:var(--r);
+  padding:1.4rem 1.3rem 1.2rem;
+  box-shadow:0 20px 72px rgba(0,0,0,.6);
+  width:92%; max-width:280px;
+  display:none; flex-direction:column; gap:.85rem;
+  opacity:0; transition:opacity .2s, transform .2s;
+}
+.ef-mic-lang-modal.show {
+  display:flex; opacity:1;
+  transform:translate(-50%,-50%) scale(1);
+}
+.ef-mic-lang-header {
+  display:flex; align-items:center; justify-content:space-between;
+}
+.ef-mic-lang-title {
+  font-size:.62rem; font-weight:600; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--accent);
+  display:flex; align-items:center; gap:.45rem;
+}
+.ef-mic-lang-title svg { flex-shrink:0; opacity:.9 }
+.ef-mic-lang-close {
+  background:none; border:1px solid var(--border); border-radius:var(--rs);
+  color:var(--text3); font-size:.8rem; cursor:pointer;
+  padding:.22rem .5rem; line-height:1; transition:all .2s;
+}
+.ef-mic-lang-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+.ef-mic-lang-body {
+  display:flex; flex-direction:column; gap:.4rem;
+}
+.ef-mic-lang-pick {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:.8rem; width:100%;
+  background:var(--card-alt); border:1px solid var(--border-s);
+  border-radius:var(--rs); padding:.65rem .9rem;
+  cursor:pointer; touch-action:manipulation; transition:all .2s;
+  text-align:left;
+}
+.ef-mic-lang-pick:hover {
+  border-color:rgba(126,200,227,.5);
+  background:rgba(126,200,227,.06);
+}
+.ef-mic-lang-pick-code {
+  font-family:'DM Mono',monospace; font-size:.8rem;
+  color:var(--accent2); flex-shrink:0; letter-spacing:.04em;
+}
+.ef-mic-lang-pick-name {
+  font-size:.72rem; color:var(--text3);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
 .ef-progress-wrap { display:flex; flex-direction:column; gap:.12rem; margin-top:.6rem; margin-bottom:.7rem }
 .ef-progress-label {
   font-family:'DM Mono',monospace; font-size:.6rem; color:var(--text3);
@@ -5732,6 +5793,9 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && $id('picker-popup').classList.contains('show')) {
     closePicker();
   }
+  if (e.key === 'Escape' && $id('ef-mic-lang-modal') && $id('ef-mic-lang-modal').classList.contains('show')) {
+    efCloseMicLangModal();
+  }
 });
 
 // ── État Charte personnalisée ────────────────────────────────────────────────────────
@@ -8027,6 +8091,33 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 <!-- ── Easy Fill overlay + modal ── -->
 <div class="ef-overlay" id="ef-overlay" onclick="efClose()"></div>
 
+<!-- ── Modale langue saisie vocale ── -->
+<div class="ef-mic-lang-overlay" id="ef-mic-lang-overlay"></div>
+<div class="ef-mic-lang-modal" id="ef-mic-lang-modal" role="dialog" aria-modal="true">
+  <div class="ef-mic-lang-header">
+    <div class="ef-mic-lang-title">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="1" width="6" height="11" rx="3"/>
+        <path d="M5 11a7 7 0 0 0 14 0"/>
+        <line x1="12" y1="18" x2="12" y2="23"/>
+        <line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>
+      <span>Voice input</span>
+    </div>
+    <button class="ef-mic-lang-close" onclick="efCloseMicLangModal()" aria-label="Close">✕</button>
+  </div>
+  <div class="ef-mic-lang-body">
+    <button class="ef-mic-lang-pick" id="ef-mic-lang-browser-btn" onclick="efPickMicLang('browser')">
+      <span class="ef-mic-lang-pick-code" id="ef-mic-lang-browser-code">—</span>
+      <span class="ef-mic-lang-pick-name" id="ef-mic-lang-browser-name">—</span>
+    </button>
+    <button class="ef-mic-lang-pick" onclick="efPickMicLang('en-US')">
+      <span class="ef-mic-lang-pick-code">en-US</span>
+      <span class="ef-mic-lang-pick-name">English (US)</span>
+    </button>
+  </div>
+</div>
+
 <!-- ── Wrapper Easy Fill (modale + pavé côte à côte en paysage) ── -->
 <div id="ef-wrapper">
 
@@ -8657,10 +8748,77 @@ function efToggleMic() {
   // Créer/reprendre l'AudioContext sur geste utilisateur (requis sur iOS)
   if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (efAudioCtx.state === 'suspended') efAudioCtx.resume();
-  if (efMicActive) { efStopMic(); } else { efStartMic(); }
+  if (efMicActive) { efStopMic(); } else { efOpenMicLangModal(); }
 }
 
-function efStartMic() {
+// ── Modale langue de saisie vocale ───────────────────────────────────────────
+
+function efGetRecogLang() {
+  return (typeof lang !== 'undefined' && lang === 'fr')
+    ? 'fr-FR'
+    : (navigator.languages?.[0] || navigator.language || 'en-US');
+}
+
+function efLangDisplayName(code) {
+  try {
+    var parts = code.split(/[-_]/);
+    var base = parts[0];
+    var region = parts[1] ? parts[1].toUpperCase() : null;
+    var names = {
+      'fr':'Français','en':'English','de':'Deutsch','es':'Español',
+      'it':'Italiano','pt':'Português','nl':'Nederlands','pl':'Polski',
+      'ru':'Русский','ja':'日本語','zh':'中文','ko':'한국어',
+      'ar':'العربية','sv':'Svenska','da':'Dansk','fi':'Suomi',
+      'nb':'Norsk','tr':'Türkçe','cs':'Čeština','hu':'Magyar',
+      'ro':'Română','sk':'Slovenčina','uk':'Українська','hr':'Hrvatski'
+    };
+    var regionNames = {
+      'FR':'France','BE':'Belgique','CH':'Suisse','CA':'Canada',
+      'GB':'United Kingdom','US':'United States','AU':'Australia',
+      'DE':'Deutschland','AT':'Österreich','BR':'Brasil','PT':'Portugal',
+      'MX':'México','ES':'España','IT':'Italia','RU':'Россия',
+      'JP':'Japan','CN':'China','KR':'Korea','TW':'Taiwan'
+    };
+    var name = names[base] || code;
+    if (region && regionNames[region]) name += ' (' + regionNames[region] + ')';
+    else if (region) name += ' (' + region + ')';
+    return name;
+  } catch(e) { return code; }
+}
+
+function efOpenMicLangModal() {
+  // Modale uniquement en mode anglais
+  if (typeof lang !== 'undefined' && lang === 'fr') {
+    efStartMic();
+    return;
+  }
+  var browserLang = navigator.languages?.[0] || navigator.language || 'en-US';
+  var codeEl  = document.getElementById('ef-mic-lang-browser-code');
+  var nameEl  = document.getElementById('ef-mic-lang-browser-name');
+  if (codeEl) codeEl.textContent = browserLang;
+  if (nameEl) nameEl.textContent = efLangDisplayName(browserLang);
+
+  document.getElementById('ef-mic-lang-overlay').classList.add('show');
+  document.getElementById('ef-mic-lang-modal').classList.add('show');
+}
+
+function efCloseMicLangModal() {
+  document.getElementById('ef-mic-lang-overlay').classList.remove('show');
+  document.getElementById('ef-mic-lang-modal').classList.remove('show');
+}
+
+function efPickMicLang(choice) {
+  efCloseMicLangModal();
+  if (choice === 'browser') {
+    // utilise la langue navigateur telle quelle
+    efStartMic();
+  } else {
+    // force en-US
+    efStartMic(choice);
+  }
+}
+
+function efStartMic(forceLang) {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
     alert(lang === 'fr'
@@ -8670,10 +8828,7 @@ function efStartMic() {
   }
   if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
   var r = new SR();
-  var _recogLang = (typeof lang !== 'undefined' && lang === 'fr')
-    ? 'fr-FR'
-    : (navigator.languages?.[0] || navigator.language || 'en-US');
-  r.lang           = _recogLang;
+  r.lang = forceLang || efGetRecogLang();
   r.continuous     = true;
   var grammar = '#JSGF V1.0; grammar numbers; public <number> = ' +
     '0|1|2|3|4|5|6|7|8|9|dix|vingt|trente|quarante|cinquante|soixante|cent|virgule|' +
