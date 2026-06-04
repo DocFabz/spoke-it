@@ -9090,11 +9090,14 @@ function efStartMic(forceLang) {
     // iOS : continuous=true est ignoré par Safari, onend se déclenche normalement
     // toutes les 2-3s sans erreur réelle → on redémarre toujours sans compter.
     // IMPORTANT : Safari ne peut pas appeler .start() sur un objet déjà utilisé,
-    // il faut obligatoirement recréer une instance fraîche via efStartMic().
+    // il faut OBLIGATOIREMENT recréer une instance fraîche via efStartMic().
+    // Sans ça : au retour dans l'appli, l'instance est "usée", .start() échoue
+    // silencieusement → boucle onend sans écoute réelle → clignotement micro.
     if (efIsIOS()) {
       setTimeout(function() {
         if (r !== efMicRecog || !efMicActive) return;
-        try { efMicRecog.start(); } catch(err) {}
+        efMicRecog = null; // invalider l'ancienne instance avant efStartMic
+        efStartMic();
       }, 80);
       return;
     }
