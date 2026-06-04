@@ -9240,7 +9240,18 @@ function efStopMic() {
   window.addEventListener('pagehide', function() { efStopMic(); });
   document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'hidden') {
+      // Même logique que efClose() : capturer l'instance avant abort() pour préchauffer
+      // dès que le device est libéré, prêt pour quand l'utilisateur revient dans l'appli.
+      var hadMic = !efIsIOS() && !!efMicRecog;
+      var dyingRecog = hadMic ? efMicRecog : null;
+      if (efWarmInstance) { try { efWarmInstance.abort(); } catch(e) {} efWarmInstance = null; }
       efStopMic();
+      if (hadMic && dyingRecog) {
+        dyingRecog.onend = function() {
+          dyingRecog.onend = null;
+          setTimeout(efWarmSR, 50);
+        };
+      }
     } else if (document.visibilityState === 'visible' && efIsIOS() && !efIsIPad()) {
       var overlay = document.getElementById('ef-overlay');
       if (overlay && overlay.classList.contains('show')) {
