@@ -8313,8 +8313,8 @@ function efSwitchSide(mode) {
 
 function efClose() {
   // Sur desktop : préchauffer une nouvelle instance SR après que l'abort() soit
-  // complètement terminé (onend), pour éviter la collision device audio qui génère
-  // la latence au tap suivant.
+  // complètement terminé (onend), pour éviter la collision device audio
+  // qui génère de la latence au tap suivant.
   var hadMic = !efIsIOS() && !!efMicRecog;
   var dyingRecog = hadMic ? efMicRecog : null;
   if (efWarmInstance) { try { efWarmInstance.abort(); } catch(e) {} efWarmInstance = null; }
@@ -8696,8 +8696,9 @@ function efIsIOS() {
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
-// Détecte spécifiquement iPad — Safari iPad refuse le relancement automatique
-// de SpeechRecognition dans visibilitychange (corrompt efMicActive sans démarrer).
+// Détecte spécifiquement iPad — comportement audio distinct d'iPhone :
+// l'AudioContext passe en suspended après arrière-plan et doit être recréé
+// (close() + new) plutôt que simplement repris (resume()).
 function efIsIPad() {
   return /iPad/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 &&
@@ -8811,10 +8812,10 @@ function efToggleMic() {
   var now = Date.now();
   if (now - efToggleMicLast < 300) return;
   efToggleMicLast = now;
-  // Sur iOS : si l'AudioContext est suspended (retour d'arrière-plan), le fermer
-  // et en recréer un neuf — reproduit exactement l'état de la première session.
-  // resume() seul ne suffit pas sur iPad : le pipeline audio reste dans un état
-  // partiel qui rend SR sourde silencieusement.
+  // Sur iOS : recréer l'AudioContext s'il est suspended (retour d'arrière-plan).
+  // close() + new AudioContext() remet le pipeline audio dans l'état exact
+  // de la première session — resume() seul laisse un état partiel sur iPadOS
+  // qui rend SR sourde sans erreur visible.
   var _doToggle = function() {
     if (efMicActive) { efStopMic(); } else { efOpenMicLangModal(); }
   };
@@ -8921,7 +8922,7 @@ function efWarmSR() {
   } catch(e) {}
 }
 
-function efStartMic(forceLang, isIOSRestart) {
+function efStartMic(forceLang) {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
     alert(lang === 'fr'
@@ -9103,17 +9104,14 @@ function efStartMic(forceLang, isIOSRestart) {
     if (r !== efMicRecog) return;
     if (!efMicActive) return;
 
-    // iOS : continuous=true est ignoré par Safari, onend se déclenche normalement
-    // toutes les 2-3s sans erreur réelle → on redémarre toujours sans compter.
-    // IMPORTANT : Safari ne peut pas appeler .start() sur un objet déjà utilisé,
-    // il faut OBLIGATOIREMENT recréer une instance fraîche via efStartMic().
-    // Sans ça : au retour dans l'appli, l'instance est "usée", .start() échoue
-    // silencieusement → boucle onend sans écoute réelle → clignotement micro.
+    // iOS : continuous=true est ignoré par Safari → onend toutes les 2-3s.
+    // Recréer obligatoirement une instance fraîche via efStartMic() —
+    // .start() sur une instance déjà utilisée échoue silencieusement sur Safari.
     if (efIsIOS()) {
       setTimeout(function() {
         if (r !== efMicRecog || !efMicActive) return;
-        efMicRecog = null; // invalider l'ancienne instance avant efStartMic
-        efStartMic(null, true); // true = redémarrage automatique iOS (pas de saveState/wakeLock)
+        efMicRecog = null;
+        efStartMic();
       }, 80);
       return;
     }
@@ -9142,7 +9140,7 @@ function efStartMic(forceLang, isIOSRestart) {
   };
   efMicRecog = r;
   if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  // Sur iOS : recréer l'AudioContext s'il est suspended → contexte frais garanti.
+  // Sur iOS : même logique que efToggleMic — recréer si suspended.
   if (efIsIOS() && efAudioCtx.state === 'suspended') {
     try { efAudioCtx.close(); } catch(e) {}
     efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -9150,11 +9148,9 @@ function efStartMic(forceLang, isIOSRestart) {
   var _startNow = function() {
     if (r !== efMicRecog) return;
     r.start();
-    if (!isIOSRestart) {
-      efSetMicActive(true);
-      efRequestWakeLock();
-      efSaveState();
-    }
+    efSetMicActive(true);
+    efRequestWakeLock();
+    efSaveState();
   };
   if (efAudioCtx.state === 'suspended') {
     efAudioCtx.resume().then(_startNow).catch(_startNow);
@@ -9287,9 +9283,19 @@ function efStopMic() {
         };
       }
     } else if (document.visibilityState === 'visible' && efIsIOS() && !efIsIPad()) {
+      // iPhone : relancer le micro automatiquement au retour (Safari iPhone accepte
+      // ce relancement depuis visibilitychange, contrairement à iPad).
       var overlay = document.getElementById('ef-overlay');
-      if (overlay && overlay.classList.contains('show')) {
-        setTimeout(function() { if (!efMicActive) efStartMic(); }, 100);
+      if (overlay && overlay.classList.contains('show') && !efMicActive) {
+        setTimeout(function() {
+          if (efMicActive) return;
+          // Recréer l'AudioContext s'il est suspended, comme pour un premier démarrage
+          if (efAudioCtx && efAudioCtx.state === 'suspended') {
+            try { efAudioCtx.close(); } catch(e) {}
+            efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          efStartMic();
+        }, 100);
       }
     }
   });
