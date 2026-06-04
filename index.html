@@ -8961,10 +8961,11 @@ function efStartMic(forceLang) {
             // Auto-avance dès la valeur stabilisée, sans attendre le résultat final
             efPendingNext = true;
             setTimeout(function() {
+              // Toujours remettre efPendingNext à false pour débloquer onresult
+              efPendingNext = false;
               if (!efMicActive) return;
               var ok = efNext();
               if (ok) { efBeepNext(); }
-                    efPendingNext = false;
             }, 200);
           }, 500);
         }
@@ -9012,6 +9013,9 @@ function efStartMic(forceLang) {
     efPendingReplace = false;
     efPendingNext = true;
     setTimeout(function() {
+      // Toujours remettre efPendingNext à false, même si le micro a redémarré
+      // entre-temps — sinon tous les résultats suivants sont ignorés indéfiniment.
+      efPendingNext = false;
       if (efMicActive) {
         // appliquer la valeur mise en file pendant la transition
         if (efPendingQueue) {
@@ -9024,7 +9028,6 @@ function efStartMic(forceLang) {
           efBeep();
           setTimeout(efBeepNext, 280);
         }
-        efPendingNext = false;
       }
     }, 0);
   };
