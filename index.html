@@ -377,7 +377,6 @@ select option             { background:#161b27 }
 .diff-toggle-wrap  { display:flex; align-items:center; gap:.45rem; flex-shrink:0 }
 .diff-toggle-label { font-size:.6rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--text3); transition:color .22s }
 .diff-toggle-wrap:has(.diff-toggle[aria-checked="true"]) .diff-toggle-label { color:var(--accent) }
-#easy-fill-bar .diff-toggle-label { color:var(--accent) }
 .diff-toggle       { position:relative; width:28px; height:16px; border-radius:8px; border:1px solid var(--border-s); background:var(--inp); cursor:pointer; touch-action:manipulation; transition:background .22s, border-color .22s; padding:0; flex-shrink:0 }
 .diff-toggle[aria-checked="true"]  { background:rgba(126,200,227,.25); border-color:rgba(126,200,227,.5) }
 .diff-toggle-thumb { position:absolute; top:2px; left:2px; width:10px; height:10px; border-radius:50%; background:var(--text3); transition:transform .22s, background .22s }
@@ -837,12 +836,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .defl-result.outlier-fa { color:var(--accent) !important; font-weight:500 }
 
 /* ── Easy Fill toggle ──────────────────────────────────────────────────────── */
-.easy-fill-bar {
-  display:flex; align-items:center; gap:.55rem;
-  padding:.55rem .9rem .55rem 1rem;
-  border-bottom:1px solid var(--border);
-}
-
 /* ── Easy Fill modal ───────────────────────────────────────────────────────── */
 .ef-overlay {
   position:fixed; inset:0; background:rgba(0,0,0,.65);
@@ -2061,6 +2054,11 @@ input[type=number] { -moz-appearance:textfield }
     <p class="tm-hint" id="tm-hint-section" style="margin-top:.5rem"></p>
   </div>
 
+  <!-- ── Bouton Easy Fill standalone ── -->
+  <div class="btn-row" id="ef-btn-row" style="display:none">
+    <button class="btn" id="ef-standalone-btn" onclick="efOpen()" data-i18n="efLabel" disabled>Easy Fill</button>
+  </div>
+
   <!-- ── Grille de saisie ── -->
   <div class="card" id="tm-input-card" style="display:none">
     <div class="ch ch-toggle" onclick="toggleTmInputCard()">
@@ -2071,16 +2069,6 @@ input[type=number] { -moz-appearance:textfield }
       </svg>
       <div class="clabel" id="tm-defl-label">Déflections mesurées</div>
       <em id="tm-input-card-chevron" class="chevron">&#8964;</em>
-    </div>
-
-    <!-- Easy Fill toggle bar -->
-    <div class="easy-fill-bar" id="easy-fill-bar" style="display:none">
-      <div class="diff-toggle-wrap">
-        <span class="diff-toggle-label" data-i18n="efLabel">Easy Fill</span>
-        <button class="diff-toggle" id="easy-fill-toggle" onclick="efToggle()" role="switch" aria-checked="false">
-          <span class="diff-toggle-thumb"></span>
-        </button>
-      </div>
     </div>
 
     <div id="tm-input-card-body" style="display:none;margin-top:.75rem">
@@ -5201,6 +5189,10 @@ function tmUpdateUnitBadge() {
     resultCard.style.display = ready ? '' : 'none';
     if (ready) tmUpdateResultCardState();
   }
+  const efBtnRow = $id('ef-btn-row');
+  const efStBtn  = $id('ef-standalone-btn');
+  if (efBtnRow) efBtnRow.style.display = ready ? '' : 'none';
+  if (efStBtn)  efStBtn.disabled = !ready;
 }
 
 // ── Sync boutons type de roue dans le module tension ─────────────────────────
@@ -5315,9 +5307,7 @@ function tmClearTensio() {
   const icBody = $id('tm-input-card-body'), icChev = $id('tm-input-card-chevron');
   if (icBody) icBody.style.display = 'none';
   if (icChev) icChev.style.transform = '';
-  const efBar = $id('easy-fill-bar'), efBtn = $id('easy-fill-toggle');
-  if (efBar) efBar.style.display = 'none';
-  if (efBtn) efBtn.setAttribute('aria-checked', 'false');
+  // Le bouton Easy Fill standalone est masqué par tmUpdateUnitBadge
   const clearBtn = $id('tm-clear-tensio');
   if (clearBtn) clearBtn.classList.add('inactive');
   const clearSpoke = $id('tm-clear-spoke');
@@ -6446,25 +6436,15 @@ function tmBuildTable() {
 
   const body  = $id('tm-input-card-body');
   const chev  = $id('tm-input-card-chevron');
-  const efBar = $id('easy-fill-bar');
-
   function _closeCard() {
     if (body)  body.style.display   = 'none';
     if (chev)  chev.style.transform = '';
-    if (efBar) efBar.style.display  = 'none';
   }
 
   if (nb < 2 || !tmSpokeKey) { _closeCard(); return; }
 
-  // Ouvrir la card seulement si pas encore de données
-  // Si données présentes, garder fermée et laisser tmTryRenderRadar ouvrir le diagramme
-  if (!tmHasData()) {
-    if (body)  body.style.display   = '';
-    if (chev)  chev.style.transform = 'rotate(180deg)';
-  } else {
-    _closeCard();
-  }
-  if (efBar) efBar.style.display = (body && body.style.display !== 'none') ? 'flex' : 'none';
+  // Card déflexions toujours fermée — l'utilisateur l'ouvre manuellement ou via Easy Fill
+  _closeCard();
 
   const perSide = Math.floor(nb / 2);
   while (tmData.fo.length < perSide) tmData.fo.push(null);
@@ -8321,23 +8301,14 @@ function efClose() {
   efHideNumpad();
   efSetBtMode(false);
   document.body.style.overflow = '';
-  var btn = $id('easy-fill-toggle');
-  if (btn) btn.setAttribute('aria-checked', 'false');
-  // Rendu radar différé à la fermeture (évite un rendu par rayon pendant la saisie)
+  // Ouvrir le diagramme AVANT le rendu (canvas doit être visible pour se dessiner)
+  var rcBody = $id('tm-result-card-body');
+  var rcChev = $id('tm-result-card-chevron');
+  if (rcBody) rcBody.style.display = 'block';
+  if (rcChev) rcChev.style.transform = 'rotate(180deg)';
+  // Puis rendre
   tmTryRenderRadar();
   tmUpdateResultCardState();
-}
-
-function efToggle() {
-  var btn = $id('easy-fill-toggle');
-  var active = btn.getAttribute('aria-checked') === 'true';
-  if (!active) {
-    btn.setAttribute('aria-checked', 'true');
-    efOpen();
-  } else {
-    btn.setAttribute('aria-checked', 'false');
-    efClose();
-  }
 }
 
 function efRenderStep() {
@@ -8660,6 +8631,7 @@ var efAutoAdvanced   = false; // true = auto-avance déjà déclenchée par le b
 var efLastInterimNum = null;  // dernier nombre intermédiaire valide (fallback isFinal)
 var efRestartCount   = 0;     // pb1/2 : compteur de tentatives de redémarrage consécutives
 var efPendingQueue   = null;  // pb3  : valeur reçue pendant efPendingNext (ne pas jeter)
+var efNavExecuted    = null;  // commande nav déjà exécutée sur l'intermédiaire (évite double déclenchement sur le final)
 
 
 function efSaveState() {
@@ -8716,6 +8688,8 @@ function efVoiceToNumber(txt) {
   // ── Étape 1 : normaliser tous les séparateurs décimaux en '.'
   // Couvre: virgule (fr/it/de/es/pt…), point, separateurs unicode arabes/persans
   s = s.replace(/[,،٫]/g, '.');
+  s = s.replace(/\b(virgule|virgola|virgola decimale|point d[eé]cimal|point|komma|coma|dot)\b/g, '.');
+  s = s.replace(/(\d)\s*\.\s*(\d)/g, '$1.$2');
 
   // ── Étape 2 : si le transcript contient déjà un nombre en chiffres arabes,
   // l'utiliser directement (cas le plus fréquent avec tous les moteurs vocaux
@@ -8893,23 +8867,23 @@ function efStartMic(forceLang) {
   // dans la langue du moteur → confiance correcte quelle que soit la langue.
   var recogLang = (forceLang || efGetRecogLang() || '').toLowerCase().split(/[-_]/)[0];
   var langWords = {
-    fr: { dec:'virgule', nav:'suivant retour précédent effacer supprimer',
+    fr: { dec:'virgule', nav:'suivant retour précédent effacer supprimer fermer',
           nums:'zéro un une deux trois quatre cinq six sept huit neuf dix vingt trente quarante cinquante soixante cent' },
-    en: { dec:'point dot', nav:'next back clear',
+    en: { dec:'point dot', nav:'next back clear close',
           nums:'zero one two three four five six seven eight nine ten twenty thirty forty fifty sixty hundred' },
-    it: { dec:'virgola punto', nav:'avanti indietro cancella',
+    it: { dec:'virgola punto', nav:'avanti indietro cancella chiudi',
           nums:'zero uno una due tre quattro cinque sei sette otto nove dieci venti trenta quaranta cinquanta sessanta cento' },
-    de: { dec:'komma punkt', nav:'weiter zurück löschen',
+    de: { dec:'komma punkt', nav:'weiter zurück löschen schließen',
           nums:'null ein eins zwei drei vier fünf sechs sieben acht neun zehn zwanzig dreißig vierzig fünfzig sechzig hundert' },
-    es: { dec:'coma punto', nav:'siguiente atrás borrar',
+    es: { dec:'coma punto', nav:'siguiente atrás borrar cerrar',
           nums:'cero uno una dos tres cuatro cinco seis siete ocho nueve diez veinte treinta cuarenta cincuenta sesenta cien' },
-    pt: { dec:'vírgula ponto', nav:'próximo voltar apagar',
+    pt: { dec:'vírgula ponto', nav:'próximo voltar apagar fechar',
           nums:'zero um uma dois duas três quatro cinco seis sete oito nove dez vinte trinta quarenta cinquenta sessenta cem' },
-    nl: { dec:'komma punt', nav:'volgende terug wissen',
+    nl: { dec:'komma punt', nav:'volgende terug wissen sluiten',
           nums:'nul een twee drie vier vijf zes zeven acht negen tien twintig dertig veertig vijftig zestig honderd' },
-    pl: { dec:'przecinek punkt', nav:'dalej wstecz wyczyść',
+    pl: { dec:'przecinek punkt', nav:'dalej wstecz wyczyść zamknij',
           nums:'zero jeden jedna dwa trzy cztery pięć sześć siedem osiem dziewięć dziesięć dwadzieścia trzydzieści sto' },
-    ru: { dec:'запятая точка', nav:'далее назад очистить',
+    ru: { dec:'запятая точка', nav:'далее назад очистить закрыть',
           nums:'ноль один одна два две три четыре пять шесть семь восемь девять десять двадцать тридцать сто' }
   };
   var lw = langWords[recogLang] || langWords['en'];
@@ -8918,8 +8892,8 @@ function efStartMic(forceLang) {
     lw.dec.split(' ').join('|') + '|' +
     lw.nav.split(' ').join('|') + '|' +
     lw.nums.split(' ').join('|') +
-    (recogLang !== 'fr' ? '|virgule|suivant|retour|précédent|effacer|supprimer' : '') +
-    (recogLang !== 'en' ? '|point|next|back|clear' : '');
+    (recogLang !== 'fr' ? '|virgule|suivant|retour|précédent|effacer|supprimer|fermer' : '') +
+    (recogLang !== 'en' ? '|point|next|back|clear|close' : '');
   var grammar = '#JSGF V1.0; grammar numbers; public <number> = ' + allWords + ';';
   try {
     var gl = new (window.SpeechGrammarList || window.webkitSpeechGrammarList)();
@@ -8942,6 +8916,10 @@ function efStartMic(forceLang) {
 
     // Résultat intermédiaire : afficher + beep si valeur stable 500ms
     if (!result.isFinal) {
+      if (txt === 'suivant' || txt === 'next' || txt === 'avanti' || txt === 'weiter' || txt === 'siguiente' || txt === 'próximo' || txt === 'volgende' || txt === 'dalej' || txt === 'далее') { efNavExecuted = txt; efNext(); return; }
+      if (txt === 'retour'  || txt === 'back' || txt === 'précédent' || txt === 'indietro' || txt === 'zurück' || txt === 'atrás' || txt === 'voltar' || txt === 'terug' || txt === 'wstecz' || txt === 'назад') { efNavExecuted = txt; efBack(); return; }
+      if (txt === 'effacer' || txt === 'supprimer' || txt === 'clear' || txt === 'cancella' || txt === 'löschen' || txt === 'borrar' || txt === 'apagar' || txt === 'wissen' || txt === 'wyczyść' || txt === 'очистить') { efNavExecuted = txt; $id('ef-inp').value = ''; efUpdateKgf(); return; }
+      if (txt === 'fermer'  || txt === 'close'    || txt === 'chiudi' || txt === 'schließen' || txt === 'cerrar' || txt === 'fechar' || txt === 'sluiten' || txt === 'zamknij' || txt === 'закрыть') { efNavExecuted = txt; efClose(); return; }
       var numInterim = efVoiceToNumber(txt);
       if (numInterim) {
         efLastInterimNum = numInterim;
@@ -8975,9 +8953,10 @@ function efStartMic(forceLang) {
 
     // Résultat final : annuler les timers, commandes vocales + validation
     if (efBeepTimer)   { clearTimeout(efBeepTimer);   efBeepTimer = null; efBeeped = false; }
-    if (txt === 'suivant' || txt === 'next')                          { efNext(); return; }
-    if (txt === 'retour'  || txt === 'back' || txt === 'précédent')   { efBack(); return; }
-    if (txt === 'effacer' || txt === 'supprimer' || txt === 'clear')  { $id('ef-inp').value = ''; efUpdateKgf(); return; }
+    if (txt === 'suivant' || txt === 'next' || txt === 'avanti' || txt === 'weiter' || txt === 'siguiente' || txt === 'próximo' || txt === 'volgende' || txt === 'dalej' || txt === 'далее') { if (efNavExecuted !== txt) efNext(); efNavExecuted = null; return; }
+    if (txt === 'retour'  || txt === 'back' || txt === 'précédent' || txt === 'indietro' || txt === 'zurück' || txt === 'atrás' || txt === 'voltar' || txt === 'terug' || txt === 'wstecz' || txt === 'назад') { if (efNavExecuted !== txt) efBack(); efNavExecuted = null; return; }
+    if (txt === 'effacer' || txt === 'supprimer' || txt === 'clear' || txt === 'cancella' || txt === 'löschen' || txt === 'borrar' || txt === 'apagar' || txt === 'wissen' || txt === 'wyczyść' || txt === 'очистить') { if (efNavExecuted !== txt) { $id('ef-inp').value = ''; efUpdateKgf(); } efNavExecuted = null; return; }
+    if (txt === 'fermer'  || txt === 'close'    || txt === 'chiudi' || txt === 'schließen' || txt === 'cerrar' || txt === 'fechar' || txt === 'sluiten' || txt === 'zamknij' || txt === 'закрыть') { if (efNavExecuted !== txt) efClose(); efNavExecuted = null; return; }
     // Si l'auto-avance a déjà été déclenchée par le beep intermédiaire,
     // vérifier quand même si le résultat final diffère et corriger le step précédent
     if (efAutoAdvanced) {
@@ -9005,6 +8984,7 @@ function efStartMic(forceLang) {
       else return;
     }
     efLastInterimNum = null;
+    efNavExecuted = null;
     var inp = $id('ef-inp');
     inp.value = num;
     efUpdateKgf();
@@ -9179,19 +9159,7 @@ function efStopMic() {
 })();
 
 // ── Patch toggleCard ─────────────────────────────────────────────────────────
-(function() {
-  var _orig = window.toggleCard;
-  window.toggleCard = function(bodyId, chevronId) {
-    _orig(bodyId, chevronId);
-    if (bodyId === 'tm-input-card-body') {
-      var bar  = $id('easy-fill-bar');
-      var body = $id('tm-input-card-body');
-      var open = body && body.style.display !== 'none';
-      if (bar) bar.style.display = open ? 'flex' : 'none';
-      if (!open) { var btn=$id('easy-fill-toggle'); if(btn) btn.setAttribute('aria-checked','false'); }
-    }
-  };
-})();
+
 
 // ── Animation Play — Diagramme de tension ────────────────────────────────────
 (function() {
