@@ -8874,7 +8874,11 @@ function efStartMic(forceLang) {
       : 'Speech recognition not supported in this browser.');
     return;
   }
-  if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
+  if (efMicRecog) {
+    try { efMicRecog.stop(); } catch(e) {}
+    try { efMicRecog.abort(); } catch(e) {}
+    efMicRecog = null;
+  }
   efRestartCount = 0; // nouvelle session propre — évite un faux dépassement de seuil
   var r = new SR();
   r.lang = forceLang || efGetRecogLang();
@@ -9097,12 +9101,15 @@ function efStartMic(forceLang) {
       }
     }, delay);
   };
+  // Allumer le bouton uniquement quand Safari confirme que le micro est ouvert.
+  r.onstart = function() {
+    efSetMicActive(true);
+    efRequestWakeLock();
+    efSaveState();
+  };
   efMicRecog = r;
   if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  efSaveState();
   r.start();
-  efSetMicActive(true);
-  efRequestWakeLock();
 }
 
 function efBeep() {
