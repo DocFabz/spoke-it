@@ -8879,6 +8879,7 @@ function efStartMic(forceLang) {
     return;
   }
   if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
+  efRestartCount = 0; // nouvelle session propre — évite un faux dépassement de seuil
   var r = new SR();
   r.lang = forceLang || efGetRecogLang();
   r.continuous     = true;
