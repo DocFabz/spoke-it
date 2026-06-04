@@ -8668,7 +8668,9 @@ function efRestoreState() {
     efOpen();
     efCurrent = state.current;
     efRenderStep();
-    efStartMic();
+    // Ne pas appeler efStartMic() ici — on est au DOMContentLoaded, sans geste
+    // utilisateur. Sur iOS, Safari refuse d'ouvrir le micro sans interaction.
+    // L'utilisateur appuie sur le bouton micro pour relancer.
   } catch(e) {}
 }
 
@@ -9192,6 +9194,7 @@ function efStopMic() {
   efNavExecuted    = null;
   if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
   if (efAudioCtx)  { efAudioCtx.close(); efAudioCtx = null; }
+  try { sessionStorage.removeItem('ef_restore'); } catch(e) {}
   efSetMicActive(false);
   efReleaseWakeLock();
 }
