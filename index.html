@@ -490,9 +490,9 @@ select option             { background:#161b27 }
 #tension-forte-field label .tension-dot, #tension-faible-field label .tension-dot { margin-top:.13em }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
-.btn           { width:100%; padding:.7rem 1.5rem; background:transparent; border:1.5px solid rgba(126,200,227,.45); border-radius:8px; color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:all .22s; display:flex; align-items:center; justify-content:center; gap:.5rem }
-.btn:active    { opacity:.8 }
-.btn.ready     { border-color:rgba(126,200,227,.65); color:var(--accent2); background:rgba(126,200,227,.13); box-shadow:inset 0 1px 0 rgba(126,200,227,.12); transition:all .25s }
+.btn           { width:100%; padding:1.1rem 1.5rem; background:rgba(126,200,227,.07); border:1.5px solid rgba(126,200,227,.3); border-radius:8px; color:var(--accent); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:all .22s; display:flex; align-items:center; justify-content:center; gap:.5rem }
+.btn:active    { background:rgba(126,200,227,.18); transform:scale(.97) }
+.btn.ready     { border-color:rgba(126,200,227,.55); color:var(--accent); background:rgba(126,200,227,.13); box-shadow:inset 0 1px 0 rgba(126,200,227,.12); transition:all .25s }
 .btn-row       { display:block }
 
 /* ── Error ─────────────────────────────────────────────────────────────────── */
@@ -8314,14 +8314,15 @@ function efClose() {
   efHideNumpad();
   efSetBtMode(false);
   document.body.style.overflow = '';
-  // Ouvrir le diagramme AVANT le rendu (canvas doit être visible pour se dessiner)
-  var rcBody = $id('tm-result-card-body');
-  var rcChev = $id('tm-result-card-chevron');
-  if (rcBody) rcBody.style.display = 'block';
-  if (rcChev) rcChev.style.transform = 'rotate(180deg)';
-  // Puis rendre
-  tmTryRenderRadar();
-  tmUpdateResultCardState();
+  // Ouvrir le diagramme uniquement si au moins une valeur a été saisie
+  if (tmHasData()) {
+    var rcBody = $id('tm-result-card-body');
+    var rcChev = $id('tm-result-card-chevron');
+    if (rcBody) rcBody.style.display = 'block';
+    if (rcChev) rcChev.style.transform = 'rotate(180deg)';
+    tmTryRenderRadar();
+    tmUpdateResultCardState();
+  }
 }
 
 function efRenderStep() {
