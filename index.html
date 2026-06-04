@@ -1054,6 +1054,13 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ef-kgf-preview.has-val.fo { color:var(--warm) }
 .ef-kgf-preview.has-val.fa { color:var(--accent) }
 
+.ef-prev-kgf {
+  font-family:'DM Mono',monospace; font-size:.6rem; font-weight:300;
+  color:var(--text3); min-height:.9rem; text-align:center;
+  opacity:.6; transition:opacity .2s;
+}
+.ef-prev-kgf.has-val { opacity:1 }
+
 .ef-btn-row { display:flex; gap:.5rem; align-items:center; justify-content:center; margin-top:.85rem }
 .ef-back-btn {
   flex:1; background:transparent; border:1px solid var(--border-s);
@@ -8173,6 +8180,8 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
       <div class="ef-kgf-preview" id="ef-kgf-preview"></div>
     </div>
 
+    <div class="ef-prev-kgf" id="ef-prev-kgf"></div>
+
     <div class="ef-btn-row">
       <button class="ef-back-btn" id="ef-back-btn" ontouchstart="efBack();event.preventDefault()" onclick="efBack()" disabled>
         <span id="ef-back-label">←</span>
@@ -8314,6 +8323,9 @@ function efClose() {
   document.body.style.overflow = '';
   var btn = $id('easy-fill-toggle');
   if (btn) btn.setAttribute('aria-checked', 'false');
+  // Rendu radar différé à la fermeture (évite un rendu par rayon pendant la saisie)
+  tmTryRenderRadar();
+  tmUpdateResultCardState();
 }
 
 function efToggle() {
@@ -8355,6 +8367,7 @@ function efRenderStep() {
   var nextBtn = $id('ef-next-btn');
   nextBtn.textContent = t('efNext');
   nextBtn.classList.remove('done');
+  efUpdatePrevKgf();
 }
 
 function efUpdateKgf() {
@@ -8367,6 +8380,19 @@ function efUpdateKgf() {
   var kgf = toKgf(parsed);
   if (kgf !== null) { prev.textContent = kgf + ' kgf'; prev.className = 'ef-kgf-preview has-val ' + side; }
   else              { prev.textContent = ''; prev.className = 'ef-kgf-preview'; }
+}
+
+function efUpdatePrevKgf() {
+  var el = $id('ef-prev-kgf');
+  if (!el) return;
+  if (efCurrent === 0) { el.textContent = ''; el.className = 'ef-prev-kgf'; return; }
+  var prevStep = efSteps[efCurrent - 1];
+  var stored = prevStep.side === 'fo' ? tmData.fo[prevStep.idx] : tmData.fa[prevStep.idx];
+  if (stored === null) { el.textContent = ''; el.className = 'ef-prev-kgf'; return; }
+  var kgf = toKgf(stored);
+  var label = efShortLabel(prevStep.side) + ' ' + t('efSpoke') + ' ' + (prevStep.idx + 1);
+  el.textContent = kgf !== null ? label + ' — ' + kgf + ' kgf' : '';
+  el.className = kgf !== null ? 'ef-prev-kgf has-val' : 'ef-prev-kgf';
 }
 
 // Retourne true si valide (ou vide), false si hors plage
@@ -8417,8 +8443,6 @@ function efCommitCurrent() {
   inp.value = tmDisplayValue(parsed);
   efSyncTableCell(step);
   tmUpdateCell(step.idx, step.side);
-  tmTryRenderRadar();
-  tmUpdateResultCardState();
   snapRefreshBtn();
   tmUpdateInvertibleHeaders();
   return true;
@@ -8632,10 +8656,11 @@ var efAudioCtx       = null;
 var efPendingNext    = false; // true = valeur validée, avance en cours, ignorer les résultats suivants
 var efBeepTimer      = null;  // debounce 500ms pour beep sur valeur stable
 var efBeeped         = false; // true = beep déjà émis par le timer sur cette valeur
+var efAutoAdvanced   = false; // true = auto-avance déjà déclenchée par le beep intermédiaire
 var efLastInterimNum = null;  // dernier nombre intermédiaire valide (fallback isFinal)
 var efRestartCount   = 0;     // pb1/2 : compteur de tentatives de redémarrage consécutives
 var efPendingQueue   = null;  // pb3  : valeur reçue pendant efPendingNext (ne pas jeter)
-var efKgfDebounce    = null;  // pb4  : timer debounce pour efUpdateKgf sur résultats interim
+
 
 function efSaveState() {
   try {
@@ -8915,36 +8940,63 @@ function efStartMic(forceLang) {
       return;
     }
 
-    // Résultat intermédiaire : afficher + beep si valeur stable 600ms
+    // Résultat intermédiaire : afficher + beep si valeur stable 500ms
     if (!result.isFinal) {
       var numInterim = efVoiceToNumber(txt);
       if (numInterim) {
         efLastInterimNum = numInterim;
-        var inp = $id('ef-inp');
-        inp.value = numInterim;
-        // pb4 : debounce 100ms pour ne pas recalculer à chaque syllabe
-        if (efKgfDebounce) { clearTimeout(efKgfDebounce); }
-        efKgfDebounce = setTimeout(function() { efKgfDebounce = null; efUpdateKgf(); }, 100);
         if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
         efBeeped = false;
+        efAutoAdvanced = false;
         var parsedInterim = tmParseInput(numInterim);
         if (parsedInterim !== null && toKgf(parsedInterim) !== null) {
           efBeepTimer = setTimeout(function() {
             efBeepTimer = null;
             efBeeped = true;
+            efAutoAdvanced = true;
+            var inp = $id('ef-inp');
+            inp.value = numInterim;
+            efUpdateKgf();
             efBeep();
+            // Auto-avance dès la valeur stabilisée, sans attendre le résultat final
+            efPendingNext = true;
+            setTimeout(function() {
+              if (!efMicActive) return;
+              var ok = efNext();
+              if (ok) { efBeepNext(); }
+              efBeeped = false;
+              efPendingNext = false;
+            }, 200);
           }, 500);
         }
       }
       return;
     }
 
-    // Résultat final : annuler les timers debounce, commandes vocales + validation
-    if (efKgfDebounce) { clearTimeout(efKgfDebounce); efKgfDebounce = null; }
-    if (efBeepTimer)   { clearTimeout(efBeepTimer);   efBeepTimer = null; }
+    // Résultat final : annuler les timers, commandes vocales + validation
+    if (efBeepTimer)   { clearTimeout(efBeepTimer);   efBeepTimer = null; efBeeped = false; }
     if (txt === 'suivant' || txt === 'next')                          { efNext(); return; }
     if (txt === 'retour'  || txt === 'back' || txt === 'précédent')   { efBack(); return; }
     if (txt === 'effacer' || txt === 'supprimer' || txt === 'clear')  { $id('ef-inp').value = ''; efUpdateKgf(); return; }
+    // Si l'auto-avance a déjà été déclenchée par le beep intermédiaire,
+    // vérifier quand même si le résultat final diffère et corriger le step précédent
+    if (efAutoAdvanced) {
+      efAutoAdvanced = false;
+      var numFinal = efVoiceToNumber(txt);
+      if (numFinal && numFinal !== efLastInterimNum && efCurrent > 0) {
+        // Corriger la valeur du step précédent
+        var prevStep = efSteps[efCurrent - 1];
+        var prevParsed = tmParseInput(numFinal);
+        if (prevParsed !== null && tmInRange(prevParsed)) {
+          if (prevStep.side === 'fo') tmData.fo[prevStep.idx] = prevParsed;
+          else                        tmData.fa[prevStep.idx] = prevParsed;
+          efSyncTableCell(prevStep);
+          tmUpdateCell(prevStep.idx, prevStep.side);
+        }
+      }
+      efLastInterimNum = null;
+      return;
+    }
     var num = efVoiceToNumber(txt);
     // Si le transcript final ne donne rien, utiliser le dernier résultat
     // intermédiaire valide (plus fiable que le contenu du champ).
@@ -8968,12 +9020,8 @@ function efStartMic(forceLang) {
         }
         var ok = efNext();
         if (ok) {
-          if (!efBeeped) {
-            efBeep();
-            setTimeout(efBeepNext, 280);
-          } else {
-            efBeepNext();
-          }
+          efBeep();
+          setTimeout(efBeepNext, 280);
         }
         efBeeped = false;
         efPendingNext = false;
@@ -9109,7 +9157,6 @@ function efStopMic() {
   if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
   efRestartCount = 0;
   efPendingQueue = null;
-  if (efKgfDebounce) { clearTimeout(efKgfDebounce); efKgfDebounce = null; }
   efSetMicActive(false);
   efReleaseWakeLock();
 }
