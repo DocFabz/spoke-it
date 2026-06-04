@@ -8272,6 +8272,9 @@ function efOpen() {
   document.body.style.overflow = 'hidden';
   efRenderStep();
   efShowNumpad(isTouch);
+  // Préchauffage SR à l'ouverture (première ouverture uniquement, ou si pas encore chaud).
+  // Après fermeture, efClose() recycle l'instance SR active → efWarmInstance déjà prête.
+  efWarmSR();
 }
 
 // Ordonne les boutons du sélecteur : NDS | DS | NDS+DS
@@ -8309,7 +8312,20 @@ function efSwitchSide(mode) {
 }
 
 function efClose() {
+  // Sur desktop : préchauffer une nouvelle instance SR après que l'abort() soit
+  // complètement terminé (onend), pour éviter la collision device audio qui génère
+  // la latence au tap suivant.
+  var hadMic = !efIsIOS() && !!efMicRecog;
+  var dyingRecog = hadMic ? efMicRecog : null;
+  if (efWarmInstance) { try { efWarmInstance.abort(); } catch(e) {} efWarmInstance = null; }
   efStopMic();
+  if (hadMic && dyingRecog) {
+    dyingRecog.onend = function() {
+      dyingRecog.onend = null;
+      // Device vraiment libéré : préchauffer maintenant
+      setTimeout(efWarmSR, 50);
+    };
+  }
   $id('ef-overlay').classList.remove('show');
   efHideNumpad();
   efSetBtMode(false);
@@ -8638,6 +8654,7 @@ var efMicActive      = false;
 var efMicRecog       = null;
 var efWakeLock       = null;
 var efAudioCtx       = null;
+var efWarmInstance   = null;  // instance SR préchauffée à efOpen() pour tap quasi-instantané sur desktop
 var efPendingNext    = false; // true = valeur validée, avance en cours, ignorer les résultats suivants
 var efBeepTimer      = null;  // debounce 500ms pour beep sur valeur stable
 var efAutoAdvanced   = false; // true = auto-avance déjà déclenchée par le beep intermédiaire
@@ -8872,6 +8889,22 @@ function efPickMicLang(choice) {
   }
 }
 
+// Préchauffage SR (desktop uniquement) : crée l'objet SpeechRecognition à l'ouverture
+// de la modale EasyFill. Sur desktop Chrome/Edge, new SR() déclenche une négociation
+// getUserMedia à froid (~400-800ms). En préchauffant ici, le tap micro devient instantané.
+function efWarmSR() {
+  if (efIsIOS()) return;
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR || efWarmInstance) return;
+  try {
+    var r = new SR();
+    r.lang           = efGetRecogLang();
+    r.continuous     = true;
+    r.interimResults = true;
+    efWarmInstance   = r;
+  } catch(e) {}
+}
+
 function efStartMic(forceLang) {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
@@ -8882,9 +8915,16 @@ function efStartMic(forceLang) {
   }
   if (efMicRecog) { var _r = efMicRecog; efMicRecog = null; try { _r.abort(); } catch(e) {} }
   efRestartCount = 0;
-  var r = new SR();
-  r.lang = forceLang || efGetRecogLang();
-  r.continuous     = true;
+  // Consommer l'instance préchauffée si disponible (desktop, pas de forceLang, pas iOS)
+  var r;
+  if (!efIsIOS() && !forceLang && efWarmInstance) {
+    r = efWarmInstance;
+    efWarmInstance = null;
+  } else {
+    r = new SR();
+    r.lang = forceLang || efGetRecogLang();
+    r.continuous     = true;
+  }
   // Grammaire JSGF construite dynamiquement selon la langue active.
   // Inclut les chiffres arabes (universels), les mots-nombres et commandes
   // dans la langue du moteur → confiance correcte quelle que soit la langue.
