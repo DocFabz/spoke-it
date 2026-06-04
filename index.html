@@ -9085,14 +9085,12 @@ function efStartMic(forceLang) {
       }
     }, delay);
   };
-  r.onstart = function() {
-    efSetMicActive(true);
-    efRequestWakeLock();
-    efSaveState();
-  };
   efMicRecog = r;
   if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
   r.start();
+  efSetMicActive(true);
+  efRequestWakeLock();
+  efSaveState();
 }
 
 function efBeep() {
