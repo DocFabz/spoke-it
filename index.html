@@ -8874,11 +8874,7 @@ function efStartMic(forceLang) {
       : 'Speech recognition not supported in this browser.');
     return;
   }
-  if (efMicRecog) {
-    try { efMicRecog.stop(); } catch(e) {}
-    try { efMicRecog.abort(); } catch(e) {}
-    efMicRecog = null;
-  }
+  if (efMicRecog) { var _r = efMicRecog; efMicRecog = null; try { _r.abort(); } catch(e) {} }
   efRestartCount = 0; // nouvelle session propre — évite un faux dépassement de seuil
   var r = new SR();
   r.lang = forceLang || efGetRecogLang();
