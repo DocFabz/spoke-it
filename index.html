@@ -8922,6 +8922,7 @@ function efStartMic(forceLang) {
   } catch(e) {}
   r.interimResults = true;
   r.onresult = function(e) {
+    efRestartCount = 0; // un résultat reçu = micro opérationnel
     var result = e.results[e.results.length - 1];
     var txt = result[0].transcript.trim().toLowerCase();
 
@@ -9048,11 +9049,22 @@ function efStartMic(forceLang) {
     // IMPORTANT : Safari ne peut pas appeler .start() sur un objet déjà utilisé,
     // il faut obligatoirement recréer une instance fraîche via efStartMic().
     if (efIsIOS()) {
+      efRestartCount++;
+      if (efRestartCount > 5) {
+        // Trop de redémarrages rapides consécutifs → abandon (micro non dispo)
+        efRestartCount = 0;
+        efSetMicActive(false);
+        efReleaseWakeLock();
+        return;
+      }
+      // Délai croissant pour laisser Safari libérer le micro entre deux sessions
+      var iosDelay = efRestartCount <= 1 ? 150 : 300;
       setTimeout(function() {
         if (r !== efMicRecog || !efMicActive) return;
         efMicRecog = null;
+        efRestartCount = 0;
         efStartMic(r.lang !== efGetRecogLang() ? r.lang : undefined);
-      }, 80);
+      }, iosDelay);
       return;
     }
 
@@ -9194,12 +9206,31 @@ function efStopMic() {
     efRestoreState();
   });
 
-  // iOS : à la mise en veille, le moteur vocal est déjà coupé par le système.
-  // On remet juste efMicActive à false pour qu'à la sortie de veille,
-  // un seul appui sur le bouton relance tout (micro + AudioContext sur geste).
+  // iOS : à la mise en veille, le moteur vocal est coupé par le système.
+  // On nettoie proprement l'instance (évite un objet zombi) et on remet
+  // efMicActive à false.
+  // Au retour au premier plan, si la modale EasyFill est toujours ouverte,
+  // on relance le micro automatiquement après un court délai (laisser iOS
+  // libérer la ressource audio avant de recréer une instance).
   document.addEventListener('visibilitychange', function() {
-    if (document.visibilityState === 'hidden' && efMicActive) {
-      efSetMicActive(false);
+    if (document.visibilityState === 'hidden') {
+      if (efMicActive) {
+        efSetMicActive(false);
+      }
+      // Tuer l'instance existante pour ne pas laisser un objet zombi
+      if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
+      efRestartCount = 0;
+    } else if (document.visibilityState === 'visible' && efIsIOS()) {
+      // Retour au premier plan : si la modale EasyFill est ouverte,
+      // relancer le micro automatiquement (le micro système s'est déjà réveillé).
+      var overlay = document.getElementById('ef-overlay');
+      if (overlay && overlay.classList.contains('show')) {
+        setTimeout(function() {
+          if (!efMicActive) {
+            efStartMic();
+          }
+        }, 400);
+      }
     }
   });
 })();
