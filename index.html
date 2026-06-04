@@ -9066,14 +9066,21 @@ function efStartMic(forceLang) {
         efReleaseWakeLock();
         return;
       }
-      // Délai croissant pour laisser Safari libérer le micro entre deux sessions
-      var iosDelay = efRestartCount <= 1 ? 150 : 300;
+      // Sur iOS/iPadOS, on réutilise l'instance existante avec .start()
+      // plutôt que d'en recréer une nouvelle — recréer une instance fait
+      // clignoter l'icône micro système à chaque cycle de 2-3s.
       setTimeout(function() {
-        if (r !== efMicRecog || !efMicActive) {  return; }
-        efMicRecog = null;
-        efRestartCount = 0;
-        efStartMic(r.lang !== efGetRecogLang() ? r.lang : undefined);
-      }, iosDelay);
+        if (r !== efMicRecog || !efMicActive) return;
+        try {
+          efMicRecog.start();
+          efRestartCount = 0;
+        } catch(err) {
+          // L'instance est vraiment morte — recréer en dernier recours
+          efMicRecog = null;
+          efRestartCount = 0;
+          efStartMic(r.lang !== efGetRecogLang() ? r.lang : undefined);
+        }
+      }, 150);
       return;
     }
 
