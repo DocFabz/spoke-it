@@ -9030,20 +9030,25 @@ function efStartMic(forceLang) {
   };
   r.onerror = function(e) {
     if (e.error === 'not-allowed') {
+      // Permission refusée : abandon définitif
       efRestartCount = 0;
       efSetMicActive(false);
       var btn = $id('ef-mic-btn');
       if (btn) btn.style.display = 'none';
-    } else if (e.error !== 'aborted') {
-      // erreur réseau/audio — onend va suivre et tenter le redémarrage avec backoff
-      efRestartCount = 0; // laisser onend gérer les tentatives
-      efSetMicActive(false);
+    } else if (e.error === 'aborted') {
+      // Abort volontaire (efStopMic) : ne rien faire
+    } else {
+      // Erreur transitoire iOS (audio-capture, service-not-allowed, network…)
+      // Sur iOS après relance d'app, Safari émet souvent une erreur la 1ère fois
+      // même si la permission est accordée (moteur audio pas encore prêt).
+      // On NE coupe PAS efMicActive ici — onend va suivre et relancer proprement.
+      efRestartCount = 0;
     }
   };
   r.onend = function() {
     // si cette instance n'est plus la courante, ne pas relancer
-    if (r !== efMicRecog) return;
-    if (!efMicActive) return;
+    if (r !== efMicRecog) {  return; }
+    if (!efMicActive) {  return; }
 
     // iOS : continuous=true est ignoré par Safari, onend se déclenche normalement
     // toutes les 2-3s sans erreur réelle → on redémarre toujours sans compter.
@@ -9061,7 +9066,7 @@ function efStartMic(forceLang) {
       // Délai croissant pour laisser Safari libérer le micro entre deux sessions
       var iosDelay = efRestartCount <= 1 ? 150 : 300;
       setTimeout(function() {
-        if (r !== efMicRecog || !efMicActive) return;
+        if (r !== efMicRecog || !efMicActive) {  return; }
         efMicRecog = null;
         efRestartCount = 0;
         efStartMic(r.lang !== efGetRecogLang() ? r.lang : undefined);
