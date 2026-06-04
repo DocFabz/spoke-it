@@ -8672,11 +8672,6 @@ function efRestoreState() {
   } catch(e) {}
 }
 
-function efIsIPad() {
-  return /iPad/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-}
-
 // Détecte tout appareil iOS (iPhone + iPad) — Safari ne supporte pas continuous=true,
 // onend se déclenche normalement toutes les 2-3s sans qu'il y ait d'erreur réelle.
 function efIsIOS() {
