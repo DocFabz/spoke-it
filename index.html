@@ -8686,7 +8686,6 @@ function efIsIOS() {
 
 async function efRequestWakeLock() {
   if (!('wakeLock' in navigator)) return;
-  if (efIsIPad()) return;
   try { efWakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
 }
 
