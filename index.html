@@ -8811,14 +8811,22 @@ function efToggleMic() {
   var now = Date.now();
   if (now - efToggleMicLast < 300) return;
   efToggleMicLast = now;
-  // Créer/reprendre l'AudioContext sur geste utilisateur (requis sur iOS).
-  // resume() est async : attendre qu'il soit running avant de lancer le micro,
-  // sinon sur iOS au retour d'arrière-plan r.start() démarre sans écoute réelle.
-  if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  // Sur iOS : si l'AudioContext est suspended (retour d'arrière-plan), le fermer
+  // et en recréer un neuf — reproduit exactement l'état de la première session.
+  // resume() seul ne suffit pas sur iPad : le pipeline audio reste dans un état
+  // partiel qui rend SR sourde silencieusement.
   var _doToggle = function() {
     if (efMicActive) { efStopMic(); } else { efOpenMicLangModal(); }
   };
-  if (efAudioCtx.state === 'suspended') {
+  if (!efAudioCtx) {
+    efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    _doToggle();
+  } else if (efIsIOS() && efAudioCtx.state === 'suspended') {
+    // Forcer un contexte frais comme la première session
+    try { efAudioCtx.close(); } catch(e) {}
+    efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    _doToggle();
+  } else if (efAudioCtx.state === 'suspended') {
     efAudioCtx.resume().then(_doToggle).catch(_doToggle);
   } else {
     _doToggle();
@@ -9134,10 +9142,13 @@ function efStartMic(forceLang, isIOSRestart) {
   };
   efMicRecog = r;
   if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  // S'assurer que l'AudioContext est running avant r.start() — sur iOS au retour
-  // d'arrière-plan il peut être suspended, ce qui rend le micro sourd silencieusement.
+  // Sur iOS : recréer l'AudioContext s'il est suspended → contexte frais garanti.
+  if (efIsIOS() && efAudioCtx.state === 'suspended') {
+    try { efAudioCtx.close(); } catch(e) {}
+    efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
   var _startNow = function() {
-    if (r !== efMicRecog) return; // instance invalidée entre-temps
+    if (r !== efMicRecog) return;
     r.start();
     if (!isIOSRestart) {
       efSetMicActive(true);
