@@ -9050,8 +9050,8 @@ function efStartMic(forceLang) {
   };
   r.onend = function() {
     // si cette instance n'est plus la courante, ne pas relancer
-    if (r !== efMicRecog) {  return; }
-    if (!efMicActive) {  return; }
+    if (r !== efMicRecog) return;
+    if (!efMicActive) return;
 
     // iOS : continuous=true est ignoré par Safari, onend se déclenche normalement
     // toutes les 2-3s sans erreur réelle → on redémarre toujours sans compter.
@@ -9222,30 +9222,17 @@ function efStopMic() {
     efRestoreState();
   });
 
-  // iOS : à la mise en veille, le moteur vocal est coupé par le système.
-  // On nettoie proprement l'instance (évite un objet zombi) et on remet
-  // efMicActive à false.
-  // Au retour au premier plan, si la modale EasyFill est toujours ouverte,
-  // on relance le micro automatiquement après un court délai (laisser iOS
-  // libérer la ressource audio avant de recréer une instance).
+  // iOS : mise en veille → nettoyer l'instance et l'état.
+  // Retour au premier plan → relancer le micro si la modale est ouverte.
   document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'hidden') {
-      if (efMicActive) {
-        efSetMicActive(false);
-      }
-      // Tuer l'instance existante pour ne pas laisser un objet zombi
+      if (efMicActive) efSetMicActive(false);
       if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
       efRestartCount = 0;
     } else if (document.visibilityState === 'visible' && efIsIOS()) {
-      // Retour au premier plan : si la modale EasyFill est ouverte,
-      // relancer le micro automatiquement (le micro système s'est déjà réveillé).
       var overlay = document.getElementById('ef-overlay');
       if (overlay && overlay.classList.contains('show')) {
-        setTimeout(function() {
-          if (!efMicActive) {
-            efStartMic();
-          }
-        }, 400);
+        setTimeout(function() { if (!efMicActive) efStartMic(); }, 400);
       }
     }
   });
