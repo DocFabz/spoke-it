@@ -8640,7 +8640,6 @@ var efWakeLock       = null;
 var efAudioCtx       = null;
 var efPendingNext    = false; // true = valeur validée, avance en cours, ignorer les résultats suivants
 var efBeepTimer      = null;  // debounce 500ms pour beep sur valeur stable
-var efBeeped         = false; // true = beep déjà émis par le timer sur cette valeur
 var efAutoAdvanced   = false; // true = auto-avance déjà déclenchée par le beep intermédiaire
 var efLastInterimNum = null;  // dernier nombre intermédiaire valide (fallback isFinal)
 var efRestartCount   = 0;     // pb1/2 : compteur de tentatives de redémarrage consécutives
@@ -8937,21 +8936,21 @@ function efStartMic(forceLang) {
 
     // Résultat intermédiaire : afficher + beep si valeur stable 500ms
     if (!result.isFinal) {
-      if (txt === 'suivant' || txt === 'next' || txt === 'avanti' || txt === 'weiter' || txt === 'siguiente' || txt === 'próximo' || txt === 'volgende' || txt === 'dalej' || txt === 'далее') { efNavExecuted = txt; efNext(); return; }
-      if (txt === 'retour'  || txt === 'back' || txt === 'précédent' || txt === 'indietro' || txt === 'zurück' || txt === 'atrás' || txt === 'voltar' || txt === 'terug' || txt === 'wstecz' || txt === 'назад') { efNavExecuted = txt; efBack(); return; }
-      if (txt === 'effacer' || txt === 'supprimer' || txt === 'clear' || txt === 'cancella' || txt === 'löschen' || txt === 'borrar' || txt === 'apagar' || txt === 'wissen' || txt === 'wyczyść' || txt === 'очистить') { efNavExecuted = txt; $id('ef-inp').value = ''; efUpdateKgf(); return; }
-      if (txt === 'fermer'  || txt === 'close'    || txt === 'chiudi' || txt === 'schließen' || txt === 'cerrar' || txt === 'fechar' || txt === 'sluiten' || txt === 'zamknij' || txt === 'закрыть') { efNavExecuted = txt; efClose(); return; }
+      // Commandes nav : includes() pour réagir dès que le mot apparaît dans le transcript partiel
+      if (['suivant','next','avanti','weiter','siguiente','próximo','volgende','dalej','далее'].some(function(w){return txt.includes(w);}))             { efNavExecuted = 'next';  efNext(); return; }
+      if (['retour','back','précédent','indietro','zurück','atrás','voltar','terug','wstecz','назад'].some(function(w){return txt.includes(w);}))       { efNavExecuted = 'back';  efBack(); return; }
+      if (['effacer','supprimer','clear','cancella','löschen','borrar','apagar','wissen','wyczyść','очистить'].some(function(w){return txt.includes(w);})) { efNavExecuted = 'clear'; $id('ef-inp').value = ''; efUpdateKgf(); return; }
+      if (['reset','réinitialiser','ricomincia','zurücksetzen','reiniciar','recomeçar','opnieuw','resetuj','сброс'].some(function(w){return txt.includes(w);})) { efNavExecuted = 'reset'; efReset(); return; }
+      if (['fermer','close','chiudi','schließen','cerrar','fechar','sluiten','zamknij','закрыть'].some(function(w){return txt.includes(w);}))           { efNavExecuted = 'close'; efClose(); return; }
       var numInterim = efVoiceToNumber(txt);
       if (numInterim) {
         efLastInterimNum = numInterim;
         if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
-        efBeeped = false;
         efAutoAdvanced = false;
         var parsedInterim = tmParseInput(numInterim);
         if (parsedInterim !== null && toKgf(parsedInterim) !== null) {
           efBeepTimer = setTimeout(function() {
             efBeepTimer = null;
-            efBeeped = true;
             efAutoAdvanced = true;
             var inp = $id('ef-inp');
             inp.value = numInterim;
@@ -8963,8 +8962,7 @@ function efStartMic(forceLang) {
               if (!efMicActive) return;
               var ok = efNext();
               if (ok) { efBeepNext(); }
-              efBeeped = false;
-              efPendingNext = false;
+                    efPendingNext = false;
             }, 200);
           }, 500);
         }
@@ -8973,11 +8971,12 @@ function efStartMic(forceLang) {
     }
 
     // Résultat final : annuler les timers, commandes vocales + validation
-    if (efBeepTimer)   { clearTimeout(efBeepTimer);   efBeepTimer = null; efBeeped = false; }
-    if (txt === 'suivant' || txt === 'next' || txt === 'avanti' || txt === 'weiter' || txt === 'siguiente' || txt === 'próximo' || txt === 'volgende' || txt === 'dalej' || txt === 'далее') { if (efNavExecuted !== txt) efNext(); efNavExecuted = null; return; }
-    if (txt === 'retour'  || txt === 'back' || txt === 'précédent' || txt === 'indietro' || txt === 'zurück' || txt === 'atrás' || txt === 'voltar' || txt === 'terug' || txt === 'wstecz' || txt === 'назад') { if (efNavExecuted !== txt) efBack(); efNavExecuted = null; return; }
-    if (txt === 'effacer' || txt === 'supprimer' || txt === 'clear' || txt === 'cancella' || txt === 'löschen' || txt === 'borrar' || txt === 'apagar' || txt === 'wissen' || txt === 'wyczyść' || txt === 'очистить') { if (efNavExecuted !== txt) { $id('ef-inp').value = ''; efUpdateKgf(); } efNavExecuted = null; return; }
-    if (txt === 'fermer'  || txt === 'close'    || txt === 'chiudi' || txt === 'schließen' || txt === 'cerrar' || txt === 'fechar' || txt === 'sluiten' || txt === 'zamknij' || txt === 'закрыть') { if (efNavExecuted !== txt) efClose(); efNavExecuted = null; return; }
+    if (efBeepTimer)   { clearTimeout(efBeepTimer);   efBeepTimer = null; }
+    if (['suivant','next','avanti','weiter','siguiente','próximo','volgende','dalej','далее'].some(function(w){return txt.includes(w);}))             { if (efNavExecuted !== 'next')  efNext(); efNavExecuted = null; return; }
+    if (['retour','back','précédent','indietro','zurück','atrás','voltar','terug','wstecz','назад'].some(function(w){return txt.includes(w);}))       { if (efNavExecuted !== 'back')  efBack(); efNavExecuted = null; return; }
+    if (['effacer','supprimer','clear','cancella','löschen','borrar','apagar','wissen','wyczyść','очистить'].some(function(w){return txt.includes(w);})) { if (efNavExecuted !== 'clear') { $id('ef-inp').value = ''; efUpdateKgf(); } efNavExecuted = null; return; }
+    if (['reset','réinitialiser','ricomincia','zurücksetzen','reiniciar','recomeçar','opnieuw','resetuj','сброс'].some(function(w){return txt.includes(w);})) { if (efNavExecuted !== 'reset') efReset(); efNavExecuted = null; return; }
+    if (['fermer','close','chiudi','schließen','cerrar','fechar','sluiten','zamknij','закрыть'].some(function(w){return txt.includes(w);}))           { if (efNavExecuted !== 'close') efClose(); efNavExecuted = null; return; }
     // Si l'auto-avance a déjà été déclenchée par le beep intermédiaire,
     // vérifier quand même si le résultat final diffère et corriger le step précédent
     if (efAutoAdvanced) {
@@ -9024,7 +9023,6 @@ function efStartMic(forceLang) {
           efBeep();
           setTimeout(efBeepNext, 280);
         }
-        efBeeped = false;
         efPendingNext = false;
       }
     }, 0);
@@ -9160,12 +9158,19 @@ function efBeepNext() {
   } catch(e) {}
 }
 
+function efReset() {
+  tmResetData();
+  tmBuildTable();
+  efCurrent = 0;
+  efRenderStep();
+  efBeepError(); // bip grave pour confirmer le reset
+}
+
 function efStopMic() {
   if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
   efRestartCount   = 0;
   efPendingQueue   = null;
   efPendingNext    = false;
-  efBeeped         = false;
   efAutoAdvanced   = false;
   efLastInterimNum = null;
   efNavExecuted    = null;
