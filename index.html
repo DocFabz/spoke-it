@@ -8679,6 +8679,14 @@ function efIsIOS() {
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
+// Détecte spécifiquement iPad — Safari iPad refuse le relancement automatique
+// de SpeechRecognition dans visibilitychange (corrompt efMicActive sans démarrer).
+function efIsIPad() {
+  return /iPad/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 &&
+     !/iPhone|iPod/.test(navigator.userAgent));
+}
+
 async function efRequestWakeLock() {
   if (!('wakeLock' in navigator)) return;
   try { efWakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
@@ -9193,7 +9201,7 @@ function efStopMic() {
   document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'hidden') {
       efStopMic();
-    } else if (document.visibilityState === 'visible' && efIsIOS()) {
+    } else if (document.visibilityState === 'visible' && efIsIOS() && !efIsIPad()) {
       var overlay = document.getElementById('ef-overlay');
       if (overlay && overlay.classList.contains('show')) {
         setTimeout(function() { if (!efMicActive) efStartMic(); }, 100);
