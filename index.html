@@ -9159,8 +9159,14 @@ function efBeepNext() {
 
 function efStopMic() {
   if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
-  efRestartCount = 0;
-  efPendingQueue = null;
+  efRestartCount   = 0;
+  efPendingQueue   = null;
+  efPendingNext    = false;
+  efBeeped         = false;
+  efAutoAdvanced   = false;
+  efLastInterimNum = null;
+  efNavExecuted    = null;
+  if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
   efSetMicActive(false);
   efReleaseWakeLock();
 }
