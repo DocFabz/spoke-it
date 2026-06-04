@@ -9134,11 +9134,21 @@ function efStartMic(forceLang, isIOSRestart) {
   };
   efMicRecog = r;
   if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  r.start();
-  if (!isIOSRestart) {
-    efSetMicActive(true);
-    efRequestWakeLock();
-    efSaveState();
+  // S'assurer que l'AudioContext est running avant r.start() — sur iOS au retour
+  // d'arrière-plan il peut être suspended, ce qui rend le micro sourd silencieusement.
+  var _startNow = function() {
+    if (r !== efMicRecog) return; // instance invalidée entre-temps
+    r.start();
+    if (!isIOSRestart) {
+      efSetMicActive(true);
+      efRequestWakeLock();
+      efSaveState();
+    }
+  };
+  if (efAudioCtx.state === 'suspended') {
+    efAudioCtx.resume().then(_startNow).catch(_startNow);
+  } else {
+    _startNow();
   }
 }
 
