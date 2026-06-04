@@ -9060,20 +9060,15 @@ function efStartMic(forceLang) {
         efReleaseWakeLock();
         return;
       }
-      // Sur iOS/iPadOS, on réutilise l'instance existante avec .start()
-      // plutôt que d'en recréer une nouvelle — recréer une instance fait
-      // clignoter l'icône micro système à chaque cycle de 2-3s.
+      // Réutiliser l'instance existante avec .start() — ne jamais recréer
+      // une nouvelle instance dans onend, ça fait clignoter l'icône micro iOS.
+      // Si .start() échoue, onend se redéclenchera naturellement.
       setTimeout(function() {
         if (r !== efMicRecog || !efMicActive) return;
         try {
           efMicRecog.start();
           efRestartCount = 0;
-        } catch(err) {
-          // L'instance est vraiment morte — recréer en dernier recours
-          efMicRecog = null;
-          efRestartCount = 0;
-          efStartMic(r.lang !== efGetRecogLang() ? r.lang : undefined);
-        }
+        } catch(err) { /* onend se redéclenchera */ }
       }, 150);
       return;
     }
@@ -9217,8 +9212,10 @@ function efStopMic() {
     efRestoreState();
   });
 
-  // iOS : mise en veille → nettoyer l'instance et l'état.
+  // iOS : mise en veille ou fermeture → nettoyer l'instance et l'état.
+  // pagehide couvre le cas où visibilitychange n'est pas déclenché (swipe fermeture).
   // Retour au premier plan → relancer le micro si la modale est ouverte.
+  window.addEventListener('pagehide', function() { efStopMic(); });
   document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'hidden') {
       efStopMic();
