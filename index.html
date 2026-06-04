@@ -9185,6 +9185,10 @@ function efReset() {
 }
 
 function efStopMic() {
+  // Couper efMicActive en premier — les callbacks asynchrones (onend, setTimeout)
+  // testent ce flag et s'arrêtent immédiatement s'il est false.
+  efSetMicActive(false);
+  efReleaseWakeLock();
   if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
   efRestartCount   = 0;
   efPendingQueue   = null;
@@ -9195,8 +9199,6 @@ function efStopMic() {
   if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
   if (efAudioCtx)  { efAudioCtx.close(); efAudioCtx = null; }
   try { sessionStorage.removeItem('ef_restore'); } catch(e) {}
-  efSetMicActive(false);
-  efReleaseWakeLock();
 }
 
 // Afficher le bouton micro seulement si supporté et online
