@@ -9048,11 +9048,14 @@ function efStartMic(forceLang) {
 
     // iOS : continuous=true est ignoré par Safari, onend se déclenche normalement
     // toutes les 2-3s sans erreur réelle → on redémarre toujours sans compter.
+    // IMPORTANT : Safari ne peut pas appeler .start() sur un objet déjà utilisé,
+    // il faut obligatoirement recréer une instance fraîche via efStartMic().
     if (efIsIOS()) {
       setTimeout(function() {
         if (r !== efMicRecog || !efMicActive) return;
-        try { efMicRecog.start(); } catch(err) {}
-      }, 80); // délai légèrement plus long pour laisser Safari libérer le micro
+        efMicRecog = null;
+        efStartMic(r.lang !== efGetRecogLang() ? r.lang : undefined);
+      }, 80);
       return;
     }
 
