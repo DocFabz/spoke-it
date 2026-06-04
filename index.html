@@ -8811,10 +8811,18 @@ function efToggleMic() {
   var now = Date.now();
   if (now - efToggleMicLast < 300) return;
   efToggleMicLast = now;
-  // Créer/reprendre l'AudioContext sur geste utilisateur (requis sur iOS)
+  // Créer/reprendre l'AudioContext sur geste utilisateur (requis sur iOS).
+  // resume() est async : attendre qu'il soit running avant de lancer le micro,
+  // sinon sur iOS au retour d'arrière-plan r.start() démarre sans écoute réelle.
   if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (efAudioCtx.state === 'suspended') efAudioCtx.resume();
-  if (efMicActive) { efStopMic(); } else { efOpenMicLangModal(); }
+  var _doToggle = function() {
+    if (efMicActive) { efStopMic(); } else { efOpenMicLangModal(); }
+  };
+  if (efAudioCtx.state === 'suspended') {
+    efAudioCtx.resume().then(_doToggle).catch(_doToggle);
+  } else {
+    _doToggle();
+  }
 }
 
 // ── Modale langue de saisie vocale ───────────────────────────────────────────
