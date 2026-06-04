@@ -9196,6 +9196,7 @@ function efStopMic() {
   efLastInterimNum = null;
   efNavExecuted    = null;
   if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
+  if (efAudioCtx)  { efAudioCtx.close(); efAudioCtx = null; }
   efSetMicActive(false);
   efReleaseWakeLock();
 }
@@ -9220,9 +9221,7 @@ function efStopMic() {
   // Retour au premier plan → relancer le micro si la modale est ouverte.
   document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'hidden') {
-      if (efMicActive) efSetMicActive(false);
-      if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
-      efRestartCount = 0;
+      efStopMic();
     } else if (document.visibilityState === 'visible' && efIsIOS()) {
       var overlay = document.getElementById('ef-overlay');
       if (overlay && overlay.classList.contains('show')) {
