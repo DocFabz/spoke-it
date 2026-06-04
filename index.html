@@ -9103,8 +9103,9 @@ function efBeep() {
         osc.start(startTime);
         osc.stop(startTime + 0.08);
       }
-      bip(ctx.currentTime);
-      bip(ctx.currentTime + 0.13);
+      var t0 = ctx.currentTime + 0.01;
+      bip(t0);
+      bip(t0 + 0.13);
     });
   } catch(e) {}
 }
@@ -9128,8 +9129,9 @@ function efBeepError() {
         osc.start(startTime);
         osc.stop(startTime + 0.14);
       }
-      bipErr(ctx.currentTime,        260);
-      bipErr(ctx.currentTime + 0.17, 220);
+      var t0 = ctx.currentTime + 0.01;
+      bipErr(t0,        260);
+      bipErr(t0 + 0.17, 220);
     });
   } catch(e) {}
 }
@@ -9146,10 +9148,11 @@ function efBeepNext() {
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.frequency.value = 660;
-      gain.gain.setValueAtTime(0.4, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.06);
+      var t0 = ctx.currentTime + 0.01;
+      gain.gain.setValueAtTime(0.4, t0);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.06);
+      osc.start(t0);
+      osc.stop(t0 + 0.06);
     });
   } catch(e) {}
 }
