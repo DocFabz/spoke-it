@@ -8127,7 +8127,7 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
   <div class="ef-header">
     <div class="ef-title" id="ef-title">Easy Fill</div>
     <div style="display:flex;align-items:center;gap:.4rem">
-      <button class="ef-bt-btn" id="ef-mic-btn" onclick="efToggleMic()" title="Saisie vocale">
+      <button class="ef-bt-btn" id="ef-mic-btn" ontouchend="efToggleMic();event.preventDefault()" onclick="efToggleMic()" title="Saisie vocale">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="9" y="1" width="6" height="11" rx="3"/>
           <path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
@@ -8784,7 +8784,14 @@ function efSetMicActive(val) {
   }
 }
 
+var efToggleMicLast = 0;
 function efToggleMic() {
+  // Garde anti-double-déclenchement iOS/iPad : Safari peut émettre click
+  // immédiatement après touchend → deux appels en < 300 ms → active puis
+  // désactive le micro dans la foulée.
+  var now = Date.now();
+  if (now - efToggleMicLast < 300) return;
+  efToggleMicLast = now;
   // Créer/reprendre l'AudioContext sur geste utilisateur (requis sur iOS)
   if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (efAudioCtx.state === 'suspended') efAudioCtx.resume();
