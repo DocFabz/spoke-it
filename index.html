@@ -8905,7 +8905,7 @@ function efWarmSR() {
   } catch(e) {}
 }
 
-function efStartMic(forceLang) {
+function efStartMic(forceLang, isIOSRestart) {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
     alert(lang === 'fr'
@@ -9097,7 +9097,7 @@ function efStartMic(forceLang) {
       setTimeout(function() {
         if (r !== efMicRecog || !efMicActive) return;
         efMicRecog = null; // invalider l'ancienne instance avant efStartMic
-        efStartMic();
+        efStartMic(null, true); // true = redémarrage automatique iOS (pas de saveState/wakeLock)
       }, 80);
       return;
     }
@@ -9127,9 +9127,11 @@ function efStartMic(forceLang) {
   efMicRecog = r;
   if (!efAudioCtx) efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
   r.start();
-  efSetMicActive(true);
-  efRequestWakeLock();
-  efSaveState();
+  if (!isIOSRestart) {
+    efSetMicActive(true);
+    efRequestWakeLock();
+    efSaveState();
+  }
 }
 
 function efBeep() {
