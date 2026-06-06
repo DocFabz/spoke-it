@@ -8658,6 +8658,7 @@ var efWarmInstance   = null;  // instance SR préchauffée à efOpen() pour tap 
 var efPendingNext    = false; // true = valeur validée, avance en cours, ignorer les résultats suivants
 var efBeepTimer      = null;  // debounce 500ms pour beep sur valeur stable
 var efAutoAdvanced   = false; // true = auto-avance déjà déclenchée par le beep intermédiaire
+var efOorFired       = false; // true = feedback hors plage déjà déclenché en intermédiaire
 var efLastInterimNum = null;  // dernier nombre intermédiaire valide (fallback isFinal)
 var efRestartCount   = 0;     // compteur de tentatives de redémarrage consécutives (non-iOS)
 var efPendingQueue   = null;  // valeur reçue pendant efPendingNext (ne pas jeter)
@@ -9008,24 +9009,49 @@ function efStartMic(forceLang) {
         efLastInterimNum = numInterim;
         if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
         efAutoAdvanced = false;
+        efOorFired = false;
         var parsedInterim = tmParseInput(numInterim);
-        if (parsedInterim !== null && toKgf(parsedInterim) !== null) {
-          efBeepTimer = setTimeout(function() {
-            efBeepTimer = null;
-            efAutoAdvanced = true;
-            var inp = $id('ef-inp');
-            inp.value = numInterim;
-            efUpdateKgf();
-            efBeep();
-            // Auto-avance dès la valeur stabilisée, sans attendre le résultat final
-            efPendingNext = true;
-            setTimeout(function() {
-              efPendingNext = false;
-              if (!efMicActive) return;
-              var ok = efNext();
-              if (ok) { efBeepNext(); }
-            }, 200);
-          }, 500);
+        if (parsedInterim !== null) {
+          var kgfInterim = toKgf(parsedInterim);
+          if (kgfInterim !== null) {
+            // Valeur valide : auto-avance après stabilisation 500ms
+            efBeepTimer = setTimeout(function() {
+              efBeepTimer = null;
+              efAutoAdvanced = true;
+              var inp = $id('ef-inp');
+              inp.value = numInterim;
+              efUpdateKgf();
+              efBeep();
+              // Auto-avance dès la valeur stabilisée, sans attendre le résultat final
+              efPendingNext = true;
+              setTimeout(function() {
+                efPendingNext = false;
+                if (!efMicActive) return;
+                var ok = efNext();
+                if (ok) { efBeepNext(); }
+              }, 200);
+            }, 500);
+          } else if (tmGetRange() !== null) {
+            // Parseable mais hors plage : beep + feedback visuel après stabilisation 500ms
+            efBeepTimer = setTimeout(function() {
+              efBeepTimer = null;
+              efOorFired = true;
+              efBeepError();
+              var inp = $id('ef-inp');
+              inp.classList.add('out-of-range');
+              setTimeout(function() { inp.classList.remove('out-of-range'); }, 400);
+              var prev = $id('ef-kgf-preview');
+              var range = tmGetRange();
+              if (range) {
+                prev.textContent = tmDisplayValue(range.min) + ' – ' + tmDisplayValue(range.max);
+                prev.classList.add('oor');
+                setTimeout(function() {
+                  prev.classList.remove('oor');
+                  efUpdateKgf();
+                }, 1800);
+              }
+            }, 500);
+          }
         }
       }
       return;
@@ -9037,6 +9063,12 @@ function efStartMic(forceLang) {
     if (['retour','back'].some(function(w){return txt.includes(w);}))     { if (efNavExecuted !== 'back')  efBack(); efNavExecuted = null; return; }
     if (['reset','réinitialiser'].some(function(w){return txt.includes(w);})) { if (efNavExecuted !== 'reset') efReset(); efNavExecuted = null; return; }
     if (['fermer','close'].some(function(w){return txt.includes(w);}))    { if (efNavExecuted !== 'close') efClose(); efNavExecuted = null; return; }
+    // Si le feedback hors plage a déjà été rendu en intermédiaire, ignorer le isFinal
+    if (efOorFired) {
+      efOorFired = false;
+      efLastInterimNum = null;
+      return;
+    }
     // Si l'auto-avance a déjà été déclenchée par le beep intermédiaire,
     // vérifier quand même si le résultat final diffère et corriger le step précédent
     if (efAutoAdvanced) {
@@ -9244,6 +9276,7 @@ function efStopMic() {
   efPendingQueue   = null;
   efPendingNext    = false;
   efAutoAdvanced   = false;
+  efOorFired       = false;
   efLastInterimNum = null;
   efNavExecuted    = null;
   if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
