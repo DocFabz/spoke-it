@@ -8652,6 +8652,48 @@ function efNumpadDel() {
 // ── Saisie vocale Easy Fill ──────────────────────────────────────────────────
 var efMicActive      = false;
 var efMicRecog       = null;
+// ── Machine à états implicite d'Easy Fill vocal ──────────────────────────────
+// Les flags ci-dessous forment ensemble une machine à états asynchrone.
+// Interactions critiques à connaître avant toute modification :
+//
+// efBeepTimer        — debounce 500ms armé sur chaque résultat intermédiaire.
+//                      Annulé par clearTimeout si un nouveau résultat arrive avant
+//                      expiration. Les deux chemins (valide / hors plage) utilisent
+//                      ce même timer pour garantir la stabilisation de la valeur.
+//
+// efAutoAdvanced     — posé à true dans le timer valide, lu dans le bloc isFinal
+//                      pour savoir que l'avance a déjà eu lieu et éviter le double
+//                      commit. Remis à false dès lecture dans isFinal.
+//
+// efOorFired         — symétrique d'efAutoAdvanced pour le cas hors plage.
+//                      Posé à true dans le timer OOR, lu dans isFinal pour
+//                      court-circuiter efCommitCurrent() et éviter double beep +
+//                      double liseré rouge. Remis à false dès lecture dans isFinal.
+//                      ATTENTION : toKgf() retourne null pour les valeurs hors plage
+//                      (pas d'interpolation possible) — la détection OOR ne peut donc
+//                      pas s'appuyer sur toKgf() !== null ; elle utilise tmGetRange()
+//                      pour vérifier qu'une table est chargée.
+//
+// efPendingNext      — posé à true pendant les 200ms de transition entre deux rayons.
+//                      Les résultats SR reçus pendant ce laps sont mis en queue dans
+//                      efPendingQueue et traités après la transition.
+//
+// efPendingQueue     — valeur reçue (isFinal) pendant efPendingNext. Traitée dès que
+//                      efPendingNext repasse à false.
+//
+// efNavExecuted      — commande nav (suivant/retour/…) déjà exécutée sur l'intermédiaire.
+//                      Empêche le double déclenchement quand le isFinal arrive ensuite.
+//
+// efLastInterimNum   — dernier nombre intermédiaire valide. Utilisé en fallback si le
+//                      transcript final est vide ou non parseable.
+//
+// Ordre de priorité dans le bloc isFinal :
+//   1. efBeepTimer annulé
+//   2. Commandes nav (isFinal)
+//   3. efOorFired  → return immédiat
+//   4. efAutoAdvanced → correction éventuelle du step précédent + return
+//   5. Traitement normal → efNext()
+// ─────────────────────────────────────────────────────────────────────────────
 var efWakeLock       = null;
 var efAudioCtx       = null;
 var efWarmInstance   = null;  // instance SR préchauffée à efOpen() pour tap quasi-instantané sur desktop
