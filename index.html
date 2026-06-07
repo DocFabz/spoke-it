@@ -541,6 +541,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   50%       { opacity:.2 }
 }
 .sum-val-btn.blink { animation:sum-blink 2s ease-in-out infinite }
+.ef-bt-btn.blink { animation:sum-blink 3.36s ease-in-out infinite }
 /* ── Modale saisie rayon ── */
 .slen-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(4px); z-index:9984; opacity:0; transition:opacity .2s; display:none }
 .slen-overlay.show { display:block; opacity:1 }
@@ -8889,10 +8890,12 @@ function efSetMicActive(val) {
     btn.style.color       = 'var(--warm)';
     btn.style.borderColor = 'rgba(232,146,124,.6)';
     btn.style.background  = 'rgba(232,146,124,.08)';
+    btn.classList.add('blink');
   } else {
     btn.style.color       = 'var(--text3)';
     btn.style.borderColor = 'rgba(255,255,255,0.07)';
     btn.style.background  = 'none';
+    btn.classList.remove('blink');
   }
 }
 
