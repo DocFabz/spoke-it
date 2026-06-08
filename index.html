@@ -9125,8 +9125,11 @@ function efStartMic(forceLang) {
                 if (ok) { efBeepNext(); }
               }, 200);
             }, 500);
-          } else if (tmGetRange() !== null) {
+          } else if (tmGetRange() !== null &&
+                     !/^\s*\d+\s*$/.test(txt)) {
             // Parseable mais hors plage : beep + feedback visuel après stabilisation 500ms
+            // Exception : transcript intermédiaire = entier seul (ex: "1" avant "1 virgule 23")
+            // → ne pas déclencher OOR, la partie décimale n'est pas encore arrivée.
             // efOorFired posé ICI (avant le timer) pour bloquer tout isFinal rapide
             // arrivant pendant les 500ms — évite le double beep + double liseré rouge.
             efOorFired = true;
