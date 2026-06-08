@@ -8830,7 +8830,6 @@ function efVoiceToNumber(txt) {
   }
 
   // ── Étape 3 : mots épelés fr/en
-  // Split sur § (déjà posé à l'étape 1) puis parsing de chaque partie.
   var units = {
     'zéro':0,'zero':0,'un':1,'une':1,'one':1,'deux':2,'two':2,
     'trois':3,'three':3,'quatre':4,'four':4,'cinq':5,'five':5,
@@ -8871,9 +8870,8 @@ function efVoiceToNumber(txt) {
   if (intVal === null) return null;
   var result = String(intVal);
   if (decPart !== null) {
-    // En FR uniquement : le moteur ASR transcrit la partie décimale après "point"
+    // En FR uniquement : le moteur iOS transcrit la partie décimale après "point"
     // en toutes lettres → dictionnaire plat 0-99 pour la résoudre.
-    // En EN le moteur transcrit toujours en chiffres arabes → étape 2 suffit.
     var dp = decPart.trim();
     var decStr;
     if ((typeof lang !== 'undefined' ? lang : 'fr') === 'fr') {
@@ -9095,10 +9093,17 @@ function efStartMic(forceLang) {
     r.grammars = gl;
   } catch(e) {}
   r.interimResults = true;
+  r.maxAlternatives = 5;
   r.onresult = function(e) {
     efRestartCount = 0; // un résultat reçu = micro opérationnel
     var result = e.results[e.results.length - 1];
+    // Parcourir les alternatives pour prendre la première qui parse en nombre valide.
+    // Utile sur iOS où le moteur hésite (ex: "point" → ponctuation, fusion, ou mot).
     var txt = result[0].transcript.trim().toLowerCase();
+    for (var _ai = 1; _ai < result.length; _ai++) {
+      var _alt = result[_ai].transcript.trim().toLowerCase();
+      if (efVoiceToNumber(_alt) !== null && efVoiceToNumber(txt) === null) { txt = _alt; break; }
+    }
 
     // pendant la transition vers le champ suivant, mémoriser plutôt que jeter
     if (efPendingNext) {
