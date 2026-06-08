@@ -8811,27 +8811,26 @@ function efVoiceToNumber(txt) {
   if (!txt) return null;
   var s = txt.trim().toLowerCase();
 
-  // ── Étape 1 : normaliser tous les séparateurs décimaux en '.'
-  // Couvre: virgule (fr/it/de/es/pt…), point, separateurs unicode arabes/persans
-  s = s.replace(/[,،٫]/g, '.');
-  s = s.replace(/\b(virgule|virgola|virgola decimale|point d[eé]cimal|point|komma|coma|dot)\b/g, '.');
-  s = s.replace(/(\d)\s*\.\s*(\d)/g, '$1.$2');
+  // ── Étape 1 : tous les séparateurs décimaux → '§'
+  // Entre chiffres arabes : coller en '.' immédiatement (ex: "1 § 32" → "1.32").
+  // Sinon le § reste pour que l'étape 3 splitte (ex: "1 § quatre vingt douze").
+  s = s.replace(/[,،٫]/g, '§');
+  s = s.replace(/\b(virgule|virgola|virgola decimale|point d[eé]cimal|point|komma|coma|dot)\b/g, '§');
+  s = s.replace(/(\d)\s*§\s*(\d)/g, '$1.$2');
 
-  // ── Étape 2 : si le transcript contient déjà un nombre en chiffres arabes,
-  // l'utiliser directement (cas le plus fréquent avec tous les moteurs vocaux
-  // quelle que soit la langue : fr, it, de, es, pt, nl, pl, ru, ja, zh…)
-  // Gère : "32", "0.32", "1.65", "270", "0.55", etc.
-  // Si le moteur a répété le nombre (ex: "32 32"), on prend le dernier.
-  var numMatches = s.match(/\d+\.?\d*/g);
-  if (numMatches && numMatches.length > 0) {
-    // Chercher d'abord un nombre décimal (avec point)
-    var decMatch = s.match(/\d+\.\d+/);
-    if (decMatch) return decMatch[0];
-    // Sinon prendre le dernier entier (déduplication si répétition)
-    return numMatches[numMatches.length - 1];
+  // ── Étape 2 : chiffres arabes déjà présents → retour direct.
+  // Ignoré si un § subsiste (partie décimale en mots → étape 3).
+  if (s.indexOf('§') === -1) {
+    var numMatches = s.match(/\d+\.?\d*/g);
+    if (numMatches && numMatches.length > 0) {
+      var decMatch = s.match(/\d+\.\d+/);
+      if (decMatch) return decMatch[0];
+      return numMatches[numMatches.length - 1];
+    }
   }
 
-  // ── Étape 3 : fallback sur dictionnaire fr/en (mots épelés)
+  // ── Étape 3 : mots épelés fr/en
+  // Split sur § (déjà posé à l'étape 1) puis parsing de chaque partie.
   var units = {
     'zéro':0,'zero':0,'un':1,'une':1,'one':1,'deux':2,'two':2,
     'trois':3,'three':3,'quatre':4,'four':4,'cinq':5,'five':5,
@@ -8844,11 +8843,7 @@ function efVoiceToNumber(txt) {
     'quatre-vingt':80,'eighty':80,'quatre-vingts':80,
     'quatre-vingt-dix':90,'ninety':90,'cent':100,'hundred':100
   };
-  s = s
-    .replace(/virgule|virgola|virgola decimale|point décimal|point|komma|coma|dot/g, '§')
-    .replace(/-/g, ' ')
-    .replace(/et\s/g, '')
-    .replace(/\s+/g, ' ').trim();
+  s = s.replace(/-/g, ' ').replace(/et\s/g, '').replace(/\s+/g, ' ').trim();
   var parts = s.split('§');
   var intPart = parts[0].trim();
   var decPart = parts[1] ? parts[1].trim() : null;
@@ -8876,8 +8871,32 @@ function efVoiceToNumber(txt) {
   if (intVal === null) return null;
   var result = String(intVal);
   if (decPart !== null) {
-    var decVal = parseWords(decPart);
-    result += '.' + (decVal !== null ? String(decVal) : decPart.replace(/[^0-9]/g, ''));
+    // En FR uniquement : le moteur ASR transcrit la partie décimale après "point"
+    // en toutes lettres → dictionnaire plat 0-99 pour la résoudre.
+    // En EN le moteur transcrit toujours en chiffres arabes → étape 2 suffit.
+    var dp = decPart.trim();
+    var decStr;
+    if ((typeof lang !== 'undefined' ? lang : 'fr') === 'fr') {
+      var _dd = {};
+      ['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf',
+       'dix','onze','douze','treize','quatorze','quinze','seize'].forEach(function(w,i){ _dd[w]=i; });
+      ['vingt','trente','quarante','cinquante','soixante'].forEach(function(w,i){
+        var base=(i+2)*10; _dd[w]=base;
+        ['un','deux','trois','quatre','cinq','six','sept','huit','neuf'].forEach(function(k,j){
+          _dd[w+' '+k]=base+j+1; _dd[w+' et '+k]=base+j+1; });
+      });
+      ['dix','onze','douze','treize','quatorze','quinze','seize','dix-sept','dix-huit','dix-neuf'].forEach(function(w,i){
+        _dd['soixante '+w]=70+i; });
+      _dd['soixante et onze']=71;
+      _dd['quatre vingt']=80; _dd['quatre vingts']=80;
+      ['un','deux','trois','quatre','cinq','six','sept','huit','neuf',
+       'dix','onze','douze','treize','quatorze','quinze','seize','dix-sept','dix-huit','dix-neuf'].forEach(function(w,i){
+        _dd['quatre vingt '+w]=81+i; });
+      decStr = _dd[dp] !== undefined ? String(_dd[dp]) : dp.replace(/[^0-9]/g,'');
+    } else {
+      decStr = /^\d+$/.test(dp) ? dp : dp.replace(/[^0-9]/g,'');
+    }
+    result += '.' + decStr;
   }
   return result || null;
 }
@@ -9042,7 +9061,7 @@ function efStartMic(forceLang) {
   // dans la langue du moteur → confiance correcte quelle que soit la langue.
   var recogLang = (forceLang || efGetRecogLang() || '').toLowerCase().split(/[-_]/)[0];
   var langWords = {
-    fr: { dec:'virgule', nav:'suivant retour précédent effacer supprimer fermer',
+    fr: { dec:'virgule point', nav:'suivant retour précédent effacer supprimer fermer',
           nums:'zéro un une deux trois quatre cinq six sept huit neuf dix vingt trente quarante cinquante soixante cent' },
     en: { dec:'point dot', nav:'next back clear close',
           nums:'zero one two three four five six seven eight nine ten twenty thirty forty fifty sixty hundred' },
