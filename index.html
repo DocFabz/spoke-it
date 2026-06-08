@@ -8811,12 +8811,15 @@ function efVoiceToNumber(txt) {
   if (!txt) return null;
   var s = txt.trim().toLowerCase();
 
-  // ── Étape 1 : tous les séparateurs décimaux → '§'
-  // Entre chiffres arabes : coller en '.' immédiatement (ex: "1 § 32" → "1.32").
-  // Sinon le § reste pour que l'étape 3 splitte (ex: "1 § quatre vingt douze").
-  s = s.replace(/[,،٫]/g, '§');
-  s = s.replace(/\b(virgule|virgola|virgola decimale|point d[eé]cimal|point|komma|coma|dot)\b/g, '§');
-  s = s.replace(/(\d)\s*§\s*(\d)/g, '$1.$2');
+  // ── Normalisation : tous les séparateurs décimaux → '§'
+  // Règle unique : "point" = "virgule", partout, sous toutes les formes.
+  s = s.replace(/\bpoints?(?=[\s\d]|$)/g, 'virgule');                           // mot "point(s)"
+  s = s.replace(/\b(virgola decimale|virgola|point d[eé]cimal|komma|coma|dot)\b/g, 'virgule'); // autres langues
+  s = s.replace(/(\w)\s*\.\s*(\w)/g, '$1 virgule $2');                          // ponctuation "." entre \w
+  s = s.replace(/(\w)\s*[;:\/]\s*(\w)/g, '$1 virgule $2');                      // ponctuations exotiques
+  s = s.replace(/virgules?(?=[\s\d]|$)/g, '§');                                 // virgule(s) → §
+  s = s.replace(/[,،٫]/g, '§');                                                 // virgules unicode → §
+  s = s.replace(/(\d)\s*§\s*(\d)/g, '$1.$2');                                   // 1 § 12 → 1.12
 
   // ── Étape 2 : chiffres arabes déjà présents → retour direct.
   // Ignoré si un § subsiste (partie décimale en mots → étape 3).
@@ -8870,8 +8873,8 @@ function efVoiceToNumber(txt) {
   if (intVal === null) return null;
   var result = String(intVal);
   if (decPart !== null) {
-    // En FR uniquement : le moteur iOS transcrit la partie décimale après "point"
-    // en toutes lettres → dictionnaire plat 0-99 pour la résoudre.
+    // En FR : le moteur iOS peut transcrire la partie décimale en toutes lettres
+    // (ex: "virgule neuf" → partie décimale = "neuf") → dictionnaire plat 0-99.
     var dp = decPart.trim();
     var decStr;
     if ((typeof lang !== 'undefined' ? lang : 'fr') === 'fr') {
