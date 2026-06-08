@@ -1306,6 +1306,14 @@ input[type=number] { -moz-appearance:textfield }
 /* ── ToU link & modal ───────────────────────────────────────────────────────── */
 .tou-link { display:inline-block; margin-bottom:.4rem; font-size:.58rem; font-weight:500; letter-spacing:.14em; text-transform:uppercase; color:var(--text3); cursor:pointer; text-decoration:none; transition:color .2s }
 .tou-link:hover { color:var(--accent) }
+.header-links-row { display:flex; margin-bottom:.4rem }
+.header-links-row .tou-link { flex:1; text-align:center; margin-bottom:0 }
+.install-section { margin:.3rem 0 .15rem }
+.install-section-title { font-size:.6rem; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); margin-bottom:.45rem }
+.install-steps { list-style:none; padding:0; margin:0 }
+.install-steps li { font-size:.72rem; color:var(--text2); line-height:1.65; margin-bottom:.28rem; padding-left:1.1rem; position:relative }
+.install-steps li::before { content:'›'; position:absolute; left:0; color:var(--accent); font-weight:600 }
+.install-icon-inline { display:inline-block; width:14px; height:14px; vertical-align:middle; margin:0 2px -1px; opacity:.85 }
 .tou-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
 .tou-overlay.show { display:block; opacity:1 }
 .tou-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.6); width:92%; max-width:400px; max-height:82vh; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
@@ -1325,8 +1333,11 @@ input[type=number] { -moz-appearance:textfield }
 <body>
 
 <header>
-  <span class="tou-link" onclick="openTou()" data-i18n="touLink">Conditions d'utilisation</span>
-  <div class="brand"><span class="brand-letter" style="--i:0">S</span><span class="brand-letter" style="--i:1">p</span><span class="brand-letter" style="--i:2">o</span><span class="brand-letter" style="--i:3">k</span><span class="brand-letter" style="--i:4">e</span><span class="brand-letter brand-letter-space"> </span><em><span class="brand-letter" style="--i:5">I</span><span class="brand-letter" style="--i:6">t</span></em></div>
+  <div class="header-links-row">
+    <span class="tou-link" onclick="openTou()" data-i18n="touLink">Conditions d'utilisation</span>
+    <span class="tou-link" onclick="openInstall()" data-i18n="installLink">Installation</span>
+  </div>
+  <div class="brand"><span class="brand-letter" style="--i:0">S</span><span class="brand-letter" style="--i:1">p</span><span class="brand-letter" style="--i:2">o</span><span class="brand-letter" style="--i:3">k</span><span class="brand-letter" style="--i:4">e</span><span class="brand-letter brand-letter-space"> </span><em><span class="brand-letter" style="--i:5">I</span><span class="brand-letter" style="--i:6">t</span><span class="brand-letter" style="--i:7">!</span></em></div>
   <div class="sub">
     <a href="https://www.instagram.com/spokeit.fr" target="_blank" rel="noopener noreferrer" class="insta-link">
       <svg class="insta-icon" viewBox="0 0 24 24" fill="none" aria-label="Instagram">
@@ -1426,6 +1437,16 @@ input[type=number] { -moz-appearance:textfield }
   </div>
   <div class="tou-body" id="tou-body"></div>
   <button class="tou-accept-btn" onclick="closeTou()" data-i18n="touAccept">J'ACCEPTE</button>
+</div>
+
+<!-- ── Modal installation ── -->
+<div class="tou-overlay" id="install-overlay" onclick="closeInstall()"></div>
+<div class="tou-modal" id="install-modal">
+  <div class="tou-header">
+    <div class="tou-title" data-i18n="installTitle">Installation</div>
+  </div>
+  <div class="tou-body" id="install-body"></div>
+  <button class="tou-accept-btn" onclick="closeInstall()" data-i18n="installClose">FERMER</button>
 </div>
 
 <!-- ── Module nav ── -->
@@ -2628,6 +2649,10 @@ const i18n = {
     touLink:'Conditions d\'utilisation',
     touTitle:'Conditions d\'utilisation',
     touAccept:'J\'accepte',
+    installLink:'Installation',
+    installTitle:'Installation',
+    installClose:'Fermer',
+    installBody:`<p style="font-size:.72rem;color:var(--text2);line-height:1.65;margin:0 0 .5rem">Pour la meilleure expérience, installez Spoke It comme une application :</p><ul class="install-steps" style="margin-bottom:.9rem"><li>Accès rapide depuis l'écran d'accueil</li><li>Plein écran</li><li>Sans barre de navigation</li></ul><div class="install-section"><div class="install-section-title">iOS — iPhone &amp; iPad</div><ul class="install-steps"><li>Ouvrez <strong>spokeit.fr</strong> dans <strong>Safari</strong>.</li><li>Appuyez sur l'icône de partage <svg class="install-icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 12V4m0 0L5 7m3-3l3 3"/><path d="M3 15v3a2 2 0 002 2h14a2 2 0 002-2v-3"/></svg> en bas de l'écran.</li><li>Faites défiler et appuyez sur <strong>« Sur l'écran d'accueil »</strong>.</li><li>Confirmez avec <strong>Ajouter</strong>.</li></ul></div><div class="install-section" style="margin-top:.7rem"><div class="install-section-title">Android — Chrome</div><ul class="install-steps"><li>Ouvrez <strong>spokeit.fr</strong> dans <strong>Chrome</strong>.</li><li>Appuyez sur le menu <svg class="install-icon-inline" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg> en haut à droite.</li><li>Appuyez sur <strong>« Ajouter à l'écran d'accueil »</strong>.</li><li>Confirmez avec <strong>Ajouter</strong>.</li></ul></div>`,
     touBody:`<p>Spokeit.fr est une application non commerciale à visée indicative uniquement.</p><p>Les calculs de longueur de rayons générés par Spokeit.fr reposent sur des formules standardisées appliquées aux données saisies par l'utilisateur.<br>Ces résultats sont des <strong>estimations théoriques</strong> et peuvent différer des valeurs réelles en fonction du matériel, de l'état de la roue, du montage, de l'usure ou de tout autre paramètre non pris en compte par l'outil.</p><p>Avant tout montage ou mise en circulation de votre matériel, il vous appartient de :</p><ul><li>vérifier les résultats auprès d'un professionnel ou mécanicien qualifié.</li><li>mesurer physiquement les rayons à l'aide d'un outil de mesure adapté.</li><li>consulter les recommandations du fabricant de votre roue ou de votre jante.</li><li><strong>ne jamais rouler sur un montage non vérifié</strong>, même si les calculs semblent cohérents.</li></ul><p>La qualité du résultat dépend entièrement de l'exactitude des données fournies. Toute erreur de saisie (diamètre, nombre de trous, ERD, etc.) entraînera un résultat inexact dont spokeit.fr ne saurait être tenu responsable.</p><p>En utilisant cet outil, vous acceptez expressément ces conditions. Si vous n'êtes pas en mesure de vérifier les résultats par vous-même, nous vous recommandons de faire appel à un professionnel avant tout montage.</p>`,
   },
   en: {
@@ -2771,6 +2796,10 @@ const i18n = {
     touLink:'Terms of use',
     touTitle:'Terms of use',
     touAccept:'I accept',
+    installLink:'Install',
+    installTitle:'Install',
+    installClose:'Close',
+    installBody:`<p style="font-size:.72rem;color:var(--text2);line-height:1.65;margin:0 0 .5rem">For the best experience, install Spoke It as an app:</p><ul class="install-steps" style="margin-bottom:.9rem"><li>Quick access from your home screen</li><li>Full-screen display</li><li>No browser UI</li></ul><div class="install-section"><div class="install-section-title">iOS — iPhone &amp; iPad</div><ul class="install-steps"><li>Open <strong>spokeit.fr</strong> in <strong>Safari</strong>.</li><li>Tap the share icon <svg class="install-icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 12V4m0 0L5 7m3-3l3 3"/><path d="M3 15v3a2 2 0 002 2h14a2 2 0 002-2v-3"/></svg> at the bottom of the screen.</li><li>Scroll down and tap <strong>"Add to Home Screen"</strong>.</li><li>Confirm with <strong>Add</strong>.</li></ul></div><div class="install-section" style="margin-top:.7rem"><div class="install-section-title">Android — Chrome</div><ul class="install-steps"><li>Open <strong>spokeit.fr</strong> in <strong>Chrome</strong>.</li><li>Tap the menu <svg class="install-icon-inline" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg> in the top-right corner.</li><li>Tap <strong>"Add to Home Screen"</strong>.</li><li>Confirm with <strong>Add</strong>.</li></ul></div>`,
     touBody:`<p>Spokeit.fr is a non-commercial application intended for indicative purposes only.</p><p>Spoke length calculations generated by Spokeit.fr are based on standardised formulas applied to data entered by the user.<br>These results are <strong>theoretical estimates</strong> and may differ from real-world values depending on the components, wheel condition, build, wear, or any other parameter not accounted for by the tool.</p><p>Before fitting or riding any assembly, it is your responsibility to:</p><ul><li>verify results with a qualified professional or mechanic.</li><li>physically measure spokes using an appropriate measuring tool.</li><li>consult the manufacturer's recommendations for your wheel or rim.</li><li><strong>never ride on an unverified build</strong>, even if the calculations appear consistent.</li></ul><p>The accuracy of results depends entirely on the accuracy of the data provided. Any input error (diameter, hole count, ERD, etc.) will produce an incorrect result for which spokeit.fr cannot be held responsible.</p><p>By using this tool, you expressly agree to these terms. If you are unable to verify the results yourself, we recommend consulting a professional before any assembly.</p>`,
   }
 };
@@ -4275,6 +4304,17 @@ function openTou() {
 function closeTou() {
   $id('tou-overlay').classList.remove('show');
   $id('tou-modal').classList.remove('show');
+}
+
+// ── Installation ──────────────────────────────────────────────────────────────
+function openInstall() {
+  $id('install-body').innerHTML = t('installBody');
+  $id('install-overlay').classList.add('show');
+  $id('install-modal').classList.add('show');
+}
+function closeInstall() {
+  $id('install-overlay').classList.remove('show');
+  $id('install-modal').classList.remove('show');
 }
 
 // ── Export / Import JSON (toutes données) ─────────────────────────────────────
