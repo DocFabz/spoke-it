@@ -8811,28 +8811,27 @@ function efVoiceToNumber(txt) {
   if (!txt) return null;
   var s = txt.trim().toLowerCase();
 
-  // ── Normalisation : tous les séparateurs décimaux → '§'
-  // Règle unique : "point" = "virgule", partout, sous toutes les formes.
-  s = s.replace(/\bpoints?(?=[\s\d]|$)/g, 'virgule');                           // mot "point(s)"
-  s = s.replace(/\b(virgola decimale|virgola|point d[eé]cimal|komma|coma|dot)\b/g, 'virgule'); // autres langues
-  s = s.replace(/(\w)\s*\.\s*(\w)/g, '$1 virgule $2');                          // ponctuation "." entre \w
-  s = s.replace(/(\w)\s*[;:\/]\s*(\w)/g, '$1 virgule $2');                      // ponctuations exotiques
-  s = s.replace(/virgules?(?=[\s\d]|$)/g, '§');                                 // virgule(s) → §
-  s = s.replace(/[,،٫]/g, '§');                                                 // virgules unicode → §
-  s = s.replace(/(\d)\s*§\s*(\d)/g, '$1.$2');                                   // 1 § 12 → 1.12
+  // ── Étape 1 : normaliser tous les séparateurs décimaux en '.'
+  // Couvre: virgule (fr/it/de/es/pt…), point, separateurs unicode arabes/persans
+  s = s.replace(/[,،٫]/g, '.');
+  s = s.replace(/\b(virgule|virgola|virgola decimale|point d[eé]cimal|point|komma|coma|dot)\b/g, '.');
+  s = s.replace(/(\d)\s*\.\s*(\d)/g, '$1.$2');
 
-  // ── Étape 2 : chiffres arabes déjà présents → retour direct.
-  // Ignoré si un § subsiste (partie décimale en mots → étape 3).
-  if (s.indexOf('§') === -1) {
-    var numMatches = s.match(/\d+\.?\d*/g);
-    if (numMatches && numMatches.length > 0) {
-      var decMatch = s.match(/\d+\.\d+/);
-      if (decMatch) return decMatch[0];
-      return numMatches[numMatches.length - 1];
-    }
+  // ── Étape 2 : si le transcript contient déjà un nombre en chiffres arabes,
+  // l'utiliser directement (cas le plus fréquent avec tous les moteurs vocaux
+  // quelle que soit la langue : fr, it, de, es, pt, nl, pl, ru, ja, zh…)
+  // Gère : "32", "0.32", "1.65", "270", "0.55", etc.
+  // Si le moteur a répété le nombre (ex: "32 32"), on prend le dernier.
+  var numMatches = s.match(/\d+\.?\d*/g);
+  if (numMatches && numMatches.length > 0) {
+    // Chercher d'abord un nombre décimal (avec point)
+    var decMatch = s.match(/\d+\.\d+/);
+    if (decMatch) return decMatch[0];
+    // Sinon prendre le dernier entier (déduplication si répétition)
+    return numMatches[numMatches.length - 1];
   }
 
-  // ── Étape 3 : mots épelés fr/en
+  // ── Étape 3 : fallback sur dictionnaire fr/en (mots épelés)
   var units = {
     'zéro':0,'zero':0,'un':1,'une':1,'one':1,'deux':2,'two':2,
     'trois':3,'three':3,'quatre':4,'four':4,'cinq':5,'five':5,
@@ -8845,7 +8844,11 @@ function efVoiceToNumber(txt) {
     'quatre-vingt':80,'eighty':80,'quatre-vingts':80,
     'quatre-vingt-dix':90,'ninety':90,'cent':100,'hundred':100
   };
-  s = s.replace(/-/g, ' ').replace(/et\s/g, '').replace(/\s+/g, ' ').trim();
+  s = s
+    .replace(/virgule|virgola|virgola decimale|point décimal|point|komma|coma|dot/g, '§')
+    .replace(/-/g, ' ')
+    .replace(/et\s/g, '')
+    .replace(/\s+/g, ' ').trim();
   var parts = s.split('§');
   var intPart = parts[0].trim();
   var decPart = parts[1] ? parts[1].trim() : null;
@@ -8873,31 +8876,8 @@ function efVoiceToNumber(txt) {
   if (intVal === null) return null;
   var result = String(intVal);
   if (decPart !== null) {
-    // En FR : le moteur iOS peut transcrire la partie décimale en toutes lettres
-    // (ex: "virgule neuf" → partie décimale = "neuf") → dictionnaire plat 0-99.
-    var dp = decPart.trim();
-    var decStr;
-    if ((typeof lang !== 'undefined' ? lang : 'fr') === 'fr') {
-      var _dd = {};
-      ['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf',
-       'dix','onze','douze','treize','quatorze','quinze','seize'].forEach(function(w,i){ _dd[w]=i; });
-      ['vingt','trente','quarante','cinquante','soixante'].forEach(function(w,i){
-        var base=(i+2)*10; _dd[w]=base;
-        ['un','deux','trois','quatre','cinq','six','sept','huit','neuf'].forEach(function(k,j){
-          _dd[w+' '+k]=base+j+1; _dd[w+' et '+k]=base+j+1; });
-      });
-      ['dix','onze','douze','treize','quatorze','quinze','seize','dix-sept','dix-huit','dix-neuf'].forEach(function(w,i){
-        _dd['soixante '+w]=70+i; });
-      _dd['soixante et onze']=71;
-      _dd['quatre vingt']=80; _dd['quatre vingts']=80;
-      ['un','deux','trois','quatre','cinq','six','sept','huit','neuf',
-       'dix','onze','douze','treize','quatorze','quinze','seize','dix-sept','dix-huit','dix-neuf'].forEach(function(w,i){
-        _dd['quatre vingt '+w]=81+i; });
-      decStr = _dd[dp] !== undefined ? String(_dd[dp]) : dp.replace(/[^0-9]/g,'');
-    } else {
-      decStr = /^\d+$/.test(dp) ? dp : dp.replace(/[^0-9]/g,'');
-    }
-    result += '.' + decStr;
+    var decVal = parseWords(decPart);
+    result += '.' + (decVal !== null ? String(decVal) : decPart.replace(/[^0-9]/g, ''));
   }
   return result || null;
 }
@@ -9062,7 +9042,7 @@ function efStartMic(forceLang) {
   // dans la langue du moteur → confiance correcte quelle que soit la langue.
   var recogLang = (forceLang || efGetRecogLang() || '').toLowerCase().split(/[-_]/)[0];
   var langWords = {
-    fr: { dec:'virgule point', nav:'suivant retour précédent effacer supprimer fermer',
+    fr: { dec:'virgule', nav:'suivant retour précédent effacer supprimer fermer',
           nums:'zéro un une deux trois quatre cinq six sept huit neuf dix vingt trente quarante cinquante soixante cent' },
     en: { dec:'point dot', nav:'next back clear close',
           nums:'zero one two three four five six seven eight nine ten twenty thirty forty fifty sixty hundred' },
@@ -9096,17 +9076,10 @@ function efStartMic(forceLang) {
     r.grammars = gl;
   } catch(e) {}
   r.interimResults = true;
-  r.maxAlternatives = 5;
   r.onresult = function(e) {
     efRestartCount = 0; // un résultat reçu = micro opérationnel
     var result = e.results[e.results.length - 1];
-    // Parcourir les alternatives pour prendre la première qui parse en nombre valide.
-    // Utile sur iOS où le moteur hésite (ex: "point" → ponctuation, fusion, ou mot).
     var txt = result[0].transcript.trim().toLowerCase();
-    for (var _ai = 1; _ai < result.length; _ai++) {
-      var _alt = result[_ai].transcript.trim().toLowerCase();
-      if (efVoiceToNumber(_alt) !== null && efVoiceToNumber(txt) === null) { txt = _alt; break; }
-    }
 
     // pendant la transition vers le champ suivant, mémoriser plutôt que jeter
     if (efPendingNext) {
