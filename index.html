@@ -9127,9 +9127,11 @@ function efStartMic(forceLang) {
             }, 500);
           } else if (tmGetRange() !== null) {
             // Parseable mais hors plage : beep + feedback visuel après stabilisation 500ms
+            // efOorFired posé ICI (avant le timer) pour bloquer tout isFinal rapide
+            // arrivant pendant les 500ms — évite le double beep + double liseré rouge.
+            efOorFired = true;
             efBeepTimer = setTimeout(function() {
               efBeepTimer = null;
-              efOorFired = true;
               efBeepError();
               var inp = $id('ef-inp');
               inp.classList.add('out-of-range');
