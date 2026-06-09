@@ -4268,13 +4268,6 @@ function loadConfig(idx) {
   ['arb-card-body','sum-card-body'].forEach(id => { $id(id).style.display = 'none'; });
   ['arb-card-chevron','sum-card-chevron'].forEach(id => { $id(id).style.transform = ''; });
   resetScrollFlags();
-  // Afficher le label du dernier snapshot si des données de tension sont présentes
-  if (tmHasData() && cfg.snapshots && cfg.snapshots.length > 0) {
-    const lastSnap = cfg.snapshots.reduce((a, b) => (b.num > a.num ? b : a), cfg.snapshots[0]);
-    _snapSetLabel(lastSnap.num);
-  } else {
-    _snapSetLabel(0);
-  }
   const top = document.querySelector('header').getBoundingClientRect().bottom + window.pageYOffset - 30; window.scrollTo({ top, behavior: 'smooth' });
   flashWheelCard(cfg.name);
 }
