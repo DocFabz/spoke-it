@@ -1306,8 +1306,9 @@ input[type=number] { -moz-appearance:textfield }
 /* ── ToU link & modal ───────────────────────────────────────────────────────── */
 .tou-link { display:inline-block; margin-bottom:.4rem; font-size:.58rem; font-weight:500; letter-spacing:.14em; text-transform:uppercase; color:var(--text3); cursor:pointer; text-decoration:none; transition:color .2s }
 .tou-link:hover { color:var(--accent) }
-.header-links-row { display:flex; justify-content:space-between; margin-bottom:.4rem }
+.header-links-row { display:flex; justify-content:center; align-items:center; gap:0; margin-bottom:.4rem }
 .header-links-row .tou-link { margin-bottom:0 }
+.header-links-sep { color:var(--text3); font-size:.58rem; margin:0 .5rem; opacity:.6; user-select:none }
 .install-section { margin:.3rem 0 .15rem }
 .install-section-title { font-size:.6rem; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); margin-bottom:.45rem }
 .install-steps { list-style:none; padding:0; margin:0 }
@@ -1335,6 +1336,7 @@ input[type=number] { -moz-appearance:textfield }
 <header>
   <div class="header-links-row">
     <span class="tou-link" onclick="openTou()" data-i18n="touLink">Conditions d'utilisation</span>
+    <span class="header-links-sep">–</span>
     <span class="tou-link" onclick="openInstall()" data-i18n="installLink">Installation</span>
   </div>
   <div class="brand"><span class="brand-letter" style="--i:0">S</span><span class="brand-letter" style="--i:1">p</span><span class="brand-letter" style="--i:2">o</span><span class="brand-letter" style="--i:3">k</span><span class="brand-letter" style="--i:4">e</span><span class="brand-letter brand-letter-space"> </span><em><span class="brand-letter" style="--i:5">I</span><span class="brand-letter" style="--i:6">t</span><span class="brand-letter" style="--i:7">!</span></em></div>
