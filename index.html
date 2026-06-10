@@ -9571,7 +9571,11 @@ function efStopMic() {
   window.addEventListener('offline', efMicUpdateBtn);
   document.addEventListener('DOMContentLoaded', function() {
     efMicUpdateBtn();
-    efRestoreState();
+    // setTimeout(0) garantit que init() (aussi sur DOMContentLoaded) a terminé
+    // avant la tentative de restauration. Sans ce délai, efOpen() peut être
+    // appelé avant que l'appli soit initialisée → modale zombie / écran blanc
+    // lors de l'octroi de permission micro (rechargement bref sur Android/iOS).
+    setTimeout(efRestoreState, 0);
   });
 
   window.addEventListener('pagehide', function() { efStopMic(); });
