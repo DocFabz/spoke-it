@@ -8463,6 +8463,9 @@ function efRenderStep() {
   nextBtn.textContent = t('efNext');
   nextBtn.classList.remove('done');
   efUpdatePrevKgf();
+  // Micro actif : rafraîchir le flag de restauration (ts pour le TTL +
+  // efCurrent pour reprendre au bon rayon après un crash-relaunch).
+  if (typeof efMicActive !== 'undefined' && efMicActive) efSaveState();
 }
 
 function efUpdateKgf() {
@@ -8820,21 +8823,34 @@ var efAutoStep       = null;  // step réellement commité par l'auto-avance. La
 
 function efSaveState() {
   try {
-    sessionStorage.setItem('ef_restore', JSON.stringify({
+    // localStorage (et non sessionStorage) : seul support qui survit de façon
+    // fiable au relancement après crash du process WebContent en PWA standalone.
+    // ts rafraîchi à chaque changement de step (efRenderStep) pour le TTL.
+    localStorage.setItem('ef_restore', JSON.stringify({
       active: true,
       current: efCurrent,
-      sideMode: efSideMode
+      sideMode: efSideMode,
+      ts: Date.now()
     }));
   } catch(e) {}
 }
 
+// Sortie propre (stop micro, fermeture, pagehide) : on efface le flag.
+// Seul un crash — qui ne passe par aucun de ces chemins — le laisse derrière lui.
+function efClearState() {
+  try { localStorage.removeItem('ef_restore'); } catch(e) {}
+}
+
 function efRestoreState() {
   try {
-    var s = sessionStorage.getItem('ef_restore');
+    var s = localStorage.getItem('ef_restore');
     if (!s) return;
-    sessionStorage.removeItem('ef_restore');
+    localStorage.removeItem('ef_restore');
     var state = JSON.parse(s);
     if (!state.active) return;
+    // TTL 30s : plus vieux = pas un crash-relaunch immédiat (kill brutal de
+    // l'app, vieille session) → accueil plutôt que rouvrir un état périmé.
+    if (!state.ts || (Date.now() - state.ts) > 30000) return;
     efSideMode = state.sideMode;
     efOpen();
     efCurrent = state.current;
@@ -9382,10 +9398,12 @@ function efStartMic(forceLang) {
   }
   var _startNow = function() {
     if (r !== efMicRecog) return;
+    // AVANT start() : si WebContent crashe pendant l'octroi de permission
+    // micro, le flag de restauration est déjà écrit.
+    efSaveState();
     r.start();
     efSetMicActive(true);
     efRequestWakeLock();
-    efSaveState();
   };
   if (efAudioCtx.state === 'suspended') {
     efAudioCtx.resume().then(_startNow).catch(_startNow);
@@ -9486,6 +9504,7 @@ function efStopMic() {
   if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
   efSetMicActive(false);
   efReleaseWakeLock();
+  efClearState();
 }
 
 // Afficher le bouton micro seulement si supporté et online
