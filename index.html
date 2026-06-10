@@ -2506,7 +2506,15 @@ input[type=number] { -moz-appearance:textfield }
 <script>
 
 // ── i18n ────────────────────────────────────────────────────────────────────
-const _storedLang = ['fr','en'].includes(localStorage.getItem('spoke-it-lang')) ? localStorage.getItem('spoke-it-lang') : null;
+// Accès storage protégé : avec "Bloquer tous les cookies" (Safari) ou certains
+// contextes privés/WebView, localStorage JETTE dès la lecture — sans try, tout
+// le bloc script principal meurt et l'application reste inerte.
+const _storedLang = (function() {
+  try {
+    var v = localStorage.getItem('spoke-it-lang');
+    return (v === 'fr' || v === 'en') ? v : null;
+  } catch(e) { return null; }
+})();
 const _browserLang = (navigator.languages?.[0] || navigator.language || 'en').toLowerCase();
 let lang = _storedLang || (_browserLang.startsWith('fr') ? 'fr' : 'en');
 
@@ -2546,6 +2554,7 @@ const i18n = {
     saveMgrTitle:'Gestion des sauvegardes',
     saveMgrDesc:'Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.',
     saveMgrWarning:'⚠︎ L\'import fusionne les données. En cas de nom identique, la version importée écrase l\'existante.',
+    lsWriteError:'Stockage local plein ou bloqué — sauvegarde impossible. Exportez vos données (JSON).',
     asymWarn:'Moyeu symétrique : Jante asymétrique déconseillée.',
     asymTip:'Décalage des trous de rayons des jantes asymétriques',
     tmTitle:'Module Tension', tmCalc:'Calculateur',
@@ -2694,6 +2703,7 @@ const i18n = {
     saveMgrTitle:'Backup manager',
     saveMgrDesc:'The JSON file contains all your data: wheel configurations, tension charts and custom tensiometers.',
     saveMgrWarning:'⚠︎ Import merges data. If a name already exists, the imported version overwrites it.',
+    lsWriteError:'Local storage full or blocked — saving failed. Export your data (JSON).',
     asymWarn:'Symmetric hub: Asymmetric rim not recommended.',
     asymTip:'Offset Spoke Bed for Asymmetric Rim',
     tmTitle:'Tension Module', tmCalc:'Calculator',
@@ -2809,6 +2819,24 @@ const i18n = {
 };
 
 function t(key) { return (i18n[lang] && i18n[lang][key]) || key; }
+
+// ── Écriture localStorage sécurisée ──────────────────────────────────────────
+// setItem peut jeter (QuotaExceededError, storage bloqué). Sans garde, l'exception
+// remonte et interrompt le flux de sauvegarde appelant — échec totalement
+// silencieux pour l'utilisateur. Ici : toast + retour false.
+function lsSet(key, val) {
+  try { localStorage.setItem(key, val); return true; }
+  catch(e) {
+    var el = $id('cache-toast');
+    if (el) {
+      el.textContent = t('lsWriteError');
+      el.classList.add('show');
+      clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(function() { el.classList.remove('show'); }, 4000);
+    }
+    return false;
+  }
+}
 
 // ── Flash liseret sur la card type de roue (confirmation de chargement config) ──
 let _flashTimer = null;
@@ -3043,7 +3071,7 @@ function _applyLangModals() {
   document.querySelectorAll('[data-i18n="screenshotGenerate"]').forEach(function(e) { e.textContent = tr.screenshotGenerate || (L==='fr' ? 'Générer le JPEG' : 'Generate JPEG'); });
 }
 
-function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; localStorage.setItem('spoke-it-lang', lang); applyLang(); }
+function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; lsSet('spoke-it-lang', lang); applyLang(); }
 
 // ── Error display ─────────────────────────────────────────────────────────────
 function showErr(key) {
@@ -4160,7 +4188,7 @@ function saveAtelierInfo() {
     email: $id('atelier-email').value.trim(),
     insta: $id('atelier-insta').value.trim()
   };
-  localStorage.setItem(LS_ATELIER, JSON.stringify(info));
+  lsSet(LS_ATELIER, JSON.stringify(info));
   closeAtelierMgr();
 }
 
@@ -4216,7 +4244,7 @@ function toggleSummaryCard() { toggleCard('sum-card-body',  'sum-card-chevron');
 // ── Configs (localStorage) ────────────────────────────────────────────────────
 const LS_KEY = 'spokeit_configs';
 function loadConfigs()        { try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch(e) { return []; } }
-function persistConfigs(cfg)  { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); }
+function persistConfigs(cfg)  { lsSet(LS_KEY, JSON.stringify(cfg)); }
 
 function saveConfig(nameOverride) {
   const name = (nameOverride || '').trim();
@@ -4768,7 +4796,7 @@ const CC_PREFIX = '★ ';
 
 // ── localStorage ────────────────────────────────────────────────────────────
 function ccLoadAll()     { try { return JSON.parse(localStorage.getItem(CC_LS_KEY)) || []; } catch(e) { return []; } }
-function ccPersist(arr)  { localStorage.setItem(CC_LS_KEY, JSON.stringify(arr)); }
+function ccPersist(arr)  { lsSet(CC_LS_KEY, JSON.stringify(arr)); }
 
 // ── Injecter les chartes custom dans TM_TABLES ──────────────────────────────
 function ccInjectAll() {
@@ -4841,7 +4869,7 @@ ccInjectAll();
 const CT_LS_KEY = 'spokeit_custom_tensios';
 
 function ctLoadAll()    { try { return JSON.parse(localStorage.getItem(CT_LS_KEY)) || []; } catch(e) { return []; } }
-function ctPersist(arr) { localStorage.setItem(CT_LS_KEY, JSON.stringify(arr)); }
+function ctPersist(arr) { lsSet(CT_LS_KEY, JSON.stringify(arr)); }
 
 // Créer une table vide dans TM_TABLES pour chaque tensiomètre custom
 function ctInjectAll() {
@@ -8337,10 +8365,12 @@ function efBuildSteps() {
 }
 
 // ── Ouverture de la modale ──────────────────────────────────────────────────
-function efOpen() {
+function efOpen(sideMode) {
   var isTouch = efIsTouchDevice();
   var isFront = wtype === 'avant';
-  efSideMode = 'fo'; // démarre sur le côté fort : NDS (avant) ou DS (arrière)
+  // Démarre sur le côté fort (NDS avant / DS arrière), sauf restauration crash
+  // qui passe le sideMode sauvegardé — sinon efOpen l'écraserait (cf. efRestoreState).
+  efSideMode = sideMode || 'fo';
   efBuildSteps();
   if (!efSteps.length) return;
   efCurrent = efFirstUnfilled();
@@ -8851,9 +8881,17 @@ function efRestoreState() {
     // TTL 30s : plus vieux = pas un crash-relaunch immédiat (kill brutal de
     // l'app, vieille session) → accueil plutôt que rouvrir un état périmé.
     if (!state.ts || (Date.now() - state.ts) > 30000) return;
-    efSideMode = state.sideMode;
-    efOpen();
-    efCurrent = state.current;
+    // sideMode passé à efOpen() — l'affectation préalable était écrasée par
+    // le 'fo' forcé d'efOpen, rouvrant la mauvaise nappe (commits sur fo
+    // alors que le crash avait eu lieu sur fa).
+    efOpen(state.sideMode);
+    // Relaunch avec formulaire vide : efBuildSteps n'a rien produit,
+    // efOpen a renoncé avant d'ouvrir la modale → ne pas restaurer l'index.
+    if (!efSteps.length) return;
+    // Clamp : un crash en mode 'both' (2×perSide steps) restauré sur une
+    // grille plus courte donnerait efSteps[efCurrent] === undefined →
+    // TypeError dans efRenderStep/efCommitCurrent (modale zombie).
+    efCurrent = Math.max(0, Math.min(state.current || 0, efSteps.length - 1));
     efRenderStep();
     // efStartMic() retiré — sans geste utilisateur Safari refuse le micro sur iOS
   } catch(e) {}
@@ -8943,27 +8981,40 @@ function efVoiceToNumber(txt) {
     var digitTokens = words.filter(function(w) { return /^\d+$/.test(w); });
     var wordTokens  = words.filter(function(w) { return !(/^\d+$/.test(w)) && units[w] !== undefined; });
     if (digitTokens.length > 1 && wordTokens.length === 0) {
-      var last = parseInt(digitTokens[digitTokens.length - 1]);
-      return last > 0 ? last : null;
+      return parseInt(digitTokens[digitTokens.length - 1]);
     }
-    var total = 0, current = 0;
+    // 'matched' remplace l'ancien test 'total > 0' : zéro est un résultat
+    // légitime ("zéro virgule trente-deux" → 0.32), pas un échec de parsing.
+    var total = 0, current = 0, matched = false;
     for (var i = 0; i < words.length; i++) {
       var w = words[i];
-      if (/^\d+$/.test(w)) { current += parseInt(w); continue; }
+      if (/^\d+$/.test(w)) { current += parseInt(w); matched = true; continue; }
       var v = units[w];
       if (v === undefined) continue;
+      matched = true;
       if (v === 100) { current = (current === 0 ? 1 : current) * 100; }
       else { current += v; }
     }
     total += current;
-    return total > 0 ? total : null;
+    return matched ? total : null;
   }
   var intVal = parseWords(intPart);
   if (intVal === null) return null;
   var result = String(intVal);
   if (decPart !== null) {
     var decVal = parseWords(decPart);
-    result += '.' + (decVal !== null ? String(decVal) : decPart.replace(/[^0-9]/g, ''));
+    if (decVal !== null) {
+      // Préserver les zéros de tête : parseWords somme les valeurs, donc
+      // "zéro cinq" donnait 5 → "1.5" au lieu de "1.05". On compte les
+      // mots-zéro en tête de decPart et on les préfixe. decVal === 0 implique
+      // que tous les tokens étaient des zéros (seuls tokens de valeur nulle
+      // possibles) → leadZeros ≥ 1, la chaîne est déjà complète.
+      var leadZeros = ((decPart.match(/^(?:\s*(?:zéro|zero)\b)+/) || [''])[0]
+        .match(/zéro|zero/g) || []).length;
+      result += '.' + '0'.repeat(leadZeros) + (decVal !== 0 ? String(decVal) : '');
+    } else {
+      result += '.' + decPart.replace(/[^0-9]/g, '');
+    }
   }
   return result || null;
 }
@@ -10299,7 +10350,7 @@ function hrLoadAll(type) {
   try { return JSON.parse(localStorage.getItem(type === 'hub' ? LS_HUBS : LS_RIMS)) || []; } catch(e) { return []; }
 }
 function hrPersist(type, arr) {
-  localStorage.setItem(type === 'hub' ? LS_HUBS : LS_RIMS, JSON.stringify(arr));
+  lsSet(type === 'hub' ? LS_HUBS : LS_RIMS, JSON.stringify(arr));
 }
 
 // ── Read hub data from form ───────────────────────────────────────────────────
