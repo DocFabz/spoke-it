@@ -8844,6 +8844,14 @@ var efLastInterimNum = null;  // dernier nombre intermédiaire valide (fallback 
 var efRestartCount   = 0;     // compteur de tentatives de redémarrage consécutives (non-iOS)
 var efPendingQueue   = null;  // valeur reçue pendant efPendingNext (ne pas jeter)
 var efNavExecuted    = null;  // commande nav déjà exécutée sur l'intermédiaire (évite double déclenchement sur le final)
+var efSessionGranted = false; // true dès que le micro capture réellement (onaudiostart/onresult).
+                              // Tant que false, un visibilitychange 'hidden' sur iOS pendant
+                              // efMicActive correspond à l'ALERTE SYSTÈME de permission micro
+                              // (en PWA standalone elle masque la page) et NON à un vrai passage
+                              // en arrière-plan. Il ne faut alors NI abort() la reco (WebKit
+                              // crashe WebContent en livrant le grant à une reco détruite —
+                              // écran blanc puis relance), NI effacer ef_restore (sinon la
+                              // relance après crash retombe sur l'accueil).
 var efForcedLang     = null;  // langue forcée via la modale — iOS recrée l'instance SR à chaque onend
                               // sans repasser forceLang : sans cette mémo, le choix en-US serait perdu après 2-3s
 var efAutoStep       = null;  // step réellement commité par l'auto-avance. La correction du final ne peut
@@ -9217,7 +9225,10 @@ function efStartMic(forceLang) {
     r.grammars = gl;
   } catch(e) {}
   r.interimResults = true;
+  // La capture audio démarre = la permission a été accordée pour cette session.
+  r.onaudiostart = function() { efSessionGranted = true; };
   r.onresult = function(e) {
+    efSessionGranted = true;
     efRestartCount = 0; // un résultat reçu = micro opérationnel
     var result = e.results[e.results.length - 1];
     var txt = result[0].transcript.trim().toLowerCase();
@@ -9412,6 +9423,15 @@ function efStartMic(forceLang) {
     if (efIsIOS()) {
       setTimeout(function() {
         if (r !== efMicRecog || !efMicActive) return;
+        // Page masquée (vrai arrière-plan survenu avant toute capture — le guard
+        // efSessionGranted a laissé efMicActive à true) : ne pas relancer en boucle
+        // ici. Marquer inactif ; la branche 'visible' de visibilitychange relancera
+        // proprement au retour sur iPhone.
+        if (document.visibilityState === 'hidden') {
+          efMicRecog = null;
+          efSetMicActive(false);
+          return;
+        }
         efMicRecog = null;
         efStartMic();
       }, 80);
@@ -9571,16 +9591,23 @@ function efStopMic() {
   window.addEventListener('offline', efMicUpdateBtn);
   document.addEventListener('DOMContentLoaded', function() {
     efMicUpdateBtn();
-    // setTimeout(0) garantit que init() (aussi sur DOMContentLoaded) a terminé
-    // avant la tentative de restauration. Sans ce délai, efOpen() peut être
-    // appelé avant que l'appli soit initialisée → modale zombie / écran blanc
-    // lors de l'octroi de permission micro (rechargement bref sur Android/iOS).
-    setTimeout(efRestoreState, 0);
+    efRestoreState();
   });
 
-  window.addEventListener('pagehide', function() { efStopMic(); });
+  window.addEventListener('pagehide', function() {
+    // Demande de permission micro en vol : ne rien démonter (cf. efSessionGranted).
+    if (efIsIOS() && efMicActive && !efSessionGranted) return;
+    efStopMic();
+  });
   document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'hidden') {
+      // iOS PWA standalone : l'alerte système de permission micro masque la page
+      // (hidden) alors que l'app n'est PAS en arrière-plan. Abort() ici détruit la
+      // reco pendant que la demande de permission est en vol → crash WebContent à
+      // l'octroi (écran blanc ~2s puis relance), et efClearState() efface le flag
+      // de restauration → retour à l'accueil. Tant que la session n'a jamais
+      // capturé d'audio, ce hidden EST l'alerte de permission : ne rien faire.
+      if (efIsIOS() && efMicActive && !efSessionGranted) return;
       // Même logique que efClose() : capturer l'instance avant abort() pour préchauffer
       // dès que le device est libéré, prêt pour quand l'utilisateur revient dans l'appli.
       var hadMic = !efIsIOS() && !!efMicRecog;
