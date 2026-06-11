@@ -1012,6 +1012,10 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 }
 .ef-step-side.fo { color:var(--warm) }
 .ef-step-side.fa { color:var(--accent) }
+.ef-step-range { font-family:'DM Mono',monospace; font-size:.52rem; letter-spacing:.08em; opacity:.65; margin:-.14rem 0 .3rem }
+.ef-step-range.fo { color:var(--warm) }
+.ef-step-range.fa { color:var(--accent) }
+.ef-step-range:empty { display:none }
 .ef-step-spoke {
   font-family:'DM Mono',monospace; font-size:1.6rem; font-weight:300;
   color:var(--text); line-height:1;
@@ -2227,7 +2231,7 @@ input[type=number] { -moz-appearance:textfield }
                 <button class="tm-th-invert" id="tm-th-nds-invert" onclick="invColDirect('nds')" title="Inverser NDS">⇅</button>
                 <button class="tm-th-reset" onclick="tmResetSide('nds')" title="Effacer NDS">✕</button>
               </div>
-              <div class="tm-th-sub" id="tm-th-nds-sub">lecture · kgf</div>
+              <div class="tm-th-sub" id="tm-th-nds-sub">Lecture</div>
             </th>
             <th id="tm-th-ds" class="th-fo">
               <div class="tm-th-row">
@@ -2235,7 +2239,7 @@ input[type=number] { -moz-appearance:textfield }
                 <button class="tm-th-invert" id="tm-th-ds-invert" onclick="invColDirect('ds')" title="Inverser DS">⇅</button>
                 <button class="tm-th-reset" onclick="tmResetSide('ds')" title="Effacer DS">✕</button>
               </div>
-              <div class="tm-th-sub" id="tm-th-ds-sub">lecture · kgf</div>
+              <div class="tm-th-sub" id="tm-th-ds-sub">Lecture</div>
             </th>
           </tr>
         </thead>
@@ -2636,7 +2640,7 @@ const i18n = {
     tmOutlierModalTitle:'Seuil de détection',
     tmOutlierModalDesc:'Si la dispersion globale de la nappe dépasse ce seuil, les rayons les plus éloignés de la tension médiane sont mis en évidence.',
     tmTensioLabel:'Tensiomètre',
-    tmReadingKgf:'lecture · kgf',
+    tmReadingKgf:'Lecture',
     tmSpokeSelectPlaceholder:'—',
     tmTensioPlaceholder:'—',
     tmWarnAerolite2:'⚠ Valeurs valables UNIQUEMENT avec le Tensiomètre Aerolite II',
@@ -2784,7 +2788,7 @@ const i18n = {
     tmCVMaxLabel:'Outliers threshold',
     tmOutlierModalTitle:'Detection threshold',
     tmOutlierModalDesc:'If the overall spread of the nappe exceeds this threshold, the spokes furthest from the median tension are highlighted.',
-    tmReadingKgf:'reading · kgf',
+    tmReadingKgf:'Reading',
     tmSpokeSelectPlaceholder:'—',
     tmTensioPlaceholder:'—',
     tmWarnAerolite2:'⚠ Values valid ONLY with the Aerolite II Tensiometer',
@@ -8354,6 +8358,7 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 
     <div class="ef-step-info">
       <div class="ef-step-side fo" id="ef-side-label">NDS</div>
+      <div class="ef-step-range fo" id="ef-side-range"></div>
       <div class="ef-step-spoke"><span id="ef-spoke-label" data-i18n="efSpoke">Rayon</span> <span id="ef-spoke-num">1</span></div>
     </div>
 
@@ -8545,6 +8550,13 @@ function efRenderStep() {
   var sideEl = $id('ef-side-label');
   sideEl.textContent = step.side === 'fo' ? labels.fo : labels.fa;
   sideEl.className   = 'ef-step-side ' + step.side;
+
+  var rangeEl = $id('ef-side-range');
+  if (rangeEl) {
+    var efRg = tmGetRange();
+    rangeEl.textContent = efRg ? t('tmReadingKgf') + ' · ' + tmDisplayValue(efRg.min) + ' → ' + tmDisplayValue(efRg.max) : '';
+    rangeEl.className   = 'ef-step-range ' + step.side;
+  }
 
   $id('ef-spoke-num').textContent = step.idx + 1;
   $id('ef-spoke-label').textContent = t('efSpoke');
