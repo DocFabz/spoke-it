@@ -8949,11 +8949,18 @@ var efAutoStep       = null;  // step réellement commité par l'auto-avance. La
                               // PAS se fier à efSteps[efCurrent-1] : si l'auto-avance a franchi une bascule
                               // de nappe, efBuildSteps() + efFirstUnfilled() ont invalidé les index.
 var efAutoResultIdx  = null;  // index e.results de l'énoncé ayant déclenché l'auto-avance. Un intermédiaire
-                              // ultérieur portant le MÊME index est la SUITE du même énoncé (ex. « 1,4 »
-                              // devenu « 1,81 » quand Safari finit de transcrire « quatre-vingt-un ») :
-                              // il corrige le step déjà commité (efAutoStep) et ne doit JAMAIS être traité
-                              // comme une valeur du champ courant. Invalidé à chaque nouvelle instance SR
-                              // (les index e.results repartent de 0) et partout où efAutoStep est annulé.
+                              // ultérieur portant le MÊME index appartient au même résultat SR : soit la
+                              // RÉÉCRITURE de l'énoncé commité (« 1,4 » → « 1,81 » quand Safari finit de
+                              // transcrire « quatre-vingt-un » : correction d'efAutoStep), soit un NOUVEL
+                              // énoncé ACCOLÉ par Safari dans le même résultat (« 31 » → « 31 32 »,
+                              // fréquent sur iOS : valeur pour le champ courant). efAutoRest() départage
+                              // via efAutoTxt. Invalidé à chaque nouvelle instance SR (les index e.results
+                              // repartent de 0) et partout où efAutoStep est annulé.
+var efAutoTxt        = null;  // transcript exact (complet) au moment de l'auto-avance. Si un résultat
+                              // ultérieur du même index le contient comme PRÉFIXE suivi d'un séparateur,
+                              // la suite est un nouvel énoncé accolé ; sinon c'est une réécriture.
+                              // Toujours le transcript COMPLET du résultat (jamais le reste seul), pour
+                              // que le test de préfixe fonctionne en chaîne (« 31 » → « 31 32 » → « 31 32 30 »).
 
 
 function efSaveState() {
@@ -9278,6 +9285,22 @@ function efCorrectAutoStep(num) {
   return true;
 }
 
+// Départage les deux cas d'un résultat SR portant le même index que l'auto-avance :
+// — RÉÉCRITURE de l'énoncé commité (« 1,4 » → « 1,81 ») : le transcript mémorisé
+//   n'est pas un préfixe du nouveau → retourne null → correction d'efAutoStep.
+// — NOUVEL énoncé ACCOLÉ par Safari (« 31 » → « 31 32 », « 31, 32 ») : préfixe
+//   intact + séparateur → retourne la suite (« 32 ») → valeur du champ courant.
+// Le séparateur est exigé : sans lui, « 1,8 » → « 1,81 » donnerait un reste « 1 »
+// pris pour une nouvelle valeur alors que c'est la fin du même nombre.
+function efAutoRest(txt) {
+  if (!efAutoTxt || txt.length <= efAutoTxt.length) return null;
+  if (txt.indexOf(efAutoTxt) !== 0) return null;
+  var rest = txt.slice(efAutoTxt.length);
+  if (!/^[\s,;]/.test(rest)) return null;        // collé = même nombre, pas un nouvel énoncé
+  rest = rest.replace(/^[\s,;]+/, '');
+  return rest || null;
+}
+
 function efStartMic(forceLang) {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
@@ -9293,6 +9316,7 @@ function efStartMic(forceLang) {
   // Nouvelle instance SR = les index e.results repartent de 0 : un efAutoResultIdx
   // périmé (souvent 0) ferait passer le PROCHAIN énoncé pour une continuation.
   efAutoResultIdx = null;
+  efAutoTxt       = null;
   // Consommer l'instance préchauffée si disponible (desktop, pas de langue forcée, pas iOS)
   var r;
   if (!efIsIOS() && !effLang && efWarmInstance) {
@@ -9350,6 +9374,12 @@ function efStartMic(forceLang) {
     var resIdx = e.results.length - 1;
     var result = e.results[resIdx];
     var txt = result[0].transcript.trim().toLowerCase();
+    // Virgule SUIVIE D'ESPACE = ponctuation d'énumération Safari (« 31, 32 »),
+    // jamais un séparateur décimal (les décimales sont transcrites collées :
+    // « 31,5 »). La neutraliser ici rend « 31, 32 » ≡ « 31 32 » dans tous les
+    // chemins — sinon efVoiceToNumber la recolle en « 31.32 » et la branche
+    // de correction écraserait le step commité avec ce faux décimal.
+    txt = txt.replace(/,\s+/g, ' ');
 
     // pendant la transition vers le champ suivant, mémoriser plutôt que jeter
     if (efPendingNext) {
@@ -9376,6 +9406,7 @@ function efStartMic(forceLang) {
         efAutoAdvanced   = false;
         efAutoStep       = null; // nav = fin de la fenêtre de correction (le garde
         efAutoResultIdx  = null; // de continuation ne doit plus matcher cet index)
+        efAutoTxt        = null;
         efOorFired       = false;
         efLastInterimNum = null;
         efNavExecuted = navCmd;
@@ -9386,25 +9417,39 @@ function efStartMic(forceLang) {
         return;
       }
       var numInterim = efVoiceToNumber(txt);
+      var oorTxt = txt; // transcript servant au test « entier seul » de la branche OOR
       if (numInterim) {
-        // Continuation du MÊME énoncé après une auto-avance déjà déclenchée
-        // (même index e.results) : ex. « 1,4 » commité puis Safari complète
-        // en « 1,81 » (« quatre » → « quatre-vingt-un », >500ms de latence).
-        // Ce n'est PAS une valeur pour le champ courant : corriger directement
-        // le step déjà commité et ne rien armer ici. efAutoAdvanced reste posé,
-        // le isFinal du même index fera la correction définitive (ou la sautera
-        // si efLastInterimNum est déjà à jour).
+        // Résultat portant le MÊME index que l'auto-avance : deux cas, départagés
+        // par efAutoRest() sur le transcript mémorisé (efAutoTxt) :
+        // — nouvel énoncé ACCOLÉ par Safari (« 31 » → « 31 32 », fréquent iOS) :
+        //   la suite est une valeur pour le champ courant → clore la fenêtre de
+        //   correction et continuer le traitement normal avec elle ;
+        // — RÉÉCRITURE de l'énoncé commité (« 1,4 » → « 1,81 », composé français
+        //   complété après la fenêtre 500ms) : corriger efAutoStep et ne rien
+        //   armer ici. efAutoAdvanced reste posé, le isFinal du même index fera
+        //   la correction définitive (ou la sautera si efLastInterimNum est à jour).
         if (efAutoStep && efAutoResultIdx === resIdx) {
-          if (numInterim !== efLastInterimNum && efCorrectAutoStep(numInterim)) {
-            efLastInterimNum = numInterim;
+          var restInt = efAutoRest(txt);
+          var restIntNum = restInt ? efVoiceToNumber(restInt) : null;
+          if (restIntNum) {
+            numInterim = restIntNum;
+            oorTxt = restInt;
+            // la fenêtre de correction de l'énoncé précédent est close ;
+            // efAutoTxt reste le transcript COMPLET (posé au prochain timer)
+            efAutoStep = null; efAutoResultIdx = null; efAutoTxt = null;
+          } else {
+            if (numInterim !== efLastInterimNum && efCorrectAutoStep(numInterim)) {
+              efLastInterimNum = numInterim;
+            }
+            return;
           }
-          return;
         }
         efLastInterimNum = numInterim;
         if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
         efAutoAdvanced = false;
         efAutoStep      = null; // nouvel énoncé : la fenêtre de correction du précédent est close
         efAutoResultIdx = null;
+        efAutoTxt       = null;
         efOorFired = false;
         var parsedInterim = tmParseInput(numInterim);
         if (parsedInterim !== null) {
@@ -9416,6 +9461,7 @@ function efStartMic(forceLang) {
               efAutoAdvanced = true;
               efAutoStep = efSteps[efCurrent]; // step qui va être commité par efNext()
               efAutoResultIdx = resIdx;       // index de l'énoncé : ses mises à jour corrigeront CE step
+              efAutoTxt = txt;                // transcript COMPLET à l'armement (test de préfixe en chaîne)
               var inp = $id('ef-inp');
               inp.value = numInterim;
               efUpdateKgf();
@@ -9436,6 +9482,7 @@ function efStartMic(forceLang) {
                   efAutoAdvanced   = false; // le final est déjà consommé : pas de re-correction
                   efAutoStep       = null;
                   efAutoResultIdx  = null;
+                  efAutoTxt        = null;
                   efLastInterimNum = null;
                 }
                 var ok = efNext();
@@ -9443,7 +9490,7 @@ function efStartMic(forceLang) {
               }, 200);
             }, 500);
           } else if (tmGetRange() !== null &&
-                     !/^\s*\d+\s*$/.test(txt)) {
+                     !/^\s*\d+\s*$/.test(oorTxt)) {
             // Parseable mais hors plage : beep + feedback visuel après stabilisation 500ms
             // Exception : transcript intermédiaire = entier seul (ex: "1" avant "1 virgule 23")
             // → ne pas déclencher OOR, la partie décimale n'est pas encore arrivée.
@@ -9490,14 +9537,26 @@ function efStartMic(forceLang) {
     // (efAutoStep — pas efSteps[efCurrent-1], invalide après une bascule de nappe)
     if (efAutoAdvanced) {
       efAutoAdvanced = false;
-      var numFinal = efVoiceToNumber(txt);
-      if (numFinal && numFinal !== efLastInterimNum && efAutoStep) {
-        efCorrectAutoStep(numFinal);
+      // Final couvrant l'énoncé commité PLUS un nouvel énoncé accolé
+      // (« 31 32 ») : le préfixe est identique au commit (rien à corriger),
+      // la suite est la valeur du champ courant → la traiter par le chemin
+      // final normal ci-dessous au lieu de la perdre.
+      var restFinal = efAutoRest(txt);
+      if (restFinal !== null && efVoiceToNumber(restFinal)) {
+        efAutoStep = null; efAutoResultIdx = null; efAutoTxt = null;
+        efLastInterimNum = null; // appartenait à l'énoncé précédent
+        txt = restFinal;
+      } else {
+        var numFinal = efVoiceToNumber(txt);
+        if (numFinal && numFinal !== efLastInterimNum && efAutoStep) {
+          efCorrectAutoStep(numFinal);
+        }
+        efAutoStep = null;
+        efAutoResultIdx = null;
+        efAutoTxt = null;
+        efLastInterimNum = null;
+        return;
       }
-      efAutoStep = null;
-      efAutoResultIdx = null;
-      efLastInterimNum = null;
-      return;
     }
     var num = efVoiceToNumber(txt);
     // Si le transcript final ne donne rien, utiliser le dernier résultat
@@ -9708,6 +9767,7 @@ function efStopMic() {
   efAutoAdvanced   = false;
   efAutoStep       = null;
   efAutoResultIdx  = null;
+  efAutoTxt        = null;
   efOorFired       = false;
   efLastInterimNum = null;
   efNavExecuted    = null;
