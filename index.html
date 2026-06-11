@@ -9369,10 +9369,20 @@ function efStartMic(forceLang) {
         efAutoStep     = null; // nouvel énoncé : la fenêtre de correction du précédent est close
         efOorFired = false;
         var parsedInterim = tmParseInput(numInterim);
+        // Sécurité décimales "prolongeables" : un intermédiaire comme "1.4"
+        // (un virgule quatre) peut encore grandir en "1.81" (quatre-vingt-un),
+        // et "1.80"/"1.30" en "1.81"/"1.32" (vingt→vingt-et-un, trente→trente-deux,
+        // soixante→soixante-dix). Dans ces cas la stabilisation 500ms est trop
+        // courte : l'auto-avance committe la valeur tronquée et le final atterrit
+        // sur le rayon suivant (les interims de continuation ferment efAutoStep,
+        // donc la correction isFinal ne rattrape pas ce cas). On rallonge alors
+        // le délai à 850ms. Une décimale "finie" (ex: 1.81, 2.65) garde 500ms.
+        var efDecPart = numInterim.indexOf('.') !== -1 ? numInterim.split('.')[1] : null;
+        var efStableDelay = (efDecPart !== null && (efDecPart.length === 1 || /0$/.test(efDecPart))) ? 850 : 500;
         if (parsedInterim !== null) {
           var kgfInterim = toKgf(parsedInterim);
           if (kgfInterim !== null) {
-            // Valeur valide : auto-avance après stabilisation 500ms
+            // Valeur valide : auto-avance après stabilisation (500ms, ou 850ms si décimale prolongeable)
             efBeepTimer = setTimeout(function() {
               efBeepTimer = null;
               efAutoAdvanced = true;
@@ -9401,7 +9411,7 @@ function efStartMic(forceLang) {
                 var ok = efNext();
                 if (ok) { efBeepNext(); }
               }, 200);
-            }, 500);
+            }, efStableDelay);
           } else if (tmGetRange() !== null &&
                      !/^\s*\d+\s*$/.test(txt)) {
             // Parseable mais hors plage : beep + feedback visuel après stabilisation 500ms
@@ -9426,7 +9436,7 @@ function efStartMic(forceLang) {
                   efUpdateKgf();
                 }, 1800);
               }
-            }, 500);
+            }, efStableDelay);
           }
         }
       }
