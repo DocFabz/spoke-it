@@ -215,8 +215,8 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .wheel-reset-btn:active { border-color:var(--warm2); color:var(--warm2); box-shadow:0 0 18px rgba(232,146,124,.25) }
 .wheel-reset-btn .reset-icon { flex-shrink:0; opacity:.75; transition:transform .35s cubic-bezier(.22,1,.36,1) }
 .wheel-reset-btn:hover .reset-icon { transform:rotate(-180deg); opacity:1 }
-@keyframes reset-tap-flash { 0% { border-color:var(--warm2); color:var(--warm2); box-shadow:0 0 18px rgba(232,146,124,.35) } 100% { border-color:rgba(232,146,124,.3); color:rgba(232,146,124,.55); box-shadow:none } }
-@media (hover: none) { .wheel-reset-btn:hover { border-color:rgba(232,146,124,.3); color:rgba(232,146,124,.55); box-shadow:none } .wheel-reset-btn:hover::before { opacity:0 } .wheel-reset-btn:active { animation:reset-tap-flash .55s cubic-bezier(.22,1,.36,1) forwards } }
+@keyframes reset-tap-flash { 0% { border-color:var(--warm2); color:var(--warm2); box-shadow:0 0 18px rgba(232,146,124,.35) } 100% { border-color:rgba(232,146,124,.45); color:rgba(232,146,124,.75); box-shadow:none } }
+@media (hover: none) { .wheel-reset-btn:hover { border-color:rgba(232,146,124,.45); color:rgba(232,146,124,.75); box-shadow:none } .wheel-reset-btn:hover::before { opacity:0 } .wheel-reset-btn:hover .reset-icon { transform:none; opacity:.75 } .wheel-reset-btn:active { animation:reset-tap-flash .55s cubic-bezier(.22,1,.36,1) forwards } }
 
 /* ── Hub/Rim save modal ─────────────────────────────────────────────────────── */
 .hr-save-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
