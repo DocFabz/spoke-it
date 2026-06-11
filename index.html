@@ -212,10 +212,10 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .wheel-reset-btn::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(232,146,124,.07) 0%,rgba(240,180,154,.04) 100%); opacity:0; transition:opacity .2s }
 .wheel-reset-btn:hover { border-color:rgba(232,146,124,.6); color:var(--warm2); box-shadow:0 0 10px rgba(232,146,124,.12),inset 0 0 6px rgba(232,146,124,.05) }
 .wheel-reset-btn:hover::before { opacity:1 }
-.wheel-reset-btn:active { border-color:var(--warm2); color:#fff; box-shadow:0 0 18px rgba(232,146,124,.25) }
+.wheel-reset-btn:active { border-color:var(--warm2); color:var(--warm2); box-shadow:0 0 18px rgba(232,146,124,.25) }
 .wheel-reset-btn .reset-icon { flex-shrink:0; opacity:.75; transition:transform .35s cubic-bezier(.22,1,.36,1) }
 .wheel-reset-btn:hover .reset-icon { transform:rotate(-180deg); opacity:1 }
-@keyframes reset-tap-flash { 0% { border-color:var(--warm2); color:#fff; box-shadow:0 0 18px rgba(232,146,124,.35) } 100% { border-color:rgba(232,146,124,.3); color:rgba(232,146,124,.55); box-shadow:none } }
+@keyframes reset-tap-flash { 0% { border-color:var(--warm2); color:var(--warm2); box-shadow:0 0 18px rgba(232,146,124,.35) } 100% { border-color:rgba(232,146,124,.3); color:rgba(232,146,124,.55); box-shadow:none } }
 @media (hover: none) { .wheel-reset-btn:hover { border-color:rgba(232,146,124,.3); color:rgba(232,146,124,.55); box-shadow:none } .wheel-reset-btn:hover::before { opacity:0 } .wheel-reset-btn:active { animation:reset-tap-flash .55s cubic-bezier(.22,1,.36,1) forwards } }
 
 /* ── Hub/Rim save modal ─────────────────────────────────────────────────────── */
@@ -1112,7 +1112,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 #tm-conv-calc-btn, #tm-conv-view-btn { outline:none }
 .tm-conv-scroll   { overflow-y:auto; flex:1; border-radius:var(--rs); border:1px solid var(--border) }
 .tm-conv-table    { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:.8rem }
-.tm-conv-table th { padding:.5rem .7rem; font-family:'DM Sans',sans-serif; font-size:.58rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; text-align:center; border-bottom:1px solid var(--border); background:rgba(126,200,227,.06); color:var(--accent); position:sticky; top:0; z-index:1 }
+.tm-conv-table th { padding:.5rem .7rem; font-family:'DM Sans',sans-serif; font-size:.58rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; text-align:center; background:linear-gradient(rgba(126,200,227,.06),rgba(126,200,227,.06)),var(--card); box-shadow:0 1px 0 var(--border); color:var(--accent); position:sticky; top:0; z-index:1 }
 .tm-conv-table td { padding:.38rem .7rem; text-align:center; border-bottom:1px solid rgba(255,255,255,.035); color:var(--text) }
 .tm-conv-table tr:nth-child(even) { background:rgba(0,0,0,.07) }
 .tm-conv-table tr:last-child td { border-bottom:none }
@@ -1269,7 +1269,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 /* ══ Polish 2026 — couche ergonomie & modernité (additive, thème inchangé) ══
    Chaque bloc est indépendant : supprimable individuellement sans effet de bord. */
 
-/* 1. Contrôles natifs, clavier iOS, scrollbars et barres système en sombre */
+/* 1. Contrôles natifs, scrollbars et fond d'overscroll en sombre
+      (nb : le clavier iOS suit le réglage système, pas la page) */
 :root { color-scheme: dark }
 
 /* 2. Rendu typographique net + zones sûres iPhone (encoche / barre home, PWA plein écran) */
