@@ -9645,6 +9645,14 @@ function efReset() {
 
 function efStopMic() {
   if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
+  // Réarmer le garde permission : si iOS ré-affiche l'alerte micro à la
+  // PROCHAINE session (fréquent en PWA standalone), le 'hidden' qu'elle
+  // provoque doit de nouveau être reconnu comme alerte (et non arrière-plan).
+  // Sans ce reset, efSessionGranted reste true depuis la session précédente
+  // → visibilitychange démonte la reco pendant l'octroi en vol → crash
+  // WebContent (écran blanc puis relance). Les restarts onend internes à une
+  // session passent par efStartMic sans efStopMic : pas de flicker du flag.
+  efSessionGranted = false;
   efRestartCount   = 0;
   efPendingQueue   = null;
   efPendingNext    = false;
