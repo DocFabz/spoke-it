@@ -1093,6 +1093,12 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ef-sw-btn.fo.active { background:rgba(232,146,124,.12); border-color:rgba(232,146,124,.35); color:var(--warm) }
 .ef-sw-btn.fa.active { background:rgba(126,200,227,.1);  border-color:rgba(126,200,227,.3);  color:var(--accent) }
 .ef-sw-btn.both.active { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.15); }
+/* Croix à droite du bouton actif : re-clic = effacement de la nappe */
+.ef-sw-btn { position:relative }
+.ef-sw-btn.active::after {
+  content:'✕'; position:absolute; right:.45em; top:50%;
+  transform:translateY(-50%); font-size:.85em; opacity:.55;
+}
 
 /* ── Loaded config name ────────────────────────────────────────────────────── */
 .cfg-loaded-name {
@@ -8500,7 +8506,16 @@ function efUpdateSwitcher() {
 }
 
 function efSwitchSide(mode) {
-  if (efSideMode === mode) return;
+  if (efSideMode === mode) {
+    // Re-clic sur le bouton actif : effacer les valeurs de la (des) nappe(s)
+    // correspondante(s). Réutilise tmResetSide (mêmes effets que les ✕ des
+    // en-têtes du tableau : data + DOM + radar + snapshot label).
+    if (mode === 'both') { tmResetSide('nds'); tmResetSide('ds'); }
+    else tmResetSide(efShortLabel(mode).toLowerCase());
+    efCurrent = efFirstUnfilled();
+    efRenderStep();
+    return;
+  }
   efSideMode = mode;
   efUpdateSwitcher();
   efBuildSteps();
