@@ -11,7 +11,7 @@
   gtag('js', new Date());
   gtag('config', 'G-GEY79L24TV');
 </script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Spoke It — Bicycle wheel spoke length calculator & tension meter</title>
 
 <meta name="description" content="Spoke It : calculateur de longueur de rayons et tensiomètre pour roues de vélo. Saisissez vos mesures de moyeu et jante, analysez la tension rayon par rayon. Gratuit, sans inscription, fonctionne sur mobile.">
@@ -1264,6 +1264,75 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 ::-webkit-scrollbar       { width:4px }
 ::-webkit-scrollbar-track { background:transparent }
 ::-webkit-scrollbar-thumb { background:var(--border-s); border-radius:2px }
+::-webkit-scrollbar-thumb:hover { background:rgba(126,200,227,.35) }
+
+/* ══ Polish 2026 — couche ergonomie & modernité (additive, thème inchangé) ══
+   Chaque bloc est indépendant : supprimable individuellement sans effet de bord. */
+
+/* 1. Contrôles natifs, clavier iOS, scrollbars et barres système en sombre */
+:root { color-scheme: dark }
+
+/* 2. Rendu typographique net + zones sûres iPhone (encoche / barre home, PWA plein écran) */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding-left:  env(safe-area-inset-left,  0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  overscroll-behavior-y: none; /* supprime le rebond/pull-to-refresh accidentel en saisie */
+}
+.wrap { padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px)) }
+
+/* 3. Sélection de texte au thème */
+::selection { background: rgba(126,200,227,.28); color: #fff }
+
+/* 4. Focus clavier visible (accessibilité), invisible au tactile */
+:focus-visible { outline: 2px solid rgba(126,200,227,.55); outline-offset: 2px; border-radius: 4px }
+:focus:not(:focus-visible) { outline: none }
+
+/* 5. Tap propre partout : pas de flash gris, pas de délai 300 ms */
+button, [onclick], input, select, label { -webkit-tap-highlight-color: transparent; touch-action: manipulation }
+
+/* 6. Zone tactile élargie à ~44 px effectifs sur les petits boutons,
+      sans aucun impact sur le layout (pseudo-élément invisible) */
+.save-mgr-btn, .lang-btn, .card-icon-btn, .ateliermgr-clear, .tou-link,
+[class*="-close"] { position: relative }
+.save-mgr-btn::after, .lang-btn::after, .card-icon-btn::after, .ateliermgr-clear::after, .tou-link::after,
+[class*="-close"]::after { content:''; position:absolute; inset:-8px }
+
+/* 7. Retour tactile au press (mobile uniquement) */
+@media (hover: none) {
+  .save-mgr-btn:active, .lang-btn:active, .card-icon-btn:active,
+  .ateliermgr-clear:active, [class*="-close"]:active {
+    transform: scale(.92);
+    transition: transform .08s;
+  }
+}
+
+/* 8. Champs numériques épurés (suppression des spinners desktop datés) */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+input[type=number] { -moz-appearance:textfield; appearance:textfield }
+
+/* 9. Le scroll programmatique vers une carte laisse un peu d'air en haut */
+.card { scroll-margin-top: 1rem }
+
+/* 10. Respect de prefers-reduced-motion (accessibilité système) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  html { scroll-behavior: auto }
+}
+
+/* 11. Isolation du scroll interne : arrivé en butée d'une modale ou d'une liste,
+      le scroll ne se propage plus à la page derrière (desktop comme mobile) */
+.erasemgr-modal, .cc-modal, .ct-modal, .snap-modal,
+.hr-load-list, .wheel-load-list, .tm-gauge-scroll, .tm-conv-scroll,
+.tou-body, #ef-wrapper.landscape .ef-modal, #snapcompare-list {
+  overscroll-behavior: contain;
+}
 
 /* ── Number input spin buttons ─────────────────────────────────────────────── */
 input[type=number]::-webkit-inner-spin-button,
