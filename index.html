@@ -8566,6 +8566,11 @@ function efClose() {
     if (rcChev) rcChev.style.transform = 'rotate(180deg)';
     tmTryRenderRadar();
     tmUpdateResultCardState();
+  } else {
+    // Plus aucune valeur (ex: effacement via les boutons de nappe) :
+    // refermer la card résultat et la repasser en état no-data non ouvrable,
+    // comme à la sélection initiale tensiomètre+rayons sans saisie.
+    tmHideResult();
   }
 }
 
