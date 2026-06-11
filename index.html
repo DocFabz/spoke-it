@@ -1099,6 +1099,13 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   content:'✕'; position:absolute; right:.45em; top:50%;
   transform:translateY(-50%); font-size:.85em; opacity:.55;
 }
+/* Flash de confirmation à l'effacement (même pattern que sb-flash, halo neutre blanc) */
+@keyframes ef-sw-clear-flash {
+  0%   { box-shadow:0 0 0 1px rgba(255,255,255,.55), 0 0 18px rgba(255,255,255,.35) }
+  40%  { box-shadow:0 0 0 1px rgba(255,255,255,.3),  0 0 8px rgba(255,255,255,.15) }
+  100% { box-shadow:0 0 0 1px rgba(255,255,255,0),   0 0 0 rgba(255,255,255,0) }
+}
+.ef-sw-btn.clear-flash { animation:ef-sw-clear-flash .55s cubic-bezier(.22,1,.36,1) }
 
 /* ── Loaded config name ────────────────────────────────────────────────────── */
 .cfg-loaded-name {
@@ -8512,6 +8519,14 @@ function efSwitchSide(mode) {
     // en-têtes du tableau : data + DOM + radar + snapshot label).
     if (mode === 'both') { tmResetSide('nds'); tmResetSide('ds'); }
     else tmResetSide(efShortLabel(mode).toLowerCase());
+    // Feedback visuel : flash warm sur le bouton (même pattern que sb-flash)
+    var swBtn = $id(mode === 'both' ? 'ef-sw-both' : (mode === 'fo' ? 'ef-sw-fo' : 'ef-sw-fa'));
+    if (swBtn) {
+      swBtn.classList.remove('clear-flash');
+      void swBtn.offsetWidth;
+      swBtn.classList.add('clear-flash');
+      swBtn.addEventListener('animationend', function() { swBtn.classList.remove('clear-flash'); }, { once: true });
+    }
     efCurrent = efFirstUnfilled();
     efRenderStep();
     return;
