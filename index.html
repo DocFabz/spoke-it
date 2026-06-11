@@ -8880,6 +8880,16 @@ var efMicRecog       = null;
 //                      efSteps[efCurrent-1] est invalide après une bascule de nappe
 //                      (efBuildSteps + efFirstUnfilled réinitialisent les index).
 //
+// efAutoResultIdx    — index e.results de l'énoncé qui a déclenché l'auto-avance.
+//                      Un résultat intermédiaire ultérieur portant le MÊME index est
+//                      la suite de ce même énoncé (Safari complète sa transcription :
+//                      « 1,4 » → « 1,81 » pour « un virgule quatre-vingt-un », les
+//                      composés français dépassant la fenêtre de stabilisation 500ms).
+//                      Il corrige efAutoStep via efCorrectAutoStep() au lieu d'être
+//                      pris pour une valeur du champ courant (sinon : 1.4 au rayon N
+//                      et 1.81 au rayon N+1). Invalidé à chaque nouvelle instance SR
+//                      (les index repartent de 0) et partout où efAutoStep est annulé.
+//
 // efOorFired         — symétrique d'efAutoAdvanced pour le cas hors plage.
 //                      Posé à true dans le timer OOR, lu dans isFinal pour
 //                      court-circuiter efCommitCurrent() et éviter double beep +
@@ -8938,6 +8948,12 @@ var efForcedLang     = null;  // langue forcée via la modale — iOS recrée l'
 var efAutoStep       = null;  // step réellement commité par l'auto-avance. La correction du final ne peut
                               // PAS se fier à efSteps[efCurrent-1] : si l'auto-avance a franchi une bascule
                               // de nappe, efBuildSteps() + efFirstUnfilled() ont invalidé les index.
+var efAutoResultIdx  = null;  // index e.results de l'énoncé ayant déclenché l'auto-avance. Un intermédiaire
+                              // ultérieur portant le MÊME index est la SUITE du même énoncé (ex. « 1,4 »
+                              // devenu « 1,81 » quand Safari finit de transcrire « quatre-vingt-un ») :
+                              // il corrige le step déjà commité (efAutoStep) et ne doit JAMAIS être traité
+                              // comme une valeur du champ courant. Invalidé à chaque nouvelle instance SR
+                              // (les index e.results repartent de 0) et partout où efAutoStep est annulé.
 
 
 function efSaveState() {
@@ -9245,6 +9261,23 @@ function efWarmSR() {
   } catch(e) {}
 }
 
+// Réécrit la valeur du step déjà commité par l'auto-avance (efAutoStep) avec
+// un transcript plus complet du MÊME énoncé. Utilisé par la branche isFinal
+// (correction historique) et par les intermédiaires de continuation (même
+// index e.results — ex. « 1,4 » devenu « 1,81 » quand Safari finit de
+// transcrire « quatre-vingt-un »). Idempotent : chaque appel écrase la
+// valeur précédente, le transcript final a le dernier mot.
+function efCorrectAutoStep(num) {
+  if (!efAutoStep) return false;
+  var parsed = tmParseInput(num);
+  if (parsed === null || !tmInRange(parsed)) return false;
+  if (efAutoStep.side === 'fo') tmData.fo[efAutoStep.idx] = parsed;
+  else                          tmData.fa[efAutoStep.idx] = parsed;
+  efSyncTableCell(efAutoStep);
+  tmUpdateCell(efAutoStep.idx, efAutoStep.side);
+  return true;
+}
+
 function efStartMic(forceLang) {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
@@ -9257,6 +9290,9 @@ function efStartMic(forceLang) {
   efRestartCount = 0;
   // Langue effective : argument explicite, sinon la langue forcée mémorisée (restarts iOS)
   var effLang = forceLang || efForcedLang;
+  // Nouvelle instance SR = les index e.results repartent de 0 : un efAutoResultIdx
+  // périmé (souvent 0) ferait passer le PROCHAIN énoncé pour une continuation.
+  efAutoResultIdx = null;
   // Consommer l'instance préchauffée si disponible (desktop, pas de langue forcée, pas iOS)
   var r;
   if (!efIsIOS() && !effLang && efWarmInstance) {
@@ -9311,7 +9347,8 @@ function efStartMic(forceLang) {
   r.onresult = function(e) {
     efSessionGranted = true;
     efRestartCount = 0; // un résultat reçu = micro opérationnel
-    var result = e.results[e.results.length - 1];
+    var resIdx = e.results.length - 1;
+    var result = e.results[resIdx];
     var txt = result[0].transcript.trim().toLowerCase();
 
     // pendant la transition vers le champ suivant, mémoriser plutôt que jeter
@@ -9337,6 +9374,8 @@ function efStartMic(forceLang) {
         // écrit la vieille valeur sur le mauvais rayon et déclenche une auto-avance fantôme.
         if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
         efAutoAdvanced   = false;
+        efAutoStep       = null; // nav = fin de la fenêtre de correction (le garde
+        efAutoResultIdx  = null; // de continuation ne doit plus matcher cet index)
         efOorFired       = false;
         efLastInterimNum = null;
         efNavExecuted = navCmd;
@@ -9348,10 +9387,24 @@ function efStartMic(forceLang) {
       }
       var numInterim = efVoiceToNumber(txt);
       if (numInterim) {
+        // Continuation du MÊME énoncé après une auto-avance déjà déclenchée
+        // (même index e.results) : ex. « 1,4 » commité puis Safari complète
+        // en « 1,81 » (« quatre » → « quatre-vingt-un », >500ms de latence).
+        // Ce n'est PAS une valeur pour le champ courant : corriger directement
+        // le step déjà commité et ne rien armer ici. efAutoAdvanced reste posé,
+        // le isFinal du même index fera la correction définitive (ou la sautera
+        // si efLastInterimNum est déjà à jour).
+        if (efAutoStep && efAutoResultIdx === resIdx) {
+          if (numInterim !== efLastInterimNum && efCorrectAutoStep(numInterim)) {
+            efLastInterimNum = numInterim;
+          }
+          return;
+        }
         efLastInterimNum = numInterim;
         if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
         efAutoAdvanced = false;
-        efAutoStep     = null; // nouvel énoncé : la fenêtre de correction du précédent est close
+        efAutoStep      = null; // nouvel énoncé : la fenêtre de correction du précédent est close
+        efAutoResultIdx = null;
         efOorFired = false;
         var parsedInterim = tmParseInput(numInterim);
         if (parsedInterim !== null) {
@@ -9362,6 +9415,7 @@ function efStartMic(forceLang) {
               efBeepTimer = null;
               efAutoAdvanced = true;
               efAutoStep = efSteps[efCurrent]; // step qui va être commité par efNext()
+              efAutoResultIdx = resIdx;       // index de l'énoncé : ses mises à jour corrigeront CE step
               var inp = $id('ef-inp');
               inp.value = numInterim;
               efUpdateKgf();
@@ -9381,6 +9435,7 @@ function efStartMic(forceLang) {
                   efPendingQueue = null;
                   efAutoAdvanced   = false; // le final est déjà consommé : pas de re-correction
                   efAutoStep       = null;
+                  efAutoResultIdx  = null;
                   efLastInterimNum = null;
                 }
                 var ok = efNext();
@@ -9437,16 +9492,10 @@ function efStartMic(forceLang) {
       efAutoAdvanced = false;
       var numFinal = efVoiceToNumber(txt);
       if (numFinal && numFinal !== efLastInterimNum && efAutoStep) {
-        var prevStep = efAutoStep;
-        var prevParsed = tmParseInput(numFinal);
-        if (prevParsed !== null && tmInRange(prevParsed)) {
-          if (prevStep.side === 'fo') tmData.fo[prevStep.idx] = prevParsed;
-          else                        tmData.fa[prevStep.idx] = prevParsed;
-          efSyncTableCell(prevStep);
-          tmUpdateCell(prevStep.idx, prevStep.side);
-        }
+        efCorrectAutoStep(numFinal);
       }
       efAutoStep = null;
+      efAutoResultIdx = null;
       efLastInterimNum = null;
       return;
     }
@@ -9658,6 +9707,7 @@ function efStopMic() {
   efPendingNext    = false;
   efAutoAdvanced   = false;
   efAutoStep       = null;
+  efAutoResultIdx  = null;
   efOorFired       = false;
   efLastInterimNum = null;
   efNavExecuted    = null;
