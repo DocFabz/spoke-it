@@ -9432,7 +9432,17 @@ function efStartMic(forceLang) {
         // donc la correction isFinal ne rattrape pas ce cas). On rallonge alors
         // le délai à 850ms. Une décimale "finie" (ex: 1.81, 2.65) garde 500ms.
         var efDecPart = numInterim.indexOf('.') !== -1 ? numInterim.split('.')[1] : null;
-        var efStableDelay = (efDecPart !== null && (efDecPart.length === 1 || /0$/.test(efDecPart))) ? 850 : 500;
+        // Décimale prolongeable (1.4→1.81, 1.80→1.81) OU entier rond prolongeable :
+        // un palier de dizaine (20, 40, 60…) peut encore recevoir une unité
+        // ("quarante"→"quarante-quatre", "soixante"→"soixante-dix", idem en EN
+        // "forty"→"forty-four"). Dit lentement, l'intermédiaire "40" se stabilise,
+        // l'auto-avance committe 40 sur le rayon N, puis "44" atterrit sur N+1 →
+        // deux cases pour un seul nombre. On rallonge alors à 850ms. Un entier déjà
+        // complet (44, 23…) n'est pas multiple de 10 → reste à 500ms.
+        var efDecProlong = efDecPart !== null && (efDecPart.length === 1 || /0$/.test(efDecPart));
+        var efIntProlong = efDecPart === null && /^\d+$/.test(numInterim) &&
+                           Number(numInterim) > 0 && Number(numInterim) % 10 === 0;
+        var efStableDelay = (efDecProlong || efIntProlong) ? 850 : 500;
         if (parsedInterim !== null) {
           var kgfInterim = toKgf(parsedInterim);
           if (kgfInterim !== null) {
