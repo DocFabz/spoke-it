@@ -1341,6 +1341,13 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
     transition-duration: .01ms !important;
   }
   html { scroll-behavior: auto }
+  /* Exception : clignotements qui sont des INDICATEURS D'ÉTAT (pas de la décoration) —
+     doivent rester visibles même en reduced-motion / Mode éco iOS.
+     Sélecteur de classe (0,2,0) > '*' (0,0,0), donc gagne malgré le !important global.
+       .ef-bt-btn.blink   → micro actif
+       .sum-val-btn.blink → valeur de longueur non renseignée (calculateur) */
+  .ef-bt-btn.blink   { animation-duration: 3.36s !important; animation-iteration-count: infinite !important; }
+  .sum-val-btn.blink { animation-duration: 2s    !important; animation-iteration-count: infinite !important; }
 }
 
 /* 11. Isolation du scroll interne : arrivé en butée d'une modale ou d'une liste,
@@ -8666,7 +8673,8 @@ function efCommitCurrent() {
     if (range) {
       prev.textContent = tmDisplayValue(range.min) + ' – ' + tmDisplayValue(range.max);
       prev.classList.add('oor');
-      setTimeout(function() {
+      efOorTimer = setTimeout(function() {
+        efOorTimer = null;
         prev.classList.remove('oor');
         efUpdateKgf();
       }, 1800);
@@ -8956,6 +8964,7 @@ var efPendingNext    = false; // true = valeur validée, avance en cours, ignore
 var efBeepTimer      = null;  // debounce 500ms pour beep sur valeur stable
 var efAutoAdvanced   = false; // true = auto-avance déjà déclenchée par le beep intermédiaire
 var efOorFired       = false; // true = feedback hors plage déjà déclenché en intermédiaire
+var efOorTimer       = null;  // timer 1800ms d'affichage de la plage OOR (annulable)
 var efLastInterimNum = null;  // dernier nombre intermédiaire valide (fallback isFinal)
 var efRestartCount   = 0;     // compteur de tentatives de redémarrage consécutives (non-iOS)
 var efPendingQueue   = null;  // valeur reçue pendant efPendingNext (ne pas jeter)
@@ -9371,6 +9380,7 @@ function efStartMic(forceLang) {
         // sinon le beep (ou le liseré OOR) en attente fire après la navigation,
         // écrit la vieille valeur sur le mauvais rayon et déclenche une auto-avance fantôme.
         if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
+        if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
         efAutoAdvanced   = false;
         efOorFired       = false;
         efLastInterimNum = null;
@@ -9385,6 +9395,7 @@ function efStartMic(forceLang) {
       if (numInterim) {
         efLastInterimNum = numInterim;
         if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
+        if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
         efAutoAdvanced = false;
         efAutoStep     = null; // nouvel énoncé : la fenêtre de correction du précédent est close
         efOorFired = false;
@@ -9451,7 +9462,8 @@ function efStartMic(forceLang) {
               if (range) {
                 prev.textContent = tmDisplayValue(range.min) + ' – ' + tmDisplayValue(range.max);
                 prev.classList.add('oor');
-                setTimeout(function() {
+                efOorTimer = setTimeout(function() {
+                  efOorTimer = null;
                   prev.classList.remove('oor');
                   efUpdateKgf();
                 }, 1800);
@@ -9465,6 +9477,7 @@ function efStartMic(forceLang) {
 
     // Résultat final : annuler les timers, commandes vocales + validation
     if (efBeepTimer)   { clearTimeout(efBeepTimer);   efBeepTimer = null; }
+    if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
     if (['suivant','next'].some(function(w){return txt.includes(w);}))    { if (efNavExecuted !== 'next')  efNext(); efNavExecuted = null; return; }
     if (['retour','back'].some(function(w){return txt.includes(w);}))     { if (efNavExecuted !== 'back')  efBack(); efNavExecuted = null; return; }
     if (['reset','réinitialiser'].some(function(w){return txt.includes(w);})) { if (efNavExecuted !== 'reset') efReset(); efNavExecuted = null; return; }
@@ -9707,6 +9720,7 @@ function efStopMic() {
   efLastInterimNum = null;
   efNavExecuted    = null;
   if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
+  if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
   efSetMicActive(false);
   efReleaseWakeLock();
   efClearState();
