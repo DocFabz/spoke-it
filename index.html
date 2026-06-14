@@ -2934,6 +2934,7 @@ function lsSet(key, val) {
 // ── Flash liseret sur la card type de roue (confirmation de chargement config) ──
 let _flashTimer = null;
 let _lastLoadTime = 0;
+const OOR_DISPLAY_MS = 1000; // durée d'affichage de la plage hors-table : vocal, saisie manuelle, tableau de déflection
 function flashWheelCard(configName) {
   const card = getCards()[0];
   clearTimeout(_flashTimer);
@@ -6734,8 +6735,12 @@ function tmBuildTable() {
 
       inp.addEventListener('blur', function() {
         if (this._escapingBlur) { this._escapingBlur = false; return; }
+        // Ressaisie rapide : annuler un affichage de plage encore en attente sur cette cellule
+        const _resEl = $id(`dr-${side}-${idx}`);
+        if (_resEl && _resEl._oorTimer) { clearTimeout(_resEl._oorTimer); _resEl._oorTimer = null; _resEl.classList.remove('oor'); }
         const raw = this.value.trim();
         let parsed = null;
+        let oorShown = false;
 
         if (raw !== '') {
           parsed = tmParseInput(raw);
@@ -6748,10 +6753,12 @@ function tmBuildTable() {
           if (resEl && range) {
             resEl.textContent = tmDisplayValue(range.min) + ' – ' + tmDisplayValue(range.max);
             resEl.classList.add('oor');
-            setTimeout(() => { resEl.classList.remove('oor'); tmUpdateCell(idx, side); }, 1800);
+            oorShown = true;
+            resEl._oorTimer = setTimeout(() => { resEl.classList.remove('oor'); resEl._oorTimer = null; tmUpdateCell(idx, side); }, OOR_DISPLAY_MS);
           }
           this.classList.add('out-of-range');
           setTimeout(() => this.classList.remove('out-of-range'), 400);
+          setTimeout(() => this.focus(), 0); // hors plage : remettre le focus dans la case pour ressaisir (le listener focus re-sélectionne)
           parsed = null;
         }
 
@@ -6772,7 +6779,7 @@ function tmBuildTable() {
           this.value = tmDisplayValue(parsed);
           this.classList.add('has-val');
         }
-        tmUpdateCell(idx, side);
+        if (!oorShown) tmUpdateCell(idx, side); // hors plage : laisser la plage affichée, le timer OOR_DISPLAY_MS restaurera la cellule
         tmTryRenderRadar();
         tmUpdateResultCardState();
         _snapSetLabel(0);
@@ -8677,7 +8684,7 @@ function efCommitCurrent() {
         efOorTimer = null;
         prev.classList.remove('oor');
         efUpdateKgf();
-      }, 1800);
+      }, OOR_DISPLAY_MS);
     }
     inp.classList.add('out-of-range');
     setTimeout(function() { inp.classList.remove('out-of-range'); }, 400);
@@ -8932,6 +8939,15 @@ var efMicRecog       = null;
 //                      pas s'appuyer sur toKgf() !== null ; elle utilise tmGetRange()
 //                      pour vérifier qu'une table est chargée.
 //
+// efOorTimer         — timer d'affichage de la plage hors-table (texte min–max + liseré,
+//                      puis retour à efUpdateKgf()), durée OOR_DISPLAY_MS. Stocké
+//                      (≠ anonyme) pour être ANNULABLE : annulé partout où efBeepTimer
+//                      l'est (nav, nouvel intermédiaire, final, efStopMic), sinon le
+//                      liseré fantôme réécrit le preview de la valeur ressaisie. Le bloc
+//                      OOR jumeau de efCommitCurrent() (saisie manuelle) partage ce même
+//                      handle ; le tableau de déflection a son équivalent local
+//                      resEl._oorTimer (annulé en tête du handler blur de la cellule).
+//
 // efPendingNext      — posé à true pendant les 200ms de transition entre deux rayons.
 //                      Les résultats SR reçus pendant ce laps sont mis en queue dans
 //                      efPendingQueue et traités après la transition.
@@ -8956,6 +8972,13 @@ var efMicRecog       = null;
 //   3. efOorFired  → return immédiat
 //   4. efAutoAdvanced → correction éventuelle du step précédent + return
 //   5. Traitement normal → efNext()
+//
+// NB final OOR tardif : un final hors-plage peut arriver APRÈS qu'efOorFired a été
+//   remis à false par l'intermédiaire de la valeur suivante ; il retombe alors en
+//   traitement normal et peut re-signaler l'OOR. Jugé non bloquant depuis l'ajout
+//   d'efOorTimer (re-feedback annulable, pas d'écrasement dur) → pas de garde
+//   supplémentaire ("patch 2") ajoutée. À ré-ouvrir uniquement si une trace device
+//   (efDump) montre un écrasement réel de la valeur ressaisie.
 // ─────────────────────────────────────────────────────────────────────────────
 var efWakeLock       = null;
 var efAudioCtx       = null;
@@ -8964,7 +8987,7 @@ var efPendingNext    = false; // true = valeur validée, avance en cours, ignore
 var efBeepTimer      = null;  // debounce 500ms pour beep sur valeur stable
 var efAutoAdvanced   = false; // true = auto-avance déjà déclenchée par le beep intermédiaire
 var efOorFired       = false; // true = feedback hors plage déjà déclenché en intermédiaire
-var efOorTimer       = null;  // timer 1800ms d'affichage de la plage OOR (annulable)
+var efOorTimer       = null;  // timer d'affichage de la plage OOR (annulable, durée = OOR_DISPLAY_MS)
 var efLastInterimNum = null;  // dernier nombre intermédiaire valide (fallback isFinal)
 var efRestartCount   = 0;     // compteur de tentatives de redémarrage consécutives (non-iOS)
 var efPendingQueue   = null;  // valeur reçue pendant efPendingNext (ne pas jeter)
@@ -9466,7 +9489,7 @@ function efStartMic(forceLang) {
                   efOorTimer = null;
                   prev.classList.remove('oor');
                   efUpdateKgf();
-                }, 1800);
+                }, OOR_DISPLAY_MS);
               }
             }, efStableDelay);
           }
