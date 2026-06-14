@@ -9005,6 +9005,11 @@ var efForcedLang     = null;  // langue forcée via la modale — iOS recrée l'
 var efAutoStep       = null;  // step réellement commité par l'auto-avance. La correction du final ne peut
                               // PAS se fier à efSteps[efCurrent-1] : si l'auto-avance a franchi une bascule
                               // de nappe, efBuildSteps() + efFirstUnfilled() ont invalidé les index.
+var efStaleFinalGuard = null; // valeur (string) d'un final TARDIF à ignorer. Après une auto-avance, le final
+                              // de la valeur commitée peut arriver APRÈS qu'un nouvel intermédiaire a fermé la
+                              // fenêtre de correction (efAutoAdvanced remis à false) ; sans garde ce final
+                              // (typiquement un long "zéro virgule XX") écraserait le rayon courant. Armé dans
+                              // la branche intermédiaire, consommé en tête du bloc isFinal.
 
 
 function efSaveState() {
@@ -9407,6 +9412,7 @@ function efStartMic(forceLang) {
         efAutoAdvanced   = false;
         efOorFired       = false;
         efLastInterimNum = null;
+        efStaleFinalGuard = null;
         efNavExecuted = navCmd;
         if      (navCmd === 'next')  efNext();
         else if (navCmd === 'back')  efBack();
@@ -9416,6 +9422,11 @@ function efStartMic(forceLang) {
       }
       var numInterim = efVoiceToNumber(txt);
       if (numInterim) {
+        // Un nouvel énoncé démarre. Si une auto-avance est encore "en attente de final"
+        // (efAutoAdvanced true), son final tardif arriverait après la fermeture de la
+        // fenêtre de correction ci-dessous et écraserait le rayon courant : on mémorise
+        // la valeur commitée (= efLastInterimNum, pas encore écrasé) comme final à ignorer.
+        if (efAutoAdvanced && efLastInterimNum) efStaleFinalGuard = efLastInterimNum;
         efLastInterimNum = numInterim;
         if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
         if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
@@ -9509,6 +9520,14 @@ function efStartMic(forceLang) {
     }
 
     // Résultat final : annuler les timers, commandes vocales + validation
+    // Garde "final tardif" : un final de la valeur déjà auto-avancée arrivant après la
+    // fermeture de la fenêtre de correction (nouvel intermédiaire passé). On l'ignore
+    // AVANT tout clearTimeout, pour ne PAS tuer le timer de stabilisation du rayon
+    // courant (sinon la valeur en cours, ex "0.42", serait perdue). Cas : "0.41" → "0.42".
+    if (efStaleFinalGuard !== null) {
+      if (efVoiceToNumber(txt) === efStaleFinalGuard) { efStaleFinalGuard = null; return; }
+      efStaleFinalGuard = null;
+    }
     if (efBeepTimer)   { clearTimeout(efBeepTimer);   efBeepTimer = null; }
     if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
     if (['suivant','next'].some(function(w){return txt.includes(w);}))    { if (efNavExecuted !== 'next')  efNext(); efNavExecuted = null; return; }
@@ -9751,6 +9770,7 @@ function efStopMic() {
   efAutoStep       = null;
   efOorFired       = false;
   efLastInterimNum = null;
+  efStaleFinalGuard = null;
   efNavExecuted    = null;
   if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
   if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
