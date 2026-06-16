@@ -9731,7 +9731,15 @@ function efStartMic(forceLang) {
     }, 0);
   };
   r.onerror = function(e) {
-    if (e.error === 'not-allowed') {
+    // Erreurs non récupérables : permission refusée, services de reconnaissance
+    // absents/désactivés (fréquent sur vieilles tablettes Android), langue non
+    // installée sur le moteur, ou micro indisponible. Réessayer ne corrige rien →
+    // on coupe et on masque le bouton, exactement comme pour le hors-ligne ; le
+    // numpad reste le repli de saisie.
+    if (e.error === 'not-allowed' ||
+        e.error === 'service-not-allowed' ||
+        e.error === 'language-not-supported' ||
+        e.error === 'audio-capture') {
       efRestartCount = 0;
       efSetMicActive(false);
       var btn = $id('ef-mic-btn');
@@ -9739,7 +9747,7 @@ function efStartMic(forceLang) {
     } else if (e.error === 'aborted') {
       // abort volontaire — ne rien faire
     } else {
-      // erreur transitoire — onend va suivre et relancer
+      // erreur transitoire (network, no-speech…) — onend va suivre et relancer
       efRestartCount = 0;
     }
   };
