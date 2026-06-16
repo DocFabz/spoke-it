@@ -3174,7 +3174,7 @@ function _applyLangModals() {
   document.querySelectorAll('[data-i18n="screenshotGenerate"]').forEach(function(e) { e.textContent = tr.screenshotGenerate || (L==='fr' ? 'Générer le JPEG' : 'Generate JPEG'); });
 }
 
-function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; lsSet('spoke-it-lang', lang); applyLang(); }
+function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; lsSet('spoke-it-lang', lang); applyLang(); efOnLangChange(); }
 
 // ── Error display ─────────────────────────────────────────────────────────────
 function showErr(key) {
@@ -9308,6 +9308,47 @@ function efGetRecogLang() {
 // voix de synthèse ET le mot d'unité, afin que voix et libellé restent cohérents.
 function efSpeechLang() {
   return efForcedLang || efGetRecogLang();
+}
+
+// Le bouton FR/EN est le contrôle de langue du module vocal. Il impose une locale
+// concrète (et prime donc sur un éventuel choix antérieur de la modale « Langue ou
+// US ») : FR → langue par défaut (efGetRecogLang renvoie fr-FR, instance préchauffée
+// réutilisable), EN → en-US forcé. Si une saisie vocale est en cours, on recrée
+// l'instance de reconnaissance pour que r.lang + grammaire + listes de mots basculent
+// immédiatement. Le retour vocal suit seul (efSpeak relit efSpeechLang à chaque énoncé).
+function efOnLangChange() {
+  efForcedLang = (lang === 'fr') ? null : 'en-US';
+  // La modale EF ouverte doit basculer son texte (titre, switcher, étape courante),
+  // que le micro tourne ou non : applyLang() ne couvre aucun élément ef-*.
+  var ov = $id('ef-overlay');
+  if (ov && ov.classList.contains('show')) efRefreshLang();
+  if (!efMicActive) return;
+  // Purger tout timer/flag armé sur un énoncé de l'ancienne langue avant de relancer.
+  if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
+  if (efOorTimer)  { clearTimeout(efOorTimer);  efOorTimer  = null; }
+  efAutoAdvanced    = false;
+  efAutoStep        = null;
+  efOorFired        = false;
+  efLastInterimNum  = null;
+  efStaleFinalGuard = null;
+  efPendingQueue    = null;
+  efStartMic(); // abort de l'instance courante + nouvelle instance dans la nouvelle langue
+}
+
+// Re-applique le texte localisé de la modale EF ouverte (le bouton FR/EN change la
+// langue à chaud) : titre roue avant/arrière + libellés du switcher (posés par efOpen),
+// puis l'étape courante — rayon, plage, boutons retour/suivant — via efRenderStep.
+function efRefreshLang() {
+  var titleEl = $id('ef-title');
+  if (titleEl) {
+    var L = typeof lang !== 'undefined' ? lang : 'fr';
+    var side = wtype === 'arriere' ? (L === 'fr' ? 'Roue arrière' : 'Rear wheel')
+                                   : (L === 'fr' ? 'Roue avant'  : 'Front wheel');
+    titleEl.textContent = 'Easy Fill — ' + side;
+  }
+  var foL = $id('ef-sw-fo-label'); if (foL) foL.textContent = efShortLabel('fo');
+  var faL = $id('ef-sw-fa-label'); if (faL) faL.textContent = efShortLabel('fa');
+  efRenderStep();
 }
 
 function efLangDisplayName(code) {
