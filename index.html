@@ -969,25 +969,34 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ef-mic-lang-body {
   display:flex; flex-direction:column; gap:.4rem;
 }
+/* Boutons de choix (modales langue + type de retour) — style « manager » */
 .ef-mic-lang-pick {
-  display:flex; align-items:center; justify-content:space-between;
-  gap:.8rem; width:100%;
-  background:var(--card-alt); border:1px solid var(--border-s);
-  border-radius:var(--rs); padding:.65rem .9rem;
-  cursor:pointer; touch-action:manipulation; transition:all .2s;
+  display:flex; align-items:center; gap:.6rem; width:100%;
+  background:transparent; border:1px solid rgba(126,200,227,.3);
+  border-radius:var(--rs); padding:.55rem .85rem;
+  cursor:pointer; touch-action:manipulation; transition:all .25s;
+  font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--accent2);
   text-align:left;
 }
 .ef-mic-lang-pick:hover {
-  border-color:rgba(126,200,227,.5);
+  border-color:rgba(126,200,227,.65);
   background:rgba(126,200,227,.06);
 }
+.ef-mic-lang-pick svg { flex-shrink:0; }
+/* Modale langue : code BCP-47 (mono) + nom poussé à droite */
 .ef-mic-lang-pick-code {
-  font-family:'DM Mono',monospace; font-size:.8rem;
+  font-family:'DM Mono',monospace; font-size:.74rem;
   color:var(--accent2); flex-shrink:0; letter-spacing:.04em;
+  text-transform:none;
 }
 .ef-mic-lang-pick-name {
-  font-size:.72rem; color:var(--text3);
+  font-size:.7rem; color:var(--text3); margin-left:auto; letter-spacing:.06em;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+/* Modale type de retour : icône + libellé collés à gauche */
+.ef-fb-pick .ef-mic-lang-pick-name {
+  margin-left:0; color:var(--accent2); white-space:normal;
 }
 
 .ef-progress-wrap { display:flex; flex-direction:column; gap:.12rem; margin-top:.6rem; margin-bottom:.7rem }
@@ -8313,6 +8322,40 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 <!-- ── Easy Fill overlay + modal ── -->
 <div class="ef-overlay" id="ef-overlay" onclick="efClose()"></div>
 
+<!-- ── Modale type de retour (bip / voix) ── -->
+<div class="ef-mic-lang-overlay" id="ef-fb-overlay"></div>
+<div class="ef-mic-lang-modal" id="ef-fb-modal" role="dialog" aria-modal="true">
+  <div class="ef-mic-lang-header">
+    <div class="ef-mic-lang-title">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="1" width="6" height="11" rx="3"/>
+        <path d="M5 11a7 7 0 0 0 14 0"/>
+        <line x1="12" y1="18" x2="12" y2="23"/>
+        <line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>
+      <span id="ef-fb-title">Type de retour</span>
+    </div>
+    <button class="ef-mic-lang-close" onclick="efCloseFeedbackModal()" aria-label="Close">✕</button>
+  </div>
+  <div class="ef-mic-lang-body">
+    <button class="ef-mic-lang-pick ef-fb-pick" onclick="efPickFeedback('beep')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+      <span class="ef-mic-lang-pick-name" id="ef-fb-beep-label">Bip sonore</span>
+    </button>
+    <button class="ef-mic-lang-pick ef-fb-pick" onclick="efPickFeedback('voice')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+      </svg>
+      <span class="ef-mic-lang-pick-name" id="ef-fb-voice-label">Lecture vocale (kg)</span>
+    </button>
+  </div>
+</div>
+
 <!-- ── Modale langue saisie vocale ── -->
 <div class="ef-mic-lang-overlay" id="ef-mic-lang-overlay"></div>
 <div class="ef-mic-lang-modal" id="ef-mic-lang-modal" role="dialog" aria-modal="true">
@@ -8330,10 +8373,20 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
   </div>
   <div class="ef-mic-lang-body">
     <button class="ef-mic-lang-pick" id="ef-mic-lang-browser-btn" onclick="efPickMicLang('browser')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="2" y1="12" x2="22" y2="12"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
       <span class="ef-mic-lang-pick-code" id="ef-mic-lang-browser-code">—</span>
       <span class="ef-mic-lang-pick-name" id="ef-mic-lang-browser-name">—</span>
     </button>
     <button class="ef-mic-lang-pick" onclick="efPickMicLang('en-US')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="2" y1="12" x2="22" y2="12"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
       <span class="ef-mic-lang-pick-code">en-US</span>
       <span class="ef-mic-lang-pick-name">English (US)</span>
     </button>
@@ -8982,6 +9035,21 @@ var efMicRecog       = null;
 // ─────────────────────────────────────────────────────────────────────────────
 var efWakeLock       = null;
 var efAudioCtx       = null;
+// ── Retour vocal (TTS) — alternative opt-in au beep ──────────────────────────
+// efTtsSpeaking forme une 2e gate en tête d'onresult, jumelle d'efPendingNext :
+// pendant que la synthèse parle (+ un tail après onend, le moteur de reco ayant
+// un retard de traitement), onresult avale tout — c'est la « fenêtre sourde »
+// qui casse le larsen reco↔TTS sans toucher au cycle de vie de la reco.
+// efTtsLastSpoken : filtre anti-écho résiduel (tampon audio de la TTS arrivant
+// juste après la fenêtre). Voir efSpeak / efFeedbackValue.
+var efTtsMode        = false;
+var efTtsSpeaking    = false; // true pendant la TTS + tail → gate sourde dans onresult
+var efTtsTail        = null;  // timer prolongeant la fenêtre sourde après onend
+var efTtsGuard       = null;  // FILET : referme la fenêtre même si onend ne vient jamais
+var efTtsLastSpoken  = '';    // dernier énoncé TTS normalisé (filtre anti-écho « phrase »)
+var efTtsSpokenNum   = null;  // nombre exact prononcé (garde anti-écho déterministe)
+var efVoicesReady    = false; // true dès que la liste des voix TTS est chargée
+var EF_TTS_TAIL_MS   = 500;   // marge après onend avant de rouvrir l'écoute
 var efWarmInstance   = null;  // instance SR préchauffée à efOpen() pour tap quasi-instantané sur desktop
 var efPendingNext    = false; // true = valeur validée, avance en cours, ignorer les résultats suivants
 var efBeepTimer      = null;  // debounce 500ms pour beep sur valeur stable
@@ -9210,7 +9278,7 @@ function efToggleMic() {
   // de la première session — resume() seul laisse un état partiel sur iPadOS
   // qui rend SR sourde sans erreur visible.
   var _doToggle = function() {
-    if (efMicActive) { efStopMic(); } else { efOpenMicLangModal(); }
+    if (efMicActive) { efStopMic(); } else { efOpenFeedbackModal(); }
   };
   if (!efAudioCtx) {
     efAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -9233,6 +9301,13 @@ function efGetRecogLang() {
   return (typeof lang !== 'undefined' && lang === 'fr')
     ? 'fr-FR'
     : (navigator.languages?.[0] || navigator.language || 'en-US');
+}
+
+// Langue effective du retour vocal : le choix forcé dans la modale « Langue ou US »
+// (« US » → en-US) prime, sinon la langue de reconnaissance. Source unique pour la
+// voix de synthèse ET le mot d'unité, afin que voix et libellé restent cohérents.
+function efSpeechLang() {
+  return efForcedLang || efGetRecogLang();
 }
 
 function efLangDisplayName(code) {
@@ -9386,6 +9461,25 @@ function efStartMic(forceLang) {
     var result = e.results[e.results.length - 1];
     var txt = result[0].transcript.trim().toLowerCase();
 
+    // Fenêtre sourde TTS : la reco entend la synthèse → tout ignorer.
+    if (efTtsSpeaking) return;
+    // Filtre anti-écho résiduel : un résultat arrivant juste après la fenêtre
+    // peut encore être le tampon audio de la TTS. Deux gardes (libérées peu
+    // après le tail) : (a) la phrase reprend ce qu'on vient de prononcer ;
+    // (b) GARDE DÉTERMINISTE — le transcript parse vers le nombre exact prononcé
+    // (indépendant du découpage/langue, fiable sur Chrome où la reco ne se coupe pas).
+    if (efTtsLastSpoken || efTtsSpokenNum) {
+      var ne = efNormEcho(txt);
+      if (ne && efTtsLastSpoken &&
+          (ne === efTtsLastSpoken ||
+           efTtsLastSpoken.indexOf(ne) !== -1 ||
+           ne.indexOf(efTtsLastSpoken) !== -1)) return;
+      if (efTtsSpokenNum) {
+        var inNum = efVoiceToNumber(txt);
+        if (inNum && parseFloat(inNum) === parseFloat(efTtsSpokenNum)) return;
+      }
+    }
+
     // pendant la transition vers le champ suivant, mémoriser plutôt que jeter
     if (efPendingNext) {
       if (result.isFinal) {
@@ -9465,7 +9559,7 @@ function efStartMic(forceLang) {
               var inp = $id('ef-inp');
               inp.value = numInterim;
               efUpdateKgf();
-              efBeep();
+              efFeedbackValue();
               // Auto-avance dès la valeur stabilisée, sans attendre le résultat final
               efPendingNext = true;
               setTimeout(function() {
@@ -9484,7 +9578,7 @@ function efStartMic(forceLang) {
                   efLastInterimNum = null;
                 }
                 var ok = efNext();
-                if (ok) { efBeepNext(); }
+                if (ok && !efTtsMode) { efBeepNext(); }
               }, 200);
             }, efStableDelay);
           } else if (tmGetRange() !== null &&
@@ -9497,7 +9591,7 @@ function efStartMic(forceLang) {
             efOorFired = true;
             efBeepTimer = setTimeout(function() {
               efBeepTimer = null;
-              efBeepError();
+              efFeedbackError();
               var inp = $id('ef-inp');
               inp.classList.add('out-of-range');
               setTimeout(function() { inp.classList.remove('out-of-range'); }, 400);
@@ -9582,10 +9676,15 @@ function efStartMic(forceLang) {
           efUpdateKgf();
           efPendingQueue = null;
         }
+        var committedRaw = inp.value.trim(); // valeur commitée AVANT que efNext avance le champ
         var ok = efNext();
         if (ok) {
-          efBeep();
-          setTimeout(efBeepNext, 280);
+          if (efTtsMode) {
+            efSpeakValue(committedRaw);
+          } else {
+            efBeep();
+            setTimeout(efBeepNext, 280);
+          }
         }
       }
     }, 0);
@@ -9672,6 +9771,160 @@ function efStartMic(forceLang) {
   } else {
     _startNow();
   }
+}
+
+// ── Retour vocal (TTS) ───────────────────────────────────────────────────────
+// efTtsSpeaking est posé AVANT speak() et rebaissé après onend + un tail (le
+// moteur de reco a un retard de traitement : l'écho de la synthèse peut tomber
+// après onend). onresult avale tout pendant cette fenêtre (gate en tête).
+function efSpeak(text) {
+  if (!('speechSynthesis' in window)) { efBeep(); return; }
+  var synth = window.speechSynthesis;
+  // FILET voix : au tout premier énoncé (surtout desktop), getVoices() peut
+  // être encore vide → parler dans le vide donnerait un énoncé muet. On diffère
+  // jusqu'à 'voiceschanged', avec un beep de secours si les voix ne viennent pas.
+  if (!efVoicesReady && !(synth.getVoices() || []).length) {
+    var done = false;
+    var fire = function() { if (done) return; done = true; efVoicesReady = true; efSpeak(text); };
+    try { synth.addEventListener('voiceschanged', fire, { once: true }); } catch(e) {}
+    setTimeout(function() { if (!done) { done = true; efBeep(); } }, 1200);
+    return;
+  }
+  try {
+    synth.cancel(); // tuer une TTS en cours/en file
+    var u = new SpeechSynthesisUtterance(String(text));
+    u.lang = efSpeechLang();
+    // Débit par langue : compense le tempo propre des voix (l'anglais natif sonne
+    // rapide, le français lent). Valeurs à affiner à l'oreille ; repli 1.05.
+    var efRateByLang = { en:0.92, fr:1.18 };
+    u.rate = efRateByLang[(u.lang || '').toLowerCase().split(/[-_]/)[0]] || 1.05;
+    var v = efPickVoice(u.lang);
+    if (v) u.voice = v;
+    efTtsLastSpoken = efNormEcho(text);
+    var mnum = String(text).match(/-?\d+(?:[.,]\d+)?/);
+    efTtsSpokenNum = mnum ? mnum[0].replace(',', '.') : null;
+    if (efTtsTail)  { clearTimeout(efTtsTail);  efTtsTail  = null; }
+    if (efTtsGuard) { clearTimeout(efTtsGuard); efTtsGuard = null; }
+    efTtsSpeaking = true; // ouvrir la fenêtre sourde
+    var closeWindow = function() {
+      if (efTtsGuard) { clearTimeout(efTtsGuard); efTtsGuard = null; }
+      if (efTtsTail)  clearTimeout(efTtsTail);
+      efTtsTail = setTimeout(function() {
+        efTtsSpeaking = false;
+        efTtsTail = null;
+        // libérer les deux gardes anti-écho un court instant après le tail
+        setTimeout(function() { efTtsLastSpoken = ''; efTtsSpokenNum = null; }, 250);
+      }, EF_TTS_TAIL_MS);
+    };
+    u.onend = u.onerror = closeWindow;
+    // FILET DE SÉCURITÉ : si onend/onerror ne se déclenche jamais (bug voix
+    // iOS/Chrome non chargée), la fenêtre sourde resterait ouverte et la reco
+    // deviendrait muette en permanence. On force la fermeture après un plafond.
+    efTtsGuard = setTimeout(function() { efTtsGuard = null; closeWindow(); }, 5000);
+    synth.speak(u);
+  } catch(e) { efTtsSpeaking = false; efBeep(); }
+}
+
+// Choisit une voix correspondant à la langue (sinon voix par défaut du moteur)
+function efPickVoice(lng) {
+  try {
+    var vs = window.speechSynthesis.getVoices() || [];
+    if (!vs.length) return null;
+    var L = lng.toLowerCase(), base = L.split(/[-_]/)[0];
+    return vs.filter(function(v){ return v.lang && v.lang.toLowerCase() === L; })[0]
+        || vs.filter(function(v){ return v.lang && v.lang.toLowerCase().split(/[-_]/)[0] === base; })[0]
+        || null;
+  } catch(e) { return null; }
+}
+
+// Préchargement des voix : armer efVoicesReady dès que la liste est dispo.
+(function efInitVoices() {
+  if (!('speechSynthesis' in window)) return;
+  var s = window.speechSynthesis;
+  var check = function() { if ((s.getVoices() || []).length) efVoicesReady = true; };
+  check();
+  try { s.addEventListener('voiceschanged', check); } catch(e) { s.onvoiceschanged = check; }
+})();
+
+// Mot d'unité (« kilos ») et libellé « hors plage » selon la langue effective du
+// retour vocal (efSpeechLang). Repli sur l'anglais pour toute langue non listée.
+function efSpeechWord(key) {
+  var base = (efSpeechLang() || 'en').toLowerCase().split(/[-_]/)[0];
+  var W = {
+    kilos: { en:'kilos', fr:'kilos', de:'Kilo', es:'kilos', it:'chili',
+             pt:'quilos', nl:'kilo', pl:'kilo', ru:'кило', sv:'kilo',
+             da:'kilo', nb:'kilo', no:'kilo', fi:'kiloa', tr:'kilo',
+             cs:'kilo', ja:'キロ', zh:'公斤', ko:'킬로' },
+    oor:   { en:'out of range', fr:'hors plage', de:'außerhalb des Bereichs',
+             es:'fuera de rango', it:'fuori intervallo', pt:'fora do intervalo',
+             nl:'buiten bereik', pl:'poza zakresem', ru:'вне диапазона',
+             sv:'utanför intervallet', da:'uden for området', nb:'utenfor området',
+             no:'utenfor området', fi:'alueen ulkopuolella', tr:'aralık dışında',
+             cs:'mimo rozsah', ja:'範囲外', zh:'超出范围', ko:'범위 초과' }
+  };
+  var m = W[key] || {};
+  return m[base] || m.en;
+}
+
+// Prononce le kgf correspondant à une lecture brute (ou beep si hors table)
+function efSpeakValue(raw) {
+  var parsed = tmParseInput(String(raw).trim());
+  var kgf = parsed !== null ? toKgf(parsed) : null;
+  if (kgf !== null) efSpeak(kgf + ' ' + efSpeechWord('kilos'));
+  else efBeep();
+}
+
+// Retour de valeur : beep rapide OU TTS du kgf (selon efTtsMode). Lit le champ.
+function efFeedbackValue() {
+  if (!efTtsMode) { efBeep(); return; }
+  efSpeakValue($id('ef-inp').value);
+}
+
+// Retour hors plage : beep grave OU TTS « hors plage »
+function efFeedbackError() {
+  if (!efTtsMode) { efBeepError(); return; }
+  efSpeak(efSpeechWord('oor'));
+}
+
+// Normalisation pour comparer un transcript entrant à ce qu'on vient de prononcer
+function efNormEcho(s) {
+  return String(s).toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+// Déverrouillage TTS iOS : le 1er speak() DOIT partir d'un geste utilisateur,
+// sinon le premier vrai énoncé est muet. Appelé depuis le tap micro / le toggle.
+function efUnlockTts() {
+  if (!efTtsMode || !('speechSynthesis' in window)) return;
+  try {
+    var u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    window.speechSynthesis.speak(u);
+  } catch(e) {}
+}
+
+function efOpenFeedbackModal() {
+  // Précharger la liste des voix (chargement asynchrone sur desktop)
+  try { if ('speechSynthesis' in window) window.speechSynthesis.getVoices(); } catch(e) {}
+  var isFr = (typeof lang !== 'undefined' && lang === 'fr');
+  var t1 = $id('ef-fb-title');       if (t1) t1.textContent = isFr ? 'Type de retour'      : 'Feedback type';
+  var bl = $id('ef-fb-beep-label');  if (bl) bl.textContent = isFr ? 'Bip sonore'          : 'Beep';
+  var vl = $id('ef-fb-voice-label'); if (vl) vl.textContent = isFr ? 'Lecture vocale (kg)' : 'Voice readout (kg)';
+  $id('ef-fb-overlay').classList.add('show');
+  $id('ef-fb-modal').classList.add('show');
+}
+
+function efCloseFeedbackModal() {
+  $id('ef-fb-overlay').classList.remove('show');
+  $id('ef-fb-modal').classList.remove('show');
+}
+
+function efPickFeedback(mode) {
+  efCloseFeedbackModal();
+  efTtsMode = (mode === 'voice');
+  if (efTtsMode) efUnlockTts(); // ce clic est un geste utilisateur → armer la TTS (iOS)
+  efOpenMicLangModal();         // poursuivre vers la langue / le démarrage micro
 }
 
 function efBeep() {
@@ -9774,6 +10027,13 @@ function efStopMic() {
   efNavExecuted    = null;
   if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
   if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
+  // Couper toute synthèse en cours et refermer la fenêtre sourde
+  try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch(e) {}
+  if (efTtsTail)  { clearTimeout(efTtsTail);  efTtsTail  = null; }
+  if (efTtsGuard) { clearTimeout(efTtsGuard); efTtsGuard = null; }
+  efTtsSpeaking   = false;
+  efTtsLastSpoken = '';
+  efTtsSpokenNum  = null;
   efSetMicActive(false);
   efReleaseWakeLock();
   efClearState();
