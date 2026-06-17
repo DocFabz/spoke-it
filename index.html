@@ -1134,7 +1134,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-conv-spoke    { font-family:'DM Mono',monospace; font-size:.72rem; color:var(--text2); margin-bottom:.8rem; line-height:1.4 }
 .tm-conv-close    { background:none; border:none; color:var(--text3); font-size:1.1rem; cursor:pointer; padding:.2rem .4rem; line-height:1; transition:color .2s; flex-shrink:0; outline:none }
 .tm-conv-close:hover { color:var(--text) }
-#tm-conv-calc-btn, #tm-conv-view-btn { outline:none }
+#tm-conv-view-btn { outline:none }
 .tm-conv-scroll   { overflow-y:auto; flex:1; border-radius:var(--rs); border:1px solid var(--border) }
 .tm-conv-table    { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:.8rem }
 .tm-conv-table th { padding:.5rem .7rem; font-family:'DM Sans',sans-serif; font-size:.58rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; text-align:center; background:linear-gradient(rgba(126,200,227,.06),rgba(126,200,227,.06)),var(--card); box-shadow:0 1px 0 var(--border); color:var(--accent); position:sticky; top:0; z-index:1 }
@@ -2403,8 +2403,16 @@ input[type=number] { -moz-appearance:textfield }
       <button class="tm-conv-close" onclick="tmCloseConvTable()">✕</button>
     </div>
     <div class="tm-conv-spoke" id="tm-conv-spoke-label"></div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:.6rem">
-      <button id="tm-conv-calc-btn" onclick="tmConvToggleCalc()" style="background:transparent;border:1px solid rgba(126,200,227,.45);border-radius:7px;color:var(--accent);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;padding:.22rem .75rem;cursor:pointer;transition:all .2s"></button>
+    <div style="display:flex;justify-content:flex-end;gap:.4rem;margin-bottom:.6rem">
+      <button id="tm-conv-pdf-btn" onclick="tmConvExportPdf()" title="Export PDF" style="background:transparent;border:1px solid rgba(126,200,227,.45);border-radius:7px;color:var(--accent);padding:.22rem .55rem;cursor:pointer;transition:all .2s;outline:none;display:inline-flex;align-items:center;justify-content:center;line-height:1">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="9" y1="13" x2="15" y2="13"/>
+          <line x1="9" y1="17" x2="13" y2="17"/>
+          <line x1="9" y1="9" x2="10" y2="9"/>
+        </svg>
+      </button>
       <button id="tm-conv-view-btn" onclick="tmConvToggleView()" style="background:transparent;border:1px solid rgba(126,200,227,.45);border-radius:7px;color:var(--accent);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;padding:.22rem .75rem;cursor:pointer;transition:all .2s;outline:none"></button>
     </div>
     <div class="tm-conv-scroll" id="tm-conv-table-wrap">
@@ -2420,36 +2428,6 @@ input[type=number] { -moz-appearance:textfield }
     </div>
     <div id="tm-conv-curve-wrap" style="display:none;padding:.4rem 0">
       <canvas id="tm-conv-canvas" style="display:block;width:100%;border-radius:var(--rs)"></canvas>
-    </div>
-    <!-- ── Vue calculatrice ── -->
-    <div id="tm-conv-calc-wrap" style="display:none;padding:.2rem 0">
-      <div style="background:rgba(126,200,227,.05);border:1px solid rgba(126,200,227,.13);border-radius:var(--rs);padding:.9rem 1rem">
-        <div style="font-size:.55rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--text2);margin-bottom:.6rem;text-align:center" id="tm-conv-calc-title-kgf">Objectif → Lecture</div>
-        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.65rem">
-          <input id="tm-conv-kgf-input" type="text" inputmode="none" readonly
-            style="flex:1;font-family:'DM Mono',monospace;font-size:.95rem;background:var(--inp);border:1px solid var(--border-s);border-radius:var(--rs);color:var(--text);padding:.42rem .65rem;outline:none;width:0;caret-color:transparent;text-align:right">
-          <div style="font-size:.65rem;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0">kgf →</div>
-          <input id="tm-conv-kgf-result" readonly tabindex="-1"
-            style="flex:1;font-family:'DM Mono',monospace;font-size:.95rem;font-weight:400;color:var(--accent);text-align:right;background:var(--inp);border:1px solid var(--border-s);border-radius:var(--rs);padding:.42rem .65rem;outline:none;width:0;caret-color:transparent" value="—">
-        </div>
-        <div id="tm-conv-kgf-hint" style="font-size:.6rem;color:var(--text3);margin-bottom:.5rem;font-family:'DM Mono',monospace;min-height:.9rem;text-align:center"></div>
-        <!-- Pavé numérique -->
-        <div class="ef-numpad" id="cc-numpad">
-          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('7');event.preventDefault()">7</button>
-          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('8');event.preventDefault()">8</button>
-          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('9');event.preventDefault()">9</button>
-          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('4');event.preventDefault()">4</button>
-          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('5');event.preventDefault()">5</button>
-          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('6');event.preventDefault()">6</button>
-          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('1');event.preventDefault()">1</button>
-          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('2');event.preventDefault()">2</button>
-          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('3');event.preventDefault()">3</button>
-          <button class="ef-numpad-key key-dot" ontouchstart="ccNumpadKey('.');event.preventDefault()">.</button>
-          <button class="ef-numpad-key" ontouchstart="ccNumpadKey('0');event.preventDefault()">0</button>
-          <button class="ef-numpad-key key-del" ontouchstart="ccNumpadDel();event.preventDefault()">⌫</button>
-          <button class="ef-numpad-key key-enter" id="cc-numpad-enter" ontouchstart="tmConvCalcKgf();event.preventDefault()">Entrée ↵</button>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -2679,10 +2657,6 @@ const i18n = {
     tmConvReading:'Lecture',
     tmConvCurve:'Courbe',
     tmConvTable:'Charte',
-    tmConvCalc:'Conversion',
-    tmConvChart:'Charte',
-    tmConvCalcTitleKgf:'Objectif → Lecture',
-    tmConvRange:'Plage',
     tmConvTensio:'Tensiomètre',
     tmWFTipNew:'Dernières mises à jour des Tension Charts par WF',
     tmWFTipOld:'Version précédente des Tension Charts par WF',
@@ -2827,10 +2801,6 @@ const i18n = {
     tmConvReading:'Reading',
     tmConvCurve:'Curve',
     tmConvTable:'Table',
-    tmConvCalc:'Conversion',
-    tmConvChart:'Chart',
-    tmConvCalcTitleKgf:'Target → Reading',
-    tmConvRange:'Range',
     tmConvTensio:'Tensiometer',
     tmWFTipNew:'Latest Tension Charts update by WF',
     tmWFTipOld:'Previous version of WF Tension Charts',
@@ -5710,27 +5680,14 @@ function tmOpenConvTable() {
 
   // Stocker les points pour la courbe + reset état
   _tmConvPts = pts;
+  _tmConvTensioLabel = tensioLabel;
+  _tmConvSpokeName = tmSpokeKey.replace(/^__[A-Z ]+__/, '');
+  _tmConvIsCustom = !!(tmType && tmType.startsWith('ct_'));
   _tmConvShowCurve = false;
-  _tmConvShowCalc  = false;
-  ccPendingReplace = false;
 
   // Labels boutons
   const viewBtn = document.getElementById('tm-conv-view-btn');
   if (viewBtn) viewBtn.textContent = t('tmConvCurve');
-  const calcBtn = document.getElementById('tm-conv-calc-btn');
-  if (calcBtn) calcBtn.textContent = t('tmConvCalc');
-
-  // Label titre calc
-  const elKgf = document.getElementById('tm-conv-calc-title-kgf');
-  if (elKgf) elKgf.textContent = t('tmConvCalcTitleKgf');
-
-  // Reset champs calc
-  const kgfInp = $id('tm-conv-kgf-input');
-  if (kgfInp) { kgfInp.value = ''; kgfInp.style.color = 'var(--text)'; }
-  const kgfRes = $id('tm-conv-kgf-result');
-  if (kgfRes) kgfRes.value = '—';
-  const kgfHint = $id('tm-conv-kgf-hint');
-  if (kgfHint) kgfHint.textContent = '';
 
   // Afficher vue tableau par défaut
   _tmConvShowOnly('table');
@@ -5741,23 +5698,22 @@ function tmOpenConvTable() {
   document.body.style.overflow = 'hidden';
 }
 
-// ── Toggle table / courbe / calculatrice ─────────────────────────────────────
+// ── Toggle table / courbe ────────────────────────────────────────────────────
 let _tmConvShowCurve = false;
-let _tmConvShowCalc  = false;
 let _tmConvPts = [];
+let _tmConvTensioLabel = '';
+let _tmConvSpokeName = '';
+let _tmConvIsCustom = false;
 
 function _tmConvShowOnly(mode) {
-  // mode: 'table' | 'curve' | 'calc'
+  // mode: 'table' | 'curve'
   $id('tm-conv-table-wrap').style.display = mode === 'table' ? '' : 'none';
   $id('tm-conv-curve-wrap').style.display = mode === 'curve' ? 'block' : 'none';
-  $id('tm-conv-calc-wrap').style.display  = mode === 'calc'  ? '' : 'none';
-  $id('tm-conv-calc-btn').textContent = mode === 'calc'  ? t('tmConvChart') : t('tmConvCalc');
   $id('tm-conv-view-btn').textContent = mode === 'curve' ? t('tmConvTable') : t('tmConvCurve');
 }
 
 function tmConvToggleView() {
   _tmConvShowCurve = !_tmConvShowCurve;
-  _tmConvShowCalc  = false;
   if (_tmConvShowCurve) {
     _tmConvShowOnly('curve');
     tmDrawConvCurve(_tmConvPts);
@@ -5765,103 +5721,6 @@ function tmConvToggleView() {
     _tmConvShowOnly('table');
   }
 }
-
-var _ccKeyHandler = null;
-
-function ccAttachKeyHandler() {
-  if (_ccKeyHandler) return;
-  _ccKeyHandler = function(e) {
-    if (!$id('tm-conv-calc-wrap') || $id('tm-conv-calc-wrap').style.display === 'none') return;
-    if (e.key >= '0' && e.key <= '9') { e.preventDefault(); ccNumpadKey(e.key); return; }
-    if (e.key === '.' || e.key === ',') { e.preventDefault(); ccNumpadKey('.'); return; }
-    if (e.key === 'Backspace') { e.preventDefault(); ccNumpadDel(); return; }
-    if (e.key === 'Enter')     { e.preventDefault(); tmConvCalcKgf(); return; }
-  };
-  document.addEventListener('keydown', _ccKeyHandler);
-}
-
-function ccDetachKeyHandler() {
-  if (!_ccKeyHandler) return;
-  document.removeEventListener('keydown', _ccKeyHandler);
-  _ccKeyHandler = null;
-}
-
-function tmConvToggleCalc() {
-  _tmConvShowCalc  = !_tmConvShowCalc;
-  _tmConvShowCurve = false;
-  _tmConvShowOnly(_tmConvShowCalc ? 'calc' : 'table');
-  if (_tmConvShowCalc) {
-    var isTouch = efIsTouchDevice();
-    var numpad = $id('cc-numpad');
-    if (numpad) numpad.style.display = isTouch ? '' : 'none';
-    if (!isTouch) ccAttachKeyHandler();
-  } else {
-    ccDetachKeyHandler();
-  }
-}
-
-function ccNumpadKey(char) {
-  var inp = $id('tm-conv-kgf-input');
-  if (ccPendingReplace) { inp.value = ''; ccPendingReplace = false; inp.style.color = 'var(--text)'; }
-  var val = inp.value;
-  if (char === '.' && val.indexOf('.') !== -1) return;
-  if (char !== '.' && val === '0') { inp.value = char; return; }
-  inp.value = val + char;
-}
-
-function ccNumpadDel() {
-  var inp = $id('tm-conv-kgf-input');
-  if (ccPendingReplace) { inp.value = ''; ccPendingReplace = false; inp.style.color = 'var(--text)'; }
-  else inp.value = inp.value.slice(0, -1);
-  var res = $id('tm-conv-kgf-result'); if (res) res.value = '—';
-  var hint = $id('tm-conv-kgf-hint'); if (hint) hint.textContent = '';
-}
-
-var ccPendingReplace = false;
-
-// ── Calcul kgf → lecture ─────────────────────────────────────────────────────
-function tmConvCalcKgf() {
-  const inp  = document.getElementById('tm-conv-kgf-input');
-  const res  = document.getElementById('tm-conv-kgf-result');
-  const hint = document.getElementById('tm-conv-kgf-hint');
-  const raw  = parseFloat(inp.value.replace(',', '.'));
-  if (isNaN(raw) || inp.value.trim() === '') { res.value = '—'; hint.textContent = ''; return; }
-  const pts   = _tmConvPts;
-  const valid = pts ? pts.filter(p => p[1] !== null) : [];
-  if (!valid.length) { res.value = '—'; hint.textContent = ''; return; }
-  // Interpolation inverse kgf → lecture (tri par kgf croissant, fonctionne dans les deux sens)
-  const sorted  = [...valid].sort((a, b) => a[1] - b[1]);
-  const kgfMin  = sorted[0][1], kgfMax = sorted[sorted.length - 1][1];
-  if (raw < kgfMin || raw > kgfMax) {
-    inp.value = ''; inp.style.color = 'var(--text)';
-    res.value = '—';
-    hint.textContent = `${t('tmConvRange')} : ${kgfMin}–${kgfMax} kgf`;
-    return;
-  }
-  let reading = null;
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const [r0, k0] = sorted[i], [r1, k1] = sorted[i + 1];
-    if (raw >= k0 && raw <= k1) {
-      const ratio = (raw - k0) / (k1 - k0);
-      reading = r0 + ratio * (r1 - r0);
-      break;
-    }
-  }
-  if (reading === null) {
-    inp.value = ''; inp.style.color = 'var(--text)';
-    res.value = '—';
-    hint.textContent = `${t('tmConvRange')} : ${kgfMin}–${kgfMax} kgf`;
-  } else {
-    const isInteger = (tmType === 'pt' || tmType === 'un');
-    const rounded = isInteger ? Math.round(reading) : Math.round(reading * 1000) / 1000;
-    res.value  = tmDisplayValue(rounded);
-    hint.textContent = '';
-    // Présélectionner le champ pour la prochaine saisie
-    ccPendingReplace = true;
-    inp.style.color = 'var(--accent)';
-  }
-}
-
 
 function tmDrawConvCurve(pts) {
   const canvas = document.getElementById('tm-conv-canvas');
@@ -6004,8 +5863,310 @@ function tmCloseConvTable() {
   $id('tm-conv-modal').classList.remove('show');
   document.body.style.overflow = '';
   if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
-  ccDetachKeyHandler();
-  _tmConvShowCalc = false;
+}
+
+// ── Courbe de conversion rendue pour le PDF (thème clair, fond blanc) ─────────
+function _tmRenderConvCurveForPdf(pts) {
+  const valid = pts.filter(p => p[1] !== null);
+  if (valid.length < 2) return null;
+
+  const Wpx = 1000, Hpx = 560;
+  const cv  = document.createElement('canvas');
+  cv.width  = Wpx;
+  cv.height = Hpx;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, Wpx, Hpx);
+
+  const pad = { t:28, r:28, b:80, l:86 };
+  const gW  = Wpx - pad.l - pad.r;
+  const gH  = Hpx - pad.t - pad.b;
+
+  const readings = pts.map(p => p[0]);
+  const kgfs     = pts.map(p => p[1] !== null ? p[1] : 0);
+  const minR = Math.min(...readings), maxR = Math.max(...readings);
+  const maxK = Math.ceil(Math.max(...kgfs) / 20) * 20 || 160;
+  const spanR = (maxR - minR) || 1;
+  const xPos = r => pad.l + (r - minR) / spanR * gW;
+  const yPos = k => pad.t + gH - k / maxK * gH;
+  const fs   = 21;
+
+  // Grille horizontale + labels Y
+  ctx.strokeStyle  = '#e1e8ee';
+  ctx.lineWidth    = 1;
+  ctx.font         = fs + "px Helvetica, Arial, sans-serif";
+  ctx.fillStyle    = '#6e7d8c';
+  ctx.textAlign    = 'right';
+  ctx.textBaseline = 'middle';
+  for (let k = 0; k <= maxK; k += maxK / 4) {
+    ctx.beginPath();
+    ctx.moveTo(pad.l, yPos(k));
+    ctx.lineTo(pad.l + gW, yPos(k));
+    ctx.stroke();
+    ctx.fillText(String(k), pad.l - 16, yPos(k));
+  }
+
+  // Titre axe Y
+  ctx.save();
+  ctx.translate(18, pad.t + gH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = '#6e7d8c';
+  ctx.fillText('kgf', 0, 0);
+  ctx.restore();
+
+  // Axes
+  ctx.strokeStyle = '#c4d0da';
+  ctx.lineWidth   = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(pad.l, pad.t);
+  ctx.lineTo(pad.l, pad.t + gH);
+  ctx.lineTo(pad.l + gW, pad.t + gH);
+  ctx.stroke();
+
+  // Ticks X — anti-collision
+  ctx.font         = fs + "px Helvetica, Arial, sans-serif";
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle    = '#6e7d8c';
+  const minSpacing = fs * 2.6;
+  const xTickY = pad.t + gH + 14;
+  // Sélection anti-chevauchement : premier et dernier toujours affichés,
+  // on retire les valeurs trop proches du dernier point (côté droit dense)
+  const tickIdx = [];
+  let lastTickX = -Infinity;
+  const nR = readings.length;
+  for (let ti = 0; ti < nR; ti++) {
+    const tx = xPos(readings[ti]);
+    if (ti === 0) { tickIdx.push(0); lastTickX = tx; continue; }
+    if (ti === nR - 1) {
+      while (tickIdx.length > 1 && tx - xPos(readings[tickIdx[tickIdx.length - 1]]) < minSpacing) tickIdx.pop();
+      tickIdx.push(ti);
+    } else if (tx - lastTickX >= minSpacing) {
+      tickIdx.push(ti);
+      lastTickX = tx;
+    }
+  }
+  tickIdx.forEach(ti => ctx.fillText(tmDisplayValue(readings[ti]), xPos(readings[ti]), xTickY));
+
+  // Titre axe X — décalé sous les valeurs, comme 'kgf' l'est de son axe
+  ctx.textBaseline = 'top';
+  ctx.fillText(t('tmConvReading'), pad.l + gW / 2, xTickY + fs + 12);
+
+  // Catmull-Rom → Bézier
+  function catmull() {
+    ctx.moveTo(xPos(valid[0][0]), yPos(valid[0][1]));
+    for (let i = 0; i < valid.length - 1; i++) {
+      const p0 = valid[Math.max(i - 1, 0)];
+      const p1 = valid[i];
+      const p2 = valid[i + 1];
+      const p3 = valid[Math.min(i + 2, valid.length - 1)];
+      const c1x = xPos(p1[0]) + (xPos(p2[0]) - xPos(p0[0])) / 6;
+      const c1y = yPos(p1[1]) + (yPos(p2[1]) - yPos(p0[1])) / 6;
+      const c2x = xPos(p2[0]) - (xPos(p3[0]) - xPos(p1[0])) / 6;
+      const c2y = yPos(p2[1]) - (yPos(p3[1]) - yPos(p1[1])) / 6;
+      ctx.bezierCurveTo(c1x, c1y, c2x, c2y, xPos(p2[0]), yPos(p2[1]));
+    }
+  }
+
+  // Remplissage dégradé
+  const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + gH);
+  grad.addColorStop(0, 'rgba(60,160,200,0.16)');
+  grad.addColorStop(1, 'rgba(60,160,200,0.02)');
+  ctx.beginPath();
+  catmull();
+  ctx.lineTo(xPos(valid[valid.length - 1][0]), pad.t + gH);
+  ctx.lineTo(xPos(valid[0][0]), pad.t + gH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Trait
+  ctx.beginPath();
+  catmull();
+  ctx.strokeStyle = 'rgb(46,134,178)';
+  ctx.lineWidth   = 2.6;
+  ctx.stroke();
+
+  // Points
+  valid.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(xPos(p[0]), yPos(p[1]), 3.6, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgb(46,134,178)';
+    ctx.fill();
+  });
+
+  return { dataUrl: cv.toDataURL('image/png'), wpx: Wpx, hpx: Hpx };
+}
+
+// ── Export PDF (A5) : tableau de conversion + courbe ──────────────────────────
+function tmConvExportPdf() {
+  const lib = window.jspdf;
+  if (!lib || !lib.jsPDF) { alert(lang === 'fr' ? 'jsPDF non chargé' : 'jsPDF not loaded'); return; }
+  const jsPDF = lib.jsPDF;
+
+  const pts = _tmConvPts;
+  if (!pts || !pts.length) return;
+
+  const L = (typeof lang !== 'undefined') ? lang : 'fr';
+  function sanitize(s) {
+    if (!s) return '';
+    const m = { '→':'->', 'Δ':'D', '±':'+/-' };
+    return String(s).replace(/[→Δ±]/g, c => m[c] || c);
+  }
+
+  // A5 portrait : 148 × 210 mm
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a5', putOnlyUsedFonts:true });
+  const PW = 148, PH = 210, ML = 12, MR = 12, MT = 12, CW = PW - ML - MR;
+
+  const C_TEXT   = [30,  40,  55];
+  const C_TEXT2  = [90, 105, 120];
+  const C_TEXT3  = [150, 165, 175];
+  const C_ACCENT = [60, 160, 200];
+  const C_BORDER = [220, 228, 235];
+  const C_CARD   = [248, 250, 252];
+
+  // Fond blanc
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, PW, PH, 'F');
+
+  const atelier  = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
+  const workshop = (atelier.name && atelier.name.trim()) ? atelier.name.trim() : 'Spoke It';
+  const now      = new Date();
+  const dateStr  = now.toLocaleDateString(L === 'fr' ? 'fr-FR' : 'en-GB', { day:'2-digit', month:'long', year:'numeric' });
+
+  let Y = MT;
+
+  // Atelier + url
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...C_TEXT3);
+  doc.text(sanitize(workshop).toUpperCase(), ML, Y + 2);
+  doc.text('spokeit.fr', PW - MR, Y + 2, { align:'right' });
+  Y += 6;
+
+  // Titre
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(...C_TEXT);
+  doc.text(sanitize(t('tmConvTitle')), ML, Y + 4);
+  Y += 7;
+
+  // Filet accent
+  doc.setDrawColor(...C_ACCENT); doc.setLineWidth(0.4);
+  doc.line(ML, Y, PW - MR, Y);
+  Y += 5;
+
+  // Tensiomètre
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(...C_TEXT2);
+  let lbl = sanitize(t('tmConvTensio')) + ' :';
+  let lw  = doc.getTextWidth(lbl);
+  doc.text(lbl, ML, Y);
+  doc.setFont('helvetica', 'bold'); doc.setTextColor(...C_ACCENT);
+  doc.text(sanitize(_tmConvTensioLabel || ''), ML + lw + 2, Y);
+  Y += 5;
+
+  // Rayon
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(...C_TEXT2);
+  lbl = sanitize(t('tmSpokeLabel')) + ' :';
+  lw  = doc.getTextWidth(lbl);
+  doc.text(lbl, ML, Y);
+  doc.setFont('helvetica', 'bold'); doc.setTextColor(...C_TEXT);
+  doc.text(sanitize(_tmConvSpokeName || ''), ML + lw + 2, Y);
+  Y += 5;
+
+  // Source de la charte : base Spoke It (fabricant) ou charte custom (utilisateur)
+  const srcLabel = _tmConvIsCustom
+    ? (L === 'fr' ? 'Données utilisateurs' : 'User data')
+    : (L === 'fr' ? 'Données fabricant'   : 'Manufacturer data');
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
+  const bPadX = 2.2, bH = 4.8;
+  const bW = doc.getTextWidth(srcLabel) + bPadX * 2;
+  doc.setDrawColor(...C_ACCENT); doc.setFillColor(...C_CARD); doc.setLineWidth(0.3);
+  doc.roundedRect(ML, Y, bW, bH, 1, 1, 'FD');
+  doc.setTextColor(...C_ACCENT);
+  doc.text(srcLabel, ML + bPadX, Y + bH - 1.6);
+  Y += bH + 4;
+
+  // ── Corps deux colonnes : valeurs à gauche, courbe à droite ────────────
+  const n        = pts.length;
+  const bodyTop  = Y;
+  const footerY  = PH - 12;
+  const bodyBot  = footerY - 4;
+  const bodyH    = bodyBot - bodyTop;
+
+  const gap     = 7;
+  const tableW  = 55;                        // colonne valeurs (gauche)
+  const curveCW = CW - tableW - gap;          // colonne courbe (droite)
+  const curveCX = ML + tableW + gap;
+
+  // Courbe rendue maintenant (pour connaître son ratio)
+  const img = _tmRenderConvCurveForPdf(pts);
+
+  // Tableau : 1 ou 2 sous-colonnes selon le nombre de lignes
+  const headerH = 5.5;
+  let   rowH    = 5.0;
+  let   nSub    = 1;
+  let   rpc     = n;
+  while (nSub <= 2) {
+    rpc = Math.ceil(n / nSub);
+    if (headerH + rpc * rowH <= bodyH) break;
+    nSub++;
+  }
+  if (nSub > 2) nSub = 2;
+  rpc = Math.ceil(n / nSub);
+  if (headerH + rpc * rowH > bodyH) rowH = Math.max(3.2, (bodyH - headerH) / rpc);
+
+  const subGap = 4;
+  const subW   = (tableW - subGap * (nSub - 1)) / nSub;
+  const rowFs  = Math.min(8, Math.max(5.0, rowH * 1.45));
+  const tableH = headerH + rpc * rowH;
+
+  for (let c = 0; c < nSub; c++) {
+    const x0    = ML + c * (subW + subGap);
+    const start = c * rpc;
+    const end   = Math.min(start + rpc, n);
+    if (start >= n) break;
+    let yy = bodyTop;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...C_TEXT2);
+    doc.text(sanitize(t('tmConvReading')), x0 + 1, yy + headerH - 2);
+    doc.text('kgf', x0 + subW - 1, yy + headerH - 2, { align:'right' });
+    doc.setDrawColor(...C_ACCENT); doc.setLineWidth(0.3);
+    doc.line(x0, yy + headerH, x0 + subW, yy + headerH);
+    yy += headerH;
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(rowFs);
+    for (let i = start; i < end; i++) {
+      const defl = pts[i][0], kgf = pts[i][1];
+      if ((i - start) % 2 === 1) { doc.setFillColor(...C_CARD); doc.rect(x0, yy, subW, rowH, 'F'); }
+      doc.setTextColor(...C_TEXT);
+      doc.text(tmDisplayValue(defl), x0 + 1, yy + rowH - 1.6);
+      doc.setTextColor(...C_ACCENT);
+      doc.text(kgf !== null ? String(kgf) : '—', x0 + subW - 1, yy + rowH - 1.6, { align:'right' });
+      yy += rowH;
+    }
+  }
+
+  // Courbe à droite, centrée verticalement par rapport au bloc tableau
+  if (img) {
+    let curveW = curveCW;
+    let curveH = curveW * (img.hpx / img.wpx);
+    if (curveH > bodyH) { curveH = bodyH; curveW = curveH * (img.wpx / img.hpx); }
+    const curveX = curveCX + (curveCW - curveW) / 2;
+    let   curveY = bodyTop + Math.max(0, (tableH - curveH) / 2);
+    if (curveY + curveH > bodyBot) curveY = bodyBot - curveH;
+    doc.addImage(img.dataUrl, 'PNG', curveX, curveY, curveW, curveH, undefined, 'FAST');
+  }
+
+  // Pied de page
+  doc.setDrawColor(...C_BORDER); doc.setLineWidth(0.3);
+  doc.line(ML, footerY, PW - MR, footerY);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(...C_TEXT3);
+  doc.text(dateStr, ML, footerY + 3.5);
+  doc.text(L === 'fr' ? 'Généré par spokeit.fr' : 'Generated by spokeit.fr', PW - MR, footerY + 3.5, { align:'right' });
+
+  // Nom de fichier
+  const safeSpoke = (_tmConvSpokeName || '').replace(/[^a-z0-9]/gi, '-').toLowerCase().replace(/-+/g, '-').replace(/^-|-$/g, '');
+  doc.save('spokeit-conversion-' + (safeSpoke || 'chart') + '.pdf');
 }
 
 // Fermer la modale avec Escape
@@ -8848,7 +9009,6 @@ function efShowNumpad(isTouch) {
   window.addEventListener('orientationchange', wrapper._orientHandler);
   window.addEventListener('resize', wrapper._orientHandler);
   $id('ef-numpad-enter').textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
-  var ccEnter = $id('cc-numpad-enter'); if (ccEnter) ccEnter.textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
 }
 
 function efUpdateOrientation() {
@@ -8920,7 +9080,6 @@ function efToggleBt() {
     window.addEventListener('orientationchange', wrapper._orientHandler);
     window.addEventListener('resize', wrapper._orientHandler);
     $id('ef-numpad-enter').textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
-    var ccEnter = $id('cc-numpad-enter'); if (ccEnter) ccEnter.textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
   }
   // Désactiver BT sur desktop : rien à changer, le listener clavier reste actif
 }
