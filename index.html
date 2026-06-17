@@ -9840,7 +9840,6 @@ function efSpeak(text) {
     return;
   }
   try {
-    synth.cancel(); // tuer une TTS en cours/en file
     var u = new SpeechSynthesisUtterance(String(text));
     u.lang = efSpeechLang();
     // Débit par langue : compense le tempo propre des voix (l'anglais natif sonne
@@ -9870,7 +9869,17 @@ function efSpeak(text) {
     // iOS/Chrome non chargée), la fenêtre sourde resterait ouverte et la reco
     // deviendrait muette en permanence. On force la fermeture après un plafond.
     efTtsGuard = setTimeout(function() { efTtsGuard = null; closeWindow(); }, 5000);
-    synth.speak(u);
+    // cancel()+speak() dans le même tick = course WebSpeech : le nouvel énoncé est
+    // parfois abandonné (ni onstart ni audio), surtout pour les énoncés courts sur
+    // iOS/WebKit (ex: « hors plage »). On ne cancel QUE s'il reste une TTS en cours
+    // ou en file, et on diffère alors le speak hors du tick du cancel. resume()
+    // débloque le moteur iOS qui peut rester figé après un cancel.
+    var efGo = function() {
+      try { synth.resume(); synth.speak(u); }
+      catch(e) { efTtsSpeaking = false; efBeep(); }
+    };
+    if (synth.speaking || synth.pending) { synth.cancel(); setTimeout(efGo, 90); }
+    else { efGo(); }
   } catch(e) { efTtsSpeaking = false; efBeep(); }
 }
 
