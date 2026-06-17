@@ -8351,7 +8351,7 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
         <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
         <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
       </svg>
-      <span class="ef-mic-lang-pick-name" id="ef-fb-voice-label">Lecture vocale (kg)</span>
+      <span class="ef-mic-lang-pick-name" id="ef-fb-voice-label">Lecture vocale</span>
     </button>
   </div>
 </div>
@@ -9957,7 +9957,7 @@ function efOpenFeedbackModal() {
   var isFr = (typeof lang !== 'undefined' && lang === 'fr');
   var t1 = $id('ef-fb-title');       if (t1) t1.textContent = isFr ? 'Type de retour'      : 'Feedback type';
   var bl = $id('ef-fb-beep-label');  if (bl) bl.textContent = isFr ? 'Bip sonore'          : 'Beep';
-  var vl = $id('ef-fb-voice-label'); if (vl) vl.textContent = isFr ? 'Lecture vocale (kg)' : 'Voice readout (kg)';
+  var vl = $id('ef-fb-voice-label'); if (vl) vl.textContent = isFr ? 'Lecture vocale' : 'Voice readout';
   $id('ef-fb-overlay').classList.add('show');
   $id('ef-fb-modal').classList.add('show');
 }
