@@ -9840,6 +9840,7 @@ function efSpeak(text) {
     return;
   }
   try {
+    synth.cancel(); // tuer une TTS en cours/en file
     var u = new SpeechSynthesisUtterance(String(text));
     u.lang = efSpeechLang();
     // Débit par langue : compense le tempo propre des voix (l'anglais natif sonne
@@ -9869,17 +9870,7 @@ function efSpeak(text) {
     // iOS/Chrome non chargée), la fenêtre sourde resterait ouverte et la reco
     // deviendrait muette en permanence. On force la fermeture après un plafond.
     efTtsGuard = setTimeout(function() { efTtsGuard = null; closeWindow(); }, 5000);
-    // cancel()+speak() dans le même tick = course WebSpeech : le nouvel énoncé est
-    // parfois abandonné (ni onstart ni audio), surtout pour les énoncés courts sur
-    // iOS/WebKit (ex: « hors plage »). On ne cancel QUE s'il reste une TTS en cours
-    // ou en file, et on diffère alors le speak hors du tick du cancel. resume()
-    // débloque le moteur iOS qui peut rester figé après un cancel.
-    var efGo = function() {
-      try { synth.resume(); synth.speak(u); }
-      catch(e) { efTtsSpeaking = false; efBeep(); }
-    };
-    if (synth.speaking || synth.pending) { synth.cancel(); setTimeout(efGo, 90); }
-    else { efGo(); }
+    synth.speak(u);
   } catch(e) { efTtsSpeaking = false; efBeep(); }
 }
 
@@ -9912,13 +9903,7 @@ function efSpeechWord(key) {
     kilos: { en:'kilos', fr:'kilos', de:'Kilo', es:'kilos', it:'chili',
              pt:'quilos', nl:'kilo', pl:'kilo', ru:'кило', sv:'kilo',
              da:'kilo', nb:'kilo', no:'kilo', fi:'kiloa', tr:'kilo',
-             cs:'kilo', ja:'キロ', zh:'公斤', ko:'킬로' },
-    oor:   { en:'out of range', fr:'hors plage', de:'außerhalb des Bereichs',
-             es:'fuera de rango', it:'fuori intervallo', pt:'fora do intervalo',
-             nl:'buiten bereik', pl:'poza zakresem', ru:'вне диапазона',
-             sv:'utanför intervallet', da:'uden for området', nb:'utenfor området',
-             no:'utenfor området', fi:'alueen ulkopuolella', tr:'aralık dışında',
-             cs:'mimo rozsah', ja:'範囲外', zh:'超出范围', ko:'범위 초과' }
+             cs:'kilo', ja:'キロ', zh:'公斤', ko:'킬로' }
   };
   var m = W[key] || {};
   return m[base] || m.en;
@@ -9938,10 +9923,14 @@ function efFeedbackValue() {
   efSpeakValue($id('ef-inp').value);
 }
 
-// Retour hors plage : beep grave OU TTS « hors plage »
+// Retour hors plage : TOUJOURS le bip grave, y compris en mode vocal.
+// La TTS « hors plage » se déclenchait par intermittence sous iOS/Safari
+// (micro actif : utterance parfois abandonnée, onend/onerror muets, voix non
+// chargées → repli efBeep() aigu trompeur). Le bip Web Audio est fiable et
+// n'ouvre pas la fenêtre sourde. Prononcer la borne est inutile ici :
+// l'utilisateur doit seulement savoir que c'est hors plage et redicter.
 function efFeedbackError() {
-  if (!efTtsMode) { efBeepError(); return; }
-  efSpeak(efSpeechWord('oor'));
+  efBeepError();
 }
 
 // Normalisation pour comparer un transcript entrant à ce qu'on vient de prononcer
