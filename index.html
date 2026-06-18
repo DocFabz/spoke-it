@@ -184,6 +184,8 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .erasemgr-item-info { flex:1; display:flex; align-items:baseline; gap:.4rem; overflow:hidden }
 .erasemgr-item-name { font-family:'DM Mono',monospace; font-size:.72rem; color:var(--accent2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .erasemgr-item-sub { font-size:.58rem; color:var(--text3); flex-shrink:0 }
+.erasemgr-item-info .wheel-load-item-rider { align-self:center; max-width:55%; font-size:.52rem; line-height:1; padding:0; gap:.2rem; border:none; border-radius:0; background:transparent }
+.erasemgr-item-info .wheel-load-item-rider svg { width:8px; height:8px }
 .erasemgr-item-btn { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
 .erasemgr-item-btn:hover { color:var(--warm) }
 
@@ -279,10 +281,33 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .wheel-load-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; touch-action:manipulation; transition:all .2s }
 .wheel-load-item:hover { border-color:var(--border-s); background:rgba(126,200,227,.03) }
 .wheel-load-item-name { flex:1; font-family:'DM Mono',monospace; font-size:.78rem; color:var(--accent2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.wheel-load-item-rider { display:inline-flex; align-items:center; gap:.25rem; flex-shrink:0; max-width:42%; font-family:'DM Mono',monospace; font-size:.62rem; color:var(--accent2); background:transparent; border:1px solid rgba(126,200,227,.35); border-radius:999px; padding:.12rem .5rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.wheel-load-item-rider svg { flex-shrink:0; opacity:.85 }
 .wheel-load-item-meta { font-family:'DM Mono',monospace; font-size:.63rem; color:var(--text3); white-space:nowrap }
 .wheel-load-item-del { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; touch-action:manipulation; padding:.1rem .25rem; transition:color .2s; flex-shrink:0 }
 .wheel-load-item-del:hover { color:var(--warm) }
 .wheel-load-empty { font-size:.72rem; color:var(--text3); font-style:italic; text-align:center; padding:.5rem }
+
+/* ── Rider ───────────────────────────────────────────────────────────────────── */
+.ridermgr-modal { gap:.8rem; max-height:88vh; overflow-y:auto }
+.ridermgr-chooser { gap:.7rem }
+.rider-wheels-list { max-height:30vh }
+.rider-wheels-list .wheel-load-empty { padding:.3rem }
+/* Bouton "Affecter à un rider" (style Générer le PDF) dans la modale de sauvegarde de roue */
+.wheel-save-rider-trigger { flex:1; min-width:0; background:transparent; border:1px solid rgba(126,200,227,.4); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; padding:.65rem 1rem; cursor:pointer; touch-action:manipulation; transition:all .22s; display:flex; align-items:center; justify-content:center; gap:.45rem }
+.wheel-save-rider-trigger:hover { border-color:rgba(126,200,227,.75); background:rgba(126,200,227,.07) }
+.wheel-save-rider-trigger:active { transform:scale(.98) }
+.wheel-save-rider-trigger svg { flex-shrink:0 }
+.wheel-save-rider-trigger .ws-trig-lbl { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.wheel-save-rider-trigger.assigned { color:var(--accent2); text-transform:none; letter-spacing:0; font-family:'DM Mono',monospace; font-size:.78rem }
+/* Modale de sélection du rider (par-dessus la modale d'enregistrement) */
+.wsr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
+.wsr-overlay.show { display:block; opacity:1 }
+.wsr-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; display:none; flex-direction:column; gap:.75rem; opacity:0; transition:opacity .2s, transform .2s; max-height:80vh }
+.wsr-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+.wheel-load-item.sel { border-color:rgba(126,200,227,.55); background:rgba(126,200,227,.07) }
+.wheel-load-item-check { flex-shrink:0; color:var(--accent2); font-size:.8rem }
+
 .wrap { max-width:880px; margin:0 auto; padding:0 1.2rem 4rem; display:flex; flex-direction:column; gap:1rem }
 
 /* ── Card ──────────────────────────────────────────────────────────────────── */
@@ -1461,6 +1486,12 @@ input[type=number] { -moz-appearance:textfield }
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
       </svg>
     </button>
+    <button class="save-mgr-btn" onclick="openRiderChoose()" id="rider-mgr-btn" title="Rider">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+    </button>
     <button id="lang-btn" onclick="toggleLang()" class="lang-btn">EN</button>
     <button class="save-mgr-btn" onclick="openPicker()" id="save-mgr-btn">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -2561,6 +2592,13 @@ input[type=number] { -moz-appearance:textfield }
       onkeydown="if(event.key==='Enter') confirmWheelSave()">
     <button class="wheel-save-btn" onclick="confirmWheelSave()">OK</button>
   </div>
+  <div class="wheel-save-inp-row">
+    <button class="wheel-save-rider-trigger" id="wheel-save-rider-trigger" onclick="wheelSaveOpenRiderModal()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="ws-trig-lbl" id="wheel-save-assign-lbl" data-i18n="riderAssign">Affecter à un rider</span>
+    </button>
+    <button class="wheel-save-btn" style="visibility:hidden" aria-hidden="true" tabindex="-1">OK</button>
+  </div>
   <div class="wheel-save-feedback" id="wheel-save-feedback"></div>
   <p class="wheel-save-warning" id="wheel-save-warning">⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.</p>
 </div>
@@ -2573,6 +2611,74 @@ input[type=number] { -moz-appearance:textfield }
     <button class="wheel-load-close" onclick="closeWheelLoadModal()">✕</button>
   </div>
   <div class="wheel-load-list" id="wheel-load-list"></div>
+</div>
+
+<!-- ── Rider : modale intermédiaire (Charger / Créer) ── -->
+<div class="ateliermgr-overlay" id="riderchoose-overlay" onclick="closeRiderChoose()"></div>
+<div class="ateliermgr-modal ridermgr-chooser" id="riderchoose-modal" style="max-width:300px" onclick="event.stopPropagation()">
+  <div class="ateliermgr-header">
+    <span class="ateliermgr-title" data-i18n="riderTitle">Rider</span>
+    <button class="ateliermgr-close" onclick="closeRiderChoose()">✕</button>
+  </div>
+  <button class="ct-save-btn" onclick="riderChooseLoad()"><span data-i18n="riderLoad">Charger</span></button>
+  <button class="ct-save-btn" onclick="riderChooseCreate()"><span data-i18n="riderCreate">Créer</span></button>
+</div>
+
+<!-- ── Rider : modale édition (Nom / Email / Téléphone / Roues affectées) ── -->
+<div class="ateliermgr-overlay" id="rideredit-overlay" onclick="closeRiderEdit()"></div>
+<div class="ateliermgr-modal ridermgr-modal" id="rideredit-modal" onclick="event.stopPropagation()">
+  <div class="ateliermgr-header">
+    <span class="ateliermgr-title" id="rideredit-title">Rider</span>
+    <button class="ateliermgr-close" onclick="closeRiderEdit()">✕</button>
+  </div>
+  <div class="ateliermgr-field">
+    <span class="ateliermgr-label" data-i18n="riderName">Nom</span>
+    <div class="ateliermgr-inp-wrap">
+      <input class="ateliermgr-inp" id="rider-name" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <button class="ateliermgr-clear" onclick="riderClear('rider-name')">✕</button>
+    </div>
+  </div>
+  <div class="ateliermgr-field">
+    <span class="ateliermgr-label">Email</span>
+    <div class="ateliermgr-inp-wrap">
+      <input class="ateliermgr-inp" id="rider-email" type="email" maxlength="80" autocomplete="off">
+      <button class="ateliermgr-clear" onclick="riderClear('rider-email')">✕</button>
+    </div>
+  </div>
+  <div class="ateliermgr-field">
+    <span class="ateliermgr-label" data-i18n="riderPhone">Téléphone</span>
+    <div class="ateliermgr-inp-wrap">
+      <input class="ateliermgr-inp" id="rider-phone" type="tel" maxlength="40" autocomplete="off">
+      <button class="ateliermgr-clear" onclick="riderClear('rider-phone')">✕</button>
+    </div>
+  </div>
+  <div class="ateliermgr-field">
+    <span class="ateliermgr-label" data-i18n="riderWheels">Roues affectées</span>
+    <div class="wheel-load-list rider-wheels-list" id="rider-wheels-list"></div>
+  </div>
+  <button class="ct-save-btn" onclick="saveRider()" style="margin-top:.3rem">
+    <span data-i18n="atelierSave">✓ Sauvegarder</span>
+  </button>
+</div>
+
+<!-- ── Rider : modale chargement (liste des riders) ── -->
+<div class="wheel-load-overlay" id="riderload-overlay" onclick="closeRiderLoad()"></div>
+<div class="wheel-load-modal" id="riderload-modal" onclick="event.stopPropagation()">
+  <div class="wheel-load-header">
+    <div class="wheel-load-title" data-i18n="riderLoadTitle">Charger un rider</div>
+    <button class="wheel-load-close" onclick="closeRiderLoad()">✕</button>
+  </div>
+  <div class="wheel-load-list" id="riderload-list"></div>
+</div>
+
+<!-- ── Sélection du rider depuis la modale d'enregistrement de roue ── -->
+<div class="wsr-overlay" id="wsr-overlay" onclick="closeWheelSaveRiderModal()"></div>
+<div class="wsr-modal" id="wsr-modal" onclick="event.stopPropagation()">
+  <div class="wheel-load-header">
+    <div class="wheel-load-title" data-i18n="riderAssign">Affecter à un rider</div>
+    <button class="wheel-load-close" onclick="closeWheelSaveRiderModal()">✕</button>
+  </div>
+  <div class="wheel-load-list" id="wsr-list"></div>
 </div>
 <div class="erasemgr-overlay" id="erasemgr-overlay" onclick="closeEraseMgr()"></div>
 <div class="erasemgr-modal" id="erasemgr-modal" onclick="event.stopPropagation()">
@@ -2692,10 +2798,24 @@ const i18n = {
     atelierTitle:'Atelier',
     atelierName:'Atelier',
     atelierSave:'✓ Sauvegarder',
+    riderTitle:'Rider',
+    riderLoad:'Charger',
+    riderCreate:'Créer',
+    riderName:'Nom',
+    riderPhone:'Téléphone',
+    riderWheels:'Roues affectées',
+    riderLoadTitle:'Charger un rider',
+    riderNoWheels:'Aucune roue affectée.',
+    riderNone:'Aucun rider enregistré.',
+    riderAssign:'Affecter à un rider',
+    riderAssignNone:'Aucun',
+    riderDelConfirm:'Supprimer ce rider ? Ses roues seront désaffectées.',
+    riderUnassign:'Désaffecter',
     eraseMgrTitle:'Supprimer des données',
     eraseMgrWheels:'Roues',
     eraseMgrCustomTensios:'Tensiomètres perso',
     eraseMgrCustomSpokes:'Rayons perso',
+    eraseMgrRiders:'Riders',
     eraseMgrDel:'✕',
     diffLabel:'Différentiel',
     radialDiscWarn:'⚠ Incompatible roue à disque',
@@ -2836,10 +2956,24 @@ const i18n = {
     atelierTitle:'Workshop',
     atelierName:'Workshop',
     atelierSave:'✓ Save',
+    riderTitle:'Rider',
+    riderLoad:'Load',
+    riderCreate:'Create',
+    riderName:'Name',
+    riderPhone:'Phone',
+    riderWheels:'Assigned wheels',
+    riderLoadTitle:'Load a rider',
+    riderNoWheels:'No assigned wheels.',
+    riderNone:'No saved riders.',
+    riderAssign:'Assign to a rider',
+    riderAssignNone:'None',
+    riderDelConfirm:'Delete this rider? Its wheels will be unassigned.',
+    riderUnassign:'Unassign',
     eraseMgrTitle:'Delete data',
     eraseMgrWheels:'Wheels',
     eraseMgrCustomTensios:'Custom tensiometers',
     eraseMgrCustomSpokes:'Custom spokes',
+    eraseMgrRiders:'Riders',
     eraseMgrDel:'✕',
     diffLabel:'Differential',
     radialDiscWarn:'⚠ Disc brake incompatible',
@@ -4319,7 +4453,7 @@ const LS_KEY = 'spokeit_configs';
 function loadConfigs()        { try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch(e) { return []; } }
 function persistConfigs(cfg)  { lsSet(LS_KEY, JSON.stringify(cfg)); }
 
-function saveConfig(nameOverride) {
+function saveConfig(nameOverride, riderIdOverride) {
   const name = (nameOverride || '').trim();
   if (!name) return;
   const configs = loadConfigs();
@@ -4329,6 +4463,9 @@ function saveConfig(nameOverride) {
     const configs2 = loadConfigs();
     const ei2 = configs2.findIndex(c => c.name === name && (c.state.wtype || 'avant') === wtype);
     const entry = { name, metaKey: wtype === 'avant' ? 'frontLabel' : 'rearLabel', state, ts: Date.now() };
+    // Affectation rider : valeur explicite passée (string ou null) sinon on conserve l'existante
+    if (typeof riderIdOverride !== 'undefined') entry.riderId = riderIdOverride || null;
+    else if (ei2 >= 0 && configs2[ei2].riderId) entry.riderId = configs2[ei2].riderId;
     const existingSnapshots = ei2 >= 0 ? (configs2[ei2].snapshots || []) : [];
     if (existingSnapshots.length > 0) {
       if (!existingSnapshots.some(s => s.num === 1) && tmHasData()) {
@@ -4430,7 +4567,8 @@ function exportConfigs() {
     customCharts:  ccLoadAll(),
     customTensios: ctLoadAll(),
     savedHubs:     hrLoadAll('hub'),
-    savedRims:     hrLoadAll('rim')
+    savedRims:     hrLoadAll('rim'),
+    riders:        (typeof loadRiders === 'function') ? loadRiders() : []
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
@@ -4505,6 +4643,16 @@ function importConfigs(event) {
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
         hrPersist('rim', existing);
+      }
+
+      if (Array.isArray(data.riders) && typeof loadRiders === 'function') {
+        const existing = loadRiders();
+        data.riders.forEach(entry => {
+          if (!entry || !entry.id) return;
+          const idx = existing.findIndex(r => r.id === entry.id);
+          if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
+        });
+        persistRiders(existing);
       }
 
       // ── 2. Tout rafraîchir en une seule passe ──
@@ -5099,7 +5247,7 @@ function renderEraseMgr(openKeys) {
   acc.className = 'erasemgr-acc';
   body.appendChild(acc);
 
-  function makeItem(name, sub, onDel) {
+  function makeItem(name, sub, onDel, riderId) {
     const div = document.createElement('div');
     div.className = 'erasemgr-item';
     const info = document.createElement('div');
@@ -5113,6 +5261,18 @@ function renderEraseMgr(openKeys) {
       subEl.className = 'erasemgr-item-sub';
       subEl.textContent = sub;
       info.appendChild(subEl);
+    }
+    // Capsule rider si la roue est affectée
+    if (riderId && typeof riderById === 'function') {
+      const rd = riderById(riderId);
+      if (rd && rd.name) {
+        const chip = document.createElement('span');
+        chip.className = 'wheel-load-item-rider';
+        chip.title = rd.name;
+        chip.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+        chip.appendChild(document.createTextNode(rd.name));
+        info.appendChild(chip);
+      }
     }
     const btn = document.createElement('button');
     btn.className = 'erasemgr-item-btn';
@@ -5165,12 +5325,33 @@ function renderEraseMgr(openKeys) {
     return wrap;
   }
 
+  // Riders (en tête)
+  const riders = (typeof loadRiders === 'function') ? loadRiders() : [];
+  const riderItems = riders.map(r => {
+    const nb = configs.filter(c => c.riderId === r.id).length;
+    const sub = nb > 0
+      ? (nb + (lang === 'fr' ? (nb > 1 ? ' roues' : ' roue') : (nb > 1 ? ' wheels' : ' wheel')))
+      : null;
+    return makeItem(r.name, sub, () => {
+      // Désaffecter les roues SANS les supprimer
+      const cfgs = loadConfigs();
+      let changed = false;
+      cfgs.forEach(c => { if (c.riderId === r.id) { c.riderId = null; changed = true; } });
+      if (changed) persistConfigs(cfgs);
+      // Supprimer le rider
+      const arr = loadRiders().filter(x => x.id !== r.id);
+      persistRiders(arr);
+    });
+  });
+  acc.appendChild(makeAccSection('eraseMgrRiders', riderItems, openKeys));
+
   // Roues (avant + arrière)
   const wheelItems = configs.map((cfg, i) => ({ cfg, i }))
     .map(({ cfg, i }) => makeItem(
       cfg.name,
       (cfg.state?.wtype || 'avant') === 'avant' ? t('frontLabel') : t('rearLabel'),
-      () => deleteConfig(i)
+      () => deleteConfig(i),
+      cfg.riderId
     ));
   acc.appendChild(makeAccSection('eraseMgrWheels', wheelItems, openKeys));
 
@@ -13237,6 +13418,78 @@ document.addEventListener('keydown', function(e) {
 // ══════════════════════════════════════════════════════════════════════════════
 (function() {
 
+  // riderId sélectionné pour la sauvegarde de roue en cours (string | null)
+  var _wsRiderId = null;
+
+  // ── Libellé du bouton déclencheur "Affecter à un rider" ────────────────────
+  function wsRenderAssignLabel() {
+    var lbl  = document.getElementById('wheel-save-assign-lbl');
+    var trig = document.getElementById('wheel-save-rider-trigger');
+    if (!lbl) return;
+    var r = (_wsRiderId && typeof riderById === 'function') ? riderById(_wsRiderId) : null;
+    if (r && r.name) {
+      lbl.removeAttribute('data-i18n');
+      lbl.textContent = r.name;
+      if (trig) trig.classList.add('assigned');
+    } else {
+      _wsRiderId = null;
+      lbl.setAttribute('data-i18n', 'riderAssign');
+      lbl.textContent = t('riderAssign');
+      if (trig) trig.classList.remove('assigned');
+    }
+  }
+
+  // ── Rendu de la liste dans la modale de sélection ──────────────────────────
+  function wsRenderRiderModalList() {
+    var list = document.getElementById('wsr-list');
+    if (!list) return;
+    var riders = (typeof loadRiders === 'function') ? loadRiders() : [];
+    list.innerHTML = '';
+
+    function makeOpt(label, id) {
+      var item = document.createElement('div');
+      item.className = 'wheel-load-item' + (_wsRiderId === id ? ' sel' : '');
+      var nameEl = document.createElement('div');
+      nameEl.className = 'wheel-load-item-name';
+      nameEl.textContent = label;
+      item.appendChild(nameEl);
+      if (_wsRiderId === id) {
+        var chk = document.createElement('span');
+        chk.className = 'wheel-load-item-check';
+        chk.textContent = '✓';
+        item.appendChild(chk);
+      }
+      item.addEventListener('click', function() {
+        _wsRiderId = id;
+        wsRenderAssignLabel();
+        closeWheelSaveRiderModal();
+      });
+      return item;
+    }
+
+    // Option "Aucun" (désaffecter)
+    list.appendChild(makeOpt(t('riderAssignNone'), null));
+
+    if (riders.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'wheel-load-empty';
+      empty.textContent = t('riderNone');
+      list.appendChild(empty);
+      return;
+    }
+    riders.forEach(function(r) { list.appendChild(makeOpt(r.name, r.id)); });
+  }
+
+  window.wheelSaveOpenRiderModal = function() {
+    wsRenderRiderModalList();
+    document.getElementById('wsr-overlay').classList.add('show');
+    document.getElementById('wsr-modal').classList.add('show');
+  };
+  window.closeWheelSaveRiderModal = function() {
+    document.getElementById('wsr-overlay').classList.remove('show');
+    document.getElementById('wsr-modal').classList.remove('show');
+  };
+
   // ── Open / close save modal ──────────────────────────────────────────────
   window.openWheelSaveModal = function() {
     var inp = document.getElementById('wheel-save-inp');
@@ -13252,6 +13505,15 @@ document.addEventListener('keydown', function(e) {
         : (lang === 'fr' ? 'arrière' : 'rear');
       title.textContent = lang === 'fr' ? 'Enregistrer la roue ' + side : 'Save ' + side + ' wheel';
     }
+    // Affectation rider : reprendre celle de la config déjà chargée s'il y en a une
+    _wsRiderId = null;
+    var loadedName = (typeof _loadedConfigName !== 'undefined') ? _loadedConfigName[wtype] : null;
+    if (loadedName && typeof loadConfigs === 'function') {
+      var cfgs = loadConfigs();
+      var cur = cfgs.find(function(c) { return c.name === loadedName && (c.state.wtype || 'avant') === wtype; });
+      if (cur && cur.riderId) _wsRiderId = cur.riderId;
+    }
+    wsRenderAssignLabel();
     if (warn) warn.textContent = t('saveWarning');
     document.getElementById('wheel-save-overlay').classList.add('show');
     document.getElementById('wheel-save-modal').classList.add('show');
@@ -13260,6 +13522,7 @@ document.addEventListener('keydown', function(e) {
   };
 
   window.closeWheelSaveModal = function() {
+    closeWheelSaveRiderModal();
     document.getElementById('wheel-save-overlay').classList.remove('show');
     document.getElementById('wheel-save-modal').classList.remove('show');
     document.body.style.overflow = '';
@@ -13274,8 +13537,9 @@ document.addEventListener('keydown', function(e) {
       if (fb) { fb.textContent = lang === 'fr' ? 'Veuillez saisir un nom.' : 'Please enter a name.'; }
       return;
     }
+    var riderId = _wsRiderId;
     closeWheelSaveModal();
-    if (typeof saveConfig === 'function') saveConfig(name);
+    if (typeof saveConfig === 'function') saveConfig(name, riderId);
   };
 
   // ── Open / close load modal ───────────────────────────────────────────────
@@ -13324,6 +13588,19 @@ document.addEventListener('keydown', function(e) {
       nameEl.className = 'wheel-load-item-name';
       nameEl.textContent = cfg.name;
 
+      // Chip rider si la roue est affectée
+      var riderEl = null;
+      if (cfg.riderId && typeof riderById === 'function') {
+        var rd = riderById(cfg.riderId);
+        if (rd && rd.name) {
+          riderEl = document.createElement('span');
+          riderEl.className = 'wheel-load-item-rider';
+          riderEl.title = rd.name;
+          riderEl.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+          riderEl.appendChild(document.createTextNode(rd.name));
+        }
+      }
+
       var dateStr = '';
       if (cfg.ts) {
         var d = new Date(cfg.ts);
@@ -13347,6 +13624,7 @@ document.addEventListener('keydown', function(e) {
       });
 
       item.appendChild(nameEl);
+      if (riderEl) item.appendChild(riderEl);
       if (dateStr) item.appendChild(metaEl);
       item.appendChild(delBtn);
 
@@ -13362,6 +13640,9 @@ document.addEventListener('keydown', function(e) {
   // ── Keyboard close ────────────────────────────────────────────────────────
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
+      if (document.getElementById('wsr-modal').classList.contains('show')) {
+        e.preventDefault(); closeWheelSaveRiderModal(); return;
+      }
       if (document.getElementById('wheel-save-modal').classList.contains('show')) {
         e.preventDefault(); closeWheelSaveModal();
       }
@@ -13371,6 +13652,254 @@ document.addEventListener('keydown', function(e) {
     }
   });
 
+
+})();
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// RIDERS  —  gestion des cyclistes et affectation des roues
+// ══════════════════════════════════════════════════════════════════════════════
+(function() {
+
+  var LS_RIDERS = 'spokeit_riders';
+
+  // ── Couche données ──────────────────────────────────────────────────────────
+  window.loadRiders = function() {
+    try { return JSON.parse(localStorage.getItem(LS_RIDERS)) || []; } catch(e) { return []; }
+  };
+  function persistRiders(arr) {
+    if (typeof lsSet === 'function') lsSet(LS_RIDERS, JSON.stringify(arr));
+    else localStorage.setItem(LS_RIDERS, JSON.stringify(arr));
+  }
+  window.persistRiders = persistRiders;
+  window.riderById = function(id) {
+    if (!id) return null;
+    return loadRiders().find(function(r) { return r.id === id; }) || null;
+  };
+  function newRiderId() {
+    return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  // rider en cours d'édition (id existant) ou null si création
+  var _editingRiderId = null;
+
+  // ── Modale intermédiaire (Charger / Créer) ─────────────────────────────────
+  window.openRiderChoose = function() {
+    document.getElementById('riderchoose-overlay').classList.add('show');
+    document.getElementById('riderchoose-modal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  };
+  window.closeRiderChoose = function() {
+    document.getElementById('riderchoose-overlay').classList.remove('show');
+    document.getElementById('riderchoose-modal').classList.remove('show');
+    document.body.style.overflow = '';
+  };
+  window.riderChooseCreate = function() {
+    closeRiderChoose();
+    openRiderEdit(null);
+  };
+  window.riderChooseLoad = function() {
+    closeRiderChoose();
+    openRiderLoad();
+  };
+
+  // ── Modale édition / création ───────────────────────────────────────────────
+  window.openRiderEdit = function(riderId) {
+    _editingRiderId = riderId || null;
+    var r = _editingRiderId ? riderById(_editingRiderId) : null;
+    document.getElementById('rider-name').value  = r ? (r.name  || '') : '';
+    document.getElementById('rider-email').value = r ? (r.email || '') : '';
+    document.getElementById('rider-phone').value = r ? (r.phone || '') : '';
+    var title = document.getElementById('rideredit-title');
+    if (title) title.textContent = t('riderTitle');
+    riderRenderWheels(_editingRiderId);
+    document.getElementById('rideredit-overlay').classList.add('show');
+    document.getElementById('rideredit-modal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  };
+  window.closeRiderEdit = function() {
+    document.getElementById('rideredit-overlay').classList.remove('show');
+    document.getElementById('rideredit-modal').classList.remove('show');
+    document.body.style.overflow = '';
+  };
+  window.riderClear = function(id) {
+    var el = document.getElementById(id);
+    if (el) { el.value = ''; el.focus(); }
+  };
+
+  window.saveRider = function() {
+    var name  = (document.getElementById('rider-name').value  || '').trim();
+    var email = (document.getElementById('rider-email').value || '').trim();
+    var phone = (document.getElementById('rider-phone').value || '').trim();
+    if (!name) {
+      var n = document.getElementById('rider-name');
+      if (n) { n.style.borderColor = '#f08080'; setTimeout(function() { n.style.borderColor = ''; }, 1200); n.focus(); }
+      return;
+    }
+    var riders = loadRiders();
+    if (_editingRiderId) {
+      var idx = riders.findIndex(function(r) { return r.id === _editingRiderId; });
+      if (idx >= 0) {
+        riders[idx].name = name; riders[idx].email = email; riders[idx].phone = phone;
+      } else {
+        riders.unshift({ id: _editingRiderId, name: name, email: email, phone: phone, ts: Date.now() });
+      }
+    } else {
+      _editingRiderId = newRiderId();
+      riders.unshift({ id: _editingRiderId, name: name, email: email, phone: phone, ts: Date.now() });
+    }
+    persistRiders(riders);
+    closeRiderEdit();
+  };
+
+  // ── Liste des roues affectées au rider (dans la modale édition) ─────────────
+  function riderRenderWheels(riderId) {
+    var list = document.getElementById('rider-wheels-list');
+    if (!list) return;
+    list.innerHTML = '';
+    var configs = (typeof loadConfigs === 'function') ? loadConfigs() : [];
+    var assigned = configs
+      .map(function(cfg, i) { return { cfg: cfg, i: i }; })
+      .filter(function(o) { return riderId && o.cfg.riderId === riderId; });
+
+    if (assigned.length === 0) {
+      list.innerHTML = '<div class="wheel-load-empty">' + t('riderNoWheels') + '</div>';
+      return;
+    }
+
+    assigned.forEach(function(o) {
+      var cfg = o.cfg, i = o.i;
+      var item = document.createElement('div');
+      item.className = 'wheel-load-item';
+
+      var nameEl = document.createElement('div');
+      nameEl.className = 'wheel-load-item-name';
+      var sideTag = (cfg.state && (cfg.state.wtype || 'avant') === 'arriere')
+        ? (lang === 'fr' ? 'AR' : 'R') : (lang === 'fr' ? 'AV' : 'F');
+      nameEl.textContent = cfg.name + '  · ' + sideTag;
+
+      var dateStr = '';
+      if (cfg.ts) {
+        var d = new Date(cfg.ts);
+        dateStr = String(d.getDate()).padStart(2,'0') + '/' +
+                  String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+      }
+      var metaEl = document.createElement('div');
+      metaEl.className = 'wheel-load-item-meta';
+      metaEl.textContent = dateStr;
+
+      var delBtn = document.createElement('button');
+      delBtn.className = 'wheel-load-item-del';
+      delBtn.textContent = '×';
+      delBtn.title = t('riderUnassign');
+      delBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var cfgs = loadConfigs();
+        if (cfgs[i]) { cfgs[i].riderId = null; persistConfigs(cfgs); }
+        riderRenderWheels(riderId);
+      });
+
+      item.appendChild(nameEl);
+      if (dateStr) item.appendChild(metaEl);
+      item.appendChild(delBtn);
+
+      item.addEventListener('click', function() {
+        riderLoadWheel(i);
+      });
+
+      list.appendChild(item);
+    });
+  }
+
+  // Charger une roue affectée (en basculant avant/arrière si nécessaire)
+  function riderLoadWheel(idx) {
+    var configs = loadConfigs();
+    var cfg = configs[idx]; if (!cfg) return;
+    var wh = (cfg.state && cfg.state.wtype) || 'avant';
+    closeRiderEdit();
+    if (typeof wtype !== 'undefined' && wh !== wtype && typeof setWheel === 'function') setWheel(wh);
+    if (typeof loadConfig === 'function') loadConfig(idx);
+  }
+
+  // ── Modale chargement (liste des riders) ────────────────────────────────────
+  window.openRiderLoad = function() {
+    riderRenderLoadList();
+    document.getElementById('riderload-overlay').classList.add('show');
+    document.getElementById('riderload-modal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  };
+  window.closeRiderLoad = function() {
+    document.getElementById('riderload-overlay').classList.remove('show');
+    document.getElementById('riderload-modal').classList.remove('show');
+    document.body.style.overflow = '';
+  };
+
+  function riderRenderLoadList() {
+    var list = document.getElementById('riderload-list');
+    if (!list) return;
+    var riders = loadRiders();
+    if (riders.length === 0) {
+      list.innerHTML = '<div class="wheel-load-empty">' + t('riderNone') + '</div>';
+      return;
+    }
+    list.innerHTML = '';
+    riders.forEach(function(r) {
+      var item = document.createElement('div');
+      item.className = 'wheel-load-item';
+
+      var nameEl = document.createElement('div');
+      nameEl.className = 'wheel-load-item-name';
+      nameEl.textContent = r.name;
+
+      // Nombre de roues affectées en méta
+      var configs = (typeof loadConfigs === 'function') ? loadConfigs() : [];
+      var nb = configs.filter(function(c) { return c.riderId === r.id; }).length;
+      var metaEl = document.createElement('div');
+      metaEl.className = 'wheel-load-item-meta';
+      metaEl.textContent = nb + (lang === 'fr' ? (nb > 1 ? ' roues' : ' roue') : (nb > 1 ? ' wheels' : ' wheel'));
+
+      var delBtn = document.createElement('button');
+      delBtn.className = 'wheel-load-item-del';
+      delBtn.textContent = '×';
+      delBtn.title = lang === 'fr' ? 'Supprimer' : 'Delete';
+      delBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var doDel = function() {
+          // Désaffecter les roues du rider
+          var cfgs = loadConfigs();
+          var changed = false;
+          cfgs.forEach(function(c) { if (c.riderId === r.id) { c.riderId = null; changed = true; } });
+          if (changed) persistConfigs(cfgs);
+          // Supprimer le rider
+          var arr = loadRiders().filter(function(x) { return x.id !== r.id; });
+          persistRiders(arr);
+          riderRenderLoadList();
+        };
+        if (typeof confirmShow === 'function') confirmShow(t('riderDelConfirm'), doDel);
+        else if (window.confirm(t('riderDelConfirm'))) doDel();
+      });
+
+      item.appendChild(nameEl);
+      item.appendChild(metaEl);
+      item.appendChild(delBtn);
+
+      item.addEventListener('click', function() {
+        closeRiderLoad();
+        openRiderEdit(r.id);
+      });
+
+      list.appendChild(item);
+    });
+  }
+
+  // ── Fermeture clavier (Échap) ───────────────────────────────────────────────
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    if (document.getElementById('rideredit-modal').classList.contains('show'))   { e.preventDefault(); closeRiderEdit(); return; }
+    if (document.getElementById('riderload-modal').classList.contains('show'))   { e.preventDefault(); closeRiderLoad(); return; }
+    if (document.getElementById('riderchoose-modal').classList.contains('show')) { e.preventDefault(); closeRiderChoose(); return; }
+  });
 
 })();
 </script>
