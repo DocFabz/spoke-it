@@ -1465,6 +1465,8 @@ input[type=number] { -moz-appearance:textfield }
 <header>
   <div class="header-links-row">
     <span class="tou-link" onclick="openTou()" data-i18n="touLink">Conditions d'utilisation</span>
+    <span class="header-links-sep">–</span>
+    <span class="tou-link" onclick="openPriv()" data-i18n="privLink">Confidentialité</span>
     <span class="header-links-sep mobile-only">–</span>
     <span class="tou-link mobile-only" onclick="openInstall()" data-i18n="installLink">Installation</span>
   </div>
@@ -1584,6 +1586,16 @@ input[type=number] { -moz-appearance:textfield }
   </div>
   <div class="tou-body" id="install-body"></div>
   <button class="tou-accept-btn" onclick="closeInstall()" data-i18n="installClose">FERMER</button>
+</div>
+
+<!-- ── Modal confidentialité ── -->
+<div class="tou-overlay" id="priv-overlay" onclick="closePriv()"></div>
+<div class="tou-modal" id="priv-modal">
+  <div class="tou-header">
+    <div class="tou-title" data-i18n="privTitle">Confidentialité</div>
+  </div>
+  <div class="tou-body" id="priv-body"></div>
+  <button class="tou-accept-btn" onclick="closePriv()" data-i18n="privClose">FERMER</button>
 </div>
 
 <!-- ── Module nav ── -->
@@ -2863,6 +2875,10 @@ const i18n = {
     installClose:'Fermer',
     installBody:`<p style="font-size:.72rem;color:var(--text2);line-height:1.65;margin:0 0 .5rem">Pour la meilleure expérience, installez Spoke It comme une application :</p><ul class="install-steps" style="margin-bottom:.9rem"><li>Accès rapide depuis l'écran d'accueil</li><li>Plein écran</li><li>Sans barre de navigation</li></ul><div class="install-section"><div class="install-section-title">iOS — iPhone &amp; iPad</div><ul class="install-steps"><li>Ouvrez <strong>spokeit.fr</strong> dans <strong>Safari</strong>.</li><li>Appuyez sur l'icône de partage <svg class="install-icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 12V4m0 0L5 7m3-3l3 3"/><path d="M3 15v3a2 2 0 002 2h14a2 2 0 002-2v-3"/></svg> en bas de l'écran.</li><li>Faites défiler et appuyez sur <strong>« Sur l'écran d'accueil »</strong>.</li><li>Confirmez avec <strong>Ajouter</strong>.</li></ul></div><div class="install-section" style="margin-top:.7rem"><div class="install-section-title">Android — Chrome</div><ul class="install-steps"><li>Ouvrez <strong>spokeit.fr</strong> dans <strong>Chrome</strong>.</li><li>Appuyez sur le menu <svg class="install-icon-inline" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg> en haut à droite.</li><li>Appuyez sur <strong>« Ajouter à l'écran d'accueil »</strong>.</li><li>Confirmez avec <strong>Ajouter</strong>.</li></ul></div>`,
     touBody:`<p>Spokeit.fr est une application non commerciale à visée indicative uniquement.</p><p>Les calculs de longueur de rayons générés par Spokeit.fr reposent sur des formules standardisées appliquées aux données saisies par l'utilisateur.<br>Ces résultats sont des <strong>estimations théoriques</strong> et peuvent différer des valeurs réelles en fonction du matériel, de l'état de la roue, du montage, de l'usure ou de tout autre paramètre non pris en compte par l'outil.</p><p>Avant tout montage ou mise en circulation de votre matériel, il vous appartient de :</p><ul><li>vérifier les résultats auprès d'un professionnel ou mécanicien qualifié.</li><li>mesurer physiquement les rayons à l'aide d'un outil de mesure adapté.</li><li>consulter les recommandations du fabricant de votre roue ou de votre jante.</li><li><strong>ne jamais rouler sur un montage non vérifié</strong>, même si les calculs semblent cohérents.</li></ul><p>La qualité du résultat dépend entièrement de l'exactitude des données fournies. Toute erreur de saisie (diamètre, nombre de trous, ERD, etc.) entraînera un résultat inexact dont spokeit.fr ne saurait être tenu responsable.</p><p>En utilisant cet outil, vous acceptez expressément ces conditions. Si vous n'êtes pas en mesure de vérifier les résultats par vous-même, nous vous recommandons de faire appel à un professionnel avant tout montage.</p>`,
+    privLink:'Confidentialité',
+    privTitle:'Confidentialité',
+    privClose:'Fermer',
+    privBody:`<p>Spokeit.fr fonctionne <strong>entièrement sur votre appareil</strong>. Il n'y a ni serveur, ni compte, ni base de données distante pour vos données.</p><p>Toutes vos données : configurations, moyeux, jantes, diagrammes de tension, cyclistes et réglages sont enregistrées <strong>localement</strong> dans le stockage de votre navigateur (localStorage). Elles ne quittent jamais votre appareil.</p><p>Concrètement, pour ces données, Spokeit.fr :</p><ul><li>ne les conserve que sur votre appareil.</li><li>ne les transmet, ne les partage et ne les vend à personne.</li><li>n'affiche aucune publicité.</li></ul><p>Le site utilise par ailleurs <strong>Google Analytics</strong> pour mesurer sa fréquentation : nombre de visites, pages consultées, type d'appareil et de navigateur, région approximative. Ces statistiques reposent sur des cookies, sont traitées par Google de façon agrégée, et portent uniquement sur l'usage du site — elles ne sont <strong>jamais reliées à vos données de roues</strong>.</p><p>Les sauvegardes (export / import) sont de simples fichiers JSON générés et lus <strong>localement</strong> : vous seul décidez où les enregistrer et avec qui les partager.</p><p>Revers de la médaille : comme tout est stocké dans le navigateur, <strong>vider les données du site ou désinstaller l'application efface vos données</strong>. Pensez à exporter régulièrement une sauvegarde pour ne rien perdre.</p>`,
   },
   en: {
     hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
@@ -3021,6 +3037,10 @@ const i18n = {
     installClose:'Close',
     installBody:`<p style="font-size:.72rem;color:var(--text2);line-height:1.65;margin:0 0 .5rem">For the best experience, install Spoke It as an app:</p><ul class="install-steps" style="margin-bottom:.9rem"><li>Quick access from your home screen</li><li>Full-screen display</li><li>No browser UI</li></ul><div class="install-section"><div class="install-section-title">iOS — iPhone &amp; iPad</div><ul class="install-steps"><li>Open <strong>spokeit.fr</strong> in <strong>Safari</strong>.</li><li>Tap the share icon <svg class="install-icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 12V4m0 0L5 7m3-3l3 3"/><path d="M3 15v3a2 2 0 002 2h14a2 2 0 002-2v-3"/></svg> at the bottom of the screen.</li><li>Scroll down and tap <strong>"Add to Home Screen"</strong>.</li><li>Confirm with <strong>Add</strong>.</li></ul></div><div class="install-section" style="margin-top:.7rem"><div class="install-section-title">Android — Chrome</div><ul class="install-steps"><li>Open <strong>spokeit.fr</strong> in <strong>Chrome</strong>.</li><li>Tap the menu <svg class="install-icon-inline" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg> in the top-right corner.</li><li>Tap <strong>"Add to Home Screen"</strong>.</li><li>Confirm with <strong>Add</strong>.</li></ul></div>`,
     touBody:`<p>Spokeit.fr is a non-commercial application intended for indicative purposes only.</p><p>Spoke length calculations generated by Spokeit.fr are based on standardised formulas applied to data entered by the user.<br>These results are <strong>theoretical estimates</strong> and may differ from real-world values depending on the components, wheel condition, build, wear, or any other parameter not accounted for by the tool.</p><p>Before fitting or riding any assembly, it is your responsibility to:</p><ul><li>verify results with a qualified professional or mechanic.</li><li>physically measure spokes using an appropriate measuring tool.</li><li>consult the manufacturer's recommendations for your wheel or rim.</li><li><strong>never ride on an unverified build</strong>, even if the calculations appear consistent.</li></ul><p>The accuracy of results depends entirely on the accuracy of the data provided. Any input error (diameter, hole count, ERD, etc.) will produce an incorrect result for which spokeit.fr cannot be held responsible.</p><p>By using this tool, you expressly agree to these terms. If you are unable to verify the results yourself, we recommend consulting a professional before any assembly.</p>`,
+    privLink:'Privacy',
+    privTitle:'Privacy',
+    privClose:'Close',
+    privBody:`<p>Spokeit.fr runs <strong>entirely on your device</strong>. There is no server, no account and no remote database for your data.</p><p>All your data: configurations, hubs, rims, tension charts, riders and settings, is stored <strong>locally</strong> in your browser's storage (localStorage). It never leaves your device.</p><p>In practice, for this data, Spokeit.fr:</p><ul><li>keeps it only on your device.</li><li>never transmits, shares or sells it to anyone.</li><li>displays no advertising.</li></ul><p>The site also uses <strong>Google Analytics</strong> to measure traffic: number of visits, pages viewed, device and browser type, approximate region. These statistics rely on cookies, are processed by Google in aggregate, and concern only how the site is used — they are <strong>never linked to your wheel data</strong>.</p><p>Backups (export / import) are plain JSON files created and read <strong>locally</strong>: you alone decide where to save them and who to share them with.</p><p>The flip side: because everything lives in the browser, <strong>clearing the site's data or uninstalling the app erases your data</strong>. Export a backup regularly so you don't lose anything.</p>`,
   }
 };
 
@@ -4557,6 +4577,17 @@ function openInstall() {
 function closeInstall() {
   $id('install-overlay').classList.remove('show');
   $id('install-modal').classList.remove('show');
+}
+
+// ── Confidentialité ───────────────────────────────────────────────────────────
+function openPriv() {
+  $id('priv-body').innerHTML = t('privBody');
+  $id('priv-overlay').classList.add('show');
+  $id('priv-modal').classList.add('show');
+}
+function closePriv() {
+  $id('priv-overlay').classList.remove('show');
+  $id('priv-modal').classList.remove('show');
 }
 
 // ── Export / Import JSON (toutes données) ─────────────────────────────────────
