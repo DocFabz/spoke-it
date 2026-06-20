@@ -566,6 +566,15 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 }
 .sum-val-btn.blink { animation:sum-blink 2s ease-in-out infinite }
 .ef-bt-btn.blink { animation:sum-blink 3.36s ease-in-out infinite }
+/* ── Rappel de sauvegarde : clignotement guide (même rythme que le micro Easy Fill) ── */
+.bkp-blink { animation:sum-blink 3.36s ease-in-out infinite }
+#backup-reminder {
+  display:none; align-items:center; justify-content:center; gap:.5rem;
+  margin:.85rem auto .1rem; color:var(--accent2);
+  font-size:.78rem; font-weight:500; letter-spacing:.04em; text-align:center;
+}
+#backup-reminder.show { display:flex; animation:sum-blink 3.36s ease-in-out infinite }
+#backup-reminder svg { flex-shrink:0; opacity:.9 }
 /* ── Modale saisie rayon ── */
 .slen-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(4px); z-index:9984; opacity:0; transition:opacity .2s; display:none }
 .slen-overlay.show { display:block; opacity:1 }
@@ -1379,9 +1388,13 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
      doivent rester visibles même en reduced-motion / Mode éco iOS.
      Sélecteur de classe (0,2,0) > '*' (0,0,0), donc gagne malgré le !important global.
        .ef-bt-btn.blink   → micro actif
-       .sum-val-btn.blink → valeur de longueur non renseignée (calculateur) */
+       .sum-val-btn.blink → valeur de longueur non renseignée (calculateur)
+       .bkp-blink         → guide vers la sauvegarde (boutons disquette / backup / export)
+       #backup-reminder   → bandeau de rappel (clignote en phase avec la disquette) */
   .ef-bt-btn.blink   { animation-duration: 3.36s !important; animation-iteration-count: infinite !important; }
   .sum-val-btn.blink { animation-duration: 2s    !important; animation-iteration-count: infinite !important; }
+  .bkp-blink         { animation-duration: 3.36s !important; animation-iteration-count: infinite !important; }
+  #backup-reminder.show { animation-duration: 3.36s !important; animation-iteration-count: infinite !important; }
 }
 
 /* 11. Isolation du scroll interne : arrivé en butée d'une modale ou d'une liste,
@@ -1500,7 +1513,7 @@ input[type=number] { -moz-appearance:textfield }
     </button>
     <div class="picker-overlay" id="picker-overlay" onclick="closePicker()"></div>
     <div class="picker-popup" id="picker-popup">
-      <button class="picker-btn" onclick="closePicker();openSaveMgr()">
+      <button class="picker-btn" id="bkp-mgr-btn" onclick="closePicker();openSaveMgr()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         <span data-i18n="pickerBackup">Backup manager</span>
       </button>
@@ -1511,6 +1524,12 @@ input[type=number] { -moz-appearance:textfield }
     </div>
   </div>
 </header>
+
+<!-- ── Bandeau rappel de sauvegarde (en flux, masqué par défaut) ── -->
+<div id="backup-reminder">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+  <span data-i18n="backupReminderMsg">Sauvegardez vos données.</span>
+</div>
 
 <!-- ── Modale Atelier ── -->
 <div class="ateliermgr-overlay" id="ateliermgr-overlay" onclick="closeAtelierMgr()"></div>
@@ -2753,6 +2772,7 @@ const i18n = {
     saveMgrDesc:'Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.',
     saveMgrWarning:'⚠︎ L\'import fusionne les données. En cas de nom identique, la version importée écrase l\'existante.',
     lsWriteError:'Stockage local plein ou bloqué — sauvegarde impossible. Exportez vos données (JSON).',
+    backupReminderMsg:'Sauvegardez vos données.',
     asymWarn:'Moyeu symétrique : Jante asymétrique déconseillée.',
     asymTip:'Décalage des trous de rayons des jantes asymétriques',
     tmTitle:'Module Tension', tmCalc:'Calculateur',
@@ -2916,6 +2936,7 @@ const i18n = {
     saveMgrDesc:'The JSON file contains all your data: wheel configurations, tension charts and custom tensiometers.',
     saveMgrWarning:'⚠︎ Import merges data. If a name already exists, the imported version overwrites it.',
     lsWriteError:'Local storage full or blocked — saving failed. Export your data (JSON).',
+    backupReminderMsg:'Back up your data.',
     asymWarn:'Symmetric hub: Asymmetric rim not recommended.',
     asymTip:'Offset Spoke Bed for Asymmetric Rim',
     tmTitle:'Tension Module', tmCalc:'Calculator',
@@ -3051,7 +3072,15 @@ function t(key) { return (i18n[lang] && i18n[lang][key]) || key; }
 // remonte et interrompt le flux de sauvegarde appelant — échec totalement
 // silencieux pour l'utilisateur. Ici : toast + retour false.
 function lsSet(key, val) {
-  try { localStorage.setItem(key, val); return true; }
+  try {
+    localStorage.setItem(key, val);
+    // Horodatage de modification pour le rappel de sauvegarde — uniquement sur
+    // les vraies données utilisateur (clés 'spokeit_', hors clés méta du rappel).
+    if (key.indexOf('spokeit_') === 0 && key !== 'spokeit_lastModif' && key !== 'spokeit_lastBackup') {
+      try { localStorage.setItem('spokeit_lastModif', String(Date.now())); } catch(e) {}
+    }
+    return true;
+  }
   catch(e) {
     var el = $id('cache-toast');
     if (el) {
@@ -4606,6 +4635,9 @@ function exportConfigs() {
   const a    = document.createElement('a');
   a.href = url; a.download = 'Spokeit-Backup.json'; a.click();
   URL.revokeObjectURL(url);
+  // Sauvegarde réussie : on horodate et on éteint le rappel (bandeau + clignotements).
+  try { localStorage.setItem('spokeit_lastBackup', String(Date.now())); } catch(e) {}
+  if (typeof bkpSetPending === 'function') bkpSetPending(false);
   closeSaveMgr();
 }
 
@@ -4705,6 +4737,45 @@ function importConfigs(event) {
     event.target.value = '';
   };
   reader.readAsText(file);
+}
+
+// ── Rappel de sauvegarde ──────────────────────────────────────────────────────
+// Bandeau informatif (en flux) + clignotement-guide qui suit l'utilisateur le long
+// du chemin disquette → « Backup manager » → « Exporter ». Les trois cibles reçoivent
+// la classe dès le départ ; comme deux d'entre elles sont masquées tant que leur
+// conteneur n'est pas ouvert, le guidage se révèle naturellement étape par étape.
+// Déclencheur : des données « spokeit_ » modifiées et non sauvegardées depuis ≥ 5 jours
+// (mesuré depuis la dernière sauvegarde, pour aussi alerter qui édite tous les jours
+// sans jamais exporter). Tout s'éteint après un export réussi (cf. exportConfigs).
+function bkpSetPending(on) {
+  var banner = document.getElementById('backup-reminder');
+  if (banner) banner.classList.toggle('show', on);
+  ['save-mgr-btn', 'bkp-mgr-btn'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.toggle('bkp-blink', on);
+  });
+  var exp = document.querySelector('.savemgr-export');
+  if (exp) exp.classList.toggle('bkp-blink', on);
+}
+
+function bkpCheckReminder() {
+  var modif, backup;
+  try {
+    modif  = parseInt(localStorage.getItem('spokeit_lastModif')  || '0', 10) || 0;
+    backup = parseInt(localStorage.getItem('spokeit_lastBackup') || '0', 10) || 0;
+  } catch(e) { return; }
+  // Premier lancement : on amorce l'horloge de sauvegarde, sans rappel.
+  if (!backup) { try { localStorage.setItem('spokeit_lastBackup', String(Date.now())); } catch(e){} return; }
+  if (modif <= backup) return;                 // rien de non sauvegardé
+  var THRESHOLD = 5 * 24 * 60 * 60 * 1000;     // 5 jours
+  if (Date.now() - backup < THRESHOLD) return; // dernière sauvegarde trop récente
+  bkpSetPending(true);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bkpCheckReminder);
+} else {
+  bkpCheckReminder();
 }
 
 // ── Auto-scroll to next card ──────────────────────────────────────────────────
