@@ -4797,7 +4797,9 @@ function importConfigs(event) {
 // Safari). Mesuré depuis la dernière sauvegarde, pour aussi alerter qui édite tous
 // les jours sans jamais exporter. Contrôlé au chargement ET à chaque retour au
 // premier plan (warm start iOS). « Reporter » (×) tait le rappel 24 h ; il revient
-// ensuite si des données restent non sauvegardées. Tout s'éteint après un export
+// ensuite si des données restent non sauvegardées. Aucun rappel s'il n'y a rien
+// à sauvegarder (toutes collections vides — cf. bkpHasData), ce qui couvre le
+// cas « avait des données puis tout supprimé ». Tout s'éteint après un export
 // réussi (cf. exportConfigs).
 function bkpSetPending(on) {
   var banner = document.getElementById('backup-reminder');
@@ -4808,6 +4810,24 @@ function bkpSetPending(on) {
   });
   var exp = document.querySelector('.savemgr-export');
   if (exp) exp.classList.toggle('bkp-blink', on);
+}
+
+// Y a-t-il réellement quelque chose à sauvegarder ? Évite le faux rappel quand
+// l'utilisateur a tout supprimé (la suppression ré-horodate lastModif via un
+// persist vide). typeof par sécurité si appelé avant la def d'un loader ; en cas
+// d'erreur de lecture on renvoie true (ne pas masquer un rappel légitime).
+function bkpHasData() {
+  try {
+    if (typeof loadConfigs === 'function' && (loadConfigs() || []).length) return true;
+    if (typeof ccLoadAll  === 'function' && (ccLoadAll()  || []).length) return true;
+    if (typeof ctLoadAll  === 'function' && (ctLoadAll()  || []).length) return true;
+    if (typeof hrLoadAll  === 'function' && (hrLoadAll('hub') || []).length) return true;
+    if (typeof hrLoadAll  === 'function' && (hrLoadAll('rim') || []).length) return true;
+    if (typeof loadRiders === 'function' && (loadRiders() || []).length) return true;
+    var at = localStorage.getItem('spokeit_atelier');
+    if (at) { var o = JSON.parse(at); if (o && (o.name || o.email || o.insta)) return true; }
+  } catch(e) { return true; }
+  return false;
 }
 
 function bkpCheckReminder() {
@@ -4829,6 +4849,7 @@ function bkpCheckReminder() {
                 || window.navigator.standalone === true;
   var THRESHOLD = (standalone ? 5 : 4) * 24 * 60 * 60 * 1000; // 5 j PWA / 4 j navigateur
   if (Date.now() - backup < THRESHOLD) return; // dernière sauvegarde trop récente
+  if (!bkpHasData()) return;                   // rien à sauvegarder : pas de rappel
   bkpSetPending(true);
 }
 
