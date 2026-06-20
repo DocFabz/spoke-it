@@ -4678,10 +4678,10 @@ function exportConfigs() {
   // ecraser la sauvegarde d'un jour precedent ; seul le fichier du jour meme est
   // remplace si l'on re-exporte le meme jour (cf. nom fixe = ecrasement total).
   var _d = new Date();
-  var _stamp = _d.getFullYear() + '-'
+  var _stamp = String(_d.getFullYear()).slice(-2) + '-'
     + String(_d.getMonth() + 1).padStart(2, '0') + '-'
     + String(_d.getDate()).padStart(2, '0');
-  a.href = url; a.download = 'Spokeit-Backup-' + _stamp + '.json'; a.click();
+  a.href = url; a.download = 'Spokeit' + _stamp + '.json'; a.click();
   URL.revokeObjectURL(url);
   // Sauvegarde réussie : on horodate et on éteint le rappel (bandeau + clignotements).
   try { localStorage.setItem('spokeit_lastBackup', String(Date.now())); } catch(e) {}
