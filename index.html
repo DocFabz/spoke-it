@@ -8112,10 +8112,18 @@ async function tmExportPdfWithOpts(opts) {
   const pdfTensioCaption = pdfTensioName
     ? (lang === 'fr' ? 'Tensiomètre\u00a0: ' : 'Tensiometer: ') + pdfTensioName
     : null;
-  if (wheelName || pdfTensioCaption) {
-    if (wheelName) {
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...C_TEXT2);
-      doc.text(sanitize(wheelLabel) + ' — ' + sanitize(wheelName), ML, Y);
+  // Rider de la roue chargée : nom de la config -> riderId -> riderById().name (jamais l'ID)
+  let pdfRiderName = null;
+  const _cfgN = (typeof _loadedConfigName !== 'undefined' && _loadedConfigName) ? _loadedConfigName[wtype] : null;
+  if (_cfgN && typeof loadConfigs === 'function' && typeof riderById === 'function') {
+    const _cfg = loadConfigs().find(c => c.name === _cfgN && (c.state && (c.state.wtype || 'avant')) === wtype);
+    if (_cfg && _cfg.riderId) { const _rd = riderById(_cfg.riderId); if (_rd && _rd.name) pdfRiderName = _rd.name; }
+  }
+  let pdfLeftLine = pdfRiderName ? sanitize(pdfRiderName) : '';
+  if (pdfLeftLine || pdfTensioCaption) {
+    if (pdfLeftLine) {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...C_WARM);
+      doc.text(pdfLeftLine, ML, Y);
     }
     if (pdfTensioCaption) {
       doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...C_TEXT3);
@@ -11100,10 +11108,29 @@ async function diagGeneratePdf() {
   var pdfTensioCaption = pdfTensioName
     ? (L === 'fr' ? 'Tensiomètre\u00a0: ' : 'Tensiometer: ') + pdfTensioName
     : null;
-  if (wheelName || pdfTensioCaption) {
-    if (wheelName) {
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C_TEXT2);
-      doc.text(sanitize(wheelLabel) + ' — ' + sanitize(wheelName), ML, Y);
+  // Rider de la roue chargée : nom de la config -> riderId -> riderById().name (jamais l'ID)
+  var pdfRiderName = null;
+  var _cfgN = (typeof _loadedConfigName !== 'undefined' && _loadedConfigName) ? _loadedConfigName[wtype] : null;
+  if (_cfgN && typeof loadConfigs === 'function' && typeof riderById === 'function') {
+    var _cfg = loadConfigs().find(c => c.name === _cfgN && (c.state && (c.state.wtype || 'avant')) === wtype);
+    if (_cfg && _cfg.riderId) { var _rd = riderById(_cfg.riderId); if (_rd && _rd.name) pdfRiderName = _rd.name; }
+  }
+  var pdfWheelPart = wheelName ? (sanitize(wheelLabel) + ' - ' + sanitize(wheelName)) : '';
+  var pdfRiderPart = pdfRiderName ? sanitize(pdfRiderName) : '';
+  if (pdfWheelPart || pdfRiderPart || pdfTensioCaption) {
+    if (pdfWheelPart || pdfRiderPart) {
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+      var _x = ML;
+      if (pdfWheelPart) {
+        doc.setTextColor(...C_TEXT2);
+        doc.text(pdfWheelPart, _x, Y);
+        _x += doc.getTextWidth(pdfWheelPart);
+      }
+      if (pdfRiderPart) {
+        if (pdfWheelPart) { doc.setTextColor(...C_TEXT2); doc.text(' - ', _x, Y); _x += doc.getTextWidth(' - '); }
+        doc.setTextColor(...C_WARM);
+        doc.text(pdfRiderPart, _x, Y);
+      }
     }
     if (pdfTensioCaption) {
       doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...C_TEXT3);
