@@ -8102,9 +8102,25 @@ async function tmExportPdfWithOpts(opts) {
   Y += headerH + 5;
 
   // ── Nom de roue + séparateur (comme diagnostic et évolution) ─────────────
-  if (wheelName) {
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...C_TEXT2);
-    doc.text(sanitize(wheelLabel) + ' — ' + sanitize(wheelName), ML, Y);
+  let pdfTensioName = null;
+  if (tmType && tmType.startsWith('ct_')) {
+    const _ct = (typeof ctLoadAll === 'function') ? ctLoadAll().find(c => 'ct_' + c.id === tmType) : null;
+    pdfTensioName = _ct ? _ct.name : null;
+  } else if (typeof _snapTensioLabel === 'function') {
+    pdfTensioName = _snapTensioLabel(tmType, tmDTSub, tmWFSub);
+  }
+  const pdfTensioCaption = pdfTensioName
+    ? (lang === 'fr' ? 'Tensiomètre\u00a0: ' : 'Tensiometer: ') + pdfTensioName
+    : null;
+  if (wheelName || pdfTensioCaption) {
+    if (wheelName) {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...C_TEXT2);
+      doc.text(sanitize(wheelLabel) + ' — ' + sanitize(wheelName), ML, Y);
+    }
+    if (pdfTensioCaption) {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...C_TEXT3);
+      doc.text(sanitize(pdfTensioCaption), PW - MR, Y, { align: 'right' });
+    }
     Y += 5;
   }
   doc.setDrawColor(...C_ACCENT); doc.setLineWidth(0.3);
@@ -11074,9 +11090,25 @@ async function diagGeneratePdf() {
   Y += headerH + 6;
 
   // ── Ligne séparatrice + nom de roue ───────────────────────────────────────
-  if (wheelName) {
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C_TEXT2);
-    doc.text(sanitize(wheelLabel) + ' — ' + sanitize(wheelName), ML, Y);
+  var pdfTensioName = null;
+  if (tmType && tmType.startsWith('ct_')) {
+    var _ct = (typeof ctLoadAll === 'function') ? ctLoadAll().find(c => 'ct_' + c.id === tmType) : null;
+    pdfTensioName = _ct ? _ct.name : null;
+  } else if (typeof _snapTensioLabel === 'function') {
+    pdfTensioName = _snapTensioLabel(tmType, tmDTSub, tmWFSub);
+  }
+  var pdfTensioCaption = pdfTensioName
+    ? (L === 'fr' ? 'Tensiomètre\u00a0: ' : 'Tensiometer: ') + pdfTensioName
+    : null;
+  if (wheelName || pdfTensioCaption) {
+    if (wheelName) {
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C_TEXT2);
+      doc.text(sanitize(wheelLabel) + ' — ' + sanitize(wheelName), ML, Y);
+    }
+    if (pdfTensioCaption) {
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...C_TEXT3);
+      doc.text(sanitize(pdfTensioCaption), PW-MR, Y, { align:'right' });
+    }
     Y += 5;
   }
   doc.setDrawColor(...C_ACCENT); doc.setLineWidth(0.3);
@@ -11995,9 +12027,23 @@ function hrClearLoadedRim() {
 
 const SNAP_MAX = 5;
 
+function _snapResolveTensio(snap) {
+  // Résout le nom du tensiomètre perso en direct depuis snap.tmType
+  // (répare les snapshots créés avant la correction si le perso existe encore) ;
+  // repli sur le label figé au moment du snapshot.
+  if (snap && snap.tmType && snap.tmType.indexOf('ct_') === 0 && typeof ctLoadAll === 'function') {
+    const ct = ctLoadAll().find(c => 'ct_' + c.id === snap.tmType);
+    if (ct) return '★ ' + ct.name;
+  }
+  return snap ? snap.tensioLabel : null;
+}
+
 function _snapTensioLabel(type, dtSub, wfSub) {
   if (!type) return null;
-  if (type.startsWith('ct_')) return type.replace(/^ct_/, '★ ');
+  if (type.startsWith('ct_')) {
+    const ct = (typeof ctLoadAll === 'function') ? ctLoadAll().find(c => 'ct_' + c.id === type) : null;
+    return '★ ' + (ct ? ct.name : type.replace(/^ct_/, ''));
+  }
   const map = {
     wf_new: 'W. FANATYK', wf_old: 'W. FANATYK (old)',
     pt: 'PARK TOOL TM-1',
@@ -12218,7 +12264,7 @@ function snapRenderList() {
       + String(d.getMonth()+1).padStart(2,'0') + ' '
       + String(d.getHours()).padStart(2,'0') + ':'
       + String(d.getMinutes()).padStart(2,'0');
-    const infoStr = [snap.tensioLabel, snap.tmSpokeKey ? snap.tmSpokeKey.replace(/^__[A-Z ]+__/, '') : null].filter(Boolean).join(' · ');
+    const infoStr = [_snapResolveTensio(snap), snap.tmSpokeKey ? snap.tmSpokeKey.replace(/^__[A-Z ]+__/, '') : null].filter(Boolean).join(' · ');
     return '<div class="snap-item" onclick="snapLoad(' + i + ')">'
       + '<div class="snap-item-info">'
       + '<span class="snap-item-label">SNAPSHOT ' + snap.num + '</span>'
@@ -12349,7 +12395,7 @@ function _snapCompareRenderList(snaps) {
       + String(d.getMonth()+1).padStart(2,'0') + ' '
       + String(d.getHours()).padStart(2,'0') + ':'
       + String(d.getMinutes()).padStart(2,'0');
-    var infoStr = [snap.tensioLabel, snap.tmSpokeKey ? snap.tmSpokeKey.replace(/^__[A-Z ]+__/, '') : null].filter(Boolean).join(' · ');
+    var infoStr = [_snapResolveTensio(snap), snap.tmSpokeKey ? snap.tmSpokeKey.replace(/^__[A-Z ]+__/, '') : null].filter(Boolean).join(' · ');
     return '<div class="snap-item" id="snapcmp-item-' + i + '" onclick="_snapCompareToggle(' + i + ')" style="cursor:pointer">'
       + '<div class="snap-item-info">'
       + '<span class="snap-item-label">SNAPSHOT ' + snap.num + '</span>'
@@ -12709,8 +12755,8 @@ function snapComparePDF() {
     doc.text('SNAPSHOT '+snap.num, cardX, Y-1);
     doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor.apply(doc,C_TEXT3);
     doc.text(dstr, cardX+colW, Y-1, {align:'right'});
-    if (snap.tensioLabel || snap.tmSpokeKey) {
-      var info = [snap.tensioLabel, snap.tmSpokeKey ? snap.tmSpokeKey.replace(/^__[A-Z ]+__/, '') : null].filter(Boolean).join(' · ');
+    if (_snapResolveTensio(snap) || snap.tmSpokeKey) {
+      var info = [_snapResolveTensio(snap), snap.tmSpokeKey ? snap.tmSpokeKey.replace(/^__[A-Z ]+__/, '') : null].filter(Boolean).join(' · ');
       doc.setFontSize(5); doc.setTextColor.apply(doc,C_TEXT3);
       doc.text(sanitize(info), cardX, Y+3.5);
     }
