@@ -7950,8 +7950,9 @@ function drawHexIcon(ctx, cx, cy, r, color) {
 // ── Screenshot diagramme de tension ──────────────────────────────────────────
 // ── Export PDF avec options (appelé depuis la modale) ─────────────────────────
 async function tmExportPdfWithOpts(opts) {
-  const { jsPDF } = window.jspdf;
-  if (!jsPDF) { alert('jsPDF not loaded'); return; }
+  const lib = window.jspdf;
+  if (!lib || !lib.jsPDF) { alert(lang === 'fr' ? 'jsPDF non chargé' : 'jsPDF not loaded'); return; }
+  const jsPDF = lib.jsPDF;
 
   const radar   = document.getElementById('tm-radar');
   const statsEl = document.getElementById('tm-stats');
@@ -10958,8 +10959,9 @@ function closeDiagModal() {
 
 // ── Génération PDF Diagnostic (style identique au PDF principal) ───────────────
 async function diagGeneratePdf() {
-  var { jsPDF } = window.jspdf;
-  if (!jsPDF) { alert('jsPDF not loaded'); return; }
+  var lib = window.jspdf;
+  if (!lib || !lib.jsPDF) { alert(lang === 'fr' ? 'jsPDF non chargé' : 'jsPDF not loaded'); return; }
+  var jsPDF = lib.jsPDF;
 
   var L  = typeof lang !== 'undefined' ? lang : 'fr';
   var tr = typeof i18n !== 'undefined' && i18n[L] ? i18n[L] : {};
