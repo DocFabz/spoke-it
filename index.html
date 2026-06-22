@@ -535,7 +535,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .rw       { display:none; animation:fu .5s cubic-bezier(.22,1,.36,1) }
 .rw.show  { display:block }
 @keyframes fu { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:translateY(0) } }
-.rg       { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem }
+.rg       { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1rem; margin-bottom:1rem }
 .rc       { border-radius:var(--rs); padding:1.4rem 1.5rem }
 .rc.fo    { background:linear-gradient(145deg,rgba(232,146,124,.07),rgba(232,146,124,.025)); border:1px solid rgba(232,146,124,.28) }
 .rc.fa    { background:linear-gradient(145deg,rgba(126,200,227,.07),rgba(126,200,227,.025)); border:1px solid rgba(126,200,227,.28) }
@@ -1449,6 +1449,12 @@ input[type=number] { -moz-appearance:textfield }
   .tm-stat-label    { font-size: .6rem; }
   .tm-outlier-bar { padding: .6rem .8rem; }
   .radar-legend { gap: .7rem; margin-top: .5rem; }
+}
+
+/* Très petits écrans (≤359px) : desserre les cards de résultat sans toucher aux iPhone (375+) ni aux Android larges. Police .rnum inchangée. */
+@media (max-width: 359px) {
+  .rg { gap: .65rem; }
+  .rc { padding: 1.25rem 1rem; }
 }
 
 /* ── ToU link & modal ───────────────────────────────────────────────────────── */
