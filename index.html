@@ -641,7 +641,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 /* ── Arbitrage ─────────────────────────────────────────────────────────────── */
 .arb-wrap          { display:none; animation:fu .5s cubic-bezier(.22,1,.36,1) }
 .arb-wrap.show     { display:block }
-.arb-cols          { display:grid; grid-template-columns:1fr 1fr; gap:1rem }
+.arb-cols          { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1rem }
 .arb-col-head      { font-size:.56rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; margin-bottom:.7rem; text-align:center }
 .arb-col-head.fo   { color:var(--warm) }
 .arb-col-head.fa   { color:var(--accent) }
