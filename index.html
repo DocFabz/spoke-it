@@ -7338,7 +7338,7 @@ function tmBuildTable() {
         }
         if (!oorShown) tmUpdateCell(idx, side); // hors plage : laisser la plage affichée, le timer OOR_DISPLAY_MS restaurera la cellule
         tmTryRenderRadar();
-        tmUpdateResultCardState();
+        tmSyncResultAfterEdit();
         _snapSetLabel(0);
         snapRefreshBtn();
         tmUpdateInvertibleHeaders();
@@ -7396,6 +7396,14 @@ function tmUpdateResultCardState() {
   }
 }
 
+// Après une suppression manuelle dans la card "Déflections mesurées" :
+// si plus aucune valeur, refermer le diagramme (état no-data non ouvrable),
+// comme le fait Easy Fill à sa fermeture. Sinon, simple MAJ d'état.
+function tmSyncResultAfterEdit() {
+  if (!tmHasData()) tmHideResult();
+  else tmUpdateResultCardState();
+}
+
 function tmHideResult() {
   const body  = $id('tm-result-card-body');
   const chev  = $id('tm-result-card-chevron');
@@ -7430,7 +7438,7 @@ function tmResetSide(col) {
   document.querySelectorAll(`[id^="dr-${side}-"]`).forEach(el => { el.textContent = ''; });
 
   tmTryRenderRadar();
-  tmUpdateResultCardState();
+  tmSyncResultAfterEdit();
   _snapSetLabel(0);
 }
 
