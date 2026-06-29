@@ -1405,6 +1405,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
   .sum-val-btn.blink { animation-duration: 2s    !important; animation-iteration-count: infinite !important; }
   .bkp-blink         { animation-duration: 3.36s !important; animation-iteration-count: infinite !important; }
   #backup-reminder.show { animation-duration: 3.36s !important; animation-iteration-count: infinite !important; }
+  /* Repère roue Easy Fill : court (3×) mais doit rester visible en Mode éco iOS */
+  .title-side.blink3 { animation-duration: .667s !important; animation-iteration-count: 3 !important; }
 }
 
 /* 11. Isolation du scroll interne : arrivé en butée d'une modale ou d'une liste,
