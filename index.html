@@ -9154,7 +9154,12 @@ function efOpen(sideMode) {
     var side = wtype === 'arriere' ? (L === 'fr' ? 'Roue arrière' : 'Rear wheel') : (L === 'fr' ? 'Roue avant' : 'Front wheel');
     efTitleEl.innerHTML = 'Easy Fill — <span class="title-side">' + side + '</span>';
   }
-  setTimeout(function() { blinkTitleSide($id('ef-title')); }, 200);
+  // Clignotement-rappel du côté roue (avant/arrière) : uniquement en accès
+  // direct au module, sans roue sauvegardée chargée. Une config connue
+  // identifie déjà la roue sans ambiguïté → pas de rappel inutile.
+  if (!_loadedConfigName[wtype]) {
+    setTimeout(function() { blinkTitleSide($id('ef-title')); }, 200);
+  }
   $id('ef-overlay').classList.add('show');
   document.body.style.overflow = 'hidden';
   efRenderStep();
