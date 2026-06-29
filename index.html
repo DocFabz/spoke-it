@@ -4981,7 +4981,10 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
  'erd-direct','nsd-val','erd-nsd-result','tension-forte','asym','sp-so-left','sp-so-right','spoke-select'].forEach(id => {
   const el = $id(id); if (!el) return;
   ['input','change'].forEach(ev => {
-    el.addEventListener(ev, updateCalcBtn);
+    // Late-bind : window.updateCalcBtn est patché plus bas (greffe hrUpdateButtons).
+    // Référencer la valeur à l'exécution, sinon on capture la version pré-patch
+    // qui ne rafraîchit pas les icônes de sauvegarde Hub/Rim.
+    el.addEventListener(ev, function() { window.updateCalcBtn(); });
     el.addEventListener(ev, markModified);
     if (id === 'offset-left' || id === 'offset-right') {
       el.addEventListener(ev, updateAsymField);
@@ -4989,7 +4992,7 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
   });
 });
 const ecrouEl = $id('ecrou-type');
-ecrouEl.addEventListener('change', updateCalcBtn);
+ecrouEl.addEventListener('change', function() { window.updateCalcBtn(); });
 ecrouEl.addEventListener('change', markModified);
 
 // ── Module tension : toute saisie efface le badge (sauf tolérance, nb rayons, rayon) ──
