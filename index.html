@@ -9777,8 +9777,15 @@ function efVoiceToNumber(txt) {
   // ── Étape 1 : normaliser tous les séparateurs décimaux en '.'
   // Couvre: virgule (fr/it/de/es/pt…), point, separateurs unicode arabes/persans
   s = s.replace(/[,،٫]/g, '.');
-  // Alternatives longues en PREMIER, sinon "virgola" court-circuite "virgola decimale"
-  s = s.replace(/\b(virgola decimale|point d[eé]cimal|virgule|virgola|point|komma|coma|dot)\b/g, '.');
+  // Alternatives longues en PREMIER, sinon "virgola" court-circuite "virgola decimale".
+  // Couvre les mots décimaux des 9 langues de langWords : it/es punto, de/pl punkt,
+  // nl punt, pt ponto + v[ií]rgula (avec ou sans accent), pl przecinek. \b reste
+  // fiable ici : toutes les bornes d'alternatives sont des lettres ASCII.
+  s = s.replace(/\b(virgola decimale|point d[eé]cimal|v[ií]rgula|virgule|virgola|przecinek|punto|punkt|ponto|punt|point|komma|coma|dot)\b/g, '.');
+  // Cyrillique à part : \b est ASCII-only en JS (з n'est pas \w → \bзапятая ne
+  // matche JAMAIS). Ancres espace/bords explicites ; le lookahead préserve
+  // l'espace de queue pour la jointure (\d)\s*\.\s*(\d) qui suit.
+  s = s.replace(/(^|\s)(?:запятая|точка)(?=\s|$)/g, '$1.');
   s = s.replace(/(\d)\s*\.\s*(\d)/g, '$1.$2');
 
   // ── Étape 2 : si le transcript contient déjà un nombre en chiffres arabes,
@@ -9917,9 +9924,15 @@ function efToggleMic() {
 // ── Modale langue de saisie vocale ───────────────────────────────────────────
 
 function efGetRecogLang() {
-  return (typeof lang !== 'undefined' && lang === 'fr')
-    ? 'fr-FR'
-    : (navigator.languages?.[0] || navigator.language || 'en-US');
+  if (typeof lang !== 'undefined' && lang === 'fr') {
+    // Francophones régionaux (fr-BE, fr-CH, fr-CA) : préférer la locale du
+    // navigateur — septante/nonante/huitante sont mieux transcrits par le
+    // modèle régional. Repli fr-FR si la locale n'est pas francophone
+    // (couvre aussi le cas 'fr' sans région).
+    var bl = navigator.languages?.[0] || navigator.language || '';
+    return /^fr[-_]/i.test(bl) ? bl : 'fr-FR';
+  }
+  return navigator.languages?.[0] || navigator.language || 'en-US';
 }
 
 // Langue effective du retour vocal : le choix forcé dans la modale « Langue ou US »
@@ -9937,10 +9950,16 @@ function efSpeechLang() {
 // immédiatement. Le retour vocal suit seul (efSpeak relit efSpeechLang à chaque énoncé).
 function efOnLangChange() {
   efForcedLang = (lang === 'fr') ? null : 'en-US';
+  // Jeter l'instance préchauffée : efWarmSR a figé r.lang à l'ouverture de la
+  // modale. Bascule EN→FR : efForcedLang redevient null → efStartMic
+  // consommerait l'instance dans l'ANCIENNE langue navigateur (ex: de-DE sous
+  // une UI française). Instance jamais startée → GC, rien à abort().
+  efWarmInstance = null;
   // La modale EF ouverte doit basculer son texte (titre, switcher, étape courante),
   // que le micro tourne ou non : applyLang() ne couvre aucun élément ef-*.
+  // Re-préchauffer dans la nouvelle langue (no-op sur iOS).
   var ov = $id('ef-overlay');
-  if (ov && ov.classList.contains('show')) efRefreshLang();
+  if (ov && ov.classList.contains('show')) { efRefreshLang(); efWarmSR(); }
   if (!efMicActive) return;
   // Purger tout timer/flag armé sur un énoncé de l'ancienne langue avant de relancer.
   if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
@@ -10207,7 +10226,16 @@ function efStartMic(forceLang) {
         var efDecProlong = efDecPart !== null && (efDecPart.length === 1 || /0$/.test(efDecPart));
         var efIntProlong = efDecPart === null && /^\d+$/.test(numInterim) &&
                            Number(numInterim) > 0 && Number(numInterim) % 10 === 0;
-        var efStableDelay = (efDecProlong || efIntProlong) ? 850 : 500;
+        // Inversion germanique (de/nl) : l'unité est dite en PREMIER
+        // ("einundzwanzig" = un-et-vingt, nl "tweeëndertig") → l'intermédiaire
+        // prolongeable est un chiffre 1-9, pas un palier de dizaine. Sans
+        // rallonge, "2" se stabilise en 500ms, l'auto-avance committe 2 et le
+        // final 32 atterrit sur le rayon suivant — symétrique du cas fr/en
+        // couvert par efIntProlong. recogLang : var d'efStartMic, captée ici
+        // par la closure onresult.
+        var efUnitProlong = (recogLang === 'de' || recogLang === 'nl') &&
+                            efDecPart === null && /^[1-9]$/.test(numInterim);
+        var efStableDelay = (efDecProlong || efIntProlong || efUnitProlong) ? 850 : 500;
         if (parsedInterim !== null) {
           var kgfInterim = toKgf(parsedInterim);
           if (kgfInterim !== null) {
