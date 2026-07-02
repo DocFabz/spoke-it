@@ -2804,7 +2804,7 @@ const i18n = {
     tensionHelpRear:'La tension NDS est calculée automatiquement selon le ratio des déports.',
     tensionHelpFront:'La tension DS est calculée automatiquement selon le ratio des déports.',
     calcBtn:'Calculer', perSide:'/côté', configSummary:'Résumé de configuration',
-    wheelLabel:'Roue', spokeCount:'Nb rayons', crossLabel:'Croisement',
+    spokeCount:'Nb rayons', crossLabel:'Croisement',
     hubType:'Type moyeu', spokeSection2:'Section rayon', rimAsym2:'Asym. jante',
     tensionRatio:'Tension ratio', frontLabel:'Avant', rearLabel:'Arrière', radial:'Radial',
     errSpokes:'Veuillez choisir le nombre de rayons.',
@@ -2836,7 +2836,6 @@ const i18n = {
     tmCVMaxLabel:'Seuil outliers',
     tmOutlierModalTitle:'Seuil de détection',
     tmOutlierModalDesc:'Si la dispersion globale de la nappe dépasse ce seuil, les rayons les plus éloignés de la tension médiane sont mis en évidence.',
-    tmTensioLabel:'Tensiomètre',
     tmReadingKgf:'Lecture',
     tmSpokeSelectPlaceholder:'—',
     tmTensioPlaceholder:'—',
@@ -3508,7 +3507,9 @@ function applyState(s) {
     wtype === 'arriere' ? rg.appendChild(rcFo) : rg.insertBefore(rcFo, rcFa);
     $id('results').classList.add('show');
   const resCard = $id('results').querySelector('.card'); if (resCard) resCard.classList.add('card-done');
-    { const hb = document.getElementById('hooke-btn'); if (hb) hb.style.display = 'flex'; }
+    // Bouton Hooke : uniquement si la save contient les sous-résultats d'élongation
+    // (m-fo/m-fa non vides ⟺ section acier sélectionnée au calc) — sinon bouton mort.
+    { const hb = document.getElementById('hooke-btn'); if (hb) hb.style.display = (s.mFo || s.mFa) ? 'flex' : 'none'; }
     if (s.summaryData) { summaryData = s.summaryData; renderSummary(); $id('summary-wrap').classList.add('show'); }
     if (s.arbData && s.arbData.fo && s.arbData.fa) {
       arbData = s.arbData;
@@ -4695,7 +4696,8 @@ function exportConfigs() {
     customTensios: ctLoadAll(),
     savedHubs:     hrLoadAll('hub'),
     savedRims:     hrLoadAll('rim'),
-    riders:        (typeof loadRiders === 'function') ? loadRiders() : []
+    riders:        (typeof loadRiders === 'function') ? loadRiders() : [],
+    atelier:       (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {}
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
@@ -4790,6 +4792,18 @@ function importConfigs(event) {
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
         persistRiders(existing);
+      }
+
+      // Atelier : singleton — la version importée écrase l'existante (même
+      // politique que les autres collections), mais un atelier vide/absent
+      // ne touche pas à l'atelier local. Champs connus uniquement.
+      if (data.atelier && typeof data.atelier === 'object' &&
+          (data.atelier.name || data.atelier.email || data.atelier.insta)) {
+        lsSet(LS_ATELIER, JSON.stringify({
+          name:  String(data.atelier.name  || ''),
+          email: String(data.atelier.email || ''),
+          insta: String(data.atelier.insta || '')
+        }));
       }
 
       // ── 2. Tout rafraîchir en une seule passe ──
@@ -6070,7 +6084,7 @@ function tmOpenConvTable() {
   }
 
   // Label rayon
-  $id('tm-conv-spoke-label').innerHTML = `${t('tmConvTensio')}\u00a0: <strong style="color:var(--accent)">${tensioLabel}</strong><br>${t('tmSpokeLabel')}\u00a0: <strong style="color:var(--text)">${tmSpokeKey.replace(/^__[A-Z ]+__/, '')}</strong>`;
+  $id('tm-conv-spoke-label').innerHTML = `${t('tmConvTensio')}\u00a0: <strong style="color:var(--accent)">${escHtml(tensioLabel)}</strong><br>${t('tmSpokeLabel')}\u00a0: <strong style="color:var(--text)">${escHtml(tmSpokeKey.replace(/^__[A-Z ]+__/, ''))}</strong>`;
 
   // Header lecture
   $id('tm-conv-th-reading').textContent = t('tmConvReading');
@@ -9809,11 +9823,12 @@ function efVoiceToNumber(txt) {
     'six':6,'sept':7,'seven':7,'huit':8,'eight':8,'neuf':9,'nine':9,
     'dix':10,'ten':10,'onze':11,'eleven':11,'douze':12,'twelve':12,
     'treize':13,'thirteen':13,'quatorze':14,'fourteen':14,'quinze':15,'fifteen':15,
-    'seize':16,'sixteen':16,'vingt':20,'twenty':20,'trente':30,'thirty':30,
+    'seize':16,'sixteen':16,'seventeen':17,'eighteen':18,'nineteen':19,
+    'vingt':20,'twenty':20,'trente':30,'thirty':30,
     'quarante':40,'forty':40,'cinquante':50,'fifty':50,
     'soixante':60,'sixty':60,'seventy':70,
     'eighty':80,
-    'ninety':90,'cent':100,'hundred':100
+    'ninety':90,'cent':100,'cents':100,'hundred':100,'mille':1000,'thousand':1000
   };
   s = s
     // Les mots-séparateurs ont déjà été normalisés en '.' à l'étape 1 :
@@ -9848,6 +9863,7 @@ function efVoiceToNumber(txt) {
       if (v === undefined) continue;
       matched = true;
       if (v === 100) { current = (current === 0 ? 1 : current) * 100; }
+      else if (v === 1000) { total += (current === 0 ? 1 : current) * 1000; current = 0; }
       else { current += v; }
     }
     total += current;
@@ -10270,10 +10286,14 @@ function efStartMic(forceLang) {
               }, 200);
             }, efStableDelay);
           } else if (tmGetRange() !== null &&
-                     !/^\s*\d+\s*$/.test(txt)) {
+                     numInterim.indexOf('.') !== -1) {
             // Parseable mais hors plage : beep + feedback visuel après stabilisation 500ms
-            // Exception : transcript intermédiaire = entier seul (ex: "1" avant "1 virgule 23")
-            // → ne pas déclencher OOR, la partie décimale n'est pas encore arrivée.
+            // Exception : valeur PARSÉE encore entière (ex: "1" ou "un" avant "… virgule 23",
+            // ou "1 virgule" en attente de sa décimale) → ne pas déclencher OOR, la partie
+            // décimale n'est pas encore arrivée. On teste numInterim (parsé) et non le
+            // transcript brut : "un" (mot) ou "1 virgule" ne matchent pas \d+ et
+            // déclenchaient l'OOR à tort. Hors plage sur le final : efCommitCurrent
+            // fait de toute façon le feedback complet (beep + plage).
             // efOorFired posé ICI (avant le timer) pour bloquer tout isFinal rapide
             // arrivant pendant les 500ms — évite le double beep + double liseré rouge.
             efOorFired = true;
@@ -12373,7 +12393,7 @@ function snapRenderList() {
       + String(d.getMonth()+1).padStart(2,'0') + ' '
       + String(d.getHours()).padStart(2,'0') + ':'
       + String(d.getMinutes()).padStart(2,'0');
-    const infoStr = [_snapResolveTensio(snap), snap.tmSpokeKey ? snap.tmSpokeKey.replace(/^__[A-Z ]+__/, '') : null].filter(Boolean).join(' · ');
+    const infoStr = escHtml([_snapResolveTensio(snap), snap.tmSpokeKey ? snap.tmSpokeKey.replace(/^__[A-Z ]+__/, '') : null].filter(Boolean).join(' · '));
     return '<div class="snap-item" onclick="snapLoad(' + i + ')">'
       + '<div class="snap-item-info">'
       + '<span class="snap-item-label">SNAPSHOT ' + snap.num + '</span>'
@@ -12504,7 +12524,7 @@ function _snapCompareRenderList(snaps) {
       + String(d.getMonth()+1).padStart(2,'0') + ' '
       + String(d.getHours()).padStart(2,'0') + ':'
       + String(d.getMinutes()).padStart(2,'0');
-    var infoStr = [_snapResolveTensio(snap), snap.tmSpokeKey ? snap.tmSpokeKey.replace(/^__[A-Z ]+__/, '') : null].filter(Boolean).join(' · ');
+    var infoStr = escHtml([_snapResolveTensio(snap), snap.tmSpokeKey ? snap.tmSpokeKey.replace(/^__[A-Z ]+__/, '') : null].filter(Boolean).join(' · '));
     return '<div class="snap-item" id="snapcmp-item-' + i + '" onclick="_snapCompareToggle(' + i + ')" style="cursor:pointer">'
       + '<div class="snap-item-info">'
       + '<span class="snap-item-label">SNAPSHOT ' + snap.num + '</span>'
@@ -12749,11 +12769,11 @@ function snapComparePDF() {
   var snapB = selPair[1];
   if (!snapA || !snapB) return;
 
+  var L  = typeof lang !== 'undefined' ? lang : 'fr';
   var jsPDFLib = window.jspdf;
   if (!jsPDFLib || !jsPDFLib.jsPDF) { alert(L==='fr'?'jsPDF non chargé':'jsPDF not loaded'); return; }
   var jsPDF = jsPDFLib.jsPDF;
 
-  var L  = typeof lang !== 'undefined' ? lang : 'fr';
   var atelierInfo = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
   var workshopName = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
   // Nom de roue : depuis la config chargée, ou depuis la config qui contient ces snapshots
