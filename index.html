@@ -4617,6 +4617,13 @@ function loadConfig(idx) {
   resetScrollFlags();
   const top = document.querySelector('header').getBoundingClientRect().bottom + window.pageYOffset - 30; window.scrollTo({ top, behavior: 'smooth' });
   flashWheelCard(cfg.name);
+  // Snapshots accessibles meme si l'etat sauvegarde ne contient pas de
+  // donnees tension (roue enregistree avant la mesure) : restaurer le
+  // dernier snapshot pour rouvrir la card et reactiver le bouton Snapshots.
+  // flashWheelCard() a deja pose _loadedConfigName, requis par snapLoad().
+  if (!tmHasData() && cfg.snapshots && cfg.snapshots.length) {
+    snapLoad(cfg.snapshots.length - 1);
+  }
 }
 
 function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
