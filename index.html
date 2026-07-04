@@ -157,6 +157,9 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .savemgr-action-btn { display:flex; align-items:center; justify-content:center; gap:.6rem; padding:.45rem .85rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:all .25s; flex:1 }
 .savemgr-export:hover, .savemgr-import:hover { border-color:rgba(126,200,227,.65); color:var(--accent2); background:rgba(126,200,227,.06) }
 .savemgr-warning { font-size:.65rem; color:var(--text3); font-style:italic; line-height:1.5 }
+.savemgr-dated { display:flex; align-items:center; justify-content:center; gap:.45rem; font-size:.65rem; color:var(--text2); line-height:1.4; white-space:nowrap; cursor:pointer; user-select:none; touch-action:manipulation }
+.savemgr-dated input { width:12px; height:12px; accent-color:var(--accent); margin:0; cursor:pointer; flex-shrink:0 }
+.savemgr-dated-fname { color:var(--accent) }
 
 /* ── Picker popup ── */
 .picker-popup { position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); z-index:9979; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:.6rem; box-shadow:0 8px 32px rgba(0,0,0,.45); display:none; flex-direction:column; gap:.3rem; min-width:180px }
@@ -1612,6 +1615,10 @@ input[type=number] { -moz-appearance:textfield }
     </button>
     <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="importConfigs(event)">
   </div>
+  <label class="savemgr-dated" for="bkp-dated-chk">
+    <input type="checkbox" id="bkp-dated-chk" checked onchange="bkpDatedToggle(this.checked)">
+    <span><span data-i18n="bkpDatedLabel">Nom de fichier daté</span> &mdash; <span id="bkp-dated-fname" class="savemgr-dated-fname"></span></span>
+  </label>
   <p class="savemgr-warning" data-i18n="saveMgrWarning">&#9888;&#65038; L'import fusionne les données. En cas de nom identique, la version importée écrase l'existante.</p>
 
 </div>
@@ -2823,10 +2830,12 @@ const i18n = {
     importSuccess:'✓ Données importées avec succès.', importError:'Fichier invalide ou corrompu.',
     saveMgrTitle:'Gestion des sauvegardes',
     saveMgrDesc:'Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.',
-    lastBackupNever:'Aucune sauvegarde effectuée pour le moment.',
+    lastBackupNever:'Aucune sauvegarde effectuée.',
     lastBackupToday:'Dernière sauvegarde : aujourd\'hui.',
     lastBackupYesterday:'Dernière sauvegarde : hier.',
     lastBackupDays:'Dernière sauvegarde : il y a {n} jours.',
+    bkpDatedLabel:'Nom de fichier daté',
+    bkpNothingToExport:'Rien à sauvegarder.',
     saveMgrWarning:'⚠︎ L\'import fusionne les données. En cas de nom identique, la version importée écrase l\'existante.',
     lsWriteError:'Stockage local plein ou bloqué — sauvegarde impossible. Exportez vos données (JSON).',
     backupReminderMsg:'Sauvegardez vos données.',
@@ -2991,10 +3000,12 @@ const i18n = {
     importSuccess:'✓ Data imported successfully.', importError:'Invalid or corrupted file.',
     saveMgrTitle:'Backup manager',
     saveMgrDesc:'The JSON file contains all your data: wheel configurations, tension charts and custom tensiometers.',
-    lastBackupNever:'No backup has been made yet.',
+    lastBackupNever:'No backup yet.',
     lastBackupToday:'Last backup: today.',
     lastBackupYesterday:'Last backup: yesterday.',
     lastBackupDays:'Last backup: {n} days ago.',
+    bkpDatedLabel:'Dated filename',
+    bkpNothingToExport:'Nothing to back up.',
     saveMgrWarning:'⚠︎ Import merges data. If a name already exists, the imported version overwrites it.',
     lsWriteError:'Local storage full or blocked — saving failed. Export your data (JSON).',
     backupReminderMsg:'Back up your data.',
@@ -4673,6 +4684,7 @@ function savemgrRenderLastBackup() {
 
 function openSaveMgr() {
   savemgrRenderLastBackup();
+  bkpDatedRender(); // état de la case + aperçu du nom (date du jour)
   $id('savemgr-overlay').classList.add('show');
   $id('savemgr-modal').classList.add('show');
 }
@@ -4715,7 +4727,39 @@ function closePriv() {
 }
 
 // ── Export / Import JSON (toutes données) ─────────────────────────────────────
+// ── Préférence de nom de fichier d'export ────────────────────────────────────
+// Daté (défaut) : un fichier par jour, protège l'historique de sauvegardes.
+// Fixe : « Spokeit.json », un seul fichier remplacé à chaque export — écrasement
+// réel sur iOS (Fichiers propose « Remplacer ») et via la boîte de dialogue
+// desktop ; les navigateurs qui téléchargent sans demander numérotent (1), (2).
+// setItem brut : une préférence ne doit pas ré-horodater lastModif (rappel).
+function bkpDatedPref() {
+  try { return localStorage.getItem('spokeit_bkpDated') !== '0'; } catch(e) { return true; }
+}
+function bkpFileName() {
+  if (!bkpDatedPref()) return 'Spokeit.json';
+  var d = new Date();
+  return 'Spokeit' + String(d.getFullYear()).slice(-2) + '-'
+    + String(d.getMonth() + 1).padStart(2, '0') + '-'
+    + String(d.getDate()).padStart(2, '0') + '.json';
+}
+function bkpDatedToggle(on) {
+  try { localStorage.setItem('spokeit_bkpDated', on ? '1' : '0'); } catch(e) {}
+  bkpDatedRender();
+}
+function bkpDatedRender() {
+  var chk = $id('bkp-dated-chk'), fn = $id('bkp-dated-fname');
+  if (chk) chk.checked = bkpDatedPref();
+  if (fn)  fn.textContent = bkpFileName();
+}
+
 function exportConfigs() {
+  // Garde anti-export-vide : ne pas générer un JSON inutile, et surtout ne pas
+  // écraser une sauvegarde saine en nom fixe avec un fichier vide.
+  if (typeof bkpHasData === 'function' && !bkpHasData()) {
+    showImportToast(t('bkpNothingToExport'), true);
+    return;
+  }
   const payload = {
     spokeit: true, v: 2,
     configs:       loadConfigs(),
@@ -4729,14 +4773,9 @@ function exportConfigs() {
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  // Nom date a la journee : un fichier par jour. Un export ne peut donc plus
-  // ecraser la sauvegarde d'un jour precedent ; seul le fichier du jour meme est
-  // remplace si l'on re-exporte le meme jour (cf. nom fixe = ecrasement total).
-  var _d = new Date();
-  var _stamp = String(_d.getFullYear()).slice(-2) + '-'
-    + String(_d.getMonth() + 1).padStart(2, '0') + '-'
-    + String(_d.getDate()).padStart(2, '0');
-  a.href = url; a.download = 'Spokeit' + _stamp + '.json'; a.click();
+  // Nom construit selon la préférence utilisateur (cf. bkpFileName) :
+  // daté = un fichier par jour (historique) ; fixe = « Spokeit.json » écrasé.
+  a.href = url; a.download = bkpFileName(); a.click();
   URL.revokeObjectURL(url);
   // Sauvegarde réussie : on horodate et on éteint le rappel (bandeau + clignotements).
   try { localStorage.setItem('spokeit_lastBackup', String(Date.now())); } catch(e) {}
@@ -4869,6 +4908,10 @@ function importConfigs(event) {
 // à sauvegarder (toutes collections vides — cf. bkpHasData), ce qui couvre le
 // cas « avait des données puis tout supprimé ». Tout s'éteint après un export
 // réussi (cf. exportConfigs).
+// Deux horloges distinctes : spokeit_lastBackup n'est écrite que par un export
+// réel (elle alimente l'affichage « dernière sauvegarde ») ; spokeit_bkpClock
+// amorce le compte à rebours du rappel au premier lancement ou après vidage du
+// cache, sans faire croire à l'affichage qu'une sauvegarde a eu lieu.
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function bkpSetPending(on) {
@@ -4907,10 +4950,15 @@ function bkpCheckReminder() {
   try {
     modif  = parseInt(localStorage.getItem('spokeit_lastModif')  || '0', 10) || 0;
     backup = parseInt(localStorage.getItem('spokeit_lastBackup') || '0', 10) || 0;
+    // Jamais exporté : l'horloge du rappel court depuis l'amorçage (bkpClock),
+    // sans polluer lastBackup qui ne reflète que les vrais exports (affichage).
+    if (!backup) backup = parseInt(localStorage.getItem('spokeit_bkpClock') || '0', 10) || 0;
     snooze = parseInt(localStorage.getItem('spokeit_lastSnooze') || '0', 10) || 0;
   } catch(e) { return; }
-  // Premier lancement : on amorce l'horloge de sauvegarde, sans rappel.
-  if (!backup) { try { localStorage.setItem('spokeit_lastBackup', String(Date.now())); } catch(e){} return; }
+  // Premier lancement (ou cache vidé) : on amorce l'horloge du rappel sur sa
+  // clé dédiée, sans rappel. lastBackup reste vierge tant qu'aucun export réel
+  // n'a eu lieu — le Data manager peut donc afficher « Aucune sauvegarde ».
+  if (!backup) { try { localStorage.setItem('spokeit_bkpClock', String(Date.now())); } catch(e){} return; }
   if (modif <= backup) return;                 // rien de non sauvegardé
   if (snooze && (Date.now() - snooze) < DAY_MS) return; // reporté < 24 h
   // Seuil plus court hors PWA installée : Safari (onglet) purge le localStorage
