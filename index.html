@@ -152,6 +152,7 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .savemgr-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
 .savemgr-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
 .savemgr-desc { font-size:.72rem; color:var(--text2); line-height:1.5 }
+.savemgr-lastbackup { font-size:.72rem; color:var(--accent); line-height:1.5 }
 .savemgr-btns { display:flex; flex-direction:row; gap:.5rem; width:100% }
 .savemgr-action-btn { display:flex; align-items:center; justify-content:center; gap:.6rem; padding:.45rem .85rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:all .25s; flex:1 }
 .savemgr-export:hover, .savemgr-import:hover { border-color:rgba(126,200,227,.65); color:var(--accent2); background:rgba(126,200,227,.06) }
@@ -1599,6 +1600,7 @@ input[type=number] { -moz-appearance:textfield }
     <button class="savemgr-close" onclick="closeSaveMgr()">&#x2715;</button>
   </div>
   <p class="savemgr-desc" data-i18n="saveMgrDesc">Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.</p>
+  <p class="savemgr-lastbackup" id="savemgr-lastbackup"></p>
   <div class="savemgr-btns">
     <button class="savemgr-action-btn savemgr-import" onclick="$id('import-file-input').click()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -2821,6 +2823,10 @@ const i18n = {
     importSuccess:'✓ Données importées avec succès.', importError:'Fichier invalide ou corrompu.',
     saveMgrTitle:'Gestion des sauvegardes',
     saveMgrDesc:'Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.',
+    lastBackupNever:'Aucune sauvegarde effectuée pour le moment.',
+    lastBackupToday:'Dernière sauvegarde : aujourd\'hui.',
+    lastBackupYesterday:'Dernière sauvegarde : hier.',
+    lastBackupDays:'Dernière sauvegarde : il y a {n} jours.',
     saveMgrWarning:'⚠︎ L\'import fusionne les données. En cas de nom identique, la version importée écrase l\'existante.',
     lsWriteError:'Stockage local plein ou bloqué — sauvegarde impossible. Exportez vos données (JSON).',
     backupReminderMsg:'Sauvegardez vos données.',
@@ -2985,6 +2991,10 @@ const i18n = {
     importSuccess:'✓ Data imported successfully.', importError:'Invalid or corrupted file.',
     saveMgrTitle:'Backup manager',
     saveMgrDesc:'The JSON file contains all your data: wheel configurations, tension charts and custom tensiometers.',
+    lastBackupNever:'No backup has been made yet.',
+    lastBackupToday:'Last backup: today.',
+    lastBackupYesterday:'Last backup: yesterday.',
+    lastBackupDays:'Last backup: {n} days ago.',
     saveMgrWarning:'⚠︎ Import merges data. If a name already exists, the imported version overwrites it.',
     lsWriteError:'Local storage full or blocked — saving failed. Export your data (JSON).',
     backupReminderMsg:'Back up your data.',
@@ -3380,6 +3390,9 @@ function _applyLangModals() {
   document.querySelectorAll('[data-i18n="screenshotDark"]').forEach(function(e)     { e.textContent = tr.screenshotDark     || 'Dark'; });
   document.querySelectorAll('[data-i18n="screenshotLight"]').forEach(function(e)    { e.textContent = tr.screenshotLight    || 'Light'; });
   document.querySelectorAll('[data-i18n="screenshotGenerate"]').forEach(function(e) { e.textContent = tr.screenshotGenerate || (L==='fr' ? 'Générer le JPEG' : 'Generate JPEG'); });
+
+  // ── Modale Save Manager ──
+  if (typeof savemgrRenderLastBackup === 'function') savemgrRenderLastBackup();
 }
 
 function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; lsSet('spoke-it-lang', lang); applyLang(); efOnLangChange(); }
@@ -4645,7 +4658,21 @@ function closePicker() {
   if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
 }
 
+// Traduit l'horodatage spokeit_lastBackup en texte lisible (aujourd'hui / hier / il y a N jours).
+function savemgrRenderLastBackup() {
+  var el = $id('savemgr-lastbackup');
+  if (!el) return;
+  var backup = 0;
+  try { backup = parseInt(localStorage.getItem('spokeit_lastBackup') || '0', 10) || 0; } catch(e) {}
+  if (!backup) { el.textContent = t('lastBackupNever'); return; }
+  var days = Math.floor((Date.now() - backup) / DAY_MS);
+  if (days <= 0)      el.textContent = t('lastBackupToday');
+  else if (days === 1) el.textContent = t('lastBackupYesterday');
+  else                 el.textContent = t('lastBackupDays').replace('{n}', days);
+}
+
 function openSaveMgr() {
+  savemgrRenderLastBackup();
   $id('savemgr-overlay').classList.add('show');
   $id('savemgr-modal').classList.add('show');
 }
@@ -4829,9 +4856,10 @@ function importConfigs(event) {
 
 // ── Rappel de sauvegarde ──────────────────────────────────────────────────────
 // Bandeau informatif (en flux) + clignotement-guide qui suit l'utilisateur le long
-// du chemin disquette → « Backup manager » → « Exporter ». Les trois cibles reçoivent
-// la classe dès le départ ; comme deux d'entre elles sont masquées tant que leur
-// conteneur n'est pas ouvert, le guidage se révèle naturellement étape par étape.
+// du chemin disquette → « Backup manager » → « Exporter » → texte « dernière
+// sauvegarde ». Les quatre cibles reçoivent la classe dès le départ ; comme
+// certaines sont masquées tant que leur conteneur n'est pas ouvert, le guidage
+// se révèle naturellement étape par étape.
 // Déclencheur : des données « spokeit_ » modifiées et non sauvegardées au-delà du
 // seuil — 5 j en PWA installée, 4 j en navigateur (marge avant l'éviction ITP de
 // Safari). Mesuré depuis la dernière sauvegarde, pour aussi alerter qui édite tous
@@ -4841,10 +4869,12 @@ function importConfigs(event) {
 // à sauvegarder (toutes collections vides — cf. bkpHasData), ce qui couvre le
 // cas « avait des données puis tout supprimé ». Tout s'éteint après un export
 // réussi (cf. exportConfigs).
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 function bkpSetPending(on) {
   var banner = document.getElementById('backup-reminder');
   if (banner) banner.classList.toggle('show', on);
-  ['save-mgr-btn', 'bkp-mgr-btn'].forEach(function(id) {
+  ['save-mgr-btn', 'bkp-mgr-btn', 'savemgr-lastbackup'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.classList.toggle('bkp-blink', on);
   });
@@ -4882,12 +4912,12 @@ function bkpCheckReminder() {
   // Premier lancement : on amorce l'horloge de sauvegarde, sans rappel.
   if (!backup) { try { localStorage.setItem('spokeit_lastBackup', String(Date.now())); } catch(e){} return; }
   if (modif <= backup) return;                 // rien de non sauvegardé
-  if (snooze && (Date.now() - snooze) < 24 * 60 * 60 * 1000) return; // reporté < 24 h
+  if (snooze && (Date.now() - snooze) < DAY_MS) return; // reporté < 24 h
   // Seuil plus court hors PWA installée : Safari (onglet) purge le localStorage
   // après ~7 j d'inactivité (ITP). On alerte plus tôt pour garder une marge.
   var standalone = window.matchMedia('(display-mode: standalone)').matches
                 || window.navigator.standalone === true;
-  var THRESHOLD = (standalone ? 5 : 4) * 24 * 60 * 60 * 1000; // 5 j PWA / 4 j navigateur
+  var THRESHOLD = (standalone ? 5 : 4) * DAY_MS; // 5 j PWA / 4 j navigateur
   if (Date.now() - backup < THRESHOLD) return; // dernière sauvegarde trop récente
   if (!bkpHasData()) return;                   // rien à sauvegarder : pas de rappel
   bkpSetPending(true);
