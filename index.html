@@ -157,9 +157,9 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .savemgr-action-btn { display:flex; align-items:center; justify-content:center; gap:.6rem; padding:.45rem .85rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:all .25s; flex:1 }
 .savemgr-export:hover, .savemgr-import:hover { border-color:rgba(126,200,227,.65); color:var(--accent2); background:rgba(126,200,227,.06) }
 .savemgr-warning { font-size:.65rem; color:var(--text3); font-style:italic; line-height:1.5 }
-.savemgr-dated { display:flex; align-items:center; justify-content:center; gap:.45rem; font-size:.65rem; color:var(--text2); line-height:1.4; white-space:nowrap; cursor:pointer; user-select:none; touch-action:manipulation }
-.savemgr-dated input { width:12px; height:12px; accent-color:var(--accent); margin:0; cursor:pointer; flex-shrink:0 }
-.savemgr-dated-fname { color:var(--accent) }
+.bkp-exp-fname { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:400; letter-spacing:0; text-transform:none; color:var(--text); margin-left:auto }
+.bkp-exp-head { display:flex; align-items:center; justify-content:space-between; gap:.6rem; padding-bottom:.15rem }
+.bkp-exp-title { font-size:.6rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
 
 /* ── Picker popup ── */
 .picker-popup { position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); z-index:9979; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:.6rem; box-shadow:0 8px 32px rgba(0,0,0,.45); display:none; flex-direction:column; gap:.3rem; min-width:180px }
@@ -1609,16 +1609,29 @@ input[type=number] { -moz-appearance:textfield }
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <span data-i18n="importBtn">Importer</span>
     </button>
-    <button class="savemgr-action-btn savemgr-export" onclick="exportConfigs()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <span data-i18n="exportBtn">Exporter</span>
-    </button>
+    <div style="position:relative;flex:1;display:flex">
+      <button class="savemgr-action-btn savemgr-export" style="flex:1" onclick="bkpExportPicker(true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span data-i18n="exportBtn">Exporter</span>
+      </button>
+      <div class="picker-popup" id="bkp-export-popup" role="group" style="min-width:215px">
+        <div class="bkp-exp-head">
+          <span class="bkp-exp-title" data-i18n="bkpExportTitle">Nom du fichier</span>
+          <button class="savemgr-close" onclick="bkpExportPicker(false)">&#x2715;</button>
+        </div>
+        <button class="picker-btn" id="bkp-exp-dated" onclick="bkpExportChoose(true)">
+          <span data-i18n="bkpExpDated">Daté</span>
+          <span class="bkp-exp-fname" id="bkp-exp-fname-dated"></span>
+        </button>
+        <button class="picker-btn" id="bkp-exp-fixed" onclick="bkpExportChoose(false)">
+          <span data-i18n="bkpExpFixed">Fixe</span>
+          <span class="bkp-exp-fname">Spokeit.json</span>
+        </button>
+      </div>
+      <div class="picker-overlay" id="bkp-export-overlay" onclick="bkpExportPicker(false)"></div>
+    </div>
     <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="importConfigs(event)">
   </div>
-  <label class="savemgr-dated" for="bkp-dated-chk">
-    <input type="checkbox" id="bkp-dated-chk" checked onchange="bkpDatedToggle(this.checked)">
-    <span><span data-i18n="bkpDatedLabel">Nom de fichier daté</span> &mdash; <span id="bkp-dated-fname" class="savemgr-dated-fname"></span></span>
-  </label>
   <p class="savemgr-warning" data-i18n="saveMgrWarning">&#9888;&#65038; L'import fusionne les données. En cas de nom identique, la version importée écrase l'existante.</p>
 
 </div>
@@ -2834,7 +2847,7 @@ const i18n = {
     lastBackupToday:'Dernière sauvegarde : aujourd\'hui.',
     lastBackupYesterday:'Dernière sauvegarde : hier.',
     lastBackupDays:'Dernière sauvegarde : il y a {n} jours.',
-    bkpDatedLabel:'Nom de fichier daté',
+    bkpExpDated:'Daté', bkpExpFixed:'Fixe', bkpExportTitle:'Nom du fichier',
     bkpNothingToExport:'Rien à sauvegarder.',
     saveMgrWarning:'⚠︎ L\'import fusionne les données. En cas de nom identique, la version importée écrase l\'existante.',
     lsWriteError:'Stockage local plein ou bloqué — sauvegarde impossible. Exportez vos données (JSON).',
@@ -3004,7 +3017,7 @@ const i18n = {
     lastBackupToday:'Last backup: today.',
     lastBackupYesterday:'Last backup: yesterday.',
     lastBackupDays:'Last backup: {n} days ago.',
-    bkpDatedLabel:'Dated filename',
+    bkpExpDated:'Dated', bkpExpFixed:'Fixed', bkpExportTitle:'Filename',
     bkpNothingToExport:'Nothing to back up.',
     saveMgrWarning:'⚠︎ Import merges data. If a name already exists, the imported version overwrites it.',
     lsWriteError:'Local storage full or blocked — saving failed. Export your data (JSON).',
@@ -4684,11 +4697,11 @@ function savemgrRenderLastBackup() {
 
 function openSaveMgr() {
   savemgrRenderLastBackup();
-  bkpDatedRender(); // état de la case + aperçu du nom (date du jour)
   $id('savemgr-overlay').classList.add('show');
   $id('savemgr-modal').classList.add('show');
 }
 function closeSaveMgr() {
+  bkpExportPicker(false); // referme le picker d'export s'il était ouvert
   $id('savemgr-overlay').classList.remove('show');
   $id('savemgr-modal').classList.remove('show');
 }
@@ -4736,21 +4749,40 @@ function closePriv() {
 function bkpDatedPref() {
   try { return localStorage.getItem('spokeit_bkpDated') !== '0'; } catch(e) { return true; }
 }
-function bkpFileName() {
-  if (!bkpDatedPref()) return 'Spokeit.json';
+function bkpDatedName() {
   var d = new Date();
   return 'Spokeit' + String(d.getFullYear()).slice(-2) + '-'
     + String(d.getMonth() + 1).padStart(2, '0') + '-'
     + String(d.getDate()).padStart(2, '0') + '.json';
 }
-function bkpDatedToggle(on) {
-  try { localStorage.setItem('spokeit_bkpDated', on ? '1' : '0'); } catch(e) {}
-  bkpDatedRender();
+function bkpFileName() {
+  return bkpDatedPref() ? bkpDatedName() : 'Spokeit.json';
 }
-function bkpDatedRender() {
-  var chk = $id('bkp-dated-chk'), fn = $id('bkp-dated-fname');
-  if (chk) chk.checked = bkpDatedPref();
-  if (fn)  fn.textContent = bkpFileName();
+// Picker d'export : le clic sur « Exporter » ouvre un popup ancré sous le
+// bouton avec les deux noms possibles (daté / fixe). Le choix est persisté
+// dans spokeit_bkpDated, que bkpFileName() relit au moment de l'export.
+function bkpExportPicker(show) {
+  var pop = $id('bkp-export-popup'), ov = $id('bkp-export-overlay');
+  if (!pop || !ov) return;
+  if (show) {
+    // Garde anti-export-vide dès l'ouverture : inutile de proposer un choix
+    // s'il n'y a rien à exporter (exportConfigs garde aussi la sienne).
+    if (typeof bkpHasData === 'function' && !bkpHasData()) {
+      showImportToast(t('bkpNothingToExport'), true);
+      return;
+    }
+    var fn = $id('bkp-exp-fname-dated');
+    if (fn) fn.textContent = bkpDatedName(); // date du jour à l'ouverture
+    pop.setAttribute('aria-label', t('bkpExportTitle'));
+    pop.classList.add('show'); ov.classList.add('show');
+  } else {
+    pop.classList.remove('show'); ov.classList.remove('show');
+  }
+}
+function bkpExportChoose(dated) {
+  try { localStorage.setItem('spokeit_bkpDated', dated ? '1' : '0'); } catch(e) {}
+  bkpExportPicker(false);
+  exportConfigs(); // bkpFileName() relit la préférence qui vient d'être posée
 }
 
 function exportConfigs() {
@@ -6684,6 +6716,10 @@ document.addEventListener('keydown', function(e) {
   }
   if (e.key === 'Escape' && $id('erasemgr-modal').classList.contains('show')) {
     closeEraseMgr();
+  }
+  if (e.key === 'Escape' && $id('bkp-export-popup') && $id('bkp-export-popup').classList.contains('show')) {
+    bkpExportPicker(false);
+    return; // ne pas fermer aussi la modale de sauvegarde derrière
   }
   if (e.key === 'Escape' && $id('picker-popup').classList.contains('show')) {
     closePicker();
