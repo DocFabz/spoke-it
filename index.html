@@ -9419,6 +9419,25 @@ function efUpdatePrevKgf() {
   el.className = kgf !== null ? 'ef-prev-kgf has-val' : 'ef-prev-kgf';
 }
 
+// ── Garde de précision métier ────────────────────────────────────────────────
+// Une lecture de tensiomètre est au CENTIÈME au plus (déflection à deux
+// décimales ; Park Tool/UNIOR au dixième). Une décimale à 3+ chiffres
+// significatifs ne peut pas sortir d'un cadran : c'est la signature d'une
+// FUSION du formateur numérique du moteur vocal (hésitation « zéro virgule
+// quatre… quatre-vingt-dix-huit » → "0,498"), sémantiquement fausse mais
+// syntaxiquement propre et souvent EN PLAGE — indétectable par la garde
+// min–max. Les zéros de queue sont ignorés ("0,980" = 0,98 légitime).
+// Ne touche PAS au raccourci entier ("123" → 1.23) : la chaîne dictée n'a
+// pas de partie décimale, le /100 de tmParseInput s'applique après.
+function efDecTooPrecise(numStr) {
+  if (!numStr) return false;
+  var s = String(numStr).replace(',', '.');
+  var dot = s.indexOf('.');
+  if (dot === -1) return false;
+  var dec = s.slice(dot + 1).replace(/0+$/, '');
+  return dec.length > 2;
+}
+
 // Retourne true si valide (ou vide), false si hors plage
 function efCommitCurrent() {
   var step   = efSteps[efCurrent];
@@ -9462,6 +9481,19 @@ function efCommitCurrent() {
 
   // Valeur invalide (non parseable) → ignorer, ne pas avancer
   if (parsed === null) return false;
+
+  // Valeur EN PLAGE mais à 3+ décimales significatives → fusion moteur
+  // (voir efDecTooPrecise). Beep + liseré SANS le texte min–max : afficher
+  // la plage serait trompeur (la valeur y est), le message utile est
+  // « redicter ». Restauration comme pour l'OOR.
+  if (efDecTooPrecise(raw)) {
+    efBeepError();
+    inp.classList.add('out-of-range');
+    setTimeout(function() { inp.classList.remove('out-of-range'); }, 400);
+    var oldPrecise = step.side === 'fo' ? tmData.fo[step.idx] : tmData.fa[step.idx];
+    inp.value = oldPrecise !== null ? tmDisplayValue(oldPrecise) : '';
+    return false;
+  }
 
   if (step.side === 'fo') tmData.fo[step.idx] = parsed;
   else                     tmData.fa[step.idx] = parsed;
@@ -9893,9 +9925,18 @@ function efVoiceToNumber(txt) {
   // Si le moteur a répété le nombre (ex: "32 32"), on prend le dernier.
   var numMatches = s.match(/\d+\.?\d*/g);
   if (numMatches && numMatches.length > 0) {
-    // Chercher d'abord un nombre décimal (avec point)
-    var decMatch = s.match(/\d+\.\d+/);
-    if (decMatch) return decMatch[0];
+    // Chercher d'abord un nombre décimal (avec point) — le DERNIER, pas le
+    // premier : symétrique de la déduplication entière ci-dessous. Quand le
+    // moteur s'auto-corrige dans un même transcript ("0,4 0,98" pour une
+    // hésitation « zéro virgule quatre… quatre-vingt-dix-huit »), le premier
+    // décimal est la lecture périmée, le dernier est la correction.
+    // NB : la variante FUSIONNÉE de la même hésitation ("0,498" — le formateur
+    // numérique du moteur concatène les nombres successifs) est indétectable
+    // ici : le transcript ne contient qu'un seul nombre, sémantiquement faux
+    // mais syntaxiquement propre. Aucune garde applicative ne peut la
+    // distinguer d'une vraie lecture en plage.
+    var decMatches = s.match(/\d+\.\d+/g);
+    if (decMatches) return decMatches[decMatches.length - 1];
     // Sinon prendre le dernier entier (déduplication si répétition)
     return numMatches[numMatches.length - 1];
   }
@@ -10338,7 +10379,12 @@ function efStartMic(forceLang) {
         var efStableDelay = (efDecProlong || efIntProlong || efUnitProlong) ? 850 : 500;
         if (parsedInterim !== null) {
           var kgfInterim = toKgf(parsedInterim);
-          if (kgfInterim !== null) {
+          var efTooPrecise = efDecTooPrecise(numInterim);
+          // Plage capturée UNE fois pour la condition ci-dessous (chemin chaud :
+          // chaque interim). Le timer OOR refait son propre tmGetRange() à
+          // l'expiration — inchangé, conservateur.
+          var efRangeNow = tmGetRange();
+          if (kgfInterim !== null && !efTooPrecise) {
             // Valeur valide : auto-avance après stabilisation (500ms, ou 850ms si décimale prolongeable)
             efBeepTimer = setTimeout(function() {
               efBeepTimer = null;
@@ -10369,9 +10415,9 @@ function efStartMic(forceLang) {
                 if (ok && !efTtsMode) { efBeepNext(); }
               }, 200);
             }, efStableDelay);
-          } else if (tmGetRange() !== null &&
+          } else if (efRangeNow !== null &&
                      (numInterim.indexOf('.') !== -1 ||
-                      (/^\d+$/.test(numInterim) && parsedInterim > tmGetRange().max))) {
+                      (/^\d+$/.test(numInterim) && parsedInterim > efRangeNow.max))) {
             // Parseable mais hors plage : beep + feedback visuel après stabilisation 500ms
             // Exception : valeur PARSÉE encore entière SOUS le max (ex: "1" ou "un" avant
             // "… virgule 23", ou "1 virgule" en attente de sa décimale) → ne pas déclencher
@@ -10397,7 +10443,9 @@ function efStartMic(forceLang) {
               setTimeout(function() { inp.classList.remove('out-of-range'); }, 400);
               var prev = $id('ef-kgf-preview');
               var range = tmGetRange();
-              if (range) {
+              // Valeur trop précise mais EN PLAGE (fusion moteur) : afficher
+              // min–max serait trompeur — beep + liseré suffisent.
+              if (range && !(efTooPrecise && kgfInterim !== null)) {
                 prev.textContent = tmDisplayValue(range.min) + ' – ' + tmDisplayValue(range.max);
                 prev.classList.add('oor');
                 efOorTimer = setTimeout(function() {
@@ -10441,7 +10489,8 @@ function efStartMic(forceLang) {
       efOorFired = false;
       var efOorRevisedNum = efVoiceToNumber(txt);
       var efOorRevised = efOorRevisedNum ? tmParseInput(efOorRevisedNum) : null;
-      if (efOorRevised === null || !tmInRange(efOorRevised)) {
+      if (efOorRevised === null || !tmInRange(efOorRevised) ||
+          efDecTooPrecise(efOorRevisedNum)) {
         efLastInterimNum = null;
         return;
       }
@@ -10457,7 +10506,9 @@ function efStartMic(forceLang) {
       if (numFinal && numFinal !== efLastInterimNum && efAutoStep) {
         var prevStep = efAutoStep;
         var prevParsed = tmParseInput(numFinal);
-        if (prevParsed !== null && tmInRange(prevParsed)) {
+        // efDecTooPrecise : un final fusionné ("0,498") ne doit pas écraser la
+        // valeur déjà commitée — 3+ décimales = impossible sur un cadran.
+        if (prevParsed !== null && tmInRange(prevParsed) && !efDecTooPrecise(numFinal)) {
           if (prevStep.side === 'fo') tmData.fo[prevStep.idx] = prevParsed;
           else                        tmData.fa[prevStep.idx] = prevParsed;
           efSyncTableCell(prevStep);
