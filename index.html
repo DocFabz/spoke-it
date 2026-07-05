@@ -9695,9 +9695,15 @@ var efMicRecog       = null;
 //                      (efBuildSteps + efFirstUnfilled réinitialisent les index).
 //
 // efOorFired         — symétrique d'efAutoAdvanced pour le cas hors plage.
-//                      Posé à true dans le timer OOR, lu dans isFinal pour
-//                      court-circuiter efCommitCurrent() et éviter double beep +
+//                      Posé à true dans le timer OOR (décimale OOR, ou entier > max
+//                      — condition monotone : aucune continuation d'énoncé ne peut
+//                      ramener un entier au-dessus du max en plage), lu dans isFinal
+//                      pour court-circuiter efCommitCurrent() et éviter double beep +
 //                      double liseré rouge. Remis à false dès lecture dans isFinal.
+//                      Le court-circuit RE-VALIDE le final : s'il a été révisé en
+//                      plage par le moteur (remplacement d'interim, ex. "4"→"1.4"),
+//                      le feedback OOR est nettoyé et le final est commité normalement
+//                      au lieu d'être jeté.
 //                      ATTENTION : toKgf() retourne null pour les valeurs hors plage
 //                      (pas d'interpolation possible) — la détection OOR ne peut donc
 //                      pas s'appuyer sur toKgf() !== null ; elle utilise tmGetRange()
@@ -10364,14 +10370,22 @@ function efStartMic(forceLang) {
               }, 200);
             }, efStableDelay);
           } else if (tmGetRange() !== null &&
-                     numInterim.indexOf('.') !== -1) {
+                     (numInterim.indexOf('.') !== -1 ||
+                      (/^\d+$/.test(numInterim) && parsedInterim > tmGetRange().max))) {
             // Parseable mais hors plage : beep + feedback visuel après stabilisation 500ms
-            // Exception : valeur PARSÉE encore entière (ex: "1" ou "un" avant "… virgule 23",
-            // ou "1 virgule" en attente de sa décimale) → ne pas déclencher OOR, la partie
-            // décimale n'est pas encore arrivée. On teste numInterim (parsé) et non le
-            // transcript brut : "un" (mot) ou "1 virgule" ne matchent pas \d+ et
+            // Exception : valeur PARSÉE encore entière SOUS le max (ex: "1" ou "un" avant
+            // "… virgule 23", ou "1 virgule" en attente de sa décimale) → ne pas déclencher
+            // OOR, la partie décimale n'est pas encore arrivée. On teste numInterim (parsé)
+            // et non le transcript brut : "un" (mot) ou "1 virgule" ne matchent pas \d+ et
             // déclenchaient l'OOR à tort. Hors plage sur le final : efCommitCurrent
             // fait de toute façon le feedback complet (beep + plage).
+            // Entier > max : OOR immédiat autorisé — condition MONOTONE, aucune suite
+            // d'énoncé ne peut ramener la valeur en plage : décimale ("4"→"4.20" ≥ 4),
+            // inversion germanique ("vier"→"vierundzwanzig" = 24), composé français
+            // ("quatre"→"quatre-vingt-cinq" = 85) ne font que croître. Le symétrique
+            // sous le min reste INTERDIT ("0" peut devenir "0.9" valide). Sans ce cas,
+            // un entier hors table attendait le isFinal (endpointing moteur, ~1-1.5s)
+            // au lieu des 500/850ms de stabilisation — asymétrie perçue par l'utilisateur.
             // efOorFired posé ICI (avant le timer) pour bloquer tout isFinal rapide
             // arrivant pendant les 500ms — évite le double beep + double liseré rouge.
             efOorFired = true;
@@ -10414,11 +10428,25 @@ function efStartMic(forceLang) {
     if (['retour','back'].some(function(w){return txt.includes(w);}))     { if (efNavExecuted !== 'back')  efBack(); efNavExecuted = null; return; }
     if (['reset','réinitialiser'].some(function(w){return txt.includes(w);})) { if (efNavExecuted !== 'reset') efReset(); efNavExecuted = null; return; }
     if (['fermer','close'].some(function(w){return txt.includes(w);}))    { if (efNavExecuted !== 'close') efClose(); efNavExecuted = null; return; }
-    // Si le feedback hors plage a déjà été rendu en intermédiaire, ignorer le isFinal
+    // Si le feedback hors plage a déjà été rendu en intermédiaire :
+    // - final lui aussi hors plage ou non parseable (cas normal) → ignorer, le
+    //   feedback est déjà fait ;
+    // - final RÉVISÉ en plage (le moteur a REMPLACÉ l'interim, pas prolongé :
+    //   ex. interim "4" entendu de travers, final "1.4") → sans cette re-validation
+    //   le return aveugle jetait la valeur valide et forçait une redictée. On
+    //   nettoie le feedback OOR erroné (liseré + plage) et on laisse filer vers
+    //   le traitement normal, qui committe le final. efOorTimer est déjà annulé
+    //   en tête de bloc → pas de réaffichage fantôme, il ne reste que les classes.
     if (efOorFired) {
       efOorFired = false;
-      efLastInterimNum = null;
-      return;
+      var efOorRevisedNum = efVoiceToNumber(txt);
+      var efOorRevised = efOorRevisedNum ? tmParseInput(efOorRevisedNum) : null;
+      if (efOorRevised === null || !tmInRange(efOorRevised)) {
+        efLastInterimNum = null;
+        return;
+      }
+      $id('ef-kgf-preview').classList.remove('oor');
+      $id('ef-inp').classList.remove('out-of-range');
     }
     // Si l'auto-avance a déjà été déclenchée par le beep intermédiaire,
     // vérifier quand même si le résultat final diffère et corriger le step commité
