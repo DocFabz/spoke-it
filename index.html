@@ -152,14 +152,15 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .savemgr-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
 .savemgr-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
 .savemgr-desc { font-size:.72rem; color:var(--text2); line-height:1.5 }
-.savemgr-lastbackup { font-size:.72rem; color:var(--accent); line-height:1.5 }
+.savemgr-lastbackup { font-size:.72rem; color:var(--accent); line-height:1.5; text-align:center }
 .savemgr-btns { display:flex; flex-direction:row; gap:.5rem; width:100% }
 .savemgr-action-btn { display:flex; align-items:center; justify-content:center; gap:.6rem; padding:.45rem .85rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:all .25s; flex:1 }
 .savemgr-export:hover, .savemgr-import:hover { border-color:rgba(126,200,227,.65); color:var(--accent2); background:rgba(126,200,227,.06) }
-.savemgr-warning { font-size:.65rem; color:var(--text3); font-style:italic; line-height:1.5 }
 .bkp-exp-fname { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:400; letter-spacing:0; text-transform:none; color:var(--text); margin-left:auto }
-.bkp-exp-head { display:flex; align-items:center; justify-content:space-between; gap:.6rem; padding-bottom:.15rem }
-.bkp-exp-title { font-size:.6rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
+.bkp-exp-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9982; opacity:0; transition:opacity .22s; display:none }
+.bkp-exp-overlay.show { display:block; opacity:1 }
+.bkp-exp-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9983; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:300px; display:none; flex-direction:column; gap:.55rem }
+.bkp-exp-modal.show { display:flex; animation:conv-in .2s ease both }
 
 /* ── Picker popup ── */
 .picker-popup { position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); z-index:9979; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:.6rem; box-shadow:0 8px 32px rgba(0,0,0,.45); display:none; flex-direction:column; gap:.3rem; min-width:180px }
@@ -1609,31 +1610,36 @@ input[type=number] { -moz-appearance:textfield }
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <span data-i18n="importBtn">Importer</span>
     </button>
-    <div style="position:relative;flex:1;display:flex">
-      <button class="savemgr-action-btn savemgr-export" style="flex:1" onclick="bkpExportPicker(true)">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span data-i18n="exportBtn">Exporter</span>
-      </button>
-      <div class="picker-popup" id="bkp-export-popup" role="group" style="min-width:215px">
-        <div class="bkp-exp-head">
-          <span class="bkp-exp-title" data-i18n="bkpExportTitle">Nom du fichier</span>
-          <button class="savemgr-close" onclick="bkpExportPicker(false)">&#x2715;</button>
-        </div>
-        <button class="picker-btn" id="bkp-exp-dated" onclick="bkpExportChoose(true)">
-          <span data-i18n="bkpExpDated">Daté</span>
-          <span class="bkp-exp-fname" id="bkp-exp-fname-dated"></span>
-        </button>
-        <button class="picker-btn" id="bkp-exp-fixed" onclick="bkpExportChoose(false)">
-          <span data-i18n="bkpExpFixed">Fixe</span>
-          <span class="bkp-exp-fname">Spokeit.json</span>
-        </button>
-      </div>
-      <div class="picker-overlay" id="bkp-export-overlay" onclick="bkpExportPicker(false)"></div>
-    </div>
+    <button class="savemgr-action-btn savemgr-export" style="flex:1" onclick="bkpExportModal(true)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span data-i18n="exportBtn">Exporter</span>
+    </button>
     <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="importConfigs(event)">
   </div>
-  <p class="savemgr-warning" data-i18n="saveMgrWarning">&#9888;&#65038; L'import fusionne les données. En cas de nom identique, la version importée écrase l'existante.</p>
 
+</div>
+
+<!-- ── Modal nom du fichier (export backup) : s'ouvre par-dessus le
+     Backup manager, mêmes codes visuels, overlay et z-index dédiés. ── -->
+<div class="bkp-exp-overlay" id="bkp-export-overlay" onclick="bkpExportModal(false)"></div>
+<div class="bkp-exp-modal" id="bkp-export-modal" role="dialog" aria-modal="true" aria-labelledby="bkp-exp-title">
+  <div class="savemgr-header">
+    <div class="savemgr-header-left">
+      <svg class="savemgr-title-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <div class="savemgr-title" id="bkp-exp-title" data-i18n="bkpExportTitle">Nom du fichier</div>
+    </div>
+    <button class="savemgr-close" onclick="bkpExportModal(false)">&#x2715;</button>
+  </div>
+  <p class="savemgr-desc" data-i18n="bkpExpDesc" style="white-space:pre-line">La sauvegarde datée permet de conserver tous les historiques de sauvegarde.
+La sauvegarde non datée écrase la précédente dans votre dossier.</p>
+  <button class="picker-btn" id="bkp-exp-dated" onclick="bkpExportChoose(true)">
+    <span data-i18n="bkpExpDated">Daté</span>
+    <span class="bkp-exp-fname" id="bkp-exp-fname-dated"></span>
+  </button>
+  <button class="picker-btn" id="bkp-exp-fixed" onclick="bkpExportChoose(false)">
+    <span data-i18n="bkpExpFixed">Fixe</span>
+    <span class="bkp-exp-fname">Spokeit.json</span>
+  </button>
 </div>
 
 <!-- ── Modal conditions d'utilisation ── -->
@@ -2848,8 +2854,8 @@ const i18n = {
     lastBackupYesterday:'Dernière sauvegarde : hier.',
     lastBackupDays:'Dernière sauvegarde : il y a {n} jours.',
     bkpExpDated:'Daté', bkpExpFixed:'Fixe', bkpExportTitle:'Nom du fichier',
+    bkpExpDesc:'La sauvegarde datée permet de conserver tous les historiques de sauvegarde.\nLa sauvegarde non datée écrase la précédente dans votre dossier.',
     bkpNothingToExport:'Rien à sauvegarder.',
-    saveMgrWarning:'⚠︎ L\'import fusionne les données. En cas de nom identique, la version importée écrase l\'existante.',
     lsWriteError:'Stockage local plein ou bloqué — sauvegarde impossible. Exportez vos données (JSON).',
     backupReminderMsg:'Sauvegardez vos données.',
     backupSnoozeTitle:'Reporter (rappel dans 24 h)',
@@ -3018,8 +3024,8 @@ const i18n = {
     lastBackupYesterday:'Last backup: yesterday.',
     lastBackupDays:'Last backup: {n} days ago.',
     bkpExpDated:'Dated', bkpExpFixed:'Fixed', bkpExportTitle:'Filename',
+    bkpExpDesc:'A dated backup keeps your entire backup history.\nAn undated backup overwrites the previous one in your folder.',
     bkpNothingToExport:'Nothing to back up.',
-    saveMgrWarning:'⚠︎ Import merges data. If a name already exists, the imported version overwrites it.',
     lsWriteError:'Local storage full or blocked — saving failed. Export your data (JSON).',
     backupReminderMsg:'Back up your data.',
     backupSnoozeTitle:'Snooze (remind in 24 h)',
@@ -4701,7 +4707,7 @@ function openSaveMgr() {
   $id('savemgr-modal').classList.add('show');
 }
 function closeSaveMgr() {
-  bkpExportPicker(false); // referme le picker d'export s'il était ouvert
+  bkpExportModal(false); // referme la modale « Nom du fichier » si elle était ouverte
   $id('savemgr-overlay').classList.remove('show');
   $id('savemgr-modal').classList.remove('show');
 }
@@ -4758,11 +4764,12 @@ function bkpDatedName() {
 function bkpFileName() {
   return bkpDatedPref() ? bkpDatedName() : 'Spokeit.json';
 }
-// Picker d'export : le clic sur « Exporter » ouvre un popup ancré sous le
-// bouton avec les deux noms possibles (daté / fixe). Le choix est persisté
-// dans spokeit_bkpDated, que bkpFileName() relit au moment de l'export.
-function bkpExportPicker(show) {
-  var pop = $id('bkp-export-popup'), ov = $id('bkp-export-overlay');
+// Modale « Nom du fichier » : le clic sur « Exporter » ouvre une modale
+// dédiée par-dessus le Backup manager avec les deux noms possibles
+// (daté / fixe). Le choix est persisté dans spokeit_bkpDated, que
+// bkpFileName() relit au moment de l'export.
+function bkpExportModal(show) {
+  var pop = $id('bkp-export-modal'), ov = $id('bkp-export-overlay');
   if (!pop || !ov) return;
   if (show) {
     // Garde anti-export-vide dès l'ouverture : inutile de proposer un choix
@@ -4773,7 +4780,6 @@ function bkpExportPicker(show) {
     }
     var fn = $id('bkp-exp-fname-dated');
     if (fn) fn.textContent = bkpDatedName(); // date du jour à l'ouverture
-    pop.setAttribute('aria-label', t('bkpExportTitle'));
     pop.classList.add('show'); ov.classList.add('show');
   } else {
     pop.classList.remove('show'); ov.classList.remove('show');
@@ -4781,7 +4787,7 @@ function bkpExportPicker(show) {
 }
 function bkpExportChoose(dated) {
   try { localStorage.setItem('spokeit_bkpDated', dated ? '1' : '0'); } catch(e) {}
-  bkpExportPicker(false);
+  bkpExportModal(false);
   exportConfigs(); // bkpFileName() relit la préférence qui vient d'être posée
 }
 
@@ -6717,8 +6723,8 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && $id('erasemgr-modal').classList.contains('show')) {
     closeEraseMgr();
   }
-  if (e.key === 'Escape' && $id('bkp-export-popup') && $id('bkp-export-popup').classList.contains('show')) {
-    bkpExportPicker(false);
+  if (e.key === 'Escape' && $id('bkp-export-modal') && $id('bkp-export-modal').classList.contains('show')) {
+    bkpExportModal(false);
     return; // ne pas fermer aussi la modale de sauvegarde derrière
   }
   if (e.key === 'Escape' && $id('picker-popup').classList.contains('show')) {
