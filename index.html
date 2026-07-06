@@ -1556,14 +1556,14 @@ input[type=number] { -moz-appearance:textfield }
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
       </svg>
     </button>
-    <button class="save-mgr-btn" onclick="openRiderChoose()" id="rider-mgr-btn" title="Rider">
+    <button class="save-mgr-btn" onclick="openRiderChoose()" id="rider-mgr-btn" title="Rider" aria-label="Rider">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
         <circle cx="12" cy="7" r="4"/>
       </svg>
     </button>
     <button id="lang-btn" onclick="toggleLang()" class="lang-btn">EN</button>
-    <button class="save-mgr-btn" onclick="openPicker()" id="save-mgr-btn">
+    <button class="save-mgr-btn" onclick="openPicker()" id="save-mgr-btn" title="Gestion des données" aria-label="Gestion des données">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
     </button>
     <div class="picker-overlay" id="picker-overlay" onclick="closePicker()"></div>
@@ -1826,7 +1826,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 
     <div class="g2" style="margin-bottom:1.2rem">
       <div class="f">
-        <label data-i18n="totalSpokes">Nb total de rayons</label>
+        <label data-i18n="totalSpokes" for="nb-rayons">Nb total de rayons</label>
         <select id="nb-rayons">
           <option value="" disabled selected hidden>—</option>
           <option>16</option><option>20</option><option>24</option>
@@ -1834,7 +1834,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         </select>
       </div>
       <div class="f" id="field-diam-trou">
-        <label data-i18n="holeDiam">Ø trous de bride (mm)</label>
+        <label data-i18n="holeDiam" for="diam-trou">Ø trous de bride (mm)</label>
         <input type="number" id="diam-trou" value="2.55" step="0.05" min="2" max="2.7" inputmode="decimal" oninput="checkDiamTrou()" onblur="resetDiamTrouIfInvalid()">
         <p class="radial-disc-warn" id="diam-trou-warn" data-i18n="diamTrouWarn">⚠ Valeur incohérente</p>
       </div>
@@ -1844,15 +1844,15 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <div class="hub-side">
         <div class="plabel L"><div class="pdot"></div><span data-i18n="left">Gauche</span></div>
         <div class="f">
-          <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTipLeft">Pitch Circle Diameter Gauche</span></label>
+          <label class="tip-wrap" for="pcd-left">PCD (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="pcdTipLeft">Pitch Circle Diameter Gauche</span></label>
           <input type="number" id="pcd-left" step="0.1" inputmode="decimal" placeholder="—">
         </div>
         <div class="f">
-          <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTipLeft">Centre-Flasque Gauche</span></label>
+          <label class="tip-wrap" for="offset-left"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="offsetTipLeft">Centre-Flasque Gauche</span></label>
           <input type="number" id="offset-left" step="0.1" inputmode="decimal" placeholder="—" oninput="onTension()" onblur="checkOffsetCoherence()" onkeydown="if(event.key==='-')event.preventDefault()">
         </div>
         <div class="f" id="field-sp-so-left" style="display:none">
-          <label class="tip-wrap"><span data-i18n="soLeft">SO gauche</span> (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
+          <label class="tip-wrap" for="sp-so-left"><span data-i18n="soLeft">SO gauche</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Spoke Offset</span></label>
           <input type="number" id="sp-so-left" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—">
         </div>
       </div>
@@ -1860,15 +1860,15 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <div class="hub-side">
         <div class="plabel R"><div class="pdot"></div><span data-i18n="right">Droit</span></div>
         <div class="f">
-          <label class="tip-wrap">PCD (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="pcdTipRight">Pitch Circle Diameter Droit</span></label>
+          <label class="tip-wrap" for="pcd-right">PCD (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="pcdTipRight">Pitch Circle Diameter Droit</span></label>
           <input type="number" id="pcd-right" step="0.1" inputmode="decimal" placeholder="—">
         </div>
         <div class="f">
-          <label class="tip-wrap"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="offsetTipRight">Centre-Flasque Droite</span></label>
+          <label class="tip-wrap" for="offset-right"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="offsetTipRight">Centre-Flasque Droite</span></label>
           <input type="number" id="offset-right" step="0.1" inputmode="decimal" placeholder="—" oninput="onTension()" onblur="checkOffsetCoherence()" onkeydown="if(event.key==='-')event.preventDefault()">
         </div>
         <div class="f" id="field-sp-so-right" style="display:none">
-          <label class="tip-wrap"><span data-i18n="soRight">SO droit</span> (mm)<span class="tip-icon">?</span><span class="tip-box">Spoke Offset</span></label>
+          <label class="tip-wrap" for="sp-so-right"><span data-i18n="soRight">SO droit</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Spoke Offset</span></label>
           <input type="number" id="sp-so-right" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—">
         </div>
       </div>
@@ -1891,15 +1891,15 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 
     <div style="display:flex;gap:1rem;align-items:flex-end">
       <div class="f" style="flex:0 0 calc(50% - .5rem)">
-        <label data-i18n="spokeMaterial">Matériau</label>
+        <label data-i18n="spokeMaterial" for="spoke-mat-select">Matériau</label>
         <select id="spoke-mat-select" onchange="setSpokeMatType(this.value)">
           <option value="steel" data-i18n="spokeMaterialSteel">ACIER</option>
           <option value="other" data-i18n="spokeMaterialOther">AUTRE</option>
         </select>
       </div>
       <div class="f" id="spoke-section-field" style="flex:0 0 calc(50% - .5rem)">
-        <label class="tip-wrap"><span data-i18n="spokeSection">Section rayon (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="spokeSectionTip">Permet de calculer l'élongation</span></label>
-        <select id="spoke-select" onchange="setSpokeFromSelect(this)">
+        <label class="tip-wrap" for="spoke-select"><span id="spoke-section-label" data-i18n="spokeSection">Section rayon (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="spokeSectionTip">Permet de calculer l'élongation</span></label>
+        <select id="spoke-select" aria-labelledby="spoke-section-label" onchange="setSpokeFromSelect(this)">
           <option value="" selected>—</option>
           <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
           <option value="1.7|">1.7</option>  <option value="1.8|">1.8</option>
@@ -1952,12 +1952,12 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <div class="f">
         <!-- ERD direct -->
         <div id="erd-direct-section" class="f">
-          <label class="tip-wrap">ERD (mm)<span class="tip-icon">?</span><span class="tip-box">Effective Rim Diameter</span></label>
+          <label class="tip-wrap" for="erd-direct">ERD (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Effective Rim Diameter</span></label>
           <input type="number" id="erd-direct" step="0.1" inputmode="decimal" placeholder="—">
         </div>
         <!-- NSD (mode NSD) -->
         <div id="erd-nsd-section" style="display:none" class="f">
-          <label class="tip-wrap">NSD (mm)<span class="tip-icon">?</span><span class="tip-box">Nipple Seat Diameter</span></label>
+          <label class="tip-wrap" for="nsd-val">NSD (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Nipple Seat Diameter</span></label>
           <input type="number" id="nsd-val" step="0.1" inputmode="decimal" placeholder="—" oninput="calcNsd()">
         </div>
         <!-- ERD calculé (mode NSD) -->
@@ -1971,7 +1971,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <div class="f">
         <!-- ADDON (mode NSD) -->
         <div id="erd-addon-field" style="display:none" class="f">
-          <label class="tip-wrap">ADDON (mm)<span class="tip-icon">?</span><span class="tip-box" data-i18n="addonTip">Dépend de l'ecrou utilisé</span></label>
+          <label class="tip-wrap" for="ecrou-type">ADDON (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="addonTip">Dépend de l'ecrou utilisé</span></label>
           <select id="ecrou-type" onchange="calcNsd()">
             <option value="" disabled selected hidden>—</option>
             <option value="1.0">1.0</option><option value="1.1">1.1</option>
@@ -1991,8 +1991,8 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         </div>
         <!-- ASYM. JANTE -->
         <div class="f">
-          <label class="tip-wrap"><span data-i18n="rimAsym">ASYM. JANTE (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="asymTip">Offset Spoke Bed for Asymmetric Rim</span></label>
-          <input type="number" id="asym" value="0" step="0.5" min="0" inputmode="decimal" onkeydown="if(event.key==='-')event.preventDefault()">
+          <label class="tip-wrap" for="asym"><span id="asym-label" data-i18n="rimAsym">ASYM. JANTE (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="asymTip">Offset Spoke Bed for Asymmetric Rim</span></label>
+          <input type="number" id="asym" aria-labelledby="asym-label" value="0" step="0.5" min="0" inputmode="decimal" onkeydown="if(event.key==='-')event.preventDefault()">
           <p class="asym-warn" id="asym-warn" data-i18n="asymWarn">Moyeu symétrique : Jante asymétrique déconseillée.</p>
         </div>
       </div>
@@ -2013,8 +2013,8 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <div class="f">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">
         <div class="diff-toggle-wrap">
-          <span class="diff-toggle-label" data-i18n="diffLabel">Différentiel</span>
-          <button class="diff-toggle" id="diff-toggle" onclick="toggleDiff()" role="switch" aria-checked="false">
+          <span class="diff-toggle-label" id="diff-toggle-label" data-i18n="diffLabel">Différentiel</span>
+          <button class="diff-toggle" id="diff-toggle" onclick="toggleDiff()" role="switch" aria-checked="false" aria-labelledby="diff-toggle-label">
             <span class="diff-toggle-thumb"></span>
           </button>
         </div>
@@ -2068,7 +2068,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     </div>
     <div class="g2" id="tension-g2">
       <div class="f" id="tension-forte-field">
-        <label>
+        <label for="tension-forte">
           <span class="tension-dot"></span>
           <span class="tension-label" data-i18n="driveSide">Côté Droit (DS)</span>
         </label>
@@ -2356,7 +2356,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <!-- Nb rayons -->
     <div class="hub-top" style="margin-bottom:0;margin-top:.2rem">
       <div class="f">
-        <label data-i18n="totalSpokes">Nb total de rayons</label>
+        <label data-i18n="totalSpokes" for="tm-nb-select">Nb total de rayons</label>
         <select id="tm-nb-select" class="tm-select tm-select-mono" onchange="tmOnNbChange()">
           <option value="" disabled selected hidden>—</option>
           <option>16</option><option>20</option><option>24</option>
@@ -2944,6 +2944,7 @@ const i18n = {
     ctMyTensios:'★ MES TENSIOS',
     pickerBackup:'Backup manager',
     pickerDataMgr:'Data manager',
+    pickerMenuBtn:'Gestion des données',
     atelierTitle:'Atelier',
     atelierName:'Atelier',
     atelierSave:'✓ Sauvegarder',
@@ -3114,6 +3115,7 @@ const i18n = {
     ctMyTensios:'★ MY TENSIOS',
     pickerBackup:'Backup manager',
     pickerDataMgr:'Data manager',
+    pickerMenuBtn:'Data management',
     atelierTitle:'Workshop',
     atelierName:'Workshop',
     atelierSave:'✓ Save',
@@ -3382,6 +3384,7 @@ function applyLang() {
   onTension();                 // met à jour tension-help-text en dernier
   $id('lang-btn').textContent = lang === 'fr' ? 'EN' : 'FR';
   var bkpSn = $id('bkp-snooze'); if (bkpSn) { bkpSn.title = t('backupSnoozeTitle'); bkpSn.setAttribute('aria-label', t('backupSnoozeTitle')); }
+  var pkBtn = $id('save-mgr-btn'); if (pkBtn) { pkBtn.title = t('pickerMenuBtn'); pkBtn.setAttribute('aria-label', t('pickerMenuBtn')); }
   if ($id('arb-wrap').classList.contains('show')) {
     // En-têtes arb-head-* retraduits par la boucle [data-i18n-key] ci-dessus ;
     // ici on redessine seulement le contenu (valeurs/boutons d'arbitrage).
