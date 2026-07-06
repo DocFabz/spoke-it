@@ -579,6 +579,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ef-bt-btn.blink { animation:sum-blink 3.36s ease-in-out infinite }
 /* ── Clignotement court (3×, ~2s) du suffixe roue dans le titre Easy Fill ── */
 .title-side.blink3 { animation:sum-blink .667s ease-in-out 3 }
+/* Titre Easy Fill sur deux lignes : "Easy Fill" puis la roue en dessous */
+.ef-title .title-side { display:block; margin-top:.2rem }
 /* ── Rappel de sauvegarde : clignotement guide (même rythme que le micro Easy Fill) ── */
 .bkp-blink { animation:sum-blink 3.36s ease-in-out infinite }
 #backup-reminder {
@@ -957,6 +959,38 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   padding:.42rem .2rem;
   font-size:.95rem;
 }
+
+/* ── Diagramme in-Easy-Fill (remplace le pavé numérique) ─────────────────── */
+#ef-diagram {
+  background:var(--card);
+  border:1px solid var(--border-s); border-top:none;
+  border-radius:0 0 var(--r) var(--r);
+  padding:.5rem 1.4rem .9rem;
+  display:none;
+  flex-shrink:0;
+}
+/* Diagramme actif : masque le pavé (touch) et affiche le panneau, tous modes */
+#ef-wrapper.diagram #ef-numpad  { display:none }
+#ef-wrapper.diagram #ef-diagram { display:block }
+/* Desktop/BT : la modale reperd son coin bas pour se souder au panneau */
+#ef-wrapper.desktop.diagram .ef-modal {
+  border-bottom:none;
+  border-radius:var(--r) var(--r) 0 0;
+}
+/* Paysage touch : le diagramme prend la place du pavé, à droite */
+#ef-wrapper.landscape #ef-diagram {
+  border-top:1px solid var(--border-s);
+  border-left:none;
+  border-radius:0 var(--r) var(--r) 0;
+  padding:.6rem .9rem;
+  flex:1 1 50%;
+}
+#ef-wrapper.landscape.diagram #ef-diagram {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+}
+.ef-radar-wrap { width:100%; max-width:300px; margin:0 auto }
+#ef-diagram .radar-legend { margin-top:.4rem }
 
 .ef-header { display:flex; align-items:center; justify-content:space-between; gap:.6rem }
 .ef-title {
@@ -7716,8 +7750,8 @@ function tmTryRenderRadar() {
   tmUpdateResultCardState();
 }
 
-function tmDrawRadar(foKgfs, faKgfs, outliers) {
-  const canvas = $id('tm-radar');
+function tmDrawRadar(foKgfs, faKgfs, outliers, canvasEl) {
+  const canvas = canvasEl || $id('tm-radar');
   const ctx    = canvas.getContext('2d');
   const dpr    = window.devicePixelRatio || 1;
 
@@ -7744,8 +7778,10 @@ function tmDrawRadar(foKgfs, faKgfs, outliers) {
   const angleStep = (2 * Math.PI) / N;
 
   const allVals  = [...foKgfs, ...faKgfs].filter(v => v !== null);
-  if (!allVals.length) return;
-  const maxVal   = Math.max(...allVals);
+  // Canvas principal : comportement historique (rien sans données).
+  // Canvas externe (Easy Fill) : dessiner la grille vide en attendant la saisie.
+  if (!allVals.length && !canvasEl) return;
+  const maxVal   = allVals.length ? Math.max(...allVals) : 0;
   const scaleMax = Math.ceil(maxVal / 20) * 20 || 20;
 
   // Rings
@@ -9142,6 +9178,12 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
   <div class="ef-header">
     <div class="ef-title" id="ef-title">Easy Fill</div>
     <div style="display:flex;align-items:center;gap:.4rem">
+      <button class="ef-bt-btn" id="ef-diag-btn" onclick="efToggleDiagram()" title="Diagramme">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 21 7 21 17 12 22 3 17 3 7"/>
+          <polygon points="12 8 16.5 15 7.5 15"/>
+        </svg>
+      </button>
       <button class="ef-bt-btn" id="ef-mic-btn" ontouchend="efToggleMic();event.preventDefault()" onclick="efToggleMic()" title="Saisie vocale">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="9" y="1" width="6" height="11" rx="3"/>
@@ -9220,6 +9262,17 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
   </div>
 </div><!-- /ef-numpad -->
 
+<!-- ── Diagramme de tension in-Easy-Fill (remplace le pavé) ── -->
+<div id="ef-diagram">
+  <div class="ef-radar-wrap">
+    <canvas class="radar-canvas" id="ef-radar" style="cursor:default"></canvas>
+  </div>
+  <div class="radar-legend" id="ef-radar-legend">
+    <div class="radar-leg-item"><span class="radar-leg-dot" style="background:rgba(232,146,124,.9)"></span><span id="ef-radar-leg-fo">—</span></div>
+    <div class="radar-leg-item"><span class="radar-leg-dot" style="background:rgba(126,200,227,.9)"></span><span id="ef-radar-leg-fa">—</span></div>
+  </div>
+</div><!-- /ef-diagram -->
+
 </div><!-- /ef-wrapper -->
 
 <script>
@@ -9293,7 +9346,7 @@ function efOpen(sideMode) {
   if (efTitleEl) {
     var L = typeof lang !== 'undefined' ? lang : 'fr';
     var side = wtype === 'arriere' ? (L === 'fr' ? 'Roue arrière' : 'Rear wheel') : (L === 'fr' ? 'Roue avant' : 'Front wheel');
-    efTitleEl.innerHTML = 'Easy Fill — <span class="title-side">' + side + '</span>';
+    efTitleEl.innerHTML = 'Easy Fill<span class="title-side">' + side + '</span>';
   }
   // Clignotement-rappel du côté roue (avant/arrière) : uniquement en accès
   // direct au module, sans roue sauvegardée chargée. Une config connue
@@ -9305,6 +9358,7 @@ function efOpen(sideMode) {
   document.body.style.overflow = 'hidden';
   efRenderStep();
   efShowNumpad(isTouch);
+  efUpdateDiagBtn();
   // Préchauffage SR à l'ouverture (première ouverture uniquement, ou si pas encore chaud).
   // Après fermeture, efClose() recycle l'instance SR active → efWarmInstance déjà prête.
   efWarmSR();
@@ -9351,6 +9405,7 @@ function efSwitchSide(mode) {
     }
     efCurrent = efFirstUnfilled();
     efRenderStep();
+    efDiagramRender();
     return;
   }
   efSideMode = mode;
@@ -9495,6 +9550,7 @@ function efCommitCurrent() {
     tmUpdateCell(step.idx, step.side);
     tmTryRenderRadar();
     tmUpdateResultCardState();
+    efDiagramRender();
     return true;
   }
 
@@ -9544,6 +9600,7 @@ function efCommitCurrent() {
   tmUpdateCell(step.idx, step.side);
   snapRefreshBtn();
   tmUpdateInvertibleHeaders();
+  efDiagramRender();
   return true;
 }
 
@@ -9644,6 +9701,8 @@ function efUpdateOrientation() {
   } else {
     wrapper.classList.remove('landscape');
   }
+  // Le diagramme dimensionne son canvas sur la largeur du conteneur → redessiner
+  if (efDiagMode) efDiagramRender();
 }
 
 // ── Listener clavier physique (desktop et mode BT) ───────────────────────────
@@ -9710,6 +9769,65 @@ function efToggleBt() {
   // Désactiver BT sur desktop : rien à changer, le listener clavier reste actif
 }
 
+// ── Diagramme in-Easy-Fill ────────────────────────────────────────────────────
+// Remplace le pavé numérique (mode touch) ou s'affiche sous la modale (BT /
+// desktop) par le même radar de tension que la card résultat, en lecture live.
+var efDiagMode = false;
+
+function efToggleDiagram() {
+  efDiagMode = !efDiagMode;
+  $id('ef-wrapper').classList.toggle('diagram', efDiagMode);
+  efUpdateDiagBtn();
+  if (efDiagMode) efDiagramRender();
+}
+
+// Icône fixe ; le bouton s'allume en accent quand le diagramme est affiché,
+// exactement comme le bouton Bluetooth quand le mode BT est actif.
+function efUpdateDiagBtn() {
+  var btn = $id('ef-diag-btn');
+  if (!btn) return;
+  var L = typeof lang !== 'undefined' ? lang : 'fr';
+  if (efDiagMode) {
+    btn.style.color       = 'var(--accent)';
+    btn.style.borderColor = 'rgba(126,200,227,.6)';
+    btn.style.background  = 'rgba(126,200,227,.08)';
+  } else {
+    btn.style.color       = 'var(--text3)';
+    btn.style.borderColor = 'rgba(255,255,255,0.07)';
+    btn.style.background  = 'none';
+  }
+  btn.title = efDiagMode ? (L === 'fr' ? 'Masquer le diagramme' : 'Hide diagram')
+                         : (L === 'fr' ? 'Afficher le diagramme' : 'Show diagram');
+}
+
+function efDiagramRender() {
+  if (!efDiagMode) return;
+  var canvas = $id('ef-radar');
+  if (!canvas) return;
+  var nb = parseInt($id('nb-rayons').value) || 0;
+  var perSide = Math.floor(nb / 2);
+  if (perSide < 2) return;
+
+  // Légende : mêmes clés/couleurs que la card résultat, NDS toujours à gauche
+  var isFront = wtype === 'avant';
+  var foKey = isFront ? 'nonDriveSide' : 'driveSide';
+  var faKey = isFront ? 'driveSide'    : 'nonDriveSide';
+  var lFo = $id('ef-radar-leg-fo');
+  var lFa = $id('ef-radar-leg-fa');
+  if (lFo) { lFo.textContent = t(foKey); lFo.dataset.i18nKey = foKey; }
+  if (lFa) { lFa.textContent = t(faKey); lFa.dataset.i18nKey = faKey; }
+  var legend = $id('ef-radar-legend');
+  if (legend && lFo && lFa) {
+    var itFo = lFo.closest('.radar-leg-item');
+    var itFa = lFa.closest('.radar-leg-item');
+    isFront ? legend.insertBefore(itFo, itFa) : legend.insertBefore(itFa, itFo);
+  }
+
+  var foKgfs = tmData.fo.slice(0, perSide).map(function(v) { return toKgf(v); });
+  var faKgfs = tmData.fa.slice(0, perSide).map(function(v) { return toKgf(v); });
+  tmDrawRadar(foKgfs, faKgfs, null, canvas);
+}
+
 function efHideNumpad() {
   var wrapper = $id('ef-wrapper');
   if (wrapper._orientHandler) {
@@ -9718,7 +9836,8 @@ function efHideNumpad() {
     wrapper._orientHandler = null;
   }
   efDetachBtKeyHandler(wrapper);
-  wrapper.classList.remove('show', 'touch', 'desktop', 'landscape');
+  wrapper.classList.remove('show', 'touch', 'desktop', 'landscape', 'diagram');
+  efDiagMode = false;
   // Remettre l'input dans son état neutre, quel que soit le mode qui était actif
   var inp = $id('ef-inp');
   if (inp) {
@@ -10165,10 +10284,11 @@ function efRefreshLang() {
     var L = typeof lang !== 'undefined' ? lang : 'fr';
     var side = wtype === 'arriere' ? (L === 'fr' ? 'Roue arrière' : 'Rear wheel')
                                    : (L === 'fr' ? 'Roue avant'  : 'Front wheel');
-    titleEl.innerHTML = 'Easy Fill — <span class="title-side">' + side + '</span>';
+    titleEl.innerHTML = 'Easy Fill<span class="title-side">' + side + '</span>';
   }
   var foL = $id('ef-sw-fo-label'); if (foL) foL.textContent = efShortLabel('fo');
   var faL = $id('ef-sw-fa-label'); if (faL) faL.textContent = efShortLabel('fa');
+  efUpdateDiagBtn();
   efRenderStep();
 }
 
