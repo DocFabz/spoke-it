@@ -3357,6 +3357,21 @@ function getERD() {
 function setInvalid(id)  { $id(id).classList.add('invalid'); }
 function clearInvalids() { document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid')); }
 
+// Nettoyage SÉLECTIF post-remplissage programmatique (hrApplyHub/hrApplyRim).
+// Les listeners input/change qui lèvent .invalid ne se déclenchent pas quand
+// .value est assigné par code : après un import, le liseré rouge et la
+// bannière #err survivaient. On ne lève l'invalid que sur les champs désormais
+// renseignés — les champs encore vides (ex. jante après import du seul moyeu)
+// restent rouges, et #err n'est masquée que si plus rien n'est invalide.
+function refreshInvalids() {
+  document.querySelectorAll('input.invalid, select.invalid').forEach(el => {
+    if (el.value === '' || el.value === null) return;
+    el.classList.remove('invalid');
+    if (el.id === 'ecrou-type') { const n = $id('nsd-val'); if (n) n.classList.remove('invalid'); }
+  });
+  if (!document.querySelector('.invalid')) $id('err').classList.remove('show');
+}
+
 // ── Cache toast ───────────────────────────────────────────────────────────────
 function showCacheToast() {
   const el = $id('cache-toast');
@@ -4055,7 +4070,10 @@ function onTension() {
   const asym = parseFloat($id('asym').value) || 0, sign = wtype === 'arriere' ? -1 : 1;
   const effL = oL + sign * asym, effR = oR - sign * asym;
   const ratio = (Math.max(effL,effR) > 0 && Math.min(effL,effR) > 0) ? Math.min(effL,effR) / Math.max(effL,effR) : 1;
-  disp.textContent = (tF * ratio).toFixed(1);
+  // Entier → sans décimale ("105" et non "105.0") ; arrondi à 1 déc. AVANT le
+  // test pour couvrir les ratios asym. donnant 104.9999… (flottants).
+  const tFaibleStr = (tF * ratio).toFixed(1);
+  disp.textContent = tFaibleStr.endsWith('.0') ? tFaibleStr.slice(0, -2) : tFaibleStr;
   const colorClass = disp._colorClass || 'has-val-accent';
   disp.classList.remove('has-val-accent', 'has-val-warm');
   disp.classList.add(colorClass);
@@ -11978,6 +11996,7 @@ function hrApplyHub(d) {
   updateAsymField();
   checkOffsetCoherence();
   updateCalcBtn();
+  refreshInvalids(); // les champs remplis par l'import ne doivent plus être rouges
   _hrApplying = false;
 }
 
@@ -11994,6 +12013,7 @@ function hrApplyRim(d) {
   document.getElementById('asym').value          = d.asym         || '0';
   if (mode === 'nsd' && typeof calcNsd === 'function') calcNsd();
   updateCalcBtn();
+  refreshInvalids(); // les champs remplis par l'import ne doivent plus être rouges
   _hrApplying = false;
 }
 
