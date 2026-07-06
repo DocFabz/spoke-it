@@ -579,8 +579,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ef-bt-btn.blink { animation:sum-blink 3.36s ease-in-out infinite }
 /* ── Clignotement court (3×, ~2s) du suffixe roue dans le titre Easy Fill ── */
 .title-side.blink3 { animation:sum-blink .667s ease-in-out 3 }
-/* Titre Easy Fill sur deux lignes : "Easy Fill" puis la roue en dessous */
-.ef-title .title-side { display:block; margin-top:.2rem }
 /* ── Rappel de sauvegarde : clignotement guide (même rythme que le micro Easy Fill) ── */
 .bkp-blink { animation:sum-blink 3.36s ease-in-out infinite }
 #backup-reminder {
@@ -9180,8 +9178,8 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
     <div style="display:flex;align-items:center;gap:.4rem">
       <button class="ef-bt-btn" id="ef-diag-btn" onclick="efToggleDiagram()" title="Diagramme">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="12 2 21 7 21 17 12 22 3 17 3 7"/>
-          <polygon points="12 8 16.5 15 7.5 15"/>
+          <polygon points="12,2.5 20,8 20,16 12,21.5 4,16 4,8"/>
+          <polygon points="12,7 16.5,10 16.5,14 12,17 7.5,14 7.5,10"/>
         </svg>
       </button>
       <button class="ef-bt-btn" id="ef-mic-btn" ontouchend="efToggleMic();event.preventDefault()" onclick="efToggleMic()" title="Saisie vocale">
@@ -9345,8 +9343,8 @@ function efOpen(sideMode) {
   var efTitleEl = $id('ef-title');
   if (efTitleEl) {
     var L = typeof lang !== 'undefined' ? lang : 'fr';
-    var side = wtype === 'arriere' ? (L === 'fr' ? 'Roue arrière' : 'Rear wheel') : (L === 'fr' ? 'Roue avant' : 'Front wheel');
-    efTitleEl.innerHTML = 'Easy Fill<span class="title-side">' + side + '</span>';
+    var side = wtype === 'arriere' ? (L === 'fr' ? 'Arrière' : 'Rear') : (L === 'fr' ? 'Avant' : 'Front');
+    efTitleEl.innerHTML = 'Easy Fill — <span class="title-side">' + side + '</span>';
   }
   // Clignotement-rappel du côté roue (avant/arrière) : uniquement en accès
   // direct au module, sans roue sauvegardée chargée. Une config connue
@@ -10282,9 +10280,9 @@ function efRefreshLang() {
   var titleEl = $id('ef-title');
   if (titleEl) {
     var L = typeof lang !== 'undefined' ? lang : 'fr';
-    var side = wtype === 'arriere' ? (L === 'fr' ? 'Roue arrière' : 'Rear wheel')
-                                   : (L === 'fr' ? 'Roue avant'  : 'Front wheel');
-    titleEl.innerHTML = 'Easy Fill<span class="title-side">' + side + '</span>';
+    var side = wtype === 'arriere' ? (L === 'fr' ? 'Arrière' : 'Rear')
+                                   : (L === 'fr' ? 'Avant'   : 'Front');
+    titleEl.innerHTML = 'Easy Fill — <span class="title-side">' + side + '</span>';
   }
   var foL = $id('ef-sw-fo-label'); if (foL) foL.textContent = efShortLabel('fo');
   var faL = $id('ef-sw-fa-label'); if (faL) faL.textContent = efShortLabel('fa');
