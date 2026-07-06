@@ -77,6 +77,7 @@
   --text:     #dce4ed;
   --text2:    #c8d6e2;
   --text3:    #8fa0b0;
+  --text3-dim:#84959f; /* label d'état inactif — minimum 4.5:1 sur --card */
   --inp:      #161b27;
   --r:        14px;
   --rs:       9px;
@@ -519,6 +520,11 @@ select option             { background:#161b27 }
 .faible-display               { background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); color:var(--text2); font-family:'DM Mono',monospace; font-size:.85rem; font-weight:300; padding:.55rem .9rem; width:100%; height:2.35rem; box-sizing:border-box; display:flex; align-items:center; transition:background .2s, border-color .2s, color .2s }
 .faible-display.has-val-accent { background:var(--inp); border-color:rgba(126,200,227,.4); color:var(--text) }
 .faible-display.has-val-warm   { background:var(--inp); border-color:rgba(232,146,124,.4);  color:var(--text) }
+/* État "pas encore calculé" — remplace l'opacity:.35 du conteneur (contraste WCAG) :
+   les éléments non textuels sont fortement grisés, le label garde ≥4.5:1 (#84959f = 4.65:1 sur --card) */
+.tension-field-calc label            { color:var(--text3-dim); transition:color .2s }
+.tension-field-calc .tension-dot     { opacity:.35; transition:opacity .2s }
+.tension-field-calc .faible-display  { opacity:.45 }
 .tension-select-warm.has-val, .tension-select-warm:focus { border-color:rgba(232,146,124,.4); background:var(--inp) }
 #tension-forte { outline:none; transition:border-color .2s, background .2s }
 .tension-dot         { display:inline-block; width:7px; height:7px; border-radius:2px; flex-shrink:0 }
@@ -2082,7 +2088,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
           <option>120</option><option>125</option><option>130</option><option>135</option><option>140</option>
         </select>
       </div>
-      <div class="f" id="tension-faible-field" style="opacity:.35">
+      <div class="f tension-field-calc" id="tension-faible-field">
         <label>
           <span class="tension-dot"></span>
           <span class="tension-label" data-i18n="nonDriveSide">Côté Gauche (NDS)</span>
@@ -3740,7 +3746,7 @@ function resetFields() {
   const disp = $id('tension-faible-display');
   disp.textContent = ''; disp.classList.remove('has-val-accent', 'has-val-warm');
   $id('tension-forte').classList.remove('has-val');
-  $id('tension-faible-field').style.opacity = '.35';
+  $id('tension-faible-field').classList.add('tension-field-calc');
   $id('err').classList.remove('show'); currentErrKey = null; clearInvalids();
   checkOffsetCoherence();
   onTension();
@@ -4042,10 +4048,10 @@ function onTension() {
   if (isNaN(tF) || isNaN(oL) || isNaN(oR)) {
     disp.textContent = '';
     disp.classList.remove('has-val-accent', 'has-val-warm');
-    field.style.opacity = '.35';
+    field.classList.add('tension-field-calc');
     return;
   }
-  field.style.opacity = '1';
+  field.classList.remove('tension-field-calc');
   const asym = parseFloat($id('asym').value) || 0, sign = wtype === 'arriere' ? -1 : 1;
   const effL = oL + sign * asym, effR = oR - sign * asym;
   const ratio = (Math.max(effL,effR) > 0 && Math.min(effL,effR) > 0) ? Math.min(effL,effR) / Math.max(effL,effR) : 1;
