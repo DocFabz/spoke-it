@@ -3,13 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-GEY79L24TV"></script>
+<!-- Google tag (gtag.js) — chargement différé ─────────────────────────────
+     Le stub gtag() et la file dataLayer sont définis immédiatement (coût nul :
+     simples push en mémoire), donc tout événement émis avant le chargement est
+     mis en file et rejoué. Le script externe (~90 Ko) n'est injecté qu'après
+     l'événement load, sur temps CPU idle (fallback 2 s), hors chemin critique
+     du premier rendu : GA disparaît de l'audit Lighthouse sans perte de data. -->
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', 'G-GEY79L24TV');
+  gtag('config', 'G-GEY79L24TV', { transport_type: 'beacon' });
+  window.addEventListener('load', function() {
+    var go = function() {
+      var s = document.createElement('script');
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-GEY79L24TV';
+      s.async = true;
+      document.head.appendChild(s);
+    };
+    if ('requestIdleCallback' in window) { requestIdleCallback(go, { timeout: 2000 }); }
+    else { setTimeout(go, 2000); }
+  });
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Spoke It — Bicycle wheel spoke length calculator & tension meter</title>
@@ -57,8 +71,8 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet"></noscript>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:wght@300&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:wght@300&display=swap" rel="stylesheet"></noscript>
 
 <style>
 /* ── Variables ─────────────────────────────────────────────────────────────── */
