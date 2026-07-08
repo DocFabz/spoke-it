@@ -836,25 +836,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 
 /* ── Radar chart */
 .radar-wrap      { width:100%; max-width:440px; margin:0 auto }
-.radar-canvas    { display:block; margin:0 auto; cursor:pointer }
+.radar-canvas    { display:block; margin:0 auto }
 
-/* ── Balance des tensions (clic radar) ───────────────────────────────────────── */
-.tm-linear-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9992; opacity:0; transition:opacity .22s; display:none }
-.tm-linear-overlay.show { display:block; opacity:1 }
-.tm-linear-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9993; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.2rem 1.2rem 1rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:94%; max-width:420px; max-height:85vh; display:none; flex-direction:column; gap:.75rem; opacity:0; transition:opacity .2s, transform .2s }
-.tm-linear-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
-.tm-linear-header { display:flex; align-items:center; justify-content:space-between; flex-shrink:0 }
-.tm-linear-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
-.tm-gauge-scroll { overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:.38rem; padding-right:.2rem }
-.tm-gauge-row { display:grid; grid-template-columns:1.6rem 1fr 1fr; align-items:center; gap:.45rem 1.2rem }
-.tm-gauge-num { font-family:'DM Mono',monospace; font-size:.58rem; color:var(--text3); text-align:center }
-.tm-gauge-side { display:flex; align-items:center; gap:.3rem }
-.tm-gauge-track { flex:1; height:5px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:visible; min-width:0; position:relative }
-.tm-gauge-fill { height:100%; border-radius:3px; position:relative }
-.tm-gauge-val { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:500; line-height:1; flex-shrink:0; width:2.4rem; text-align:right }
-.tm-gauge-header-cell { font-family:'DM Sans',sans-serif; font-size:.55rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; text-align:center; color:var(--text3) }
-.tm-gauge-avg-cell { font-size:.52rem; opacity:.75; letter-spacing:.06em; text-transform:none; font-family:'DM Mono',monospace; display:flex; flex-direction:column; align-items:center; gap:.1rem }
-.tm-gauge-avg-dot { position:absolute; top:50%; width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.75); transform:translate(-50%,-50%); pointer-events:none; box-shadow:0 0 3px rgba(0,0,0,0.4) }
 .radar-legend    { display:flex; gap:1.2rem; justify-content:center; margin-top:.75rem; flex-wrap:wrap }
 .radar-leg-item  { display:flex; align-items:center; gap:.38rem; font-size:.68rem; color:var(--text2); font-family:'DM Sans',sans-serif }
 .radar-leg-dot   { width:10px; height:10px; border-radius:50%; flex-shrink:0 }
@@ -1472,7 +1455,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
 /* 11. Isolation du scroll interne : arrivé en butée d'une modale ou d'une liste,
       le scroll ne se propage plus à la page derrière (desktop comme mobile) */
 .erasemgr-modal, .cc-modal, .ct-modal, .snap-modal,
-.hr-load-list, .wheel-load-list, .tm-gauge-scroll, .tm-conv-scroll,
+.hr-load-list, .wheel-load-list, .tm-conv-scroll,
 .tou-body, #ef-wrapper.landscape .ef-modal, #snapcompare-list {
   overscroll-behavior: contain;
 }
@@ -3439,7 +3422,6 @@ const i18n = {
     diagObsLabel:'Observations',
     diagObsPlaceholder:'Observations du wheelbuilder…',
     diagPdfBtn:'Générer le PDF',
-    tmLinearTitle:'Balance des tensions',
     snapTitle:'Snapshots de tension',
     snapBtn:'Snapshots',
     snapSaveBtn:'✓ Nouveau snapshot',
@@ -3612,7 +3594,6 @@ const i18n = {
     diagObsLabel:'Observations',
     diagObsPlaceholder:'Wheelbuilder observations…',
     diagPdfBtn:'Generate PDF',
-    tmLinearTitle:'Tension Balance',
     snapTitle:'Tension Snapshots',
     snapBtn:'Snapshots',
     snapSaveBtn:'✓ New snapshot',
@@ -3740,8 +3721,6 @@ const hubTypeByWheel = { avant: 'jbend', arriere: 'jbend' }; // hubType indépen
 let tmType = null;
 let tmData = { fo: [], fa: [] };
 let tmPrevFo = [], tmPrevFa = [];
-let tmAvgFo = null, tmAvgFa = null; // moyennes par nappe, mises à jour par tmRenderStats
-let tmCvFo  = null, tmCvFa  = null; // CV (±%) par nappe, mises à jour par tmRenderStats
 // Numéro du dernier snapshot chargé (pour le liseret bleu)
 
 // Multi-slot store: preserves data per tensiometer key (wf, pt, dt_standard, dt_aerolite2)
@@ -8390,248 +8369,6 @@ function tmDrawRadar(foKgfs, faKgfs, outliers, canvasEl) {
 
 
 // ── Helpers canvas ────────────────────────────────────────────────────────────
-// ── Balance des tensions — clic sur le radar ─────────────────────────────────
-(function() {
-  var canvas = document.getElementById('tm-radar');
-  if (canvas) canvas.addEventListener('click', tmLinearOpen);
-})();
-
-function tmLinearOpen() {
-  var nb = parseInt(document.getElementById('nb-rayons').value) || 0;
-  var perSide = Math.floor(nb / 2);
-  if (perSide < 2) return;
-
-  var foKgfs = tmData.fo.slice(0, perSide).map(function(v) { return toKgf(v); });
-  var faKgfs = tmData.fa.slice(0, perSide).map(function(v) { return toKgf(v); });
-  var allVals = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
-  if (!allVals.length) return;
-
-  // Code couleur + ordre des colonnes :
-  // fo = orange, fa = bleu — toujours
-  // Roue avant  : fo=NDS=Left,  fa=DS=Right  → col gauche=fo(orange), col droite=fa(bleu)
-  // Roue arrière: fo=DS=Right,  fa=NDS=Left  → col gauche=fa(bleu),   col droite=fo(orange)
-  var isFront = (typeof wtype !== 'undefined' && wtype === 'avant');
-
-  // Colonne gauche = toujours NDS, colonne droite = toujours DS
-  var leftKgfs  = isFront ? foKgfs : faKgfs;
-  var rightKgfs = isFront ? faKgfs : foKgfs;
-  var leftColor  = isFront ? 'rgba(232,146,124,0.95)' : 'rgba(126,200,227,0.85)';
-  var rightColor = isFront ? 'rgba(126,200,227,0.85)' : 'rgba(232,146,124,0.95)';
-  var leftTrack  = isFront ? 'rgba(232,146,124,0.12)' : 'rgba(126,200,227,0.10)';
-  var rightTrack = isFront ? 'rgba(126,200,227,0.10)' : 'rgba(232,146,124,0.12)';
-
-  var headLeft  = document.getElementById('tm-gauge-head-fo');
-  var headRight = document.getElementById('tm-gauge-head-fa');
-  if (headLeft)  { headLeft.textContent  = t('nonDriveSide'); headLeft.style.color  = leftColor; }
-  if (headRight) { headRight.textContent = t('driveSide');    headRight.style.color = rightColor; }
-
-  // Moyennes par colonne — lues depuis les globales calculées par tmRenderStats (même valeur que le radar)
-  var avgL = isFront ? tmAvgFo : tmAvgFa;
-  var avgR = isFront ? tmAvgFa : tmAvgFo;
-  var cvL  = isFront ? tmCvFo  : tmCvFa;
-  var cvR  = isFront ? tmCvFa  : tmCvFo;
-  var avgLeftEl  = document.getElementById('tm-gauge-avg-left');
-  var avgRightEl = document.getElementById('tm-gauge-avg-right');
-  if (avgLeftEl)  {
-    avgLeftEl.innerHTML  = avgL !== null ? ('<span>∅ ' + avgL.toFixed(1) + ' kgf</span>') : '';
-    avgLeftEl.style.color  = leftColor;
-  }
-  if (avgRightEl) {
-    avgRightEl.innerHTML = avgR !== null ? ('<span>∅ ' + avgR.toFixed(1) + ' kgf</span>') : '';
-    avgRightEl.style.color = rightColor;
-  }
-
-  var modal = document.getElementById('tm-linear-modal');
-  modal.querySelector('[data-i18n="tmLinearTitle"]').textContent = t('tmLinearTitle');
-
-  tmLinearDraw(leftKgfs, rightKgfs, leftColor, rightColor, leftTrack, rightTrack, avgL, avgR);
-  tmDrawSpeedos(cvL, cvR, leftColor, rightColor);
-
-  document.getElementById('tm-linear-overlay').classList.add('show');
-  modal.classList.add('show');
-}
-
-function tmLinearClose() {
-  document.getElementById('tm-linear-overlay').classList.remove('show');
-  document.getElementById('tm-linear-modal').classList.remove('show');
-}
-
-function tmLinearDraw(leftKgfs, rightKgfs, leftColor, rightColor, leftTrack, rightTrack, avgL, avgR) {
-  var body = document.getElementById('tm-gauge-body');
-  if (!body) return;
-  body.innerHTML = '';
-
-  var allVals = leftKgfs.concat(rightKgfs).filter(function(v) { return v !== null; });
-  if (!allVals.length) return;
-  var maxVal = Math.max.apply(null, allVals);
-  var minVal = Math.min.apply(null, allVals);
-
-  var nb = leftKgfs.length;
-
-  for (var i = 0; i < nb; i++) {
-    var row = document.createElement('div');
-    row.className = 'tm-gauge-row';
-
-    var numEl = document.createElement('div');
-    numEl.className = 'tm-gauge-num';
-    numEl.textContent = i + 1;
-    row.appendChild(numEl);
-
-    // Colonne gauche = NDS
-    row.appendChild(makeGaugeCell(leftKgfs[i],  maxVal, minVal, avgL, leftColor,  leftTrack));
-    // Colonne droite = DS
-    row.appendChild(makeGaugeCell(rightKgfs[i], maxVal, minVal, avgR, rightColor, rightTrack));
-
-    body.appendChild(row);
-  }
-
-  function makeGaugeCell(val, maxV, minV, avgV, barColor, trackColor) {
-    var cell  = document.createElement('div');
-    cell.className = 'tm-gauge-side';
-
-    var track = document.createElement('div');
-    track.className = 'tm-gauge-track';
-    track.style.background = trackColor;
-
-    var range = maxV * 1.05 - minV * 0.85;
-    var pct   = val !== null ? Math.max(4, Math.round(((val - minV * 0.85) / range) * 100)) : 0;
-
-    var fill  = document.createElement('div');
-    fill.className = 'tm-gauge-fill';
-    fill.style.width      = pct + '%';
-    fill.style.background = barColor;
-
-    // Curseur moyenne — uniquement si la valeur est renseignée
-    track.appendChild(fill);
-    if (val !== null) {
-      var avgPct = Math.max(2, Math.min(98, Math.round(((avgV - minV * 0.85) / range) * 100)));
-      var cursor = document.createElement('div');
-      cursor.className = 'tm-gauge-avg-dot';
-      cursor.style.left = avgPct + '%';
-      track.appendChild(cursor);
-    }
-    cell.appendChild(track);
-
-    var valEl = document.createElement('div');
-    valEl.className = 'tm-gauge-val';
-    valEl.style.color = val !== null ? barColor : 'rgba(150,170,190,0.3)';
-    valEl.textContent = val !== null ? Math.round(val) : '—';
-    cell.appendChild(valEl);
-    return cell;
-  }
-}
-
-function tmDrawSpeedos(cvLeft, cvRight, colorLeft, colorRight) {
-  var wrap = document.getElementById('tm-gauge-speedos');
-  if (!wrap) return;
-  wrap.innerHTML = '';
-
-  var maxCV   = 20;
-  var W = 130, H = 80;
-
-  function makeSpeedo(cv, color) {
-    var container = document.createElement('div');
-    container.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:.25rem;flex:1';
-
-    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-    svg.setAttribute('width', '100%');
-
-    var cx = W / 2, cy = H - 14, r = 52;
-
-    // ── Arc de fond ──
-    var bgArc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    bgArc.setAttribute('d', describeArc(cx, cy, r, 180, 0));
-    bgArc.setAttribute('fill', 'none');
-    bgArc.setAttribute('stroke', 'rgba(255,255,255,0.07)');
-    bgArc.setAttribute('stroke-width', '5');
-    bgArc.setAttribute('stroke-linecap', 'round');
-    svg.appendChild(bgArc);
-
-    // ── Arc coloré dégradé (vert → jaune → rouge) via segments ──
-    var steps = 40;
-    for (var i = 0; i < steps; i++) {
-      var t0 = i / steps, t1 = (i + 1) / steps;
-      var a0 = 180 - t0 * 180, a1 = 180 - t1 * 180;
-      var seg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      seg.setAttribute('d', describeArc(cx, cy, r, a0, a1 - 0.5));
-      seg.setAttribute('fill', 'none');
-      seg.setAttribute('stroke', cvGradientColor(t0));
-      seg.setAttribute('stroke-width', '5');
-      svg.appendChild(seg);
-    }
-
-    // ── Aiguille ──
-    if (cv !== null) {
-      var cvClamped   = Math.min(cv, maxCV);
-      var needlePct   = cvClamped / maxCV;
-      var needleAngle = (180 - needlePct * 180) * Math.PI / 180;
-      var nx = cx + (r - 4) * Math.cos(needleAngle);
-      var ny = cy - (r - 4) * Math.sin(needleAngle);
-      var needle = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      needle.setAttribute('x1', cx); needle.setAttribute('y1', cy);
-      needle.setAttribute('x2', nx); needle.setAttribute('y2', ny);
-      needle.setAttribute('stroke', color);
-      needle.setAttribute('stroke-width', '2');
-      needle.setAttribute('stroke-linecap', 'round');
-      svg.appendChild(needle);
-
-      // Pivot central
-      var pivot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      pivot.setAttribute('cx', cx); pivot.setAttribute('cy', cy); pivot.setAttribute('r', '3');
-      pivot.setAttribute('fill', color);
-      svg.appendChild(pivot);
-    }
-
-    // ── Labels 0 et max ──
-    function svgText(x, y, txt, anchor) {
-      var el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      el.setAttribute('x', x); el.setAttribute('y', y);
-      el.setAttribute('text-anchor', anchor);
-      el.setAttribute('font-family', 'DM Mono, monospace');
-      el.setAttribute('font-size', '7');
-      el.setAttribute('fill', 'rgba(150,170,190,0.5)');
-      el.textContent = txt;
-      return el;
-    }
-    svg.appendChild(svgText(cx - r - 2, cy + 10, '0', 'middle'));
-    svg.appendChild(svgText(cx + r + 2, cy + 10, maxCV + '%', 'middle'));
-
-    container.appendChild(svg);
-
-    // ── ± valeur sous le compteur ──
-    var valEl = document.createElement('div');
-    valEl.style.cssText = 'font-family:"DM Mono",monospace;font-size:.68rem;font-weight:500;color:' + color + ';line-height:1';
-    valEl.textContent = cv !== null ? '± ' + cv.toFixed(1) + ' %' : '—';
-    container.appendChild(valEl);
-
-    return container;
-  }
-
-  // Dégradé vert → jaune → rouge selon t ∈ [0,1]
-  function cvGradientColor(t) {
-    if (t < 0.5) {
-      var r2 = Math.round(255 * (t * 2));
-      return 'rgb(' + r2 + ',200,80)';
-    } else {
-      var g = Math.round(200 * (1 - (t - 0.5) * 2));
-      return 'rgb(255,' + g + ',40)';
-    }
-  }
-
-  function describeArc(cx, cy, r, startDeg, endDeg) {
-    var s = startDeg * Math.PI / 180;
-    var e = endDeg   * Math.PI / 180;
-    var x1 = cx + r * Math.cos(s), y1 = cy - r * Math.sin(s);
-    var x2 = cx + r * Math.cos(e), y2 = cy - r * Math.sin(e);
-    var large = (startDeg - endDeg) > 180 ? 1 : 0;
-    return 'M ' + x1 + ' ' + y1 + ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x2 + ' ' + y2;
-  }
-
-  wrap.appendChild(makeSpeedo(cvLeft,  colorLeft));
-  wrap.appendChild(makeSpeedo(cvRight, colorRight));
-}
-
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -9549,10 +9286,6 @@ function tmRenderStats(foKgfs, faKgfs) {
   }
 
   const fo = stats(foKgfs), fa = stats(faKgfs);
-  tmAvgFo = fo ? parseFloat(fo.avg) : null;
-  tmAvgFa = fa ? parseFloat(fa.avg) : null;
-  tmCvFo  = fo ? parseFloat(fo.cv)  : null;
-  tmCvFa  = fa ? parseFloat(fa.cv)  : null;
   const container = $id('tm-stats');
   container.innerHTML = '';
 
@@ -9772,7 +9505,7 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 <!-- ── Diagramme de tension in-Easy-Fill (remplace le pavé) ── -->
 <div id="ef-diagram">
   <div class="ef-radar-wrap">
-    <canvas class="radar-canvas" id="ef-radar" style="cursor:default"></canvas>
+    <canvas class="radar-canvas" id="ef-radar"></canvas>
   </div>
   <div class="radar-legend" id="ef-radar-legend">
     <div class="radar-leg-item"><span class="radar-leg-dot" style="background:rgba(232,146,124,.9)"></span><span id="ef-radar-leg-fo">—</span></div>
@@ -9996,6 +9729,7 @@ function efRenderStep() {
   // Micro actif : rafraîchir le flag de restauration (ts pour le TTL +
   // efCurrent pour reprendre au bon rayon après un crash-relaunch).
   if (typeof efMicActive !== 'undefined' && efMicActive) efSaveState();
+  if (efDiagMode) efPulseDot();
 }
 
 function efUpdateKgf() {
@@ -10285,7 +10019,8 @@ function efToggleDiagram() {
   efDiagMode = !efDiagMode;
   $id('ef-wrapper').classList.toggle('diagram', efDiagMode);
   efUpdateDiagBtn();
-  if (efDiagMode) efDiagramRender();
+  if (efDiagMode) { efDiagramRender(); efPulseDot(); }
+  else efCancelDot();
 }
 
 // Icône fixe ; le bouton s'allume en accent quand le diagramme est affiché,
@@ -10335,6 +10070,96 @@ function efDiagramRender() {
   tmDrawRadar(foKgfs, faKgfs, null, canvas);
 }
 
+// ── Pulse du dot courant (0,8 s) ────────────────────────────────────────────────
+// À chaque navigation (Next / Back / bascule de nappe, auto-avance vocale
+// comprise) et à l'activation du mode diagramme, le point de la mesure
+// courante s'allume 0,8 s dans le style de l'animation Play de la card
+// résultat (halo radial + point plein + liseré blanc), puis le radar est
+// redessiné à plat. Step allumé : le courant si sa valeur existe (navigation
+// dans un diagramme déjà rempli), sinon le précédent (saisie fraîche : après
+// un Next le step courant est vide, le dot intéressant est celui qui vient
+// d'être commité). Aucune valeur → rien. La géométrie est recalculée à
+// chaque frame : tmDrawRadar redimensionne le canvas sur la largeur du
+// conteneur, un resize/rotation en cours de pulse resterait sinon décalé.
+var efDotAnim   = null;
+var EF_DOT_MS   = 800;
+var EF_DOT_FADE = 250;
+
+function efCancelDot() {
+  if (efDotAnim) { efDotAnim.cancel(); efDotAnim = null; }
+}
+
+function efPulseDot() {
+  efCancelDot();
+  if (!efDiagMode) return;
+  var canvas = $id('ef-radar');
+  if (!canvas || !efSteps || !efSteps.length) return;
+  var nb = parseInt($id('nb-rayons').value) || 0;
+  var perSide = Math.floor(nb / 2);
+  if (perSide < 2) return;
+
+  var step = efSteps[efCurrent];
+  var val  = step ? toKgf(step.side === 'fo' ? tmData.fo[step.idx] : tmData.fa[step.idx]) : null;
+  if (val === null && efCurrent > 0) {
+    step = efSteps[efCurrent - 1];
+    val  = toKgf(step.side === 'fo' ? tmData.fo[step.idx] : tmData.fa[step.idx]);
+  }
+  if (val === null) return;
+
+  var foKgfs = tmData.fo.slice(0, perSide).map(function(v) { return toKgf(v); });
+  var faKgfs = tmData.fa.slice(0, perSide).map(function(v) { return toKgf(v); });
+  var allVals = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
+  if (!allVals.length) return;
+  var scaleMax    = Math.ceil(Math.max.apply(null, allVals) / 20) * 20 || 20;
+  var aStep       = (2 * Math.PI) / (perSide * 2);
+  var angle       = (step.idx * 2 + (step.side === 'fo' ? 0 : 1)) * aStep - Math.PI / 2;
+  var color       = step.side === 'fo' ? [232, 146, 124] : [126, 200, 227];
+
+  var startTime = null, rafId = null, cancelled = false;
+
+  function drawFrame(alpha) {
+    tmDrawRadar(foKgfs, faKgfs, null, canvas);
+    var dpr  = window.devicePixelRatio || 1;
+    var size = parseFloat(canvas.style.width) || (canvas.width / dpr);
+    var cx = size / 2, cy = size / 2, R = size * 0.38;
+    var rr = (val / scaleMax) * R;
+    var px = cx + rr * Math.cos(angle);
+    var py = cy + rr * Math.sin(angle);
+    var ctx = canvas.getContext('2d');
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    var grad = ctx.createRadialGradient(px, py, 2, px, py, 18);
+    grad.addColorStop(0, 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ',' + (0.45 * alpha) + ')');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath(); ctx.arc(px, py, 18, 0, 2 * Math.PI);
+    ctx.fillStyle = grad; ctx.fill();
+    ctx.beginPath(); ctx.arc(px, py, 7, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(' + color[0] + ',' + color[1] + ',' + color[2] + ',1)';
+    ctx.fill();
+    ctx.beginPath(); ctx.arc(px, py, 7, 0, 2 * Math.PI);
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.restore();
+  }
+
+  function frame(ts) {
+    if (cancelled) return;
+    if (!startTime) startTime = ts;
+    var progress  = Math.min((ts - startTime) / EF_DOT_MS, 1);
+    var fadeRatio = EF_DOT_FADE / EF_DOT_MS;
+    var alpha;
+    if (progress < fadeRatio)          { alpha = progress / fadeRatio; }
+    else if (progress > 1 - fadeRatio) { alpha = (1 - progress) / fadeRatio; }
+    else                               { alpha = 1; }
+    drawFrame(alpha);
+    if (progress < 1) { rafId = requestAnimationFrame(frame); }
+    else { efDotAnim = null; efDiagramRender(); }
+  }
+
+  efDotAnim = { cancel: function() { cancelled = true; if (rafId) cancelAnimationFrame(rafId); } };
+  rafId = requestAnimationFrame(frame);
+}
+
 function efHideNumpad() {
   var wrapper = $id('ef-wrapper');
   if (wrapper._orientHandler) {
@@ -10345,6 +10170,7 @@ function efHideNumpad() {
   efDetachBtKeyHandler(wrapper);
   wrapper.classList.remove('show', 'touch', 'desktop', 'landscape', 'diagram');
   efDiagMode = false;
+  efCancelDot();
   // Remettre l'input dans son état neutre, quel que soit le mode qui était actif
   var inp = $id('ef-inp');
   if (inp) {
@@ -12918,38 +12744,6 @@ function hrClearLoadedRim() {
   </div>
 </div>
 
-<!-- ── Balance des tensions ───────────────────────────────────────────────── -->
-<div class="tm-linear-overlay" id="tm-linear-overlay" onclick="tmLinearClose()"></div>
-<div class="tm-linear-modal" id="tm-linear-modal">
-  <div class="tm-linear-header">
-    <div class="tm-linear-title" data-i18n="tmLinearTitle">Balance des tensions</div>
-    <button class="ateliermgr-close" onclick="tmLinearClose()">✕</button>
-  </div>
-  <div style="display:grid;grid-template-columns:1.6rem 1fr 1fr;gap:.45rem 1.2rem;padding-bottom:.35rem;border-bottom:1px solid var(--border);flex-shrink:0">
-    <div></div>
-    <div style="display:flex;align-items:center;gap:.3rem">
-      <div style="flex:1" class="tm-gauge-header-cell" id="tm-gauge-head-fo">—</div>
-      <div style="width:2.4rem"></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:.3rem">
-      <div style="flex:1" class="tm-gauge-header-cell" id="tm-gauge-head-fa">—</div>
-      <div style="width:2.4rem"></div>
-    </div>
-  </div>
-  <div style="display:grid;grid-template-columns:1.6rem 1fr 1fr;gap:.45rem 1.2rem;padding-bottom:.1rem;margin-top:-.2rem;flex-shrink:0">
-    <div></div>
-    <div style="display:flex;align-items:center;gap:.3rem">
-      <div style="flex:1" class="tm-gauge-header-cell tm-gauge-avg-cell" id="tm-gauge-avg-left"></div>
-      <div style="width:2.4rem"></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:.3rem">
-      <div style="flex:1" class="tm-gauge-header-cell tm-gauge-avg-cell" id="tm-gauge-avg-right"></div>
-      <div style="width:2.4rem"></div>
-    </div>
-  </div>
-  <div class="tm-gauge-scroll" id="tm-gauge-body"></div>
-  <div id="tm-gauge-speedos" style="display:flex;gap:.75rem;justify-content:center;padding:.6rem 0 .2rem;flex-shrink:0;border-top:1px solid var(--border)"></div>
-</div>
 <!-- ── Modale Snapshots de tension ────────────────────────────────────────── -->
 <div class="snap-overlay" id="snap-overlay" onclick="snapClose()"></div>
 <div class="snap-modal" id="snap-modal">
