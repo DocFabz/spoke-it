@@ -8577,11 +8577,26 @@ async function tmExportPdfWithOpts(opts) {
     const _cfg = loadConfigs().find(c => c.name === _cfgN && (c.state && (c.state.wtype || 'avant')) === wtype);
     if (_cfg && _cfg.riderId) { const _rd = riderById(_cfg.riderId); if (_rd && _rd.name) pdfRiderName = _rd.name; }
   }
-  let pdfLeftLine = pdfRiderName ? sanitize(pdfRiderName) : '';
-  if (pdfLeftLine || pdfTensioCaption) {
-    if (pdfLeftLine) {
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...C_WARM);
-      doc.text(pdfLeftLine, ML, Y);
+  // Sans données de calcul (roue créée via le module tension seul), la roue
+  // n'apparaît pas dans le bloc Configuration : on compose alors la ligne
+  // "Type - Nom de roue - Rider" exactement comme le PDF diagnostic. Avec
+  // calcul, la roue figure déjà dans Configuration et seul le rider s'affiche.
+  const pdfWheelPart = (!sd && wheelName) ? (sanitize(wheelLabel) + ' - ' + sanitize(wheelName)) : '';
+  const pdfRiderPart = pdfRiderName ? sanitize(pdfRiderName) : '';
+  if (pdfWheelPart || pdfRiderPart || pdfTensioCaption) {
+    if (pdfWheelPart || pdfRiderPart) {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+      let _x = ML;
+      if (pdfWheelPart) {
+        doc.setTextColor(...C_TEXT2);
+        doc.text(pdfWheelPart, _x, Y);
+        _x += doc.getTextWidth(pdfWheelPart);
+      }
+      if (pdfRiderPart) {
+        if (pdfWheelPart) { doc.setTextColor(...C_TEXT2); doc.text(' - ', _x, Y); _x += doc.getTextWidth(' - '); }
+        doc.setTextColor(...C_WARM);
+        doc.text(pdfRiderPart, _x, Y);
+      }
     }
     if (pdfTensioCaption) {
       doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...C_TEXT3);
