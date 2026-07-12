@@ -222,6 +222,12 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .erasemgr-item-info .wheel-load-item-rider svg { width:8px; height:8px }
 .erasemgr-item-btn { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
 .erasemgr-item-btn:hover { color:var(--warm) }
+.erasemgr-footer { display:flex; justify-content:flex-end }
+.erasemgr-eraseall { background:none; border:1px solid rgba(232,146,124,.45); border-radius:7px; height:26px; display:inline-flex; align-items:center; font-family:'DM Mono','DM Mono FB',monospace; font-size:.58rem; font-weight:400; letter-spacing:.15em; text-transform:uppercase; color:rgba(232,146,124,.75); cursor:pointer; gap:.35rem; padding:0 .6rem 0 .45rem; line-height:1; transition:color .2s, border-color .2s, background .2s, box-shadow .2s, transform .2s; touch-action:manipulation }
+.erasemgr-eraseall svg { flex-shrink:0; opacity:.75 }
+.erasemgr-eraseall:hover svg { opacity:1 }
+.erasemgr-eraseall:hover { border-color:rgba(232,146,124,.6); color:var(--warm2); box-shadow:0 0 10px rgba(232,146,124,.12),inset 0 0 6px rgba(232,146,124,.05) }
+@media (hover: none) { .erasemgr-eraseall:hover { border-color:rgba(232,146,124,.45); color:rgba(232,146,124,.75); box-shadow:none } .erasemgr-eraseall:active { background:rgba(232,146,124,.14); transform:scale(.96) } }
 
 /* ── Hub/Rim quick save/load icon buttons ──────────────────────────────────── */
 .card-icon-btn {
@@ -2844,6 +2850,9 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <button class="erasemgr-close" onclick="closeEraseMgr()">&#x2715;</button>
   </div>
   <div id="erasemgr-body"></div>
+  <div class="erasemgr-footer">
+    <button class="erasemgr-eraseall" onclick="eraseMgrEraseAll()"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg><span data-i18n="eraseMgrAllBtn">Tout effacer</span></button>
+  </div>
 </div>
 
 <!-- ── Lazy-load jsPDF ──────────────────────────────────────────────────────
@@ -3403,7 +3412,6 @@ const i18n = {
     riderNone:'Aucun rider enregistré.',
     riderAssign:'Affecter à un rider',
     riderAssignNone:'Aucun',
-    riderDelConfirm:'Supprimer ce rider ? Ses roues seront désaffectées.',
     riderUnassign:'Désaffecter',
     eraseMgrTitle:'Supprimer des données',
     eraseMgrWheels:'Roues',
@@ -3411,6 +3419,8 @@ const i18n = {
     eraseMgrCustomSpokes:'Rayons perso',
     eraseMgrRiders:'Riders',
     eraseMgrDel:'✕',
+    eraseMgrAllBtn:'Tout effacer',
+    eraseMgrAllConfirm:'Voulez-vous supprimer l\u2019ensemble de vos enregistrements ?',
     diffLabel:'Différentiel',
     radialDiscWarn:'⚠ Incompatible roue à disque',
     diamTrouWarn:'⚠ Valeur incohérente',
@@ -3577,7 +3587,6 @@ const i18n = {
     riderNone:'No saved riders.',
     riderAssign:'Assign to a rider',
     riderAssignNone:'None',
-    riderDelConfirm:'Delete this rider? Its wheels will be unassigned.',
     riderUnassign:'Unassign',
     eraseMgrTitle:'Delete data',
     eraseMgrWheels:'Wheels',
@@ -3585,6 +3594,8 @@ const i18n = {
     eraseMgrCustomSpokes:'Custom spokes',
     eraseMgrRiders:'Riders',
     eraseMgrDel:'✕',
+    eraseMgrAllBtn:'Erase all',
+    eraseMgrAllConfirm:'Do you want to delete all your records?',
     diffLabel:'Differential',
     radialDiscWarn:'⚠ Disc brake incompatible',
     diamTrouWarn:'⚠ Inconsistent value',
@@ -6296,6 +6307,31 @@ function renderEraseMgr(openKeys) {
     return makeItem(CC_PREFIX + cc.name, tensioLabel(cc.tensioKey), () => ccDeleteDirect(globalIdx, null));
   });
   acc.appendChild(makeAccSection('eraseMgrCustomSpokes', spokeItems, openKeys));
+}
+
+// ── Tout effacer : supprime l'ensemble des enregistrements du Data manager ──
+function eraseMgrEraseAll() {
+  confirmShow(t('eraseMgrAllConfirm'), function() {
+    // Riders
+    persistRiders([]);
+    // Roues (snapshots inclus, portés par chaque config)
+    persistConfigs([]);
+    renderConfigsList();
+    // Tensiomètres perso — ctDelete gère les effets de bord (tensio actif,
+    // TM_TABLES, chartes custom associées, dropdowns)
+    while (ctLoadAll().length > 0) ctDelete(0);
+    // Chartes de rayons custom restantes (attachées aux tensiomètres fixes)
+    if (ccLoadAll().length > 0) {
+      const activeIsCustom = tmSpokeKey && tmSpokeKey.startsWith(CC_PREFIX);
+      ccPersist([]);
+      ccInjectAll();
+      if (activeIsCustom) { tmSpokeKey = null; tmResetData(); tmHideResult(); }
+      tmPopulateSpokeSelect();
+      tmBuildTable();
+      ccRenderExisting();
+    }
+    renderEraseMgr();
+  });
 }
 
 // ── Obtenir la table active (objet {spokeKey: [[defl,kgf]…]}) ─────────────────
@@ -14948,30 +14984,8 @@ document.addEventListener('keydown', function(e) {
       metaEl.className = 'wheel-load-item-meta';
       metaEl.textContent = nb + (lang === 'fr' ? (nb > 1 ? ' roues' : ' roue') : (nb > 1 ? ' wheels' : ' wheel'));
 
-      var delBtn = document.createElement('button');
-      delBtn.className = 'wheel-load-item-del';
-      delBtn.textContent = '×';
-      delBtn.title = lang === 'fr' ? 'Supprimer' : 'Delete';
-      delBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var doDel = function() {
-          // Désaffecter les roues du rider
-          var cfgs = loadConfigs();
-          var changed = false;
-          cfgs.forEach(function(c) { if (c.riderId === r.id) { c.riderId = null; changed = true; } });
-          if (changed) persistConfigs(cfgs);
-          // Supprimer le rider
-          var arr = loadRiders().filter(function(x) { return x.id !== r.id; });
-          persistRiders(arr);
-          riderRenderLoadList();
-        };
-        if (typeof confirmShow === 'function') confirmShow(t('riderDelConfirm'), doDel);
-        else if (window.confirm(t('riderDelConfirm'))) doDel();
-      });
-
       item.appendChild(nameEl);
       item.appendChild(metaEl);
-      item.appendChild(delBtn);
 
       item.addEventListener('click', function() {
         closeRiderLoad();
