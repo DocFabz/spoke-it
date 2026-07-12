@@ -6330,6 +6330,13 @@ function eraseMgrEraseAll() {
       tmBuildTable();
       ccRenderExisting();
     }
+    // Moyeux / jantes enregistrés (module hub/rim défini dans un bloc script
+    // ultérieur — garde typeof par cohérence avec les autres appels croisés)
+    if (typeof hrPersist === 'function') {
+      hrPersist('hub', []);
+      hrPersist('rim', []);
+      if (typeof hrUpdateButtons === 'function') hrUpdateButtons();
+    }
     renderEraseMgr();
   });
 }
