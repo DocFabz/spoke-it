@@ -176,6 +176,8 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .savemgr-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
 .savemgr-desc { font-size:.72rem; color:var(--text2); line-height:1.5 }
 .savemgr-lastbackup { font-size:.72rem; color:var(--accent); line-height:1.5; text-align:center }
+.savemgr-storage { font-size:.62rem; color:var(--text3); line-height:1.4; text-align:center }
+.savemgr-storage--ok { color:var(--success) }
 .savemgr-btns { display:flex; flex-direction:row; gap:.5rem; width:100% }
 .savemgr-action-btn { display:flex; align-items:center; justify-content:center; gap:.6rem; padding:.45rem .85rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans','DM Sans FB',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:all .25s; flex:1 }
 .savemgr-export:hover, .savemgr-import:hover { border-color:rgba(126,200,227,.65); color:var(--accent2); background:rgba(126,200,227,.06) }
@@ -1648,6 +1650,7 @@ input[type=number] { -moz-appearance:textfield }
   </div>
   <p class="savemgr-desc" data-i18n="saveMgrDesc">Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.</p>
   <p class="savemgr-lastbackup" id="savemgr-lastbackup"></p>
+  <p class="savemgr-storage" id="savemgr-storage" hidden></p>
   <div class="savemgr-btns">
     <button class="savemgr-action-btn savemgr-import" onclick="$id('import-file-input').click()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -3324,6 +3327,8 @@ const i18n = {
     lastBackupToday:'Dernière sauvegarde : aujourd\'hui.',
     lastBackupYesterday:'Dernière sauvegarde : hier.',
     lastBackupDays:'Dernière sauvegarde : il y a {n} jours.',
+    storageGuarded:'Stockage protégé contre l\'éviction ✓',
+    storageUnguarded:'Stockage non garanti par le navigateur',
     bkpExpDated:'Daté', bkpExpFixed:'Fixe', bkpExportTitle:'Nom du fichier',
     bkpExpDesc:'La sauvegarde datée permet de conserver tous les historiques de sauvegarde.\nLa sauvegarde non datée écrase la précédente dans votre dossier.',
     bkpNothingToExport:'Rien à sauvegarder.',
@@ -3496,6 +3501,8 @@ const i18n = {
     lastBackupToday:'Last backup: today.',
     lastBackupYesterday:'Last backup: yesterday.',
     lastBackupDays:'Last backup: {n} days ago.',
+    storageGuarded:'Storage protected from eviction ✓',
+    storageUnguarded:'Storage not guaranteed by the browser',
     bkpExpDated:'Dated', bkpExpFixed:'Fixed', bkpExportTitle:'Filename',
     bkpExpDesc:'A dated backup keeps your entire backup history.\nAn undated backup overwrites the previous one in your folder.',
     bkpNothingToExport:'Nothing to back up.',
@@ -5226,8 +5233,25 @@ function savemgrRenderLastBackup() {
   else                 el.textContent = t('lastBackupDays').replace('{n}', days);
 }
 
+// Reflète l'état du stockage persistant sous la capsule de dernier backup.
+// Interroge l'API en direct plutôt que _storagePersisted seul : la modale
+// peut s'ouvrir avant la résolution de la promesse du boot. Resynchronise la
+// variable des seuils au passage. API absente : l'élément reste masqué.
+function savemgrRenderStorageStatus() {
+  var el = $id('savemgr-storage');
+  if (!el) return;
+  if (!(navigator.storage && navigator.storage.persisted)) { el.hidden = true; return; }
+  navigator.storage.persisted().then(function(ok) {
+    _storagePersisted = !!ok;
+    el.textContent = t(ok ? 'storageGuarded' : 'storageUnguarded');
+    el.classList.toggle('savemgr-storage--ok', !!ok);
+    el.hidden = false;
+  }).catch(function() { el.hidden = true; });
+}
+
 function openSaveMgr() {
   savemgrRenderLastBackup();
+  savemgrRenderStorageStatus();
   $id('savemgr-overlay').classList.add('show');
   $id('savemgr-modal').classList.add('show');
 }
@@ -5506,6 +5530,19 @@ function bkpHasData() {
   return false;
 }
 
+// ── Stockage persistant ──────────────────────────────────────────────────────
+// Demande au navigateur d'exclure l'origine de l'éviction automatique du
+// stockage (pression disque, inactivité). Best-effort : l'échec est sans
+// conséquence, le rappel de backup reste la ligne de défense. Défaut
+// pessimiste : tant que la promesse n'a pas résolu, les seuils se calculent
+// comme si non persistant (un rappel un peu tôt est sans coût, l'inverse non).
+var _storagePersisted = false;
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persisted().then(function(ok) {
+    return ok || navigator.storage.persist();
+  }).then(function(ok) { _storagePersisted = !!ok; }).catch(function(){});
+}
+
 function bkpCheckReminder() {
   var banner = document.getElementById('backup-reminder');
   if (banner && banner.classList.contains('show')) return; // déjà affiché : rien à refaire
@@ -5524,11 +5561,14 @@ function bkpCheckReminder() {
   if (!backup) { try { localStorage.setItem('spokeit_bkpClock', String(Date.now())); } catch(e){} return; }
   if (modif <= backup) return;                 // rien de non sauvegardé
   if (snooze && (Date.now() - snooze) < DAY_MS) return; // reporté < 24 h
-  // Seuil plus court hors PWA installée : Safari (onglet) purge le localStorage
-  // après ~7 j d'inactivité (ITP). On alerte plus tôt pour garder une marge.
+  // Seuil gradué selon le risque d'éviction du localStorage :
+  // 7 j si PWA installée ET stockage persistant accordé (éviction quasi nulle),
+  // 5 j si PWA seule, 4 j en onglet — Safari (ITP) purge après ~7 j d'inactivité.
+  // _storagePersisted seul ne relâche jamais le seuil : sur Safari, persisted()
+  // ne neutralise pas ITP, d'où l'exigence de conjonction avec standalone.
   var standalone = window.matchMedia('(display-mode: standalone)').matches
                 || window.navigator.standalone === true;
-  var THRESHOLD = (standalone ? 5 : 4) * DAY_MS; // 5 j PWA / 4 j navigateur
+  var THRESHOLD = ((standalone && _storagePersisted) ? 7 : standalone ? 5 : 4) * DAY_MS;
   if (Date.now() - backup < THRESHOLD) return; // dernière sauvegarde trop récente
   if (!bkpHasData()) return;                   // rien à sauvegarder : pas de rappel
   bkpSetPending(true);
