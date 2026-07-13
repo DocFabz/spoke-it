@@ -2683,7 +2683,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
   <!-- Créer nouveau -->
   <div id="ct-create-section">
     <div class="cc-step-label" data-i18n="ctLabel">Nom du tensiomètre</div>
-    <input type="text" id="ct-name-inp" class="ct-input" placeholder="Ex : Mon Tensiomètre" maxlength="50" autocomplete="off"
+    <input type="text" id="ct-name-inp" class="ct-input" placeholder="Ex : Mon Tensiomètre" maxlength="50" autocomplete="off" autocapitalize="characters"
       oninput="$id('ct-feedback').textContent=''"
       onkeydown="if(event.key==='Enter'){event.preventDefault();ctSave()}">
     <div class="ct-feedback" id="ct-feedback"></div>
@@ -2707,7 +2707,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <button class="hr-save-close" onclick="closeHrSaveModal()">✕</button>
   </div>
   <div class="hr-save-inp-row">
-    <input class="hr-save-inp" id="hr-save-inp" type="text" placeholder="Nom…" maxlength="60" autocomplete="off"
+    <input class="hr-save-inp" id="hr-save-inp" type="text" placeholder="Nom…" maxlength="60" autocomplete="off" autocapitalize="characters"
       onkeydown="if(event.key==='Enter'){event.preventDefault();confirmHrSave()}">
     <button class="hr-save-btn" onclick="confirmHrSave()">OK</button>
   </div>
@@ -2732,7 +2732,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <button class="wheel-save-close" onclick="closeWheelSaveModal()">✕</button>
   </div>
   <div class="wheel-save-inp-row">
-    <input class="wheel-save-inp" id="wheel-save-inp" type="text" placeholder="Nom…" maxlength="60" autocomplete="off"
+    <input class="wheel-save-inp" id="wheel-save-inp" type="text" placeholder="Nom…" maxlength="60" autocomplete="off" autocapitalize="characters"
       onkeydown="if(event.key==='Enter') confirmWheelSave()">
     <button class="wheel-save-btn" onclick="confirmWheelSave()">OK</button>
   </div>
@@ -2796,7 +2796,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
   <div class="ateliermgr-field">
     <span class="ateliermgr-label" data-i18n="riderName">Nom</span>
     <div class="ateliermgr-inp-wrap">
-      <input class="ateliermgr-inp" id="rider-name" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <input class="ateliermgr-inp" id="rider-name" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
       <button class="ateliermgr-clear" onclick="riderClear('rider-name')">✕</button>
     </div>
   </div>
@@ -12866,7 +12866,7 @@ function hrClearLoadedRim() {
   <!-- Panneau de nommage (affiché si pas de config chargée) -->
   <div id="snap-name-panel" style="display:none;flex-direction:column;gap:.6rem">
     <div style="display:flex;flex-direction:column;gap:.4rem">
-      <input id="snap-name-inp" class="ct-input" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Ex : Ma roue" onkeydown="if(event.key==='Enter')snapRegisterAndSave()">
+      <input id="snap-name-inp" class="ct-input" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="Ex : Ma roue" onkeydown="if(event.key==='Enter')snapRegisterAndSave()">
       <button id="snap-name-confirm-btn" class="ct-save-btn" onclick="snapRegisterAndSave()">✓ Enregistrer & snapshot</button>
     </div>
     <div id="snap-name-feedback" style="font-size:.67rem;color:#f08080;min-height:.85rem"></div>
