@@ -1983,7 +1983,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         </div>
         <!-- ERD calculé (mode NSD) -->
         <div id="erd-nsd-result-field" style="display:none" class="f">
-          <label data-i18n="erdCalc">ERD calculé (mm)</label>
+          <label data-i18n="erdCalc" for="erd-nsd-result">ERD calculé (mm)</label>
           <input type="number" id="erd-nsd-result" readonly tabindex="-1" class="inp-readonly">
         </div>
       </div>
@@ -2101,11 +2101,11 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         </select>
       </div>
       <div class="f tension-field-calc" id="tension-faible-field">
-        <label>
+        <label for="tension-faible-display">
           <span class="tension-dot"></span>
           <span class="tension-label" data-i18n="nonDriveSide">Côté Gauche (NDS)</span>
         </label>
-        <div class="faible-display" id="tension-faible-display"></div>
+        <output class="faible-display" id="tension-faible-display"></output>
       </div>
     </div>
     <p class="help" style="margin-top:.6rem" id="tension-help-text"></p>
@@ -2346,7 +2346,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 
     <!-- Sélecteur de rayon -->
     <div class="f" style="margin-bottom:1rem">
-      <label data-i18n="tmSpokeLabel">Rayon</label>
+      <label data-i18n="tmSpokeLabel" for="tm-spoke-select">Rayon</label>
       <div style="display:flex;gap:.4rem;align-items:center">
         <select id="tm-spoke-select" class="tm-select" style="flex:1" onchange="tmOnSpokeChange()">
           <option value="">—</option>
@@ -2635,14 +2635,14 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <div class="cc-step">
       <div style="display:flex;gap:.6rem">
         <div class="f" style="flex:1">
-          <label data-i18n="ccStepName">Nom du rayon</label>
+          <label data-i18n="ccStepName" for="cc-name">Nom du rayon</label>
           <div style="display:flex;gap:.35rem">
             <input type="text" id="cc-name" class="cc-input" placeholder="Ex : Mon Rayon Custom 2.0" maxlength="60" autocomplete="off" oninput="ccToggleNameClear()">
             <button class="tm-clear-tensio" id="cc-clear-name" onclick="ccClearName()" style="display:none" title="Reset">✕</button>
           </div>
         </div>
         <div class="f" style="width:5.5rem;flex-shrink:0">
-          <label data-i18n="ccStepNbPoints">Points</label>
+          <label data-i18n="ccStepNbPoints" for="cc-nb-points">Points</label>
           <input type="number" id="cc-nb-points" class="cc-input" style="padding-left:.5rem;text-align:center" min="5" max="30" value="10" onchange="ccOnNbChange()">
         </div>
       </div>
