@@ -3653,6 +3653,75 @@ const i18n = {
 
 function t(key) { return (i18n[lang] && i18n[lang][key]) || key; }
 
+// ── Registre central des clés localStorage ───────────────────────────────────
+// Source de vérité unique : toute clé lue ou écrite par l'app DOIT être
+// déclarée ici. Consommé par :
+//   - lsSet            → horodatage spokeit_lastModif (clés kind:'data' seules)
+//   - eraseMgrEraseAll → filet de sécurité d'effacement (clés erase:true)
+//   - lsAuditKeys      → détection en console des clés fantômes non déclarées
+// kind : 'data'      = données utilisateur (déclenchent le rappel de sauvegarde)
+//        'pref'      = préférence d'interface (survit à « Tout effacer »)
+//        'meta'      = horloges internes du rappel / détection de version
+//        'transient' = état éphémère de reprise (auto-nettoyé par son module)
+// erase : purgée par le filet de sécurité de « Tout effacer ». L'orchestration
+//         métier de eraseMgrEraseAll reste responsable des effets de bord
+//         (UI, TM_TABLES, tensio actif…) ; le filet garantit seulement
+//         qu'aucune donnée déclarée effaçable ne survit dans le storage.
+// exportField : nom du champ dans le JSON de sauvegarde (null = jamais exporté).
+const LS_REGISTRY = [
+  { key:'spokeit_configs',        kind:'data',      erase:true,  exportField:'configs',       owner:'roues + snapshots' },
+  { key:'spokeit_saved_hubs',     kind:'data',      erase:true,  exportField:'savedHubs',     owner:'moyeux enregistrés' },
+  { key:'spokeit_saved_rims',     kind:'data',      erase:true,  exportField:'savedRims',     owner:'jantes enregistrées' },
+  { key:'spokeit_riders',         kind:'data',      erase:true,  exportField:'riders',        owner:'riders' },
+  { key:'spokeit_custom_charts',  kind:'data',      erase:true,  exportField:'customCharts',  owner:'chartes rayons custom' },
+  { key:'spokeit_custom_tensios', kind:'data',      erase:true,  exportField:'customTensios', owner:'tensiomètres custom' },
+  // Identité de l'atelier : exportée mais survit volontairement à « Tout
+  // effacer » (on efface les données de travail, pas la configuration du lieu).
+  { key:'spokeit_atelier',        kind:'data',      erase:false, exportField:'atelier',       owner:'atelier' },
+  { key:'spokeit_lastModif',      kind:'meta',      erase:false, exportField:null,            owner:'rappel de sauvegarde' },
+  { key:'spokeit_lastBackup',     kind:'meta',      erase:false, exportField:null,            owner:'rappel de sauvegarde' },
+  { key:'spokeit_bkpClock',       kind:'meta',      erase:false, exportField:null,            owner:'rappel de sauvegarde (amorçage)' },
+  { key:'spokeit_lastSnooze',     kind:'meta',      erase:false, exportField:null,            owner:'rappel de sauvegarde (snooze 24h)' },
+  { key:'spokeit_bkpDated',       kind:'pref',      erase:false, exportField:null,            owner:'export backup (nom daté/fixe)' },
+  { key:'spokeit_appTag',         kind:'meta',      erase:false, exportField:null,            owner:'toast nouvelle version (ETag)' },
+  { key:'spoke-it-lang',          kind:'pref',      erase:false, exportField:null,            owner:'i18n' },
+  { key:'ef_restore',             kind:'transient', erase:true,  exportField:null,            owner:'EF Vocal (reprise crash iOS)' },
+];
+// Clés « données » précalculées pour le test à chaud dans lsSet.
+const LS_DATA_KEYS = (function() {
+  const s = {};
+  LS_REGISTRY.forEach(e => { if (e.kind === 'data') s[e.key] = true; });
+  return s;
+})();
+// Clés d'anciennes versions (fonctionnalités supprimées) : purgées au boot.
+// Ne JAMAIS réutiliser ces noms pour de nouvelles clés.
+const LS_LEGACY_KEYS = [
+  'spoke-it-theme',         // ancien toggle de thème
+  'spoke-it-backup-remind', // ancien rappel de sauvegarde (avant le modèle à deux horloges)
+];
+// Audit au démarrage (hors chemin critique) : purge des clés legacy, puis
+// signaler en console toute clé de notre espace de nommage absente du
+// registre — symptôme d'un module qui a ajouté une clé sans la déclarer.
+window.addEventListener('load', function() {
+  function lsAuditKeys() {
+    LS_LEGACY_KEYS.forEach(function(k) {
+      try { localStorage.removeItem(k); } catch(e) {}
+    });
+    const known = {};
+    LS_REGISTRY.forEach(e => { known[e.key] = true; });
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!known[k] && /^(spokeit_|spoke-it-|ef_)/.test(k)) {
+          console.warn('[Spokeit] Clé localStorage non déclarée dans LS_REGISTRY : ' + k);
+        }
+      }
+    } catch(e) {}
+  }
+  if ('requestIdleCallback' in window) requestIdleCallback(lsAuditKeys, { timeout: 5000 });
+  else setTimeout(lsAuditKeys, 5000);
+});
+
 // ── Écriture localStorage sécurisée ──────────────────────────────────────────
 // setItem peut jeter (QuotaExceededError, storage bloqué). Sans garde, l'exception
 // remonte et interrompt le flux de sauvegarde appelant — échec totalement
@@ -3661,8 +3730,8 @@ function lsSet(key, val) {
   try {
     localStorage.setItem(key, val);
     // Horodatage de modification pour le rappel de sauvegarde — uniquement sur
-    // les vraies données utilisateur (clés 'spokeit_', hors clés méta du rappel).
-    if (key.indexOf('spokeit_') === 0 && key !== 'spokeit_lastModif' && key !== 'spokeit_lastBackup') {
+    // les vraies données utilisateur (clés kind:'data' du LS_REGISTRY).
+    if (LS_DATA_KEYS[key]) {
       try { localStorage.setItem('spokeit_lastModif', String(Date.now())); } catch(e) {}
     }
     return true;
@@ -5361,6 +5430,7 @@ function exportConfigs() {
     showImportToast(t('bkpNothingToExport'), true);
     return;
   }
+  // Contrat des champs : LS_REGISTRY.exportField (une entrée par clé exportée).
   const payload = {
     spokeit: true, v: 2,
     configs:       loadConfigs(),
@@ -6340,6 +6410,13 @@ function eraseMgrEraseAll() {
       hrPersist('rim', []);
       if (typeof hrUpdateButtons === 'function') hrUpdateButtons();
     }
+    // Filet de sécurité registre : toute clé déclarée effaçable qui
+    // subsisterait (module futur oublié dans l'orchestration ci-dessus)
+    // est purgée à froid. Les loaders retournent tous leur valeur par
+    // défaut sur clé absente, la suppression brute est donc sûre.
+    LS_REGISTRY.forEach(function(e) {
+      if (e.erase) { try { localStorage.removeItem(e.key); } catch(err) {} }
+    });
     renderEraseMgr();
   });
 }
