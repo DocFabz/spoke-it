@@ -15016,5 +15016,17 @@ document.addEventListener('keydown', function(e) {
 })();
 </script>
 
+
+<script>
+// ── Service worker (network-first) ───────────────────────────────────────────
+// Filet hors-ligne uniquement : en ligne, comportement identique à l'absence
+// de SW (voir sw.js). Enregistré après load, hors chemin critique du rendu.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function() {});
+  });
+}
+</script>
+
 </body>
 </html>
