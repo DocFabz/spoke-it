@@ -10581,6 +10581,12 @@ function efVoiceToNumber(txt) {
   if (!txt) return null;
   var s = txt.trim().toLowerCase();
 
+  // ── Étape 0 : translittérer les chiffres arabes orientaux (٠-٩, U+0660) et
+  // persans (۰-۹, U+06F0) en ASCII — \d ne matche que 0-9, un moteur ar/fa
+  // émettant "٣٢" donnerait sinon null alors que la langue est proposée.
+  s = s.replace(/[٠-٩]/g, function(c) { return String.fromCharCode(c.charCodeAt(0) - 0x0660 + 48); })
+       .replace(/[۰-۹]/g, function(c) { return String.fromCharCode(c.charCodeAt(0) - 0x06F0 + 48); });
+
   // ── Étape 1 : normaliser tous les séparateurs décimaux en '.'
   // Couvre: virgule (fr/it/de/es/pt…), point, separateurs unicode arabes/persans
   s = s.replace(/[,،٫]/g, '.');
@@ -10629,6 +10635,7 @@ function efVoiceToNumber(txt) {
     'vingt':20,'twenty':20,'trente':30,'thirty':30,
     'quarante':40,'forty':40,'cinquante':50,'fifty':50,
     'soixante':60,'sixty':60,'seventy':70,
+    'septante':70,'huitante':80,'octante':80,'nonante':90,
     'eighty':80,
     'ninety':90,'cent':100,'cents':100,'hundred':100,'mille':1000,'thousand':1000
   };
@@ -10917,23 +10924,23 @@ function efStartMic(forceLang) {
   // dans la langue du moteur → confiance correcte quelle que soit la langue.
   var recogLang = (effLang || efGetRecogLang() || '').toLowerCase().split(/[-_]/)[0];
   var langWords = {
-    fr: { dec:'virgule', nav:'suivant retour précédent effacer supprimer fermer',
+    fr: { dec:'virgule', nav:'suivant retour précédent fermer réinitialiser',
           nums:'zéro un une deux trois quatre cinq six sept huit neuf dix vingt trente quarante cinquante soixante cent' },
-    en: { dec:'point dot', nav:'next back clear close',
+    en: { dec:'point dot', nav:'next back reset close',
           nums:'zero one two three four five six seven eight nine ten twenty thirty forty fifty sixty hundred' },
-    it: { dec:'virgola punto', nav:'avanti indietro cancella chiudi',
+    it: { dec:'virgola punto', nav:'avanti indietro chiudi',
           nums:'zero uno una due tre quattro cinque sei sette otto nove dieci venti trenta quaranta cinquanta sessanta cento' },
-    de: { dec:'komma punkt', nav:'weiter zurück löschen schließen',
+    de: { dec:'komma punkt', nav:'weiter zurück schließen',
           nums:'null ein eins zwei drei vier fünf sechs sieben acht neun zehn zwanzig dreißig vierzig fünfzig sechzig hundert' },
-    es: { dec:'coma punto', nav:'siguiente atrás borrar cerrar',
+    es: { dec:'coma punto', nav:'siguiente atrás cerrar',
           nums:'cero uno una dos tres cuatro cinco seis siete ocho nueve diez veinte treinta cuarenta cincuenta sesenta cien' },
-    pt: { dec:'vírgula ponto', nav:'próximo voltar apagar fechar',
+    pt: { dec:'vírgula ponto', nav:'próximo voltar fechar',
           nums:'zero um uma dois duas três quatro cinco seis sete oito nove dez vinte trinta quarenta cinquenta sessenta cem' },
-    nl: { dec:'komma punt', nav:'volgende terug wissen sluiten',
+    nl: { dec:'komma punt', nav:'volgende terug sluiten',
           nums:'nul een twee drie vier vijf zes zeven acht negen tien twintig dertig veertig vijftig zestig honderd' },
-    pl: { dec:'przecinek punkt', nav:'dalej wstecz wyczyść zamknij',
+    pl: { dec:'przecinek punkt', nav:'dalej wstecz zamknij',
           nums:'zero jeden jedna dwa trzy cztery pięć sześć siedem osiem dziewięć dziesięć dwadzieścia trzydzieści sto' },
-    ru: { dec:'запятая точка', nav:'далее назад очистить закрыть',
+    ru: { dec:'запятая точка', nav:'далее назад закрыть',
           nums:'ноль один одна два две три четыре пять шесть семь восемь девять десять двадцать тридцать сто' }
   };
   var lw = langWords[recogLang] || langWords['en'];
@@ -10942,8 +10949,8 @@ function efStartMic(forceLang) {
     lw.dec.split(' ').join('|') + '|' +
     lw.nav.split(' ').join('|') + '|' +
     lw.nums.split(' ').join('|') +
-    (recogLang !== 'fr' ? '|virgule|suivant|retour|précédent|effacer|supprimer|fermer' : '') +
-    (recogLang !== 'en' ? '|point|next|back|clear|close' : '');
+    (recogLang !== 'fr' ? '|virgule|suivant|retour|précédent|fermer' : '') +
+    (recogLang !== 'en' ? '|point|next|back|reset|close' : '');
   var grammar = '#JSGF V1.0; grammar numbers; public <number> = ' + allWords + ';';
   try {
     var gl = new (window.SpeechGrammarList || window.webkitSpeechGrammarList)();
@@ -10992,7 +10999,7 @@ function efStartMic(forceLang) {
       // Commandes nav : préfixes courts non ambigus pour réactivité maximale
       function efMatchNav(prefixes) { return prefixes.some(function(p){return txt.includes(p);}); }
       var navCmd = efMatchNav(['suiv','next'])   ? 'next'
-                 : efMatchNav(['retou','back'])  ? 'back'
+                 : efMatchNav(['retou','précéd','back'])  ? 'back'
                  : efMatchNav(['reset','réini']) ? 'reset'
                  : efMatchNav(['ferm','close'])  ? 'close' : null;
       if (navCmd) {
@@ -11045,14 +11052,14 @@ function efStartMic(forceLang) {
         var efDecProlong = efDecPart !== null && (efDecPart.length === 1 || /0$/.test(efDecPart));
         var efIntProlong = efDecPart === null && /^\d+$/.test(numInterim) &&
                            Number(numInterim) > 0 && Number(numInterim) % 10 === 0;
-        // Inversion germanique (de/nl) : l'unité est dite en PREMIER
-        // ("einundzwanzig" = un-et-vingt, nl "tweeëndertig") → l'intermédiaire
+        // Inversion germanique (de/nl/da) : l'unité est dite en PREMIER
+        // ("einundzwanzig" = un-et-vingt, nl "tweeëndertig", da "enogtyve") → l'intermédiaire
         // prolongeable est un chiffre 1-9, pas un palier de dizaine. Sans
         // rallonge, "2" se stabilise en 500ms, l'auto-avance committe 2 et le
         // final 32 atterrit sur le rayon suivant — symétrique du cas fr/en
         // couvert par efIntProlong. recogLang : var d'efStartMic, captée ici
         // par la closure onresult.
-        var efUnitProlong = (recogLang === 'de' || recogLang === 'nl') &&
+        var efUnitProlong = (recogLang === 'de' || recogLang === 'nl' || recogLang === 'da') &&
                             efDecPart === null && /^[1-9]$/.test(numInterim);
         var efStableDelay = (efDecProlong || efIntProlong || efUnitProlong) ? 850 : 500;
         if (parsedInterim !== null) {
@@ -11151,7 +11158,7 @@ function efStartMic(forceLang) {
     if (efBeepTimer)   { clearTimeout(efBeepTimer);   efBeepTimer = null; }
     if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
     if (['suivant','next'].some(function(w){return txt.includes(w);}))    { if (efNavExecuted !== 'next')  efNext(); efNavExecuted = null; return; }
-    if (['retour','back'].some(function(w){return txt.includes(w);}))     { if (efNavExecuted !== 'back')  efBack(); efNavExecuted = null; return; }
+    if (['retour','précéd','back'].some(function(w){return txt.includes(w);}))     { if (efNavExecuted !== 'back')  efBack(); efNavExecuted = null; return; }
     if (['reset','réinitialiser'].some(function(w){return txt.includes(w);})) { if (efNavExecuted !== 'reset') efReset(); efNavExecuted = null; return; }
     if (['fermer','close'].some(function(w){return txt.includes(w);}))    { if (efNavExecuted !== 'close') efClose(); efNavExecuted = null; return; }
     // Si le feedback hors plage a déjà été rendu en intermédiaire :
