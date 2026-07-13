@@ -3390,6 +3390,7 @@ const i18n = {
     ccCustomLabel:'★ PERSO',
     ccManageTitle:'Chartes personnalisées',
     cacheToast:'⚠︎ Données sauvegardées en cache navigateur',
+    appUpdated:'✓ Nouvelle version installée',
     ctTitle:'★ Tensiomètre perso',
     ctLabel:'Nom du tensiomètre',
     ctPlaceholder:'Ex : Mon Tensiomètre',
@@ -3565,6 +3566,7 @@ const i18n = {
     ccCustomLabel:'★ CUSTOM',
     ccManageTitle:'Custom charts',
     cacheToast:'⚠︎ Data saved in browser cache',
+    appUpdated:'✓ New version installed',
     ctTitle:'★ Custom tensiometer',
     ctLabel:'Tensiometer name',
     ctPlaceholder:'E.g.: My Tensiometer',
@@ -15026,6 +15028,49 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(function() {});
   });
 }
+</script>
+
+
+<script>
+// ── Toast « Nouvelle version installée » ─────────────────────────────────────
+// Détection passive de déploiement via l'ETag de GitHub Pages (empreinte du
+// contenu, recalculée serveur à chaque déploiement). Comparé à celui mémorisé
+// à la session précédente : différent = l'app qui vient de se charger est une
+// nouvelle version (network-first : en ligne, on sert toujours le frais).
+// HEAD en cache par défaut : partage l'état du cache HTTP du document, donc
+// l'ETag lu correspond bien à la version réellement affichée.
+// localStorage BRUT (pas lsSet) : clé méta, ne doit pas horodater
+// spokeit_lastModif ni réveiller le rappel de sauvegarde.
+(function() {
+  var KEY = 'spokeit_appTag';
+  function majCheck() {
+    fetch('./', { method: 'HEAD' }).then(function(resp) {
+      var tag = resp.headers.get('ETag');
+      if (!tag) return;
+      var prev = null;
+      try { prev = localStorage.getItem(KEY); } catch(e) {}
+      if (prev && prev !== tag) {
+        // Réutilise #import-toast (haut, centré) — même pattern que
+        // showImportToast, en teinte accent (info) plutôt que succès/erreur.
+        var el = document.getElementById('import-toast');
+        if (el) {
+          el.textContent = t('appUpdated');
+          el.style.color = 'var(--accent2)';
+          el.style.borderColor = 'rgba(126,200,227,.4)';
+          el.style.opacity = '1';
+          clearTimeout(el._hideTimer);
+          el._hideTimer = setTimeout(function() { el.style.opacity = '0'; }, 3000);
+        }
+      }
+      try { localStorage.setItem(KEY, tag); } catch(e) {}
+    }).catch(function() {}); // hors-ligne : silence, on retentera au prochain lancement en ligne
+  }
+  // Hors chemin critique, même modèle que le chargement GA
+  window.addEventListener('load', function() {
+    if ('requestIdleCallback' in window) { requestIdleCallback(majCheck, { timeout: 3000 }); }
+    else { setTimeout(majCheck, 3000); }
+  });
+})();
 </script>
 
 </body>
