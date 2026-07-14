@@ -15128,6 +15128,12 @@ if ('serviceWorker' in navigator) {
     fetch('./', { method: 'HEAD' }).then(function(resp) {
       var tag = resp.headers.get('ETag');
       if (!tag) return;
+      // Normalisation : Fastly/GitHub Pages sert W/"x" (compressé) ou "x"
+      // (non compressé) pour le MEME contenu. Le prefixe W/ ne porte aucune
+      // information de version -- on le retire avant comparaison/stockage,
+      // sinon l'alternance cache HTTP chaud/froid (frequente en PWA iOS)
+      // fait osciller la chaine et declenche le toast sans deploiement.
+      tag = tag.replace(/^W\//, '');
       var prev = null;
       try { prev = localStorage.getItem(KEY); } catch(e) {}
       if (prev && prev !== tag) {
