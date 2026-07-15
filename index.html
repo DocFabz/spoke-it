@@ -3773,6 +3773,8 @@ function flashWheelCard(configName) {
 
 // ── Loaded config name badge ──────────────────────────────────────────────────
 function markModified() {
+  // Restauration programmatique (bascule avant/arriere) : jamais une modification
+  if (_applyingState) return;
   if (Date.now() - _lastLoadTime < 500) return;
   if (_loadedConfigName[wtype]) {
     // Première modification = nouvelle roue : reset complet du module tension
