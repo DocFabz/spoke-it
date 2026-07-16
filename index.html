@@ -958,6 +958,12 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   border-radius:var(--r) 0 0 var(--r);
   flex:1 1 50%; overflow-y:auto;
 }
+/* Paysage : centrer verticalement le contenu sous le header (le panneau
+   droit centre déjà le sien). Marges auto plutôt que justify-content:center :
+   en cas de débordement (overflow-y:auto), elles s'effondrent à zéro et le
+   scroll reste ancré en haut, là où justify-content:center rendrait le haut
+   du contenu inaccessible. */
+#ef-wrapper.landscape #ef-screen-fill { margin-top:auto; margin-bottom:auto }
 #ef-wrapper.landscape #ef-numpad {
   border-top:1px solid var(--border-s);
   border-left:none;
