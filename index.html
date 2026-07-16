@@ -916,7 +916,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   box-shadow:0 20px 72px rgba(0,0,0,.6);
   border-radius:var(--r);
   width:92%; max-width:340px;
-  max-height:96vh;
+  max-height:96vh;   /* repli navigateurs sans dvh */
+  max-height:96dvh;  /* viewport visuel réel (barres Safari comprises) */
   overflow:hidden;
 }
 #ef-wrapper.show { display:flex }
@@ -950,7 +951,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 #ef-wrapper.landscape {
   flex-direction:row;
   max-width:680px;
-  max-height:90vh;
+  max-height:90vh;   /* repli navigateurs sans dvh */
+  max-height:90dvh;  /* viewport visuel réel (barres Safari comprises) */
 }
 #ef-wrapper.landscape .ef-modal {
   border-bottom:1px solid var(--border-s);
