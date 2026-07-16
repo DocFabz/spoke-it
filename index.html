@@ -5816,8 +5816,14 @@ document.querySelectorAll('input[type=number]').forEach(inp => {
 });
 
 // ── Redessiner le radar au changement de taille (rotation écran) ────────────
+// Debounce 120 ms : resize tire en rafale (drag desktop, clavier/barre iOS),
+// seul le dernier état compte — on ne rend qu'une fois le geste terminé.
+let _radarResizeT = null;
 window.addEventListener('resize', function() {
-  if ($id('tm-result-card').style.display !== 'none') tmTryRenderRadar();
+  clearTimeout(_radarResizeT);
+  _radarResizeT = setTimeout(function() {
+    if ($id('tm-result-card').style.display !== 'none') tmTryRenderRadar();
+  }, 120);
 });
 
 // ── Prevent iOS auto-zoom on orientation change ─────────────────────────────
@@ -5893,17 +5899,25 @@ window.addEventListener('resize', function() {
     current = box;
   }
 
-  // Touch (mobile)
-  document.addEventListener('touchstart', function(e) {
-    if (!e.target || !e.target.closest) return;
-    const icon = e.target.closest('.tip-icon');
-    if (icon) {
+  // Touch (mobile). Non-passif UNIQUEMENT sur les icônes : un listener
+  // touchstart { passive:false } sur document obligeait le navigateur à
+  // attendre JS avant chaque début de scroll tactile, sur toute la page,
+  // alors que le preventDefault ne sert qu'aux tips (bloquer l'activation
+  // du <label> parent + l'émulation click/hover iOS). Les 15 .tip-icon
+  // sont toutes dans le HTML statique (aucune générée en JS) : convention
+  // à maintenir, sinon attacher ce listener à la création de l'icône.
+  document.querySelectorAll('.tip-icon').forEach(function(icon) {
+    icon.addEventListener('touchstart', function(e) {
       e.preventDefault();
       showTip(icon);
-    } else if (!e.target.closest('.tip-box')) {
-      closeAll();
-    }
-  }, { passive: false });
+    }, { passive: false });
+  });
+
+  // Fermeture au toucher hors tip : passif, ne retarde plus le scroll.
+  document.addEventListener('touchstart', function(e) {
+    if (!e.target || !e.target.closest) return;
+    if (!e.target.closest('.tip-icon') && !e.target.closest('.tip-box')) closeAll();
+  }, { passive: true });
 
   // Hover (desktop) — délégation sur .tip-icon via mouseover/mouseout
   document.addEventListener('mouseover', function(e) {
@@ -8416,11 +8430,19 @@ function tmDrawRadar(foKgfs, faKgfs, outliers, canvasEl) {
   const wrapperW = wrapper ? wrapper.getBoundingClientRect().width : 440;
   const size = Math.min(wrapperW || canvas.width / dpr, 440);
 
-  // Force exact square
-  canvas.style.width  = size + 'px';
-  canvas.style.height = size + 'px';
-  canvas.width  = Math.round(size * dpr);
-  canvas.height = Math.round(size * dpr);
+  // Force exact square. Réassigner canvas.width réalloue le bitmap même à
+  // valeur identique (effet de bord du setter) : on ne redimensionne que si
+  // la taille physique (CSS × dpr) a changé — critique pendant le pulse EF
+  // (tmDrawRadar appelé à chaque frame). Cache porté par le canvas lui-même,
+  // la fonction servant plusieurs canvas (tm-radar, ef-radar, offscreen).
+  const sizePx = Math.round(size * dpr);
+  if (canvas._lastPx !== sizePx) {
+    canvas._lastPx      = sizePx;
+    canvas.style.width  = size + 'px';
+    canvas.style.height = size + 'px';
+    canvas.width  = sizePx;
+    canvas.height = sizePx;
+  }
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   const W = size, H = size;
@@ -10264,8 +10286,9 @@ function efDiagramRender() {
 // dans un diagramme déjà rempli), sinon le précédent (saisie fraîche : après
 // un Next le step courant est vide, le dot intéressant est celui qui vient
 // d'être commité). Aucune valeur → rien. La géométrie est recalculée à
-// chaque frame : tmDrawRadar redimensionne le canvas sur la largeur du
-// conteneur, un resize/rotation en cours de pulse resterait sinon décalé.
+// chaque frame : tmDrawRadar remesure la largeur du conteneur et ne
+// redimensionne le canvas que si elle a changé (cache _lastPx) — un
+// resize/rotation en cours de pulse resterait sinon décalé.
 var efDotAnim   = null;
 var EF_DOT_MS   = 800;
 var EF_DOT_FADE = 250;
