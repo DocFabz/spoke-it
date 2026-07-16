@@ -1005,7 +1005,11 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
 }
-.ef-radar-wrap { width:100%; max-width:300px; margin:0 auto }
+/* max-width 290 : plancher commun aux deux orientations iPhone (interne
+   portrait ≈293px, paysage ≈310px) → radar de taille IDENTIQUE des deux
+   côtés de la bascule, plus de saut visuel à la rotation. iPad non
+   concerné (.landscape jamais posée, innerHeight > 600). */
+.ef-radar-wrap { width:100%; max-width:290px; margin:0 auto }
 #ef-diagram .radar-legend { margin-top:.4rem }
 
 .ef-header { display:flex; align-items:center; justify-content:space-between; gap:.6rem }
