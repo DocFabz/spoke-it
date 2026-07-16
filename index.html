@@ -125,10 +125,15 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .brand em     { font-style:normal; color:var(--accent) }
 .brand-letter { display:inline-block; animation:letter-glow 0.6s ease calc(var(--i, 0) * 0.12s) both }
 .brand-letter-space { width:.25em }
+/* Composité GPU (Lighthouse) : opacity+filter au lieu de color+text-shadow.
+   Attente -> opacity .45 + saturate(0), qui désature aussi les lettres
+   cyan de l'em en gris (équivalent du color:var(--text3) d'origine, sinon
+   creux de luminosité entre Spoke et It) ; flash blanc -> brightness ;
+   halo -> drop-shadow. Timing inchangé, plus aucun repaint au boot. */
 @keyframes letter-glow {
-  0%   { color:var(--text3); text-shadow:none }
-  40%  { color:#fff; text-shadow:0 0 18px rgba(126,200,227,.95), 0 0 40px rgba(126,200,227,.55), 0 0 80px rgba(126,200,227,.25) }
-  100% { color:inherit; text-shadow:none }
+  0%   { opacity:.45; filter:saturate(0) }
+  40%  { opacity:1; filter:brightness(2.2) drop-shadow(0 0 9px rgba(126,200,227,.95)) drop-shadow(0 0 22px rgba(126,200,227,.45)) }
+  100% { opacity:1; filter:none }
 }
 .sub          { font-family:'DM Mono','DM Mono FB',monospace; font-size:.67rem; font-weight:300; color:var(--text3); letter-spacing:.2em; margin-top:.1rem }
 .insta-link   { display:inline-flex; align-items:center; gap:.35rem; color:var(--text3); text-decoration:none; letter-spacing:.15em; transition:color .2s }
