@@ -10139,22 +10139,36 @@ function efShowNumpad(isTouch) {
 
   // Touch sans BT : pavé custom
   wrapper.classList.add('show', 'touch');
-  efUpdateOrientation();
+  efApplyOrientation();
   wrapper._orientHandler = efUpdateOrientation;
   window.addEventListener('orientationchange', wrapper._orientHandler);
   window.addEventListener('resize', wrapper._orientHandler);
   $id('ef-numpad-enter').textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
 }
 
-function efUpdateOrientation() {
+function efApplyOrientation() {
   var wrapper = $id('ef-wrapper');
-  if (efIsLandscape()) {
-    wrapper.classList.add('landscape');
-  } else {
-    wrapper.classList.remove('landscape');
-  }
+  var land = efIsLandscape();
+  if (land === wrapper.classList.contains('landscape')) return; // idempotent
+  wrapper.classList.toggle('landscape', land);
   // Le diagramme dimensionne son canvas sur la largeur du conteneur → redessiner
   if (efDiagMode) efDiagramRender();
+}
+
+// Handler orientationchange/resize. Debounce 120 ms : sur iOS,
+// orientationchange tire AVANT la mise à jour de innerWidth/innerHeight
+// (dimensions périmées), puis resize arrive en rafale pendant l'animation
+// de rotation — appliqué à chaud, le layout de la modale re-basculait
+// 2-3 fois par rotation (effet flash). On attend la stabilisation et on
+// applique UNE fois, sur les dimensions définitives.
+var _efOrientT = null;
+function efUpdateOrientation() {
+  clearTimeout(_efOrientT);
+  _efOrientT = setTimeout(function() {
+    var wrapper = $id('ef-wrapper');
+    if (!wrapper || !wrapper.classList.contains('show')) return; // modale fermée entre-temps
+    efApplyOrientation();
+  }, 120);
 }
 
 // ── Listener clavier physique (desktop et mode BT) ───────────────────────────
@@ -10212,7 +10226,7 @@ function efToggleBt() {
     efDetachBtKeyHandler(wrapper);
     wrapper.classList.remove('desktop');
     wrapper.classList.add('touch');
-    efUpdateOrientation();
+    efApplyOrientation();
     wrapper._orientHandler = efUpdateOrientation;
     window.addEventListener('orientationchange', wrapper._orientHandler);
     window.addEventListener('resize', wrapper._orientHandler);
