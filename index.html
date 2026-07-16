@@ -951,14 +951,19 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 #ef-wrapper.landscape {
   flex-direction:row;
   max-width:680px;
-  max-height:90vh;   /* repli navigateurs sans dvh */
-  max-height:90dvh;  /* viewport visuel réel (barres Safari comprises) */
+  max-height:94vh;   /* repli navigateurs sans dvh */
+  max-height:94dvh;  /* viewport visuel réel (barres Safari comprises) */
 }
 #ef-wrapper.landscape .ef-modal {
   border-bottom:1px solid var(--border-s);
   border-right:none;
   border-radius:var(--r) 0 0 var(--r);
   flex:1 1 50%; overflow-y:auto;
+  /* Compaction paysage : le contenu (~350px) dépassait les ~300-345px
+     visibles sur iPhone -> scroll. Padding aligné sur le panneau droit
+     (.9rem) et gap réduit ; le portrait garde ses valeurs d'origine. */
+  padding:.9rem 1.2rem;
+  gap:.7rem;
 }
 /* Paysage : centrer verticalement le contenu sous le header (le panneau
    droit centre déjà le sien). Marges auto plutôt que justify-content:center :
