@@ -5851,9 +5851,11 @@ window.addEventListener('resize', function() {
     // Brief lock then restore to force iOS to reset zoom
     var vp = document.querySelector('meta[name="viewport"]');
     if (!vp) return;
-    vp.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    // Chaîne identique au meta d'origine (viewport-fit=cover inclus, sinon
+    // les env(safe-area-inset-*) retombaient à 0 après la première rotation).
+    vp.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
     setTimeout(function() {
-      vp.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+      vp.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
     }, 200);
   });
 })();
