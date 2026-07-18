@@ -6947,7 +6947,7 @@ function tmOpenConvTable() {
   _tmConvPts = pts;
   _tmConvTensioLabel = tensioLabel;
   _tmConvSpokeName = tmSpokeKey.replace(/^__[A-Z ]+__/, '');
-  _tmConvIsCustom = !!(tmType && tmType.startsWith('ct_'));
+  _tmConvIsCustom = !!((tmType && tmType.startsWith('ct_')) || (tmSpokeKey && tmSpokeKey.startsWith(CC_PREFIX)));
   _tmConvShowCurve = false;
 
   // Labels boutons
@@ -7277,8 +7277,8 @@ async function tmConvExportPdf() {
   const L = (typeof lang !== 'undefined') ? lang : 'fr';
   function sanitize(s) {
     if (!s) return '';
-    const m = { '→':'->', 'Δ':'D', '±':'+/-' };
-    return String(s).replace(/[→Δ±]/g, c => m[c] || c);
+    const m = { '→':'->', 'Δ':'D', '±':'+/-', '★':'*' };
+    return String(s).replace(/[→Δ±★]/g, c => m[c] || c);
   }
 
   // A5 portrait : 148 × 210 mm
@@ -8675,8 +8675,8 @@ async function tmExportPdfWithOpts(opts) {
 
   function sanitize(str) {
     if (!str) return '';
-    var map = { '→':'->','Δ':'D','±':'+/-' };
-    return str.replace(/[→Δ±]/g, function(c) { return map[c] || c; });
+    var map = { '→':'->','Δ':'D','±':'+/-','★':'*' };
+    return str.replace(/[→Δ±★]/g, function(c) { return map[c] || c; });
   }
 
   function getElongation(id) {
@@ -12031,8 +12031,8 @@ async function diagGeneratePdf() {
 
   function sanitize(str) {
     if (!str) return '';
-    var map = {'→':'->','Δ':'D','±':'+/-'};
-    return str.replace(/[→Δ±]/g, function(c) { return map[c] || c; });
+    var map = {'→':'->','Δ':'D','±':'+/-','★':'*'};
+    return str.replace(/[→Δ±★]/g, function(c) { return map[c] || c; });
   }
 
   // ── Palette (identique au PDF principal) ──────────────────────────────────
@@ -13665,7 +13665,7 @@ async function snapComparePDF() {
 
   function sanitize(str) {
     if (!str) return '';
-    return str.replace(/[→Δ±]/g, function(c){ return({'→':'->','Δ':'D','±':'+/-'})[c]||c; });
+    return str.replace(/[→Δ±★]/g, function(c){ return({'→':'->','Δ':'D','±':'+/-','★':'*'})[c]||c; });
   }
   var PW=210, PH=297, ML=14, MR=14, MT=14, CW=PW-ML-MR;
   var C_TEXT=[30,40,55], C_TEXT2=[90,105,120], C_TEXT3=[150,165,175];
