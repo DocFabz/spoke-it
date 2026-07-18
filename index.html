@@ -1169,6 +1169,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ef-inp::placeholder { color:var(--text3); font-size:1rem }
 .ef-inp.out-of-range { animation:shake .35s ease; border-color:rgba(240,128,128,.7) !important; }
 .ef-kgf-preview.oor  { color:#f08080 !important; font-style:italic }
+#tm-tc-result { display:block; font-family:'DM Mono','DM Mono FB',monospace; font-size:1.6rem; font-weight:300; color:var(--accent); letter-spacing:.04em; padding:.15rem 0 }
+#tm-tc-result.oor { color:#f08080; font-style:italic; font-size:1rem; padding:.45rem 0 }
 .ef-kgf-preview {
   font-family:'DM Mono','DM Mono FB',monospace; font-size:.75rem; font-weight:300;
   color:var(--text3); min-height:1.1rem; transition:color .2s;
@@ -2392,6 +2394,10 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:13px;height:13px;flex-shrink:0"><circle cx="8" cy="8" r="6.5"/><line x1="8" y1="5" x2="8" y2="11"/><line x1="5" y1="8" x2="11" y2="8"/></svg>
           <span data-i18n="ccCreateBtn">Charte Perso</span>
         </button>
+        <button class="picker-btn locked" id="tm-tc-btn" onclick="tmChartsPickerClose();tmTcOpen()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:13px;height:13px;flex-shrink:0"><circle cx="8" cy="8" r="6.5"/><path d="M5.2 8.3l1.9 1.9 3.7-4.2"/></svg>
+          <span data-i18n="tmTcBtn">Contrôle tensiomètre</span>
+        </button>
       </div>
       <div class="picker-overlay" id="tm-charts-overlay" onclick="tmChartsPickerClose()"></div>
     </div>
@@ -2623,6 +2629,43 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     </div>
     <div id="tm-conv-curve-wrap" style="display:none;padding:.4rem 0">
       <canvas id="tm-conv-canvas" style="display:block;width:100%;border-radius:var(--rs)"></canvas>
+    </div>
+  </div>
+
+  <!-- ── Modal contrôle tension : tension mesurée → lecture attendue ── -->
+  <div class="tm-conv-overlay" id="tm-tc-overlay" onclick="tmTcClose()"></div>
+  <div class="tm-conv-modal" id="tm-tc-modal">
+    <div class="tm-conv-header">
+      <div class="tm-conv-title" data-i18n="tmTcTitle">Contrôle tensiomètre</div>
+      <button class="tm-conv-close" onclick="tmTcClose()">✕</button>
+    </div>
+    <div class="tm-conv-spoke" id="tm-tc-spoke-label"></div>
+    <div class="f" style="margin-bottom:1rem;align-items:center;text-align:center">
+      <label data-i18n="tmTcMeasured" for="tm-tc-input">Tension mesurée (kgf)</label>
+      <input class="ef-inp" id="tm-tc-input" type="text" readonly inputmode="none"
+        autocomplete="off" autocorrect="off" spellcheck="false" placeholder="—"
+        style="width:8.5rem">
+    </div>
+    <div class="f" style="align-items:center;text-align:center">
+      <label data-i18n="tmTcExpected" for="tm-tc-result">Lecture attendue</label>
+      <output id="tm-tc-result" for="tm-tc-input">—</output>
+    </div>
+    <div id="tm-tc-numpad" style="display:none">
+      <div class="ef-numpad">
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('7');event.preventDefault()">7</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('8');event.preventDefault()">8</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('9');event.preventDefault()">9</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('4');event.preventDefault()">4</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('5');event.preventDefault()">5</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('6');event.preventDefault()">6</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('1');event.preventDefault()">1</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('2');event.preventDefault()">2</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('3');event.preventDefault()">3</button>
+        <button class="ef-numpad-key key-dot" ontouchstart="tmTcKey('.');event.preventDefault()">.</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('0');event.preventDefault()">0</button>
+        <button class="ef-numpad-key key-del" ontouchstart="tmTcDel();event.preventDefault()">⌫</button>
+        <button class="ef-numpad-key key-enter" ontouchstart="tmTcCommit();event.preventDefault()" id="tm-tc-numpad-enter">OK</button>
+      </div>
     </div>
   </div>
 
@@ -3389,6 +3432,10 @@ const i18n = {
     tmConvCurve:'Courbe',
     tmConvTable:'Charte',
     tmConvTensio:'Tensiomètre',
+    tmTcBtn:'Contrôle tensiomètre',
+    tmTcTitle:'Contrôle tensiomètre',
+    tmTcMeasured:'Tension mesurée (kgf)',
+    tmTcExpected:'Lecture attendue',
     tmWFTipNew:'Dernières mises à jour des Tension Charts par WF',
     tmWFTipOld:'Version précédente des Tension Charts par WF',
     tmDTTipStd:'Tensiomètre DT Swiss standard',
@@ -3565,6 +3612,10 @@ const i18n = {
     tmConvCurve:'Curve',
     tmConvTable:'Table',
     tmConvTensio:'Tensiometer',
+    tmTcBtn:'Tensiometer check',
+    tmTcTitle:'Tensiometer check',
+    tmTcMeasured:'Measured tension (kgf)',
+    tmTcExpected:'Expected reading',
     tmWFTipNew:'Latest Tension Charts update by WF',
     tmWFTipOld:'Previous version of WF Tension Charts',
     tmDTTipStd:'Standard DT Swiss tensiometer',
@@ -6902,6 +6953,13 @@ function tmUpdateConvBtn() {
     ccBtn.classList.toggle('lit', hasTensio);
   }
 
+  // Item "Contrôle tension" dans le picker : actif si un rayon est sélectionné
+  const tcBtn = $id('tm-tc-btn');
+  if (tcBtn) {
+    tcBtn.classList.toggle('locked', !hasSpoke);
+    tcBtn.classList.toggle('lit', hasSpoke);
+  }
+
   // Bouton déclencheur : allumé si au moins un item est actif
   const triggerBtn = $id('tm-charts-picker-btn');
   if (triggerBtn) {
@@ -7128,6 +7186,160 @@ function tmCloseConvTable() {
   $id('tm-conv-modal').classList.remove('show');
   document.body.style.overflow = '';
   if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+}
+
+// ── Contrôle tension : interpolation inverse kgf → lecture attendue ─────────
+// Parcourt les segments de la charte [[lecture,kgf]] et retourne la lecture
+// interpolée linéairement pour la tension cible ; null si hors plage.
+function tmTcExpectedReading(kgf, pts) {
+  if (kgf === null || !isFinite(kgf) || !pts) return null;
+  const valid = pts.filter(p => p[1] !== null);
+  if (valid.length < 2) return null;
+  for (let i = 0; i < valid.length - 1; i++) {
+    const x0 = valid[i][0], y0 = valid[i][1];
+    const x1 = valid[i + 1][0], y1 = valid[i + 1][1];
+    if (y0 === y1) { if (kgf === y0) return x0; continue; }
+    if (kgf >= Math.min(y0, y1) && kgf <= Math.max(y0, y1)) {
+      const ratio = (kgf - y0) / (y1 - y0);
+      return x0 + ratio * (x1 - x0);
+    }
+  }
+  return null;
+}
+
+// ── Modale contrôle tensiomètre ─ saisie reprise du système clavier Easy Fill
+// (sans le vocal) : input readonly + inputmode none (jamais de clavier OS),
+// pavé custom sur écran tactile, clavier physique (desktop / BT) via handler
+// document-level, règles de frappe efNumpadKey (point décimal unique, pas de
+// zéro de tête), pendingReplace (valeur précédente conservée, première frappe
+// remplace), feedback hors-plage EF (plage kgf de la charte + liseré shake).
+var _tmTcPendingReplace = false; // true = valeur présélectionnée, prochaine frappe remplace
+var _tmTcOorTimer = null;        // timer d'affichage de la plage OOR (annulable, cf. efOorTimer)
+
+function tmTcOpen() {
+  if (!tmSpokeKey) return;
+  const pts = tmGetPoints();
+  if (!pts || !pts.length) return;
+  $id('tm-tc-spoke-label').innerHTML = `${t('tmSpokeLabel')}\u00a0: <strong style="color:var(--text)">${escHtml(tmSpokeKey.replace(/^__[A-Z ]+__/, ''))}</strong>`;
+
+  // Input : toujours readonly, aucun clavier virtuel dans aucun mode (cf. efShowNumpad)
+  const inp = $id('tm-tc-input');
+  inp.setAttribute('readonly', '');
+  inp.setAttribute('inputmode', 'none');
+
+  // Valeur précédente conservée ; la première frappe la remplace (cf. efRenderStep)
+  _tmTcPendingReplace = !!inp.value;
+
+  // Pavé custom sur tactile uniquement ; desktop = clavier physique
+  $id('tm-tc-numpad').style.display = efIsTouchDevice() ? '' : 'none';
+  $id('tm-tc-numpad-enter').textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
+
+  tmTcAttachKeys();
+  // Ré-évaluation silencieuse de la valeur conservée : lecture si en plage,
+  // tiret sinon — aucun feedback OOR à l'ouverture (réservé à Entrée)
+  var kept = parseFloat(inp.value.trim().replace(',', '.'));
+  var keptR = isFinite(kept) ? tmTcExpectedReading(kept, pts) : null;
+  var out0 = $id('tm-tc-result');
+  out0.classList.remove('oor');
+  out0.textContent = keptR !== null ? tmDisplayValue(keptR) : '—';
+  $id('tm-tc-overlay').classList.add('show');
+  $id('tm-tc-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function tmTcClose() {
+  tmTcDetachKeys();
+  if (_tmTcOorTimer) { clearTimeout(_tmTcOorTimer); _tmTcOorTimer = null; }
+  $id('tm-tc-overlay').classList.remove('show');
+  $id('tm-tc-modal').classList.remove('show');
+  document.body.style.overflow = '';
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+}
+
+// ── Frappe : règles identiques à efNumpadKey / efNumpadDel ───────────────
+function tmTcKey(char) {
+  var inp = $id('tm-tc-input');
+  if (_tmTcPendingReplace) { inp.value = ''; _tmTcPendingReplace = false; }
+  var val = inp.value;
+  if (char === '.' && val.indexOf('.') !== -1) return; // un seul point décimal
+  if (char !== '.' && val === '0') { inp.value = char; tmTcEditing(); return; } // pas de zéro en tête
+  inp.value = val + char;
+  tmTcEditing();
+}
+
+function tmTcDel() {
+  var inp = $id('tm-tc-input');
+  if (_tmTcPendingReplace) { inp.value = ''; _tmTcPendingReplace = false; tmTcEditing(); return; }
+  inp.value = inp.value.slice(0, -1);
+  tmTcEditing();
+}
+
+// En cours de frappe : aucune évaluation — le résultat s'efface, le feedback
+// OOR en cours est annulé. La valeur n'est prise en compte qu'à Entrée.
+function tmTcEditing() {
+  if (_tmTcOorTimer) { clearTimeout(_tmTcOorTimer); _tmTcOorTimer = null; }
+  var out = $id('tm-tc-result');
+  out.textContent = '—';
+  out.classList.remove('oor');
+}
+
+// ── Clavier physique (desktop et BT), attaché pendant l'ouverture seulement ─
+function tmTcAttachKeys() {
+  var modal = $id('tm-tc-modal');
+  if (modal._tcKeyHandler) return; // déjà attaché
+  modal._tcKeyHandler = function(e) {
+    if (e.key >= '0' && e.key <= '9') { e.preventDefault(); tmTcKey(e.key); return; }
+    if (e.key === '.' || e.key === ',') { e.preventDefault(); tmTcKey('.'); return; }
+    if (e.key === 'Backspace') { e.preventDefault(); tmTcDel(); return; }
+    if (e.key === 'Enter')     { e.preventDefault(); tmTcCommit(); return; }
+    if (e.key === 'Escape')    { e.preventDefault(); tmTcClose(); return; }
+  };
+  document.addEventListener('keydown', modal._tcKeyHandler);
+}
+
+function tmTcDetachKeys() {
+  var modal = $id('tm-tc-modal');
+  if (modal && modal._tcKeyHandler) {
+    document.removeEventListener('keydown', modal._tcKeyHandler);
+    modal._tcKeyHandler = null;
+  }
+}
+
+// ── Commit à Entrée : équivalent d'efCommitCurrent (sans avance de rayon) ──
+function tmTcCommit() {
+  var out = $id('tm-tc-result');
+  var inp = $id('tm-tc-input');
+  if (_tmTcOorTimer) { clearTimeout(_tmTcOorTimer); _tmTcOorTimer = null; }
+  var raw = inp.value.trim().replace(',', '.');
+  if (!raw || raw === '.') { out.textContent = '—'; out.classList.remove('oor'); return; }
+  var kgf = parseFloat(raw);
+  if (!isFinite(kgf)) { out.textContent = '—'; out.classList.remove('oor'); return; }
+  var r = tmTcExpectedReading(kgf, tmGetPoints());
+
+  if (r === null) {
+    // Hors plage : beep + plage kgf de la charte + liseré shake, puis retour
+    // au tiret après OOR_DISPLAY_MS (même mécanique que le commit manuel EF)
+    efBeepError();
+    var valid = (tmGetPoints() || []).filter(function(p){ return p[1] !== null; });
+    if (valid.length) {
+      var kgfs = valid.map(function(p){ return p[1]; });
+      out.textContent = Math.min.apply(null, kgfs) + ' – ' + Math.max.apply(null, kgfs) + ' kgf';
+      out.classList.add('oor');
+      _tmTcOorTimer = setTimeout(function() {
+        _tmTcOorTimer = null;
+        out.classList.remove('oor');
+        out.textContent = '—';
+      }, OOR_DISPLAY_MS);
+    }
+    inp.classList.add('out-of-range');
+    setTimeout(function(){ inp.classList.remove('out-of-range'); }, 400);
+    _tmTcPendingReplace = true; // prochaine frappe : ressaisie complète
+    return;
+  }
+
+  out.textContent = tmDisplayValue(r);
+  out.classList.remove('oor');
+  _tmTcPendingReplace = true; // valeur validée : prochaine frappe remplace
 }
 
 // ── Courbe de conversion rendue pour le PDF (thème clair, fond blanc) ─────────
