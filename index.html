@@ -1171,6 +1171,26 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ef-kgf-preview.oor  { color:#f08080 !important; font-style:italic }
 #tm-tc-result { display:block; font-family:'DM Mono','DM Mono FB',monospace; font-size:1.6rem; font-weight:300; color:var(--accent); letter-spacing:.04em; padding:.15rem 0 }
 #tm-tc-result.oor { color:#f08080; font-style:italic; font-size:1rem; padding:.45rem 0 }
+/* Paysage touch (cf. #ef-wrapper.landscape) : champs à gauche, pavé à droite.
+   Le header span les deux colonnes ; le pavé est placé explicitement (les
+   éléments à position définie sont posés d'abord, le flux auto remplit la
+   colonne gauche). Doublets vh/dvh : viewport visuel réel, barres Safari
+   comprises. Touches compactées aux valeurs du paysage EF. */
+#tm-tc-modal.landscape.show {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  column-gap:1.1rem;
+  align-content:center;
+  max-width:620px;
+  max-height:94vh;
+  max-height:94dvh;
+  padding:.9rem 1.2rem;
+  overflow-y:auto;
+}
+#tm-tc-modal.landscape .tm-conv-header { grid-column:1 / -1; margin-bottom:.5rem }
+#tm-tc-modal.landscape #tm-tc-numpad { grid-column:2; grid-row:2 / span 3; align-self:center }
+#tm-tc-modal.landscape .ef-numpad { padding:.2rem 0; max-width:none }
+#tm-tc-modal.landscape .ef-numpad-key { padding:.42rem .2rem; font-size:.95rem }
 .ef-kgf-preview {
   font-family:'DM Mono','DM Mono FB',monospace; font-size:.75rem; font-weight:300;
   color:var(--text3); min-height:1.1rem; transition:color .2s;
@@ -7231,8 +7251,19 @@ function tmTcOpen() {
   _tmTcPendingReplace = !!inp.value;
 
   // Pavé custom sur tactile uniquement ; desktop = clavier physique
-  $id('tm-tc-numpad').style.display = efIsTouchDevice() ? '' : 'none';
+  var touch = efIsTouchDevice();
+  var modal = $id('tm-tc-modal');
+  $id('tm-tc-numpad').style.display = touch ? '' : 'none';
   $id('tm-tc-numpad-enter').textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
+
+  // Paysage : uniquement en touch (le pavé est la raison d'être du layout ;
+  // sans pavé, le portrait convient partout) — même logique qu'efShowNumpad
+  if (touch) {
+    tmTcApplyOrientation();
+    modal._orientHandler = tmTcUpdateOrientation;
+    window.addEventListener('orientationchange', modal._orientHandler);
+    window.addEventListener('resize', modal._orientHandler);
+  }
 
   tmTcAttachKeys();
   // Ré-évaluation silencieuse de la valeur conservée : lecture si en plage,
@@ -7243,15 +7274,23 @@ function tmTcOpen() {
   out0.classList.remove('oor');
   out0.textContent = keptR !== null ? tmDisplayValue(keptR) : '—';
   $id('tm-tc-overlay').classList.add('show');
-  $id('tm-tc-modal').classList.add('show');
+  modal.classList.add('show');
   document.body.style.overflow = 'hidden';
 }
 
 function tmTcClose() {
   tmTcDetachKeys();
   if (_tmTcOorTimer) { clearTimeout(_tmTcOorTimer); _tmTcOorTimer = null; }
+  clearTimeout(_tmTcOrientT);
+  var modal = $id('tm-tc-modal');
+  if (modal._orientHandler) {
+    window.removeEventListener('orientationchange', modal._orientHandler);
+    window.removeEventListener('resize', modal._orientHandler);
+    modal._orientHandler = null;
+  }
+  modal.classList.remove('landscape');
   $id('tm-tc-overlay').classList.remove('show');
-  $id('tm-tc-modal').classList.remove('show');
+  modal.classList.remove('show');
   document.body.style.overflow = '';
   if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
 }
@@ -7295,6 +7334,28 @@ function tmTcAttachKeys() {
     if (e.key === 'Escape')    { e.preventDefault(); tmTcClose(); return; }
   };
   document.addEventListener('keydown', modal._tcKeyHandler);
+}
+
+// ── Orientation paysage (mécanique efApplyOrientation / efUpdateOrientation) ─
+function tmTcApplyOrientation() {
+  var modal = $id('tm-tc-modal');
+  var land = efIsLandscape();
+  if (land === modal.classList.contains('landscape')) return; // idempotent
+  modal.classList.toggle('landscape', land);
+}
+
+// Debounce 120 ms : sur iOS, orientationchange tire AVANT la mise à jour de
+// innerWidth/innerHeight, puis resize arrive en rafale pendant l'animation de
+// rotation — on attend la stabilisation et on applique UNE fois (anti-flash,
+// cf. efUpdateOrientation).
+var _tmTcOrientT = null;
+function tmTcUpdateOrientation() {
+  clearTimeout(_tmTcOrientT);
+  _tmTcOrientT = setTimeout(function() {
+    var modal = $id('tm-tc-modal');
+    if (!modal || !modal.classList.contains('show')) return; // modale fermée entre-temps
+    tmTcApplyOrientation();
+  }, 120);
 }
 
 function tmTcDetachKeys() {
