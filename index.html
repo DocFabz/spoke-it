@@ -7247,9 +7247,6 @@ function tmTcOpen() {
   inp.setAttribute('readonly', '');
   inp.setAttribute('inputmode', 'none');
 
-  // Valeur précédente conservée ; la première frappe la remplace (cf. efRenderStep)
-  _tmTcPendingReplace = !!inp.value;
-
   // Pavé custom sur tactile uniquement ; desktop = clavier physique
   var touch = efIsTouchDevice();
   var modal = $id('tm-tc-modal');
@@ -7266,13 +7263,7 @@ function tmTcOpen() {
   }
 
   tmTcAttachKeys();
-  // Ré-évaluation silencieuse de la valeur conservée : lecture si en plage,
-  // tiret sinon — aucun feedback OOR à l'ouverture (réservé à Entrée)
-  var kept = parseFloat(inp.value.trim().replace(',', '.'));
-  var keptR = isFinite(kept) ? tmTcExpectedReading(kept, pts) : null;
-  var out0 = $id('tm-tc-result');
-  out0.classList.remove('oor');
-  out0.textContent = keptR !== null ? tmDisplayValue(keptR) : '—';
+  // État vierge garanti par tmTcClose (saisie + résultat vidés à la fermeture)
   $id('tm-tc-overlay').classList.add('show');
   modal.classList.add('show');
   document.body.style.overflow = 'hidden';
@@ -7289,6 +7280,12 @@ function tmTcClose() {
     modal._orientHandler = null;
   }
   modal.classList.remove('landscape');
+  // Modale vidée à la fermeture : saisie et résultat repartent de zéro
+  $id('tm-tc-input').value = '';
+  var tcOut = $id('tm-tc-result');
+  tcOut.textContent = '—';
+  tcOut.classList.remove('oor');
+  _tmTcPendingReplace = false;
   $id('tm-tc-overlay').classList.remove('show');
   modal.classList.remove('show');
   document.body.style.overflow = '';
@@ -7613,7 +7610,7 @@ async function tmConvExportPdf() {
 
   // Source de la charte : base Spoke It (fabricant) ou charte custom (utilisateur)
   const srcLabel = _tmConvIsCustom
-    ? (L === 'fr' ? 'Données utilisateurs' : 'User data')
+    ? (L === 'fr' ? 'Données utilisateur' : 'User data')
     : (L === 'fr' ? 'Données fabricant'   : 'Manufacturer data');
   doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
   const bPadX = 2.2, bH = 4.8;
