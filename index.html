@@ -1191,6 +1191,39 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 #tm-tc-modal.landscape #tm-tc-numpad { grid-column:2; grid-row:2 / span 3; align-self:center }
 #tm-tc-modal.landscape .ef-numpad { padding:.2rem 0; max-width:none }
 #tm-tc-modal.landscape .ef-numpad-key { padding:.42rem .2rem; font-size:.95rem }
+
+/* ── Easy Chart (remplissage clavier EF de la grille charte custom) ────────── */
+/* Au-dessus de cc-modal (9990/9991) mais sous Easy Fill (9994/9995) */
+#ec-overlay { z-index:9992 }
+#ec-modal   { z-index:9993; overflow-y:auto }
+/* Switcher kgf/lecture : la croix ✕ d'ef-sw-btn.active est conservée —
+   re-clic sur l'ordre actif = effacement complet de la grille (mécanique EF) */
+/* Champs compacts côte à côte ; l'actif porte .ec-active — couleurs de la
+   table charte : kgf=accent (bleu), lecture=warm (orange, classe fo) */
+#ec-modal .ef-inp { max-width:none; font-size:1.15rem; padding:.5rem .6rem }
+#ec-modal .ef-inp.ec-active    { border-color:rgba(126,200,227,.5);  background:rgba(126,200,227,.03) }
+#ec-modal .ef-inp.ec-active.fo { border-color:rgba(232,146,124,.55); background:rgba(232,146,124,.025) }
+/* Le champ de tête (choisi par le switch) est affiché à gauche */
+#ec-fields .ec-f-kgf  { order:1 }
+#ec-fields .ec-f-read { order:2 }
+#ec-fields.read-first .ec-f-kgf  { order:2 }
+#ec-fields.read-first .ec-f-read { order:1 }
+/* Paysage touch : contenu à gauche, pavé à droite (mécanique tm-tc) */
+#ec-modal.landscape.show {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  column-gap:1.1rem;
+  align-content:center;
+  max-width:620px;
+  max-height:94vh;
+  max-height:94dvh;
+  padding:.9rem 1.2rem;
+  overflow-y:auto;
+}
+#ec-modal.landscape .tm-conv-header { grid-column:1 / -1; margin-bottom:.5rem }
+#ec-modal.landscape #ec-numpad { grid-column:2; grid-row:2 / span 6; align-self:center }
+#ec-modal.landscape .ef-numpad { padding:.2rem 0; max-width:none }
+#ec-modal.landscape .ef-numpad-key { padding:.42rem .2rem; font-size:.95rem }
 .ef-kgf-preview {
   font-family:'DM Mono','DM Mono FB',monospace; font-size:.75rem; font-weight:300;
   color:var(--text3); min-height:1.1rem; transition:color .2s;
@@ -1341,6 +1374,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cc-del-btn     { background:none; border:none; color:var(--text3); font-size:.8rem; cursor:pointer; padding:.1rem .25rem; line-height:1; transition:color .18s, opacity .18s; opacity:.35; display:flex; align-items:center; justify-content:center; width:100% }
 .cc-del-btn:hover { color:#f08080; opacity:1 }
 .cc-del-btn:active { transform:scale(.88) }
+/* Croix d'en-tête (effacement global) : inline à côté du libellé de colonne */
+.cc-th-clear { display:inline-flex; width:auto; vertical-align:middle; margin-left:.15rem }
 
 /* ── Chartes personnalisées in dropdown ───────────────────────────────────────────── */
 .tm-spoke-custom { color:var(--accent) !important; font-weight:500 }
@@ -2732,6 +2767,19 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       </div>
     </div>
 
+    <!-- ── Bouton Easy Chart (saisie clavier type Easy Fill) ── -->
+    <div class="btn-row" style="margin-bottom:1rem">
+      <button class="btn" id="ec-open-btn" onclick="ecOpen()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.85">
+          <line x1="3" y1="20" x2="21" y2="20"/>
+          <rect x="4"  y="10" width="4" height="10" rx="1" fill="currentColor" opacity=".3" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="10" y="5"  width="4" height="15" rx="1" fill="currentColor" opacity=".3" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="16" y="13" width="4" height="7"  rx="1" fill="currentColor" opacity=".3" stroke="currentColor" stroke-width="1.4"/>
+        </svg>
+        <span data-i18n="ecTitle">Easy Chart</span>
+      </button>
+    </div>
+
     <!-- Étape 3 : Grille de saisie -->
     <div class="cc-step">
       <div class="cc-step-label"><span id="cc-counter" style="color:var(--accent)">0/10</span></div>
@@ -2739,8 +2787,8 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         <thead>
           <tr>
             <th class="cc-th-num">#</th>
-            <th class="cc-th-kgf">kgf</th>
-            <th class="cc-th-reading" id="cc-th-reading">Lecture</th>
+            <th class="cc-th-kgf">kgf <button class="cc-del-btn cc-th-clear" onclick="ccClearAllValues()" tabindex="-1" title="Reset">✕</button></th>
+            <th class="cc-th-reading"><span id="cc-th-reading-label">Lecture</span> <button class="cc-del-btn cc-th-clear" onclick="ccClearAllValues()" tabindex="-1" title="Reset">✕</button></th>
             <th class="cc-th-del"></th>
           </tr>
         </thead>
@@ -2750,6 +2798,78 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     </div>
 
     <button class="cc-save-btn" id="cc-save-btn" onclick="ccSave()" data-i18n="ccSaveBtn" style="flex-shrink:0">✓ Enregistrer la charte</button>
+  </div>
+
+  <!-- ── Modal Easy Chart : remplissage clavier EF de la grille charte custom ── -->
+  <div class="tm-conv-overlay" id="ec-overlay" onclick="ecClose()"></div>
+  <div class="tm-conv-modal" id="ec-modal">
+    <div class="tm-conv-header">
+      <div class="tm-conv-title" data-i18n="ecTitle">Easy Chart</div>
+      <button class="tm-conv-close" onclick="ecClose()">✕</button>
+    </div>
+
+    <!-- Ordre de saisie : premier champ du point (kgf ou lecture) -->
+    <div class="ef-side-switch" style="margin-bottom:.2rem">
+      <button class="ef-sw-btn fa active" id="ec-sw-kgf" onclick="ecSetOrder('kgf')">KGF</button>
+      <button class="ef-sw-btn fo" id="ec-sw-read" onclick="ecSetOrder('read')" data-i18n="ccReadingPlaceholder">Lecture</button>
+    </div>
+
+    <!-- Gauge d'avancement des points (mécanique ef-progress) -->
+    <div class="ef-progress-wrap">
+      <div class="ef-progress-label" id="ec-prog-label">0 / 10</div>
+      <div class="ef-progress-track">
+        <div class="ef-progress-fill" id="ec-prog-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="ef-step-info" style="margin:0 0 .8rem">
+      <div class="ef-step-spoke"><span data-i18n="ecPoint">Point</span> <span id="ec-point-num">1</span></div>
+    </div>
+
+    <!-- Champs kgf / lecture (couleurs de la table : kgf=accent, lecture=warm).
+         L'actif porte .ec-active, tap = sélection ; le champ de tête (switch)
+         est affiché à gauche via #ec-fields.read-first (flex order). -->
+    <div id="ec-fields" style="display:flex;gap:.6rem;margin-bottom:.4rem">
+      <div class="f ec-f-kgf" style="flex:1;align-items:center;text-align:center">
+        <label class="color-fa" for="ec-inp-kgf">kgf</label>
+        <input class="ef-inp" id="ec-inp-kgf" type="text" readonly inputmode="none"
+          autocomplete="off" autocorrect="off" spellcheck="false" placeholder="—"
+          onclick="ecSelectField('kgf')">
+      </div>
+      <div class="f ec-f-read" style="flex:1;align-items:center;text-align:center">
+        <label class="color-fo" for="ec-inp-read" data-i18n="ccReadingPlaceholder">Lecture</label>
+        <input class="ef-inp fo" id="ec-inp-read" type="text" readonly inputmode="none"
+          autocomplete="off" autocorrect="off" spellcheck="false" placeholder="—"
+          onclick="ecSelectField('read')">
+      </div>
+    </div>
+
+    <div class="cc-feedback" id="ec-feedback"></div>
+
+    <!-- Boutons Retour / Suivant façon EF (Suivant = commit, comme Entrée) -->
+    <div class="ef-btn-row" style="margin:0 0 .6rem">
+      <button class="ef-back-btn" id="ec-back-btn" ontouchstart="ecBack();event.preventDefault()" onclick="ecBack()" disabled>← Retour</button>
+      <button class="ef-next-btn" id="ec-next-btn" ontouchstart="ecCommit();event.preventDefault()" onclick="ecCommit()">Suivant →</button>
+    </div>
+
+    <!-- Pavé numérique EF (touch uniquement ; desktop = clavier physique) -->
+    <div id="ec-numpad" style="display:none">
+      <div class="ef-numpad">
+        <button class="ef-numpad-key" ontouchstart="ecKey('7');event.preventDefault()">7</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('8');event.preventDefault()">8</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('9');event.preventDefault()">9</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('4');event.preventDefault()">4</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('5');event.preventDefault()">5</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('6');event.preventDefault()">6</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('1');event.preventDefault()">1</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('2');event.preventDefault()">2</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('3');event.preventDefault()">3</button>
+        <button class="ef-numpad-key key-dot" ontouchstart="ecKey('.');event.preventDefault()">.</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('0');event.preventDefault()">0</button>
+        <button class="ef-numpad-key key-del" ontouchstart="ecDel();event.preventDefault()">⌫</button>
+        <button class="ef-numpad-key key-enter" ontouchstart="ecCommit();event.preventDefault()" id="ec-numpad-enter">Entrée ↵</button>
+      </div>
+    </div>
   </div>
 
 </div><!-- /.wrap -->
@@ -3475,6 +3595,8 @@ const i18n = {
     ccErrDupKgf:'Cette valeur kgf existe déjà.',
     ccErrMonotone:'Incohérence : les lectures doivent être soit toutes croissantes, soit toutes décroissantes par rapport aux kgf.',
     ccErrKgfInvalid:'Toutes les valeurs doivent être des nombres valides.',
+    ecTitle:'Easy Chart',
+    ecPoint:'Point',
     ccCustomLabel:'★ PERSO',
     ccManageTitle:'Chartes personnalisées',
     cacheToast:'⚠︎ Données sauvegardées en cache navigateur',
@@ -3655,6 +3777,8 @@ const i18n = {
     ccErrDupKgf:'This kgf value already exists.',
     ccErrMonotone:'Inconsistency: readings must be either all increasing or all decreasing relative to kgf.',
     ccErrKgfInvalid:'All values must be valid numbers.',
+    ecTitle:'Easy Chart',
+    ecPoint:'Point',
     ccCustomLabel:'★ CUSTOM',
     ccManageTitle:'Custom charts',
     cacheToast:'⚠︎ Data saved in browser cache',
@@ -7717,6 +7841,10 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && $id('tm-charts-popup') && $id('tm-charts-popup').classList.contains('show')) {
     tmChartsPickerClose();
   }
+  if (e.key === 'Escape' && $id('ec-modal') && $id('ec-modal').classList.contains('show')) {
+    ecClose();
+    return; // ne pas fermer aussi la modale charte derrière
+  }
   if (e.key === 'Escape' && $id('cc-modal').classList.contains('show')) {
     ccClose();
   }
@@ -7861,33 +7989,27 @@ function ccOnTensioChange() {
   ccRenderExisting();
 }
 function ccUpdateReadingLabel() {
-  const th = $id('cc-th-reading');
+  const th = $id('cc-th-reading-label'); // span : la croix du th est préservée
   if (th) th.textContent = t('ccReadingPlaceholder') || 'Lecture';
 }
 
-// ── Renuméroter les lignes de la grille ──────────────────────────────────────
-function ccRenumberRows() {
-  const tbody = $id('cc-grid-tbody');
-  tbody.querySelectorAll('tr').forEach((tr, i) => {
-    const numTd = tr.querySelector('.cc-row-num');
-    if (numTd) numTd.textContent = i + 1;
+// ── Vider les valeurs d'une ligne (la ligne est conservée) ──────────────────
+function ccClearRow(tr) {
+  tr.querySelectorAll('.cc-grid-inp').forEach(inp => {
+    inp.value = '';
+    inp.classList.remove('has-val', 'cc-err');
   });
+  $id('cc-feedback').textContent = '';
+  ccSyncPoints();
 }
 
-// ── Supprimer une ligne de la grille ─────────────────────────────────────────
-function ccDeleteRow(tr) {
-  const tbody = $id('cc-grid-tbody');
-  if (tbody.querySelectorAll('tr').length <= 5) return; // minimum 5 lignes
-  tr.remove();
-  ccRenumberRows();
-  // Synchroniser l'input avec le nombre réel de lignes restantes
-  const rowCount = tbody.querySelectorAll('tr').length;
-  $id('cc-nb-points').value = String(rowCount);
-  // Désactiver les croix si on atteint le minimum
-  tbody.querySelectorAll('tr').forEach(r => {
-    const btn = r.querySelector('.cc-del-btn');
-    if (btn) btn.style.pointerEvents = rowCount <= 5 ? 'none' : '';
+// ── Vider toutes les valeurs de la grille (croix d'en-tête, reset Easy Chart)
+function ccClearAllValues() {
+  $id('cc-grid-tbody').querySelectorAll('.cc-grid-inp').forEach(inp => {
+    inp.value = '';
+    inp.classList.remove('has-val', 'cc-err');
   });
+  $id('cc-feedback').textContent = '';
   ccSyncPoints();
 }
 
@@ -7911,13 +8033,13 @@ function ccBuildGrid() {
       `<td class="cc-row-num">${i + 1}</td>` +
       `<td><input class="cc-grid-inp cc-kgf${kgfHas}" type="text" inputmode="decimal" value="${kgfVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
       `<td><input class="cc-grid-inp cc-read${readHas}" type="text" inputmode="decimal" value="${readVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
-      `<td><button class="cc-del-btn" tabindex="-1" title="Supprimer la ligne">✕</button></td>`;
+      `<td><button class="cc-del-btn" tabindex="-1" title="Effacer les valeurs">✕</button></td>`;
 
     tbody.appendChild(tr);
 
     tr.querySelector('.cc-del-btn').addEventListener('click', function(e) {
       e.preventDefault();
-      ccDeleteRow(tr);
+      ccClearRow(tr);
     });
 
     tr.querySelectorAll('.cc-grid-inp').forEach(inp => {
@@ -8264,6 +8386,284 @@ function ccSave() {
   // Fermer la modale
   ccClose();
   setTimeout(showCacheToast, 50);
+}
+
+// ── Easy Chart ─ remplissage de la grille charte custom au clavier EF ────────
+// Même mécanique que la modale contrôle tensiomètre (tmTc*) : input readonly +
+// inputmode none (jamais de clavier OS), pavé custom en touch, clavier physique
+// via handler document-level, règles de frappe efNumpadKey (point décimal
+// unique, pas de zéro de tête), pendingReplace. Les valeurs validées sont
+// écrites directement dans les cellules de la grille cc — les règles de
+// cohérence existantes (ccValidateGrid via ccSyncPoints) s'appliquent telles
+// quelles ; en cas d'erreur la cellule est rétablie, le message apparaît façon
+// EF (texte rouge italique + liseré shake + bip) et la prochaine frappe
+// remplace la valeur fautive.
+var ecOrder = 'kgf';            // premier champ du point : 'kgf' | 'read'
+var ecField = 'kgf';            // champ actif
+var ecIndex = 0;                // ligne courante de la grille (0-based)
+var _ecPendingReplace = false;  // valeur pré-affichée : prochaine frappe remplace
+var _ecErrTimer = null;         // timer du liseré shake (annulable)
+var _ecOrientT  = null;         // debounce orientation (cf. _tmTcOrientT)
+
+function ecRows() { return $id('cc-grid-tbody').querySelectorAll('tr'); }
+function ecCell(tr, field) { return tr.querySelector(field === 'kgf' ? '.cc-kgf' : '.cc-read'); }
+function ecOther(field) { return field === 'kgf' ? 'read' : 'kgf'; }
+function ecRowComplete(tr) {
+  return ecCell(tr, 'kgf').value.trim() !== '' && ecCell(tr, 'read').value.trim() !== '';
+}
+function ecFirstIncomplete(from) {
+  var rows = ecRows();
+  for (var i = from; i < rows.length; i++) if (!ecRowComplete(rows[i])) return i;
+  return -1;
+}
+function ecActiveInp() { return $id(ecField === 'kgf' ? 'ec-inp-kgf' : 'ec-inp-read'); }
+
+function ecOpen() {
+  var rows = ecRows();
+  if (!rows.length) return;
+  var first = ecFirstIncomplete(0);
+  ecIndex = first === -1 ? 0 : first; // grille complète (rayon pré-rempli) : révision depuis le point 1
+  ecField = ecOrder;
+  // Ligne partielle : si le champ de tête est déjà rempli, démarrer sur l'autre
+  var tr = rows[ecIndex];
+  if (ecCell(tr, ecField).value.trim() !== '' && ecCell(tr, ecOther(ecField)).value.trim() === '') {
+    ecField = ecOther(ecField);
+  }
+  $id('ec-feedback').textContent = '';
+
+  // Pavé custom sur tactile uniquement ; desktop = clavier physique (cf. tmTcOpen)
+  var touch = efIsTouchDevice();
+  var modal = $id('ec-modal');
+  $id('ec-numpad').style.display = touch ? '' : 'none';
+  $id('ec-numpad-enter').textContent = (lang === 'fr') ? 'Entrée ↵' : 'Enter ↵';
+  if (touch) {
+    ecApplyOrientation();
+    modal._orientHandler = ecUpdateOrientation;
+    window.addEventListener('orientationchange', modal._orientHandler);
+    window.addEventListener('resize', modal._orientHandler);
+  }
+
+  ecAttachKeys();
+  ecRefresh();
+  $id('ec-overlay').classList.add('show');
+  modal.classList.add('show');
+}
+
+function ecClose() {
+  var modal = $id('ec-modal');
+  if (!modal.classList.contains('show')) return; // idempotent (Escape doublé)
+  ecDetachKeys();
+  if (_ecErrTimer) { clearTimeout(_ecErrTimer); _ecErrTimer = null; }
+  clearTimeout(_ecOrientT);
+  if (modal._orientHandler) {
+    window.removeEventListener('orientationchange', modal._orientHandler);
+    window.removeEventListener('resize', modal._orientHandler);
+    modal._orientHandler = null;
+  }
+  modal.classList.remove('landscape');
+  _ecPendingReplace = false;
+  $id('ec-feedback').textContent = '';
+  $id('ec-overlay').classList.remove('show');
+  modal.classList.remove('show');
+  // body.overflow reste géré par cc-modal (toujours ouverte derrière)
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+}
+
+// ── Rafraîchit gauge, numéro de point, champs et surbrillance ───────────────
+function ecRefresh() {
+  var rows = ecRows();
+  var total = rows.length;
+  // Gauge positionnelle, sémantique EF exacte (cf. efShowStep) : le label suit
+  // le point courant et la barre recule avec le bouton Retour
+  $id('ec-prog-label').textContent = (ecIndex + 1) + ' / ' + total;
+  $id('ec-prog-fill').style.width  = (total ? (ecIndex / total * 100) : 0) + '%';
+  $id('ec-point-num').textContent = ecIndex + 1;
+
+  $id('ec-sw-kgf').classList.toggle('active', ecOrder === 'kgf');
+  $id('ec-sw-read').classList.toggle('active', ecOrder === 'read');
+
+  // Champs : valeurs de la ligne courante ; l'actif porte .ec-active
+  var tr = rows[ecIndex];
+  var kgfInp = $id('ec-inp-kgf'), readInp = $id('ec-inp-read');
+  kgfInp.value  = tr ? ecCell(tr, 'kgf').value  : '';
+  readInp.value = tr ? ecCell(tr, 'read').value : '';
+  kgfInp.classList.toggle('ec-active', ecField === 'kgf');
+  readInp.classList.toggle('ec-active', ecField === 'read');
+
+  // Champ de tête à gauche + libellés/état des boutons (clés EF réutilisées)
+  $id('ec-fields').classList.toggle('read-first', ecOrder === 'read');
+  $id('ec-back-btn').disabled = (ecIndex === 0 && ecField === ecOrder);
+  $id('ec-back-btn').textContent = t('efBack');
+  $id('ec-next-btn').textContent = t('efNext');
+
+  // Valeur déjà présente dans le champ actif : la prochaine frappe remplace
+  _ecPendingReplace = ecActiveInp().value !== '';
+}
+
+function ecSetOrder(o) {
+  // Re-clic sur l'ordre déjà actif : effacement complet de la grille
+  // (mécanique EF du re-clic sur ef-sw-btn.active) + flash de confirmation
+  if (o === ecOrder) {
+    ccClearAllValues();
+    ecIndex = 0;
+    ecField = ecOrder;
+    var btn = $id(o === 'kgf' ? 'ec-sw-kgf' : 'ec-sw-read');
+    btn.classList.remove('clear-flash');
+    void btn.offsetWidth; // reflow : redémarrage de l'animation one-shot
+    btn.classList.add('clear-flash');
+    btn.addEventListener('animationend', function() { btn.classList.remove('clear-flash'); }, { once: true });
+    ecEditing();
+    ecRefresh();
+    return;
+  }
+  ecOrder = o;
+  ecField = o;
+  ecEditing();
+  ecRefresh();
+}
+
+function ecSelectField(f) {
+  ecField = f;
+  ecEditing();
+  ecRefresh();
+}
+
+// ── Frappe : règles identiques à efNumpadKey / efNumpadDel ──────────────────
+function ecKey(char) {
+  var inp = ecActiveInp();
+  if (_ecPendingReplace) { inp.value = ''; _ecPendingReplace = false; }
+  var val = inp.value;
+  if (char === '.' && val.indexOf('.') !== -1) return; // un seul point décimal
+  if (char !== '.' && val === '0') { inp.value = char; ecEditing(); return; } // pas de zéro en tête
+  inp.value = val + char;
+  ecEditing();
+}
+
+function ecDel() {
+  var inp = ecActiveInp();
+  if (_ecPendingReplace) { inp.value = ''; _ecPendingReplace = false; ecEditing(); return; }
+  inp.value = inp.value.slice(0, -1);
+  ecEditing();
+}
+
+// En cours de frappe : le feedback d'erreur en cours est annulé
+function ecEditing() {
+  if (_ecErrTimer) { clearTimeout(_ecErrTimer); _ecErrTimer = null; }
+  $id('ec-feedback').textContent = '';
+}
+
+// ── Commit à Entrée : écrit la cellule et audite via les règles cc ──────────
+function ecCommit() {
+  var rows = ecRows();
+  var tr = rows[ecIndex];
+  if (!tr) { ecClose(); return; }
+  var inp = ecActiveInp();
+  var raw = inp.value.trim().replace(',', '.');
+  if (!raw || raw === '.') { ecShake(inp); return; }
+
+  var cell = ecCell(tr, ecField);
+  var prev = cell.value;
+  cell.value = raw;
+  cell.classList.add('has-val');
+  ccSyncPoints(); // ccPoints + compteur + validation temps réel (cc-feedback)
+
+  var fb = $id('cc-feedback');
+  if (fb.textContent !== '') {
+    // Erreur de cohérence : rétablir la cellule, message façon EF, ressaisie.
+    // NB : un doublon kgf peut n'être détecté qu'au commit de la lecture (la
+    // validation porte sur les paires complètes) — le message désigne alors le
+    // champ fautif ; un tap sur le champ kgf permet de le corriger.
+    var msg = fb.textContent;
+    cell.value = prev;
+    cell.classList.toggle('has-val', prev.trim() !== '');
+    ccSyncPoints(); // ré-audit → efface le marquage d'erreur de la grille
+    efBeepError();
+    $id('ec-feedback').textContent = msg;
+    ecShake(inp);
+    _ecPendingReplace = true; // prochaine frappe : ressaisie complète
+    return;
+  }
+
+  $id('ec-feedback').textContent = '';
+  ecAdvance();
+}
+
+function ecShake(inp) {
+  if (_ecErrTimer) clearTimeout(_ecErrTimer);
+  inp.classList.add('out-of-range');
+  _ecErrTimer = setTimeout(function() { inp.classList.remove('out-of-range'); _ecErrTimer = null; }, 400);
+}
+
+// ── Avance strictement séquentielle (navigation possible sur grille remplie) :
+// champ de tête → second champ de la même ligne, second champ → ligne suivante.
+// La fermeture n'intervient qu'après validation du second champ du DERNIER
+// point. Cas particulier : second champ validé alors que la tête est vide →
+// retour sur la tête pour compléter la ligne.
+function ecAdvance() {
+  var rows = ecRows();
+  var tr = rows[ecIndex];
+  var other = ecOther(ecField);
+  if (ecField === ecOrder || ecCell(tr, other).value.trim() === '') {
+    ecField = other;
+  } else {
+    if (ecIndex >= rows.length - 1) { ecClose(); return; } // dernier point validé
+    ecIndex++;
+    ecField = ecOrder;
+  }
+  ecRefresh();
+}
+
+// ── Retour : autre champ si on est sur le second, sinon ligne précédente
+// (recul strict d'un pas, lignes complètes revisitables — pendingReplace)
+function ecBack() {
+  ecEditing();
+  if (ecField !== ecOrder) {
+    ecField = ecOrder;
+  } else if (ecIndex > 0) {
+    ecIndex--;
+    ecField = ecOther(ecOrder);
+  }
+  ecRefresh();
+}
+
+// ── Clavier physique (desktop et BT), attaché pendant l'ouverture seulement ─
+function ecAttachKeys() {
+  var modal = $id('ec-modal');
+  if (modal._ecKeyHandler) return; // déjà attaché
+  modal._ecKeyHandler = function(e) {
+    if (e.key >= '0' && e.key <= '9') { e.preventDefault(); ecKey(e.key); return; }
+    if (e.key === '.' || e.key === ',') { e.preventDefault(); ecKey('.'); return; }
+    if (e.key === 'Backspace') { e.preventDefault(); ecDel(); return; }
+    if (e.key === 'Enter')     { e.preventDefault(); ecCommit(); return; }
+    if (e.key === 'Tab')       { e.preventDefault(); ecSelectField(ecOther(ecField)); return; }
+    if (e.key === 'Escape')    { e.preventDefault(); ecClose(); return; }
+  };
+  document.addEventListener('keydown', modal._ecKeyHandler);
+}
+
+function ecDetachKeys() {
+  var modal = $id('ec-modal');
+  if (modal && modal._ecKeyHandler) {
+    document.removeEventListener('keydown', modal._ecKeyHandler);
+    modal._ecKeyHandler = null;
+  }
+}
+
+// ── Orientation paysage (mécanique tmTcApplyOrientation / debounce 120 ms) ──
+function ecApplyOrientation() {
+  var modal = $id('ec-modal');
+  var land = efIsLandscape();
+  if (land === modal.classList.contains('landscape')) return; // idempotent
+  modal.classList.toggle('landscape', land);
+}
+
+function ecUpdateOrientation() {
+  clearTimeout(_ecOrientT);
+  _ecOrientT = setTimeout(function() {
+    var modal = $id('ec-modal');
+    if (!modal || !modal.classList.contains('show')) return; // modale fermée entre-temps
+    ecApplyOrientation();
+  }, 120);
 }
 
 // ── tmInit ───────────────────────────────────────────────────────────────────
