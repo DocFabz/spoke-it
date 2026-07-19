@@ -1229,7 +1229,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   overflow-y:auto;
 }
 #ec-modal.landscape .tm-conv-header { grid-column:1 / -1; margin-bottom:.5rem }
-#ec-modal.landscape #ec-numpad { grid-column:2; grid-row:2 / span 6; align-self:center }
+#ec-modal.landscape #ec-numpad { grid-column:2; grid-row:2 / span 5; align-self:center }
 #ec-modal.landscape .ef-numpad { padding:.2rem 0; max-width:none }
 #ec-modal.landscape .ef-numpad-key { padding:.42rem .2rem; font-size:.95rem }
 .ef-kgf-preview {
@@ -2830,10 +2830,6 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       </div>
     </div>
 
-    <div class="ef-step-info" style="margin:0 0 .8rem">
-      <div class="ef-step-spoke"><span data-i18n="ecPoint">Point</span> <span id="ec-point-num">1</span></div>
-    </div>
-
     <!-- Champs kgf / lecture (couleurs de la table : kgf=accent, lecture=warm).
          L'actif porte .ec-active, tap = sélection ; le champ de tête (switch)
          est affiché à gauche via #ec-fields.read-first (flex order). -->
@@ -3604,7 +3600,6 @@ const i18n = {
     ccErrMonotone:'Incohérence : les lectures doivent être soit toutes croissantes, soit toutes décroissantes par rapport aux kgf.',
     ccErrKgfInvalid:'Toutes les valeurs doivent être des nombres valides.',
     ecTitle:'Easy Chart',
-    ecPoint:'Point',
     ccCustomLabel:'★ PERSO',
     ccManageTitle:'Chartes personnalisées',
     cacheToast:'⚠︎ Données sauvegardées en cache navigateur',
@@ -3786,7 +3781,6 @@ const i18n = {
     ccErrMonotone:'Inconsistency: readings must be either all increasing or all decreasing relative to kgf.',
     ccErrKgfInvalid:'All values must be valid numbers.',
     ecTitle:'Easy Chart',
-    ecPoint:'Point',
     ccCustomLabel:'★ CUSTOM',
     ccManageTitle:'Custom charts',
     cacheToast:'⚠︎ Data saved in browser cache',
@@ -8485,7 +8479,6 @@ function ecRefresh() {
   // le point courant et la barre recule avec le bouton Retour
   $id('ec-prog-label').textContent = (ecIndex + 1) + ' / ' + total;
   $id('ec-prog-fill').style.width  = (total ? (ecIndex / total * 100) : 0) + '%';
-  $id('ec-point-num').textContent = ecIndex + 1;
 
   $id('ec-sw-kgf').classList.toggle('active', ecOrder === 'kgf');
   $id('ec-sw-read').classList.toggle('active', ecOrder === 'read');
