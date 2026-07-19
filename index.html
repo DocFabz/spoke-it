@@ -2819,7 +2819,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <!-- Ordre de saisie : premier champ du point (kgf ou lecture) -->
     <div class="ef-side-switch" style="margin-bottom:.2rem">
       <button class="ef-sw-btn fa active" id="ec-sw-kgf" onclick="ecSetOrder('kgf')">KGF</button>
-      <button class="ef-sw-btn fo" id="ec-sw-read" onclick="ecSetOrder('read')" data-i18n="ccReadingPlaceholder">Lecture</button>
+      <button class="ef-sw-btn fo" id="ec-sw-read" style="text-transform:uppercase" onclick="ecSetOrder('read')" data-i18n="ccReadingPlaceholder">Lecture</button>
     </div>
 
     <!-- Gauge d'avancement des points (mécanique ef-progress) -->
@@ -8226,8 +8226,17 @@ function ccOnNbChange() {
 }
 
 // ── Afficher les chartes existantes pour le tensiomètre sélectionné ─────────
+// Visible uniquement en mode libre (aucun tensio actif sur la card) : dans ce
+// cas ccOpen() laisse #cc-tensio actif ; sinon le select est disabled et le
+// chemin card/dropdown couvre déjà l'édition de la charte active.
 function ccRenderExisting() {
-  const tensioKey = $id('cc-tensio').value;
+  const selTensio = $id('cc-tensio');
+  if (selTensio && selTensio.disabled) {
+    const lw = $id('cc-existing-list');
+    if (lw) lw.innerHTML = '';
+    return;
+  }
+  const tensioKey = selTensio.value;
   const isWF = tensioKey === 'wf';
   const customs = ccLoadAll().filter(cc => {
     if (isWF) return cc.tensioKey === 'wf' || cc.tensioKey === 'wf_old' || cc.tensioKey === 'wf_new';
