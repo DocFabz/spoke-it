@@ -5380,7 +5380,7 @@ function loadConfig(idx) {
   }
 }
 
-function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 function renderConfigsList() {
   if (typeof hrUpdateButtons === 'function') hrUpdateButtons();
@@ -5574,6 +5574,7 @@ function importConfigs(event) {
       if (Array.isArray(data.customTensios)) {
         const existing = ctLoadAll();
         data.customTensios.forEach(entry => {
+          if (!entry || typeof entry.name !== 'string') return;
           const idx = existing.findIndex(c => c.name === entry.name);
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
@@ -5583,6 +5584,7 @@ function importConfigs(event) {
       if (Array.isArray(data.customCharts)) {
         const existing = ccLoadAll();
         data.customCharts.forEach(entry => {
+          if (!entry || typeof entry.name !== 'string') return;
           const idx = existing.findIndex(c => c.name === entry.name);
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
@@ -5592,6 +5594,7 @@ function importConfigs(event) {
       if (Array.isArray(data.configs)) {
         const existing = loadConfigs();
         data.configs.forEach(entry => {
+          if (!entry || typeof entry.name !== 'string' || !entry.state || typeof entry.state !== 'object') return;
           const idx = existing.findIndex(c => c.name === entry.name && (c.state.wtype || 'avant') === (entry.state.wtype || 'avant'));
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
@@ -5601,6 +5604,7 @@ function importConfigs(event) {
       if (Array.isArray(data.savedHubs)) {
         const existing = hrLoadAll('hub');
         data.savedHubs.forEach(entry => {
+          if (!entry || typeof entry.name !== 'string') return;
           const idx = existing.findIndex(h => h.name.toLowerCase() === entry.name.toLowerCase());
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
@@ -5610,6 +5614,7 @@ function importConfigs(event) {
       if (Array.isArray(data.savedRims)) {
         const existing = hrLoadAll('rim');
         data.savedRims.forEach(entry => {
+          if (!entry || typeof entry.name !== 'string') return;
           const idx = existing.findIndex(r => r.name.toLowerCase() === entry.name.toLowerCase());
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
