@@ -8231,7 +8231,7 @@ function ccOnNbChange() {
 // chemin card/dropdown couvre déjà l'édition de la charte active.
 function ccRenderExisting() {
   const selTensio = $id('cc-tensio');
-  if (selTensio && selTensio.disabled) {
+  if (selTensio && selTensio.disabled && tmSpokeKey) {
     const lw = $id('cc-existing-list');
     if (lw) lw.innerHTML = '';
     return;
@@ -12251,7 +12251,7 @@ function efBeep() {
       var t0 = ctx.currentTime + 0.01;
       bip(t0);
       bip(t0 + 0.13);
-    });
+    }).catch(function() {}); // rejet resume() (ctx fermé) : bip absent, silence assumé
   } catch(e) {}
 }
 
@@ -12277,7 +12277,7 @@ function efBeepError() {
       var t0 = ctx.currentTime + 0.01;
       bipErr(t0,        260);
       bipErr(t0 + 0.17, 220);
-    });
+    }).catch(function() {}); // rejet resume() (ctx fermé) : bip absent, silence assumé
   } catch(e) {}
 }
 
@@ -12298,7 +12298,7 @@ function efBeepNext() {
       gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.06);
       osc.start(t0);
       osc.stop(t0 + 0.06);
-    });
+    }).catch(function() {}); // rejet resume() (ctx fermé) : bip absent, silence assumé
   } catch(e) {}
 }
 
