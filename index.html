@@ -1203,6 +1203,14 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 #ec-modal .ef-inp { max-width:none; font-size:1.15rem; padding:.5rem .6rem }
 #ec-modal .ef-inp.ec-active    { border-color:rgba(126,200,227,.5);  background:rgba(126,200,227,.03) }
 #ec-modal .ef-inp.ec-active.fo { border-color:rgba(232,146,124,.55); background:rgba(232,146,124,.025) }
+/* Anti-chevauchement : tm-conv-modal est une colonne flex bornée à 82dvh —
+   sans flex-shrink:0 les enfants se compriment quand le contenu dépasse et le
+   texte du feedback déborde sur les boutons. Le surplus part en scroll
+   (overflow-y:auto déjà posé sur #ec-modal). */
+#ec-modal.show > * { flex-shrink:0 }
+/* Deux lignes réservées (.66rem × 1.3 × 2) : le message long ne décale pas
+   les boutons à l'apparition (même logique que min-height d'ef-kgf-preview) */
+#ec-modal #ec-feedback { min-height:1.75rem }
 /* Le champ de tête (choisi par le switch) est affiché à gauche */
 #ec-fields .ec-f-kgf  { order:1 }
 #ec-fields .ec-f-read { order:2 }
