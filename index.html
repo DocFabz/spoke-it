@@ -4119,6 +4119,9 @@ function showCacheToast() {
 
 // ── i18n apply ───────────────────────────────────────────────────────────────
 function applyLang() {
+  // Attribut lang du document : lecteurs d'écran et césure suivent la langue
+  // active (sinon <html lang="fr"> figé, texte EN lu avec phonétique FR).
+  document.documentElement.lang = lang;
   document.querySelectorAll('[data-i18n]').forEach(el => {
     if (!el.children.length) el.textContent = t(el.dataset.i18n);
   });
@@ -13452,11 +13455,15 @@ function closeHrLoadModal() {
 function hrRenderLoadList(type) {
   var list = document.getElementById('hr-load-list');
   if (!list) return;
-  var arr = hrLoadAll(type);
+  // Index global (gi) capturé AVANT filtrage : la suppression splice le
+  // tableau complet du storage, jamais l'index de la vue filtrée (sinon,
+  // moyeux AV/AR mélangés => mauvais moyeu supprimé). Même pattern que
+  // wheelRenderLoadList / riderRenderWheels.
+  var arr = hrLoadAll(type).map(function(e, gi) { return { entry: e, gi: gi }; });
 
   // Pour les hubs, filtrer par roue courante
   if (type === 'hub') {
-    arr = arr.filter(function(e) { return (e.data && e.data.wtype ? e.data.wtype : 'avant') === wtype; });
+    arr = arr.filter(function(o) { return (o.entry.data && o.entry.data.wtype ? o.entry.data.wtype : 'avant') === wtype; });
   }
 
   if (arr.length === 0) {
@@ -13465,7 +13472,8 @@ function hrRenderLoadList(type) {
     return;
   }
   list.innerHTML = '';
-  arr.forEach(function(entry, idx) {
+  arr.forEach(function(o) {
+    var entry = o.entry, gi = o.gi;
     var item = document.createElement('div');
     item.className = 'hr-load-item';
 
@@ -13480,7 +13488,7 @@ function hrRenderLoadList(type) {
     delBtn.addEventListener('click', function(e) {
       e.stopPropagation();
       var a = hrLoadAll(type);
-      a.splice(idx, 1);
+      a.splice(gi, 1);
       hrPersist(type, a);
       hrRenderLoadList(type);
       hrUpdateButtons();
