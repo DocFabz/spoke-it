@@ -2625,6 +2625,32 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
           </span>
           <span id="tm-play-both-label">DS + NDS</span>
         </button>
+        <button id="tm-play-rec-toggle" onclick="tmRecToggle()" class="tm-play-mode-btn" aria-pressed="false" style="margin-top:.35rem">
+          <span id="tm-play-rec-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;display:inline-block;transition:background .2s"></span>
+          <span data-i18n="tmRecToggle">Exporter en vidéo</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Modale vidéo prête (partage / téléchargement) ── -->
+    <div id="tm-rec-overlay" onclick="tmRecCloseModal()" style="position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:9992;display:none;opacity:0;transition:opacity .2s"></div>
+    <div id="tm-rec-modal" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.97);z-index:9993;background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:1.4rem 1.4rem 1.1rem;box-shadow:0 16px 64px rgba(0,0,0,.55);width:88%;max-width:300px;display:none;flex-direction:column;gap:.75rem;opacity:0;transition:opacity .2s,transform .2s">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:.55rem;min-width:0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent);opacity:.85;flex-shrink:0"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          <div style="font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)" data-i18n="tmRecReady">Vidéo prête</div>
+        </div>
+        <button onclick="tmRecCloseModal()" class="ateliermgr-close">✕</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.4rem">
+        <button id="tm-rec-share-btn" onclick="tmRecShare()" class="tm-play-mode-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          <span data-i18n="tmRecShare">Partager</span>
+        </button>
+        <button id="tm-rec-save-btn" onclick="tmRecSave()" class="tm-play-mode-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span data-i18n="tmRecSave">Télécharger</span>
+        </button>
       </div>
     </div>
 
@@ -3559,6 +3585,9 @@ const i18n = {
     tmSpokeLabel:'Rayon',
     tmRadarTitle:'Diagramme de tension',
     tmAvg:'Moyenne', tmStd:'Écart-type',
+    tmRecToggle:'Exporter en vidéo', tmRecReady:'Vidéo prête',
+    tmRecShare:'Partager', tmRecSave:'Télécharger',
+    tmRecErr:'Enregistrement vidéo non supporté sur ce navigateur',
     tmCVMaxLabel:'Seuil outliers',
     tmOutlierModalTitle:'Seuil de détection',
     tmOutlierModalDesc:'Si la dispersion globale de la nappe dépasse ce seuil, les rayons les plus éloignés de la tension médiane sont mis en évidence.',
@@ -3739,6 +3768,9 @@ const i18n = {
     tmSpokeLabel:'Spoke',
     tmRadarTitle:'Tension diagram',
     tmAvg:'Average', tmStd:'Std deviation',
+    tmRecToggle:'Export as video', tmRecReady:'Video ready',
+    tmRecShare:'Share', tmRecSave:'Download',
+    tmRecErr:'Video recording not supported in this browser',
     tmCVMaxLabel:'Outliers threshold',
     tmOutlierModalTitle:'Detection threshold',
     tmOutlierModalDesc:'If the overall spread of the nappe exceeds this threshold, the spokes furthest from the median tension are highlighted.',
@@ -12436,7 +12468,14 @@ function efStopMic() {
 
   window.tmStartPlay = function(mode) {
     tmClosePlayModal();
-    setTimeout(function() { tmPlayAnimation(mode); }, 230);
+    setTimeout(function() {
+      // Si le toggle vidéo est armé, la capture démarre avant l'animation
+      if (window.tmRecArmed && tmRecArmed()) {
+        tmRecStart(function() { tmPlayAnimation(mode); });
+      } else {
+        tmPlayAnimation(mode);
+      }
+    }, 230);
   };
 
   // ── tmStopAnimation ─────────────────────────────────────────────────────────
@@ -12454,6 +12493,7 @@ function efStopMic() {
     if (btn) btn.onclick = function(){ tmOpenPlayModal(); };
     var disp = $id('tm-anim-display');
     if (disp) disp.style.visibility = 'hidden';
+    if (window.tmRecStop) tmRecStop();   // clôture éventuelle de la capture vidéo
     tmTryRenderRadar();
   };
 
@@ -12490,7 +12530,11 @@ function efStopMic() {
 
   function tmRunStepSeq(foKgfs, faKgfs, sequence) {
     if (!tmAnimRunning) return;
-    if (tmAnimStep >= sequence.length) { tmStopAnimation(); return; }
+    if (tmAnimStep >= sequence.length) {
+      if (window.tmRecMarkComplete) tmRecMarkComplete();   // fin naturelle : capture valide
+      tmStopAnimation();
+      return;
+    }
 
     var item     = sequence[tmAnimStep];
     var spokeIdx = item.spokeIdx;
@@ -12603,6 +12647,190 @@ function efStopMic() {
     if (btn) btn.onclick = function() { tmStopAnimation(); };
 
     tmRunStepSeq(foKgfs, faKgfs, sequence);
+  };
+
+})();
+
+// ── Export vidéo de l'animation Play ─────────────────────────────────────────
+// captureStream + MediaRecorder sur un canvas composite (radar + étiquettes),
+// zéro dépendance. MP4 (Safari/Chrome récents) avec repli WebM (Firefox).
+// Partage natif iOS/Android via Web Share API, téléchargement sinon.
+(function() {
+  var recArmed  = false;   // toggle armé dans la modale play
+  var recording = false;
+  var recorder  = null;
+  var chunks    = [];
+  var compRaf   = null;
+  var recBlob   = null;
+  var recFile   = null;
+  var recMime   = '';
+  var recComplete = false;   // true = animation menée à son terme
+
+  function recSupported() {
+    return typeof MediaRecorder !== 'undefined' &&
+           typeof HTMLCanvasElement !== 'undefined' &&
+           !!HTMLCanvasElement.prototype.captureStream;
+  }
+
+  function pickMime() {
+    var cand = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+    for (var i = 0; i < cand.length; i++) {
+      try { if (MediaRecorder.isTypeSupported(cand[i])) return cand[i]; } catch (e) {}
+    }
+    return '';
+  }
+
+  // ── Toggle dans la modale play ──────────────────────────────────────────────
+  window.tmRecToggle = function() {
+    if (!recArmed && !recSupported()) { alert(t('tmRecErr')); return; }
+    recArmed = !recArmed;
+    var btn = $id('tm-play-rec-toggle');
+    var dot = $id('tm-play-rec-dot');
+    if (btn) {
+      btn.setAttribute('aria-pressed', recArmed ? 'true' : 'false');
+      btn.style.borderColor = recArmed ? 'rgba(232,110,110,.55)' : '';
+    }
+    if (dot) dot.style.background = recArmed ? 'rgba(232,110,110,.95)' : 'var(--text3)';
+  };
+  window.tmRecArmed = function() { return recArmed; };
+  window.tmRecMarkComplete = function() { recComplete = true; };
+
+  // ── Démarrage : capture composite puis lancement de l'animation ────────────
+  window.tmRecStart = function(launch) {
+    var radar = $id('tm-radar');
+    if (!radar || !radar.width || !recSupported()) { launch(); return; }
+
+    var dpr  = window.devicePixelRatio || 1;
+    var band = Math.round(96 * dpr);           // bandeau étiquettes sous le radar
+    var comp = document.createElement('canvas');
+    comp.width  = radar.width;
+    comp.height = radar.height + band;
+    var ctx = comp.getContext('2d');
+
+    var bodyBg = getComputedStyle(document.body).backgroundColor;
+    var bg = (bodyBg && bodyBg !== 'rgba(0, 0, 0, 0)') ? bodyBg : '#10141d';
+
+    function drawComposite() {
+      if (!recording) return;
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, comp.width, comp.height);
+      var r = $id('tm-radar');
+      if (r && r.width) ctx.drawImage(r, 0, 0);
+
+      // Étiquettes : mêmes valeurs/couleurs/opacité que l'affichage HTML live
+      var inner = $id('tm-anim-inner');
+      var alpha = inner ? parseFloat(inner.style.opacity) : 1;
+      if (isNaN(alpha)) alpha = 1;
+      var tEl = $id('tm-anim-title'), vEl = $id('tm-anim-val'), iEl = $id('tm-anim-idx');
+      var cx = comp.width / 2;
+      var y0 = comp.height - band;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.textAlign   = 'center';
+      if (tEl && tEl.textContent && tEl.textContent !== '—') {
+        ctx.font      = Math.round(11 * dpr) + "px 'DM Mono','DM Mono FB',monospace";
+        ctx.fillStyle = tEl.style.color || 'rgba(150,160,175,.8)';
+        ctx.fillText(tEl.textContent.toUpperCase(), cx, y0 + 22 * dpr);
+      }
+      if (vEl && vEl.textContent && vEl.textContent !== '—') {
+        ctx.font      = '500 ' + Math.round(24 * dpr) + "px 'DM Mono','DM Mono FB',monospace";
+        ctx.fillStyle = vEl.style.color || 'rgba(232,146,124,.95)';
+        ctx.fillText(vEl.textContent, cx, y0 + 52 * dpr);
+      }
+      if (iEl && iEl.textContent && iEl.textContent !== '—') {
+        ctx.font      = Math.round(11 * dpr) + "px 'DM Mono','DM Mono FB',monospace";
+        ctx.fillStyle = 'rgba(150,160,175,.75)';
+        ctx.fillText(iEl.textContent, cx, y0 + 76 * dpr);
+      }
+      ctx.restore();
+      compRaf = requestAnimationFrame(drawComposite);
+    }
+
+    var mime = pickMime();
+    try {
+      var stream = comp.captureStream(30);
+      recorder = mime
+        ? new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 })
+        : new MediaRecorder(stream, { videoBitsPerSecond: 6000000 });
+    } catch (e) {
+      recorder = null;
+      launch();                                // capture impossible : animation seule
+      return;
+    }
+
+    recMime = recorder.mimeType || mime || 'video/webm';
+    chunks  = [];
+    recorder.ondataavailable = function(ev) { if (ev.data && ev.data.size) chunks.push(ev.data); };
+    recorder.onstop = function() {
+      recBlob = new Blob(chunks, { type: recMime });
+      chunks  = [];
+      var ext = recMime.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
+      recFile = new File([recBlob], 'tension-animation.' + ext, { type: recMime });
+      tmRecOpenModal();
+    };
+
+    recComplete = false;
+    recording   = true;
+    recorder.start(250);
+    drawComposite();
+    launch();
+  };
+
+  // ── Arrêt (hook appelé par tmStopAnimation) ────────────────────────────────
+  window.tmRecStop = function() {
+    if (!recording) return;
+    recording = false;
+    if (compRaf) { cancelAnimationFrame(compRaf); compRaf = null; }
+    if (recorder && recorder.state !== 'inactive') {
+      if (!recComplete) {
+        // Arrêt manuel : on jette la capture (pas de blob, pas de modale)
+        recorder.ondataavailable = null;
+        recorder.onstop = null;
+        chunks = [];
+      }
+      try { recorder.stop(); } catch (e) {}
+    }
+    recorder = null;
+    if (recArmed) tmRecToggle();               // désarmer : pas de capture accidentelle
+  };
+
+  // ── Modale résultat ────────────────────────────────────────────────────────
+  window.tmRecOpenModal = function() {
+    var shareBtn = $id('tm-rec-share-btn');
+    var canSh = false;
+    try { canSh = !!(recFile && navigator.canShare && navigator.canShare({ files: [recFile] })); }
+    catch (e) { canSh = false; }
+    if (shareBtn) shareBtn.style.display = canSh ? '' : 'none';
+    var ov = $id('tm-rec-overlay'), mo = $id('tm-rec-modal');
+    if (ov) { ov.style.display = 'block'; setTimeout(function(){ ov.style.opacity='1'; }, 10); }
+    if (mo) { mo.style.display = 'flex'; setTimeout(function(){ mo.style.opacity='1'; mo.style.transform='translate(-50%,-50%) scale(1)'; }, 10); }
+  };
+
+  window.tmRecCloseModal = function() {
+    var ov = $id('tm-rec-overlay'), mo = $id('tm-rec-modal');
+    if (ov) { ov.style.opacity='0'; setTimeout(function(){ ov.style.display='none'; }, 220); }
+    if (mo) { mo.style.opacity='0'; mo.style.transform='translate(-50%,-50%) scale(.97)'; setTimeout(function(){ mo.style.display='none'; }, 220); }
+  };
+
+  // Partage natif (feuille iOS : « Enregistrer la vidéo » → Photos)
+  window.tmRecShare = async function() {
+    if (!recFile) return;
+    try {
+      await navigator.share({ files: [recFile], title: 'Tension Animation' });
+      tmRecCloseModal();
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;   // annulation utilisateur
+      tmRecSave();                                    // repli : téléchargement
+    }
+  };
+
+  window.tmRecSave = function() {
+    if (!recBlob || !recFile) return;
+    var url = URL.createObjectURL(recBlob);
+    var a = document.createElement('a');
+    a.href = url; a.download = recFile.name; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 30000);
+    tmRecCloseModal();
   };
 
 })();
