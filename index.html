@@ -2628,28 +2628,6 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       </div>
     </div>
 
-    <!-- ── Modale vidéo prête (partage / téléchargement) ── -->
-    <div id="tm-rec-overlay" onclick="tmRecCloseModal()" style="position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:9992;display:none;opacity:0;transition:opacity .2s"></div>
-    <div id="tm-rec-modal" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.97);z-index:9993;background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:1.4rem 1.4rem 1.1rem;box-shadow:0 16px 64px rgba(0,0,0,.55);width:88%;max-width:300px;display:none;flex-direction:column;gap:.75rem;opacity:0;transition:opacity .2s,transform .2s">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div style="display:flex;align-items:center;gap:.55rem;min-width:0">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent);opacity:.85;flex-shrink:0"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-          <div style="font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)" data-i18n="tmRecReady">Vidéo prête</div>
-        </div>
-        <button onclick="tmRecCloseModal()" class="ateliermgr-close">✕</button>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:.4rem">
-        <button id="tm-rec-share-btn" onclick="tmRecShare()" class="tm-play-mode-btn">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-          <span data-i18n="tmRecShare">Partager</span>
-        </button>
-        <button id="tm-rec-save-btn" onclick="tmRecSave()" class="tm-play-mode-btn">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span data-i18n="tmRecSave">Télécharger</span>
-        </button>
-      </div>
-    </div>
-
     <div id="tm-result-card-body" style="display:none;margin-top:.75rem">
     <div class="radar-wrap">
       <canvas class="radar-canvas" id="tm-radar"></canvas>
@@ -3581,9 +3559,7 @@ const i18n = {
     tmSpokeLabel:'Rayon',
     tmRadarTitle:'Diagramme de tension',
     tmAvg:'Moyenne', tmStd:'Écart-type',
-    tmRecToggle:'Exporter en vidéo', tmRecReady:'Vidéo prête',
-    tmRecShare:'Partager', tmRecSave:'Télécharger',
-    tmRecErr:'Enregistrement vidéo non supporté sur ce navigateur',
+    tmRecShare:'Partager la vidéo', tmRecSave:'Télécharger la vidéo',
     tmCVMaxLabel:'Seuil outliers',
     tmOutlierModalTitle:'Seuil de détection',
     tmOutlierModalDesc:'Si la dispersion globale de la nappe dépasse ce seuil, les rayons les plus éloignés de la tension médiane sont mis en évidence.',
@@ -3764,9 +3740,7 @@ const i18n = {
     tmSpokeLabel:'Spoke',
     tmRadarTitle:'Tension diagram',
     tmAvg:'Average', tmStd:'Std deviation',
-    tmRecToggle:'Export as video', tmRecReady:'Video ready',
-    tmRecShare:'Share', tmRecSave:'Download',
-    tmRecErr:'Video recording not supported in this browser',
+    tmRecShare:'Share video', tmRecSave:'Download video',
     tmCVMaxLabel:'Outliers threshold',
     tmOutlierModalTitle:'Detection threshold',
     tmOutlierModalDesc:'If the overall spread of the nappe exceeds this threshold, the spokes furthest from the median tension are highlighted.',
@@ -12636,12 +12610,17 @@ function efStopMic() {
 })();
 
 // ── Export vidéo — animation Évolution (snapshots) ───────────────────────────
-// captureStream + MediaRecorder, zéro dépendance. MP4 (Safari/Chrome récents)
-// avec repli WebM (Firefox). Partage natif iOS/Android via Web Share API
-// (feuille iOS : « Enregistrer la vidéo » → Photos), téléchargement sinon.
+// Chaque lecture est capturée silencieusement (captureStream + MediaRecorder,
+// zéro dépendance). À la fin de l'animation, le bouton disquette apparaît :
+// un tap = partage natif sur mobile (feuille iOS : « Enregistrer la vidéo »
+// → Photos) ou téléchargement direct sur desktop — même logique que l'export
+// JPEG. MP4 (Safari/Chrome récents) avec repli WebM (Firefox). Fermeture ou
+// replay en cours de lecture : la capture est jetée.
 (function() {
-  var recBlob = null;
-  var recFile = null;
+  var recCv     = null;   // MediaRecorder de la lecture en cours
+  var recBlob   = null;   // dernière vidéo complète
+  var recFile   = null;
+  var onReadyCb = null;
 
   function recSupported() {
     return typeof MediaRecorder !== 'undefined' &&
@@ -12657,44 +12636,48 @@ function efStopMic() {
     return '';
   }
 
-  // ── Enregistreur générique : capture directe d'un canvas autonome ──────────
-  // Utilisé par l'animation Évolution (snapCompareAnim) : tout est dessiné sur
-  // le canvas, pas de composite. runFn reçoit un callback done() à appeler à
-  // la fin de l'animation → stop + modale Partager/Télécharger.
-  var recCv = null;   // recorder de la capture générique en cours
-
-  window.tmRecCanvas = function(canvasEl, baseName, runFn) {
-    if (recCv) return;                          // capture déjà en cours
-    if (!canvasEl || !recSupported()) { alert(t('tmRecErr')); return; }
+  // Démarre la capture d'une lecture ; toute capture précédente est jetée.
+  // Retourne false si l'enregistrement n'est pas possible (le bouton
+  // disquette n'apparaîtra simplement pas).
+  window.tmRecCanvasStart = function(canvasEl, baseName) {
+    tmRecCanvasAbort();
+    recBlob = null; recFile = null;
+    if (!canvasEl || !recSupported()) return false;
     var mime = pickMime();
-    var localChunks = [];
+    var chunks = [];
     try {
       var stream = canvasEl.captureStream(30);
       recCv = mime
         ? new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 })
         : new MediaRecorder(stream, { videoBitsPerSecond: 6000000 });
-    } catch (e) { recCv = null; alert(t('tmRecErr')); return; }
+    } catch (e) { recCv = null; return false; }
 
     var m = recCv.mimeType || mime || 'video/webm';
-    recCv.ondataavailable = function(ev) { if (ev.data && ev.data.size) localChunks.push(ev.data); };
+    recCv.ondataavailable = function(ev) { if (ev.data && ev.data.size) chunks.push(ev.data); };
     recCv.onstop = function() {
       recCv   = null;
-      recBlob = new Blob(localChunks, { type: m });
+      recBlob = new Blob(chunks, { type: m });
       var ext = m.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
       recFile = new File([recBlob], baseName + '.' + ext, { type: m });
-      tmRecOpenModal();
+      if (typeof onReadyCb === 'function') { var cb = onReadyCb; onReadyCb = null; cb(); }
     };
     recCv.start(250);
-    runFn(function() {
-      // Petite marge pour capturer la dernière frame stabilisée
-      setTimeout(function() {
-        if (recCv && recCv.state !== 'inactive') { try { recCv.stop(); } catch (e) {} }
-      }, 150);
-    });
+    return true;
   };
 
-  // Abandon silencieux (fermeture de la modale pendant la capture) : on jette
+  // Fin naturelle de l'animation : clôt la capture puis signale onReady
+  // (petite marge pour embarquer la dernière frame stabilisée).
+  window.tmRecCanvasFinish = function(onReady) {
+    if (!recCv) return;
+    onReadyCb = onReady || null;
+    setTimeout(function() {
+      if (recCv && recCv.state !== 'inactive') { try { recCv.stop(); } catch (e) {} }
+    }, 150);
+  };
+
+  // Abandon silencieux (fermeture de la modale ou replay) : capture jetée
   window.tmRecCanvasAbort = function() {
+    onReadyCb = null;
     if (!recCv) return;
     recCv.ondataavailable = null;
     recCv.onstop = null;
@@ -12702,43 +12685,23 @@ function efStopMic() {
     recCv = null;
   };
 
-  // ── Modale résultat ────────────────────────────────────────────────────────
-  window.tmRecOpenModal = function() {
-    var shareBtn = $id('tm-rec-share-btn');
-    var canSh = false;
-    try { canSh = !!(recFile && navigator.canShare && navigator.canShare({ files: [recFile] })); }
-    catch (e) { canSh = false; }
-    if (shareBtn) shareBtn.style.display = canSh ? '' : 'none';
-    var ov = $id('tm-rec-overlay'), mo = $id('tm-rec-modal');
-    if (ov) { ov.style.display = 'block'; setTimeout(function(){ ov.style.opacity='1'; }, 10); }
-    if (mo) { mo.style.display = 'flex'; setTimeout(function(){ mo.style.opacity='1'; mo.style.transform='translate(-50%,-50%) scale(1)'; }, 10); }
-  };
-
-  window.tmRecCloseModal = function() {
-    var ov = $id('tm-rec-overlay'), mo = $id('tm-rec-modal');
-    if (ov) { ov.style.opacity='0'; setTimeout(function(){ ov.style.display='none'; }, 220); }
-    if (mo) { mo.style.opacity='0'; mo.style.transform='translate(-50%,-50%) scale(.97)'; setTimeout(function(){ mo.style.display='none'; }, 220); }
-  };
-
-  // Partage natif (feuille iOS : « Enregistrer la vidéo » → Photos)
-  window.tmRecShare = async function() {
-    if (!recFile) return;
-    try {
-      await navigator.share({ files: [recFile], title: 'Tension Animation' });
-      tmRecCloseModal();
-    } catch (err) {
-      if (err && err.name === 'AbortError') return;   // annulation utilisateur
-      tmRecSave();                                    // repli : téléchargement
-    }
-  };
-
-  window.tmRecSave = function() {
+  // Bouton disquette : share natif mobile / téléchargement desktop
+  // (pattern identique à l'export JPEG tmScreenshot)
+  window.tmRecShareOrSave = async function() {
     if (!recBlob || !recFile) return;
+    var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && navigator.canShare) {
+      try {
+        if (navigator.canShare({ files: [recFile] })) {
+          await navigator.share({ files: [recFile], title: 'Tension Evolution' });
+          return;
+        }
+      } catch (err) { if (err && err.name === 'AbortError') return; }
+    }
     var url = URL.createObjectURL(recBlob);
     var a = document.createElement('a');
     a.href = url; a.download = recFile.name; a.click();
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 30000);
-    tmRecCloseModal();
+    setTimeout(function() { URL.revokeObjectURL(url); }, 30000);
   };
 
 })();
@@ -15185,16 +15148,25 @@ async function snapCompareAnim() {
     _snapAnimRAF = requestAnimationFrame(loop);
   }
 
-  // Exposer pour les boutons replay et export vidéo
-  document.getElementById('snapanim-replay').onclick = play;
-  var expBtn = document.getElementById('snapanim-export');
-  if (expBtn) {
-    expBtn.title = t('tmRecToggle');
-    expBtn.onclick = function() {
-      tmRecCanvas(canvasEl, 'tension-evolution', function(done) { play(done); });
-    };
+  // Chaque lecture (initiale ou replay) est capturée ; la disquette
+  // n'apparaît qu'une fois l'animation terminée et la vidéo prête.
+  var saveBtn = document.getElementById('snapanim-save');
+  var isMobileUA = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (saveBtn) {
+    saveBtn.title   = isMobileUA ? t('tmRecShare') : t('tmRecSave');
+    saveBtn.onclick = function() { tmRecShareOrSave(); };
   }
-  play();
+  function startPlayback() {
+    if (saveBtn) saveBtn.style.display = 'none';
+    var capturing = tmRecCanvasStart(canvasEl, 'tension-evolution');
+    play(function() {
+      if (capturing) tmRecCanvasFinish(function() {
+        if (saveBtn) saveBtn.style.display = '';
+      });
+    });
+  }
+  document.getElementById('snapanim-replay').onclick = startPlayback;
+  startPlayback();
 }
 </script>
 <!-- ── Modale Évolution Tension ── -->
@@ -15236,8 +15208,8 @@ async function snapCompareAnim() {
   <div class="snap-header">
     <div class="snap-title">Animation</div>
     <div style="display:flex;align-items:center;gap:.4rem">
-      <button id="snapanim-export" class="snap-close" title="Exporter en vidéo">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      <button id="snapanim-save" class="snap-close" title="Partager la vidéo" style="display:none">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       </button>
       <button id="snapanim-replay" class="snap-close" title="Rejouer">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
