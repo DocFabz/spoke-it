@@ -771,7 +771,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .snap-close:focus, .snap-close:active { outline:none; border-color:var(--border); color:var(--text3); background:none }
 #snapanim-replay:focus, #snapanim-replay:active, #snapanim-save:focus, #snapanim-save:active { outline:none; border-color:var(--border); color:var(--text3); background:none }
 #snapanim-replay, #snapanim-save { display:inline-flex; align-items:center; justify-content:center; padding:.25rem .45rem }
-#snapanim-replay:disabled { opacity:.35; cursor:default; pointer-events:none }
+#snapanim-replay:disabled, #snapanim-save:disabled { opacity:.35; cursor:default; pointer-events:none }
 #snapanim-replay.rec-ready, #snapanim-save.rec-ready { background:rgba(126,200,227,.12); border-color:rgba(126,200,227,.45); color:var(--accent) }
 #snapanim-replay.rec-ready:active, #snapanim-save.rec-ready:active { opacity:.75 }
 .snap-save-row { display:flex; gap:.4rem; flex-shrink:0 }
@@ -15164,13 +15164,14 @@ async function snapCompareAnim() {
     if (replayBtn) { replayBtn.disabled = false; replayBtn.classList.add('rec-ready'); }
   }
   function startPlayback() {
-    if (saveBtn) { saveBtn.style.display = 'none'; saveBtn.classList.remove('rec-ready'); }
+    if (saveBtn) { saveBtn.style.display = ''; saveBtn.disabled = true; saveBtn.classList.remove('rec-ready'); }
     if (replayBtn) { replayBtn.disabled = true; replayBtn.classList.remove('rec-ready'); }
     // Peindre la frame 0 (snapshot A complet) AVANT de démarrer la capture :
     // le canvas vient d'être (re)dimensionné donc noir, et la première frame
     // encodée sert de vignette à la vidéo (Photos iOS, galeries Android).
     drawFrame(0);
     var capturing = tmRecCanvasStart(canvasEl, 'tension-evolution');
+    if (!capturing && saveBtn) saveBtn.style.display = 'none';
     play(function() {
       if (!capturing) { snapAnimBtnsReady(); return; }
       // Hold 2 s sur l'état final (récap affiché) avant de clore la capture.
@@ -15187,7 +15188,7 @@ async function snapCompareAnim() {
           requestAnimationFrame(holdLoop);
         } else {
           tmRecCanvasFinish(function() {
-            if (saveBtn) { saveBtn.style.display = ''; saveBtn.classList.add('rec-ready'); }
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.add('rec-ready'); }
             snapAnimBtnsReady();
           });
         }
