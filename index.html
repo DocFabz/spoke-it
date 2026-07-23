@@ -15001,9 +15001,8 @@ async function snapCompareAnim() {
     ctx.beginPath(); ctx.arc(cx,cy,3,0,2*Math.PI); ctx.fillStyle='rgba(150,170,190,0.35)'; ctx.fill();
 
     var PAD = Math.round(w*0.025);
-    ctx.font='500 '+Math.round(w*0.018)+'px DM Mono,monospace'; ctx.textBaseline='top';
-    var ai = (typeof loadAtelierInfo==='function') ? loadAtelierInfo() : {};
-    var wname = (ai.name&&ai.name.trim()) ? ai.name.trim() : 'Spoke It';
+    ctx.font='500 '+Math.round(w*0.022)+'px DM Mono,monospace'; ctx.textBaseline='top';
+    var wname = 'Powered by spokeit.fr';
     ctx.globalAlpha=1; ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.textAlign='left'; ctx.fillText(wname, PAD, PAD);
     ctx.textAlign='right';
     if (alphaA>0) { ctx.globalAlpha=alphaA; ctx.fillStyle='rgba(126,200,227,1)'; ctx.fillText(fmtDate(snapA.ts), w-PAD, PAD); }
@@ -15126,14 +15125,14 @@ async function snapCompareAnim() {
   }
 
   // Liseré blanc — peint en fin de frame, donc présent à l'écran ET dans la
-  // vidéo (captureStream encode les pixels du canvas). Rounded-rect aligné
-  // sur le radius CSS du canvas : clip à 10px, trait centré à 1px → r=9.
+  // vidéo (captureStream encode les pixels du canvas). Rectangle net bord à
+  // bord : pas de coins arrondis, donc aucun coin noir résiduel dans la vidéo
+  // (export Insta propre). À l'écran, le radius CSS rogne à peine les angles.
   function drawBorder() {
     ctx.globalAlpha = 1;
-    roundRect(ctx, 1, 1, VW - 2, VH - 2, 9);
     ctx.strokeStyle = 'rgba(255,255,255,0.9)';
     ctx.lineWidth = 2;
-    ctx.stroke();
+    ctx.strokeRect(1, 1, VW - 2, VH - 2);
   }
 
   function play(onDone) {
