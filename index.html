@@ -769,9 +769,11 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .snap-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:all .2s }
 .snap-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
 .snap-close:focus, .snap-close:active { outline:none; border-color:var(--border); color:var(--text3); background:none }
-#snapanim-replay:hover, #snapanim-save:hover { border-color:rgba(126,200,227,.6); color:rgba(126,200,227,1) }
 #snapanim-replay:focus, #snapanim-replay:active, #snapanim-save:focus, #snapanim-save:active { outline:none; border-color:var(--border); color:var(--text3); background:none }
-@media (hover: none) { #snapanim-replay:hover, #snapanim-save:hover { border-color:var(--border); color:var(--text3) } }
+#snapanim-replay, #snapanim-save { display:inline-flex; align-items:center; justify-content:center; padding:.25rem .45rem }
+#snapanim-replay:disabled { opacity:.35; cursor:default; pointer-events:none }
+#snapanim-replay.rec-ready, #snapanim-save.rec-ready { background:rgba(126,200,227,.12); border-color:rgba(126,200,227,.45); color:var(--accent) }
+#snapanim-replay.rec-ready:active, #snapanim-save.rec-ready:active { opacity:.75 }
 .snap-save-row { display:flex; gap:.4rem; flex-shrink:0 }
 .snap-save-btn {
   background:transparent; border:1px solid var(--border-s); border-radius:var(--rs);
@@ -15157,15 +15159,20 @@ async function snapCompareAnim() {
     saveBtn.title   = isMobileUA ? t('tmRecShare') : t('tmRecSave');
     saveBtn.onclick = function() { this.blur(); tmRecShareOrSave(); };
   }
+  var replayBtn = document.getElementById('snapanim-replay');
+  function snapAnimBtnsReady() {
+    if (replayBtn) { replayBtn.disabled = false; replayBtn.classList.add('rec-ready'); }
+  }
   function startPlayback() {
-    if (saveBtn) saveBtn.style.display = 'none';
+    if (saveBtn) { saveBtn.style.display = 'none'; saveBtn.classList.remove('rec-ready'); }
+    if (replayBtn) { replayBtn.disabled = true; replayBtn.classList.remove('rec-ready'); }
     // Peindre la frame 0 (snapshot A complet) AVANT de démarrer la capture :
     // le canvas vient d'être (re)dimensionné donc noir, et la première frame
     // encodée sert de vignette à la vidéo (Photos iOS, galeries Android).
     drawFrame(0);
     var capturing = tmRecCanvasStart(canvasEl, 'tension-evolution');
     play(function() {
-      if (!capturing) return;
+      if (!capturing) { snapAnimBtnsReady(); return; }
       // Hold 2 s sur l'état final (récap affiché) avant de clore la capture.
       // Repeindre à chaque frame est nécessaire : captureStream n'émet des
       // frames que sur repaint, sans quoi le hold ne serait pas encodé.
@@ -15180,13 +15187,14 @@ async function snapCompareAnim() {
           requestAnimationFrame(holdLoop);
         } else {
           tmRecCanvasFinish(function() {
-            if (saveBtn) saveBtn.style.display = '';
+            if (saveBtn) { saveBtn.style.display = ''; saveBtn.classList.add('rec-ready'); }
+            snapAnimBtnsReady();
           });
         }
       })();
     });
   }
-  document.getElementById('snapanim-replay').onclick = startPlayback;
+  if (replayBtn) replayBtn.onclick = startPlayback;
   startPlayback();
 }
 </script>
@@ -15230,10 +15238,10 @@ async function snapCompareAnim() {
     <div class="snap-title">Animation</div>
     <div style="display:flex;align-items:center;gap:.4rem">
       <button id="snapanim-save" class="snap-close" title="Partager la vidéo" style="display:none">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       </button>
       <button id="snapanim-replay" class="snap-close" title="Rejouer">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
       </button>
       <button onclick="snapAnimClose()" class="snap-close">&#x2715;</button>
     </div>
