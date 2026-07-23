@@ -2625,10 +2625,6 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
           </span>
           <span id="tm-play-both-label">DS + NDS</span>
         </button>
-        <button id="tm-play-rec-toggle" onclick="tmRecToggle()" class="tm-play-mode-btn" aria-pressed="false" style="margin-top:.35rem">
-          <span id="tm-play-rec-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;display:inline-block;transition:background .2s"></span>
-          <span data-i18n="tmRecToggle">Exporter en vidéo</span>
-        </button>
       </div>
     </div>
 
@@ -12468,14 +12464,7 @@ function efStopMic() {
 
   window.tmStartPlay = function(mode) {
     tmClosePlayModal();
-    setTimeout(function() {
-      // Si le toggle vidéo est armé, la capture démarre avant l'animation
-      if (window.tmRecArmed && tmRecArmed()) {
-        tmRecStart(function() { tmPlayAnimation(mode); });
-      } else {
-        tmPlayAnimation(mode);
-      }
-    }, 230);
+    setTimeout(function() { tmPlayAnimation(mode); }, 230);
   };
 
   // ── tmStopAnimation ─────────────────────────────────────────────────────────
@@ -12493,7 +12482,6 @@ function efStopMic() {
     if (btn) btn.onclick = function(){ tmOpenPlayModal(); };
     var disp = $id('tm-anim-display');
     if (disp) disp.style.visibility = 'hidden';
-    if (window.tmRecStop) tmRecStop();   // clôture éventuelle de la capture vidéo
     tmTryRenderRadar();
   };
 
@@ -12530,11 +12518,7 @@ function efStopMic() {
 
   function tmRunStepSeq(foKgfs, faKgfs, sequence) {
     if (!tmAnimRunning) return;
-    if (tmAnimStep >= sequence.length) {
-      if (window.tmRecMarkComplete) tmRecMarkComplete();   // fin naturelle : capture valide
-      tmStopAnimation();
-      return;
-    }
+    if (tmAnimStep >= sequence.length) { tmStopAnimation(); return; }
 
     var item     = sequence[tmAnimStep];
     var spokeIdx = item.spokeIdx;
@@ -12651,20 +12635,13 @@ function efStopMic() {
 
 })();
 
-// ── Export vidéo de l'animation Play ─────────────────────────────────────────
-// captureStream + MediaRecorder sur un canvas composite (radar + étiquettes),
-// zéro dépendance. MP4 (Safari/Chrome récents) avec repli WebM (Firefox).
-// Partage natif iOS/Android via Web Share API, téléchargement sinon.
+// ── Export vidéo — animation Évolution (snapshots) ───────────────────────────
+// captureStream + MediaRecorder, zéro dépendance. MP4 (Safari/Chrome récents)
+// avec repli WebM (Firefox). Partage natif iOS/Android via Web Share API
+// (feuille iOS : « Enregistrer la vidéo » → Photos), téléchargement sinon.
 (function() {
-  var recArmed  = false;   // toggle armé dans la modale play
-  var recording = false;
-  var recorder  = null;
-  var chunks    = [];
-  var compRaf   = null;
-  var recBlob   = null;
-  var recFile   = null;
-  var recMime   = '';
-  var recComplete = false;   // true = animation menée à son terme
+  var recBlob = null;
+  var recFile = null;
 
   function recSupported() {
     return typeof MediaRecorder !== 'undefined' &&
@@ -12680,118 +12657,49 @@ function efStopMic() {
     return '';
   }
 
-  // ── Toggle dans la modale play ──────────────────────────────────────────────
-  window.tmRecToggle = function() {
-    if (!recArmed && !recSupported()) { alert(t('tmRecErr')); return; }
-    recArmed = !recArmed;
-    var btn = $id('tm-play-rec-toggle');
-    var dot = $id('tm-play-rec-dot');
-    if (btn) {
-      btn.setAttribute('aria-pressed', recArmed ? 'true' : 'false');
-      btn.style.borderColor = recArmed ? 'rgba(232,110,110,.55)' : '';
-    }
-    if (dot) dot.style.background = recArmed ? 'rgba(232,110,110,.95)' : 'var(--text3)';
-  };
-  window.tmRecArmed = function() { return recArmed; };
-  window.tmRecMarkComplete = function() { recComplete = true; };
+  // ── Enregistreur générique : capture directe d'un canvas autonome ──────────
+  // Utilisé par l'animation Évolution (snapCompareAnim) : tout est dessiné sur
+  // le canvas, pas de composite. runFn reçoit un callback done() à appeler à
+  // la fin de l'animation → stop + modale Partager/Télécharger.
+  var recCv = null;   // recorder de la capture générique en cours
 
-  // ── Démarrage : capture composite puis lancement de l'animation ────────────
-  window.tmRecStart = function(launch) {
-    var radar = $id('tm-radar');
-    if (!radar || !radar.width || !recSupported()) { launch(); return; }
-
-    var dpr  = window.devicePixelRatio || 1;
-    var band = Math.round(96 * dpr);           // bandeau étiquettes sous le radar
-    var comp = document.createElement('canvas');
-    comp.width  = radar.width;
-    comp.height = radar.height + band;
-    var ctx = comp.getContext('2d');
-
-    var bodyBg = getComputedStyle(document.body).backgroundColor;
-    var bg = (bodyBg && bodyBg !== 'rgba(0, 0, 0, 0)') ? bodyBg : '#10141d';
-
-    function drawComposite() {
-      if (!recording) return;
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, comp.width, comp.height);
-      var r = $id('tm-radar');
-      if (r && r.width) ctx.drawImage(r, 0, 0);
-
-      // Étiquettes : mêmes valeurs/couleurs/opacité que l'affichage HTML live
-      var inner = $id('tm-anim-inner');
-      var alpha = inner ? parseFloat(inner.style.opacity) : 1;
-      if (isNaN(alpha)) alpha = 1;
-      var tEl = $id('tm-anim-title'), vEl = $id('tm-anim-val'), iEl = $id('tm-anim-idx');
-      var cx = comp.width / 2;
-      var y0 = comp.height - band;
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.textAlign   = 'center';
-      if (tEl && tEl.textContent && tEl.textContent !== '—') {
-        ctx.font      = Math.round(11 * dpr) + "px 'DM Mono','DM Mono FB',monospace";
-        ctx.fillStyle = tEl.style.color || 'rgba(150,160,175,.8)';
-        ctx.fillText(tEl.textContent.toUpperCase(), cx, y0 + 22 * dpr);
-      }
-      if (vEl && vEl.textContent && vEl.textContent !== '—') {
-        ctx.font      = '500 ' + Math.round(24 * dpr) + "px 'DM Mono','DM Mono FB',monospace";
-        ctx.fillStyle = vEl.style.color || 'rgba(232,146,124,.95)';
-        ctx.fillText(vEl.textContent, cx, y0 + 52 * dpr);
-      }
-      if (iEl && iEl.textContent && iEl.textContent !== '—') {
-        ctx.font      = Math.round(11 * dpr) + "px 'DM Mono','DM Mono FB',monospace";
-        ctx.fillStyle = 'rgba(150,160,175,.75)';
-        ctx.fillText(iEl.textContent, cx, y0 + 76 * dpr);
-      }
-      ctx.restore();
-      compRaf = requestAnimationFrame(drawComposite);
-    }
-
+  window.tmRecCanvas = function(canvasEl, baseName, runFn) {
+    if (recCv) return;                          // capture déjà en cours
+    if (!canvasEl || !recSupported()) { alert(t('tmRecErr')); return; }
     var mime = pickMime();
+    var localChunks = [];
     try {
-      var stream = comp.captureStream(30);
-      recorder = mime
+      var stream = canvasEl.captureStream(30);
+      recCv = mime
         ? new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 })
         : new MediaRecorder(stream, { videoBitsPerSecond: 6000000 });
-    } catch (e) {
-      recorder = null;
-      launch();                                // capture impossible : animation seule
-      return;
-    }
+    } catch (e) { recCv = null; alert(t('tmRecErr')); return; }
 
-    recMime = recorder.mimeType || mime || 'video/webm';
-    chunks  = [];
-    recorder.ondataavailable = function(ev) { if (ev.data && ev.data.size) chunks.push(ev.data); };
-    recorder.onstop = function() {
-      recBlob = new Blob(chunks, { type: recMime });
-      chunks  = [];
-      var ext = recMime.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
-      recFile = new File([recBlob], 'tension-animation.' + ext, { type: recMime });
+    var m = recCv.mimeType || mime || 'video/webm';
+    recCv.ondataavailable = function(ev) { if (ev.data && ev.data.size) localChunks.push(ev.data); };
+    recCv.onstop = function() {
+      recCv   = null;
+      recBlob = new Blob(localChunks, { type: m });
+      var ext = m.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
+      recFile = new File([recBlob], baseName + '.' + ext, { type: m });
       tmRecOpenModal();
     };
-
-    recComplete = false;
-    recording   = true;
-    recorder.start(250);
-    drawComposite();
-    launch();
+    recCv.start(250);
+    runFn(function() {
+      // Petite marge pour capturer la dernière frame stabilisée
+      setTimeout(function() {
+        if (recCv && recCv.state !== 'inactive') { try { recCv.stop(); } catch (e) {} }
+      }, 150);
+    });
   };
 
-  // ── Arrêt (hook appelé par tmStopAnimation) ────────────────────────────────
-  window.tmRecStop = function() {
-    if (!recording) return;
-    recording = false;
-    if (compRaf) { cancelAnimationFrame(compRaf); compRaf = null; }
-    if (recorder && recorder.state !== 'inactive') {
-      if (!recComplete) {
-        // Arrêt manuel : on jette la capture (pas de blob, pas de modale)
-        recorder.ondataavailable = null;
-        recorder.onstop = null;
-        chunks = [];
-      }
-      try { recorder.stop(); } catch (e) {}
-    }
-    recorder = null;
-    if (recArmed) tmRecToggle();               // désarmer : pas de capture accidentelle
+  // Abandon silencieux (fermeture de la modale pendant la capture) : on jette
+  window.tmRecCanvasAbort = function() {
+    if (!recCv) return;
+    recCv.ondataavailable = null;
+    recCv.onstop = null;
+    if (recCv.state !== 'inactive') { try { recCv.stop(); } catch (e) {} }
+    recCv = null;
   };
 
   // ── Modale résultat ────────────────────────────────────────────────────────
@@ -15034,6 +14942,7 @@ var _snapAnimRAF = null;
 
 function snapAnimClose() {
   if (_snapAnimRAF) { cancelAnimationFrame(_snapAnimRAF); _snapAnimRAF = null; }
+  if (window.tmRecCanvasAbort) tmRecCanvasAbort();   // capture en cours : jetée
   document.getElementById('snapanim-overlay').classList.remove('show');
   document.getElementById('snapanim-modal').classList.remove('show');
 }
@@ -15250,7 +15159,7 @@ async function snapCompareAnim() {
     ctx.globalAlpha = 1;
   }
 
-  function play() {
+  function play(onDone) {
     if (_snapAnimRAF) { cancelAnimationFrame(_snapAnimRAF); _snapAnimRAF = null; }
     var startTime = null;
     var FADE_IN_MS = 600;
@@ -15268,13 +15177,23 @@ async function snapCompareAnim() {
       } else {
         drawRecap(1);
         _snapAnimRAF = null;
+        // onDone : fin de capture vidéo. Le onclick replay passe l'event ici,
+        // le typeof le neutralise.
+        if (typeof onDone === 'function') onDone();
       }
     }
     _snapAnimRAF = requestAnimationFrame(loop);
   }
 
-  // Exposer pour le bouton replay
+  // Exposer pour les boutons replay et export vidéo
   document.getElementById('snapanim-replay').onclick = play;
+  var expBtn = document.getElementById('snapanim-export');
+  if (expBtn) {
+    expBtn.title = t('tmRecToggle');
+    expBtn.onclick = function() {
+      tmRecCanvas(canvasEl, 'tension-evolution', function(done) { play(done); });
+    };
+  }
   play();
 }
 </script>
@@ -15317,6 +15236,9 @@ async function snapCompareAnim() {
   <div class="snap-header">
     <div class="snap-title">Animation</div>
     <div style="display:flex;align-items:center;gap:.4rem">
+      <button id="snapanim-export" class="snap-close" title="Exporter en vidéo">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      </button>
       <button id="snapanim-replay" class="snap-close" title="Rejouer">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
       </button>
