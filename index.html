@@ -801,22 +801,14 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .snap-del-btn:hover { color:#f08080 }
 
 /* ── Module Tension ─────────────────────────────────────────────────────────── */
+/* Aligné sur le segment control .seg/.sb (sélecteur de roue) : un seul
+   langage de sélecteur segmenté dans l'app */
 .module-nav     { display:flex; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); padding:3px; gap:3px; max-width:880px; margin:0 auto 1.2rem; width:100% }
-.module-nav-btn { flex:1; padding:.6rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans','DM Sans FB',sans-serif; font-size:.85rem; font-weight:500; cursor:pointer; touch-action:manipulation; transition:all .3s cubic-bezier(.22,1,.36,1); display:flex; align-items:center; justify-content:center; gap:.4rem; letter-spacing:0; text-transform:uppercase; position:relative; overflow:hidden }
-.module-nav-btn::before { content:''; position:absolute; inset:0; border-radius:inherit; opacity:0; transition:opacity .3s }
-.module-nav-btn::after  { content:''; position:absolute; inset:0; border-radius:inherit; background:radial-gradient(ellipse 80% 60% at 50% 120%, rgba(126,200,227,.35) 0%, transparent 70%); opacity:0; transition:opacity .4s }
-.module-nav-btn.active { background:var(--bg2); color:var(--accent); box-shadow:0 2px 16px rgba(0,0,0,.45) }
-.module-nav-btn.active::before { opacity:0 }
-.module-nav-btn.active::after  { opacity:0 }
-.module-nav-btn.active .nav-icon { filter:drop-shadow(0 0 4px rgba(126,200,227,.6)); color:var(--accent) }
+.module-nav-btn { flex:1; padding:.6rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans','DM Sans FB',sans-serif; font-size:.85rem; font-weight:500; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:.4rem }
+.module-nav-btn.active { background:var(--bg2); color:var(--accent); box-shadow:0 2px 16px rgba(0,0,0,.45), 0 0 0 1px rgba(126,200,227,.15) inset }
+.module-nav-btn.active .nav-icon { color:var(--accent) }
 .module-nav-btn:hover:not(.active) { color:var(--text2) }
-.module-nav-btn:hover:not(.active)::before { background:linear-gradient(135deg, rgba(126,200,227,.03) 0%, transparent 60%); opacity:1 }
-@keyframes nav-click-flash {
-  0%   { box-shadow:0 2px 16px rgba(0,0,0,.45), 0 0 0 1px rgba(126,200,227,.15) inset, 0 0 24px rgba(126,200,227,.35) }
-  40%  { box-shadow:0 2px 16px rgba(0,0,0,.45), 0 0 0 1px rgba(126,200,227,.15) inset, 0 0 12px rgba(126,200,227,.18) }
-  100% { box-shadow:0 2px 16px rgba(0,0,0,.45), 0 0 0 1px rgba(126,200,227,.15) inset }
-}
-.module-nav-btn.nav-flash { animation:nav-click-flash .55s cubic-bezier(.22,1,.36,1) }
+.module-nav-btn.nav-flash { animation:sb-click-flash .55s cubic-bezier(.22,1,.36,1) }
 
 /* Conteneur principal du module */
 #tension-module  { display:none }
