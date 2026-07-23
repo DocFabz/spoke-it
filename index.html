@@ -15158,6 +15158,10 @@ async function snapCompareAnim() {
   }
   function startPlayback() {
     if (saveBtn) saveBtn.style.display = 'none';
+    // Peindre la frame 0 (snapshot A complet) AVANT de démarrer la capture :
+    // le canvas vient d'être (re)dimensionné donc noir, et la première frame
+    // encodée sert de vignette à la vidéo (Photos iOS, galeries Android).
+    drawFrame(0);
     var capturing = tmRecCanvasStart(canvasEl, 'tension-evolution');
     play(function() {
       if (capturing) tmRecCanvasFinish(function() {
