@@ -771,6 +771,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .snap-close:focus, .snap-close:active { outline:none; border-color:var(--border); color:var(--text3); background:none }
 #snapanim-replay:hover, #snapanim-save:hover { border-color:rgba(126,200,227,.6); color:rgba(126,200,227,1) }
 #snapanim-replay:focus, #snapanim-replay:active, #snapanim-save:focus, #snapanim-save:active { outline:none; border-color:var(--border); color:var(--text3); background:none }
+@media (hover: none) { #snapanim-replay:hover, #snapanim-save:hover { border-color:var(--border); color:var(--text3) } }
 .snap-save-row { display:flex; gap:.4rem; flex-shrink:0 }
 .snap-save-btn {
   background:transparent; border:1px solid var(--border-s); border-radius:var(--rs);
@@ -15164,9 +15165,25 @@ async function snapCompareAnim() {
     drawFrame(0);
     var capturing = tmRecCanvasStart(canvasEl, 'tension-evolution');
     play(function() {
-      if (capturing) tmRecCanvasFinish(function() {
-        if (saveBtn) saveBtn.style.display = '';
-      });
+      if (!capturing) return;
+      // Hold 2 s sur l'état final (récap affiché) avant de clore la capture.
+      // Repeindre à chaque frame est nécessaire : captureStream n'émet des
+      // frames que sur repaint, sans quoi le hold ne serait pas encodé.
+      var HOLD_END_MS = 2000;
+      var t0 = performance.now();
+      (function holdLoop() {
+        var modal = document.getElementById('snapanim-modal');
+        if (!modal || !modal.classList.contains('show')) return;   // modale fermée : abort déjà fait
+        drawFrame(TOTAL_MS);
+        drawRecap(1);
+        if (performance.now() - t0 < HOLD_END_MS) {
+          requestAnimationFrame(holdLoop);
+        } else {
+          tmRecCanvasFinish(function() {
+            if (saveBtn) saveBtn.style.display = '';
+          });
+        }
+      })();
     });
   }
   document.getElementById('snapanim-replay').onclick = startPlayback;
