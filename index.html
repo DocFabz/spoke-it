@@ -1957,7 +1957,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
           <input type="number" id="offset-left" step="0.1" inputmode="decimal" placeholder="—" oninput="onTension()" onblur="checkOffsetCoherence()" onkeydown="if(event.key==='-')event.preventDefault()">
         </div>
         <div class="f" id="field-sp-so-left" style="display:none">
-          <label class="tip-wrap" for="sp-so-left"><span data-i18n="soLeft">SO gauche</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Spoke Offset</span></label>
+          <label class="tip-wrap" for="sp-so-left"><span data-i18n="soLeft">SO G</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Spoke Offset</span></label>
           <input type="number" id="sp-so-left" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—">
         </div>
       </div>
@@ -1973,7 +1973,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
           <input type="number" id="offset-right" step="0.1" inputmode="decimal" placeholder="—" oninput="onTension()" onblur="checkOffsetCoherence()" onkeydown="if(event.key==='-')event.preventDefault()">
         </div>
         <div class="f" id="field-sp-so-right" style="display:none">
-          <label class="tip-wrap" for="sp-so-right"><span data-i18n="soRight">SO droit</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Spoke Offset</span></label>
+          <label class="tip-wrap" for="sp-so-right"><span data-i18n="soRight">SO D</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Spoke Offset</span></label>
           <input type="number" id="sp-so-right" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—">
         </div>
       </div>
@@ -3510,7 +3510,7 @@ const i18n = {
     totalSpokes:'Nb total de rayons', holeDiam:'Ø trous de bride (mm)',
     left:'Gauche', right:'Droit',
     pcdTipLeft:'Pitch Circle Diameter Gauche', pcdTipRight:'Pitch Circle Diameter Droit', offset:'Déport', offsetTipLeft:'Centre-Flasque Gauche', offsetTipRight:'Centre-Flasque Droite',
-    soLeft:'SO gauche', soRight:'SO droit',
+    soLeft:'SO G', soRight:'SO D',
     erdDirect:'ERD DIRECT', addonTip:"Dépend de l'ecrou utilisé",
     erdCalc:'ERD calculé (mm)', rimAsym:'ASYM. JANTE (mm)', spokeSection:'Section rayon (mm)', spokeSectionTip:"Permet de calculer l'élongation", cross:'Croisement',
     spokeCard:'Rayons', spokeMaterialSteel:'ACIER', spokeMaterialOther:'AUTRE', spokeMaterial:'Matériau',
@@ -3690,7 +3690,7 @@ const i18n = {
     totalSpokes:'Total spoke count', holeDiam:'Flange hole Ø (mm)',
     left:'Left', right:'Right',
     pcdTipLeft:'Left Pitch Circle Diameter', pcdTipRight:'Right Pitch Circle Diameter', offset:'Offset', offsetTipLeft:'Left Flange to Center', offsetTipRight:'Right Flange to Center',
-    soLeft:'SO left', soRight:'SO right',
+    soLeft:'SO L', soRight:'SO R',
     erdDirect:'ERD DIRECT', addonTip:'Depends on the nipple used',
     erdCalc:'Calculated ERD (mm)', rimAsym:'RIM ASYM. (mm)', spokeSection:'Spoke section (mm)', spokeSectionTip:'Used to calculate elongation', cross:'Lacing',
     spokeCard:'Spokes', spokeMaterialSteel:'STEEL', spokeMaterialOther:'OTHER', spokeMaterial:'Material',
