@@ -15125,6 +15125,17 @@ async function snapCompareAnim() {
     ctx.globalAlpha = 1;
   }
 
+  // Liseré blanc — peint en fin de frame, donc présent à l'écran ET dans la
+  // vidéo (captureStream encode les pixels du canvas). Rounded-rect aligné
+  // sur le radius CSS du canvas : clip à 10px, trait centré à 1px → r=9.
+  function drawBorder() {
+    ctx.globalAlpha = 1;
+    roundRect(ctx, 1, 1, VW - 2, VH - 2, 9);
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
   function play(onDone) {
     if (_snapAnimRAF) { cancelAnimationFrame(_snapAnimRAF); _snapAnimRAF = null; }
     var startTime = null;
@@ -15138,10 +15149,12 @@ async function snapCompareAnim() {
         var recapT = Math.min((elapsed - TOTAL_MS) / FADE_IN_MS, 1);
         drawRecap(recapT);
       }
+      drawBorder();
       if (elapsed < TOTAL_MS + FADE_IN_MS) {
         _snapAnimRAF = requestAnimationFrame(loop);
       } else {
         drawRecap(1);
+        drawBorder();
         _snapAnimRAF = null;
         // onDone : fin de capture vidéo. Le onclick replay passe l'event ici,
         // le typeof le neutralise.
@@ -15170,6 +15183,7 @@ async function snapCompareAnim() {
     // le canvas vient d'être (re)dimensionné donc noir, et la première frame
     // encodée sert de vignette à la vidéo (Photos iOS, galeries Android).
     drawFrame(0);
+    drawBorder();
     var capturing = tmRecCanvasStart(canvasEl, 'tension-evolution');
     if (!capturing && saveBtn) saveBtn.style.display = 'none';
     play(function() {
@@ -15184,6 +15198,7 @@ async function snapCompareAnim() {
         if (!modal || !modal.classList.contains('show')) return;   // modale fermée : abort déjà fait
         drawFrame(TOTAL_MS);
         drawRecap(1);
+        drawBorder();
         if (performance.now() - t0 < HOLD_END_MS) {
           requestAnimationFrame(holdLoop);
         } else {
