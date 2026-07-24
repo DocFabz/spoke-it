@@ -9515,6 +9515,10 @@ async function tmExportPdfWithOpts(opts) {
   }
 
   // ── Longueurs de rayons ───────────────────────────────────────────────────
+  // Workflow tension seule (pas de calcul) : summaryData est null, les
+  // longueurs n'existent pas — on omet toute la section plutôt que des « — ».
+  const isAvantPdf = wtype === 'avant';
+  if (sd) {
   Y += 5;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
@@ -9522,7 +9526,6 @@ async function tmExportPdfWithOpts(opts) {
   doc.text(lang === 'fr' ? 'LONGUEURS DE RAYONS' : 'SPOKE LENGTHS', ML, Y);
   Y += 4;
 
-  const isAvantPdf = wtype === 'avant';
   const halfW = (CW - 4) / 2;
   const cardR = 2;
 
@@ -9576,6 +9579,7 @@ async function tmExportPdfWithOpts(opts) {
     drawLenCard(xRight, labelFo, calcFo, retFo, true,  eloFo);
   }
   Y += (eloFo || eloFa ? 30 : 24) + 4;
+  } // fin if (sd) — section longueurs
 
   // ── Diagramme de tension ──────────────────────────────────────────────────
   if (opts.diagram) {
