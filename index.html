@@ -583,8 +583,11 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 @keyframes fu { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:translateY(0) } }
 .rg       { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1rem; margin-bottom:1rem }
 .rc       { border-radius:var(--rs); padding:1.4rem 1.5rem }
-.rc.fo    { background:linear-gradient(145deg,rgba(232,146,124,.07),rgba(232,146,124,.025)); border:1px solid rgba(232,146,124,.28) }
-.rc.fa    { background:linear-gradient(145deg,rgba(126,200,227,.07),rgba(126,200,227,.025)); border:1px solid rgba(126,200,227,.28) }
+.rc.fo    { background:var(--card-alt); border:1px solid rgba(232,146,124,.28) }
+.rc.fa    { background:var(--card-alt); border:1px solid rgba(126,200,227,.28) }
+.rc.fo:hover { background:linear-gradient(145deg,rgba(232,146,124,.07),rgba(232,146,124,.025)) }
+.rc.fa:hover { background:linear-gradient(145deg,rgba(126,200,227,.07),rgba(126,200,227,.025)) }
+@media (hover: none) { .rc.fo:hover, .rc.fa:hover { background:var(--card-alt) } }
 .rtag     { font-size:.59rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; margin-bottom:.2rem }
 .fo .rtag { color:var(--warm) }
 .fa .rtag { color:var(--accent) }
@@ -696,10 +699,17 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .arb-grid          { display:flex; flex-direction:column; gap:.3rem }
 .arb-row           { display:flex; align-items:center; justify-content:space-between; padding:.5rem .85rem; border:1px solid var(--border); border-radius:var(--rs); background:var(--card-alt); cursor:pointer; touch-action:manipulation; transition:border-color .18s, background .18s, box-shadow .18s }
 .arb-row:hover     { background:rgba(255,255,255,.04); box-shadow:0 0 0 1px var(--border-s) }
-@media (hover: none) { .arb-row:hover { background:var(--card-alt); box-shadow:none } }
-.arb-row.best-fo  { border-color:var(--warm) }
-.arb-row.best-fa  { border-color:var(--accent) }
-.arb-row.arb-flash { border-color:var(--success) !important; box-shadow:0 0 0 1px var(--success) !important }
+.arb-row.arb-dim   { opacity:.55 }
+.arb-row.arb-dim:hover { opacity:1 }
+@media (hover: none) { .arb-row:hover { background:var(--card-alt); box-shadow:none } .arb-row.arb-dim:hover { opacity:.55 } }
+.arb-row.best-fo  { border-color:rgba(232,146,124,.5) }
+.arb-row.best-fa  { border-color:rgba(126,200,227,.5) }
+.arb-row.arb-selected { border-color:rgba(126,207,168,.28) }
+.arb-row.arb-flash { border-color:var(--success) !important }
+.arb-row.arb-selected .arb-sz,
+.arb-row.arb-selected .arb-unit,
+.arb-row.arb-selected .arb-delta,
+.arb-row.arb-selected .arb-lbl { color:var(--success) !important }
 .arb-left          { display:flex; flex-direction:column; align-items:flex-start; gap:.05rem }
 .arb-sz            { font-family:'DM Mono','DM Mono FB',monospace; font-size:.88rem; font-weight:500; color:var(--text); line-height:1 }
 .arb-unit          { font-family:'DM Mono','DM Mono FB',monospace; font-size:.58rem; font-weight:300; color:var(--text3) }
@@ -2266,7 +2276,8 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         <div class="clabel clabel-done" data-i18n="arbitrage">Arrondi suggéré</div>
         <em id="arb-card-chevron" class="chevron chevron-done">&#8964;</em>
       </div>
-      <div id="arb-card-body" style="display:none;margin-top:1.35rem">
+      <div id="arb-card-body" style="display:none;margin-top:.3rem">
+        <p class="help" style="margin-top:0;margin-bottom:1.3rem;display:flex;align-items:center;gap:.4rem"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="flex:none" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><line x1="12" y1="11" x2="12" y2="16.5"/><line x1="12" y1="7.5" x2="12.01" y2="7.5"/></svg><span data-i18n="arbPickHint">Cliquez sur la valeur souhaitée pour le montage.</span></p>
         <div class="arb-cols" id="arb-cols">
           <div id="arb-col-fo">
             <div class="arb-col-head fo" id="arb-head-fo">Côté Gauche (NDS)</div>
@@ -3527,7 +3538,7 @@ const i18n = {
     errErd:'ERD invalide ou non renseigné.', errCross:'Veuillez choisir un croisement.',
     errOffset:'Les déports doivent être positifs.',
     errSO:'Veuillez renseigner le Spoke Offset (SO) pour les deux côtés.',
-    arbitrage:'Arrondi suggéré', gapTarget:'écart cible',
+    arbitrage:'Arrondi suggéré', arbPickHint:'Cliquez sur la valeur souhaitée pour le montage.', gapTarget:'écart cible',
     spokeThread:'⚠ La suggestion d\'arrondi propose la taille de rayon ayant le moins d\'écart avec la cible, en prenant en compte l\'élongation estimée. Vérifiez toujours la base de calcul de votre ERD et le positionnement du rayon dans l\'écrou qui a servi à le définir.',
     saveWarning:'⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.',
     exportBtn:'Exporter', importBtn:'Importer',
@@ -3708,7 +3719,7 @@ const i18n = {
     errErd:'ERD is invalid or missing.', errCross:'Please select a lacing pattern.',
     errOffset:'Offsets must be positive values.',
     errSO:'Please enter Spoke Offset (SO) for both sides.',
-    arbitrage:'Suggested rounding', gapTarget:'gap to target',
+    arbitrage:'Suggested rounding', arbPickHint:'Click the desired value for the build.', gapTarget:'gap to target',
     spokeThread:'⚠ The rounding suggestion finds the spoke length with the smallest gap from target, accounting for estimated elongation. Always verify the calculation basis of your ERD and the spoke positioning in the nipple used to define it.',
     saveWarning:'⚠︎ Locally stored in browser cache. Clearing the cache will erase all data.',
     exportBtn:'Export', importBtn:'Import',
@@ -5245,7 +5256,9 @@ function renderArb(side) {
   $id('arb-grid-' + side).innerHTML = sizes.map((sz, i) => {
     const delta = deltas[i];
     let cls = 'arb-row';
-    if (Math.abs(delta) <= minAbs + 0.0001) cls += ' best-' + side;
+    if (arbSelected[side] === null && Math.abs(delta) <= minAbs + 0.0001) cls += ' best-' + side;
+    if (arbSelected[side] === sz) cls += ' arb-selected';
+    else if (arbSelected[side] !== null) cls += ' arb-dim';
     const rawThreads = delta / 0.45;
     const roundedThreads = Math.round(rawThreads * 2) / 2;
     const threadWord = lang === 'fr'
@@ -5259,6 +5272,14 @@ function renderArb(side) {
 function applyArbLen(side, sz) {
   if (!summaryData) return;
   const d = summaryData;
+  // Toggle : re-clic sur la case déjà sélectionnée -> désélection totale
+  // (état d'avant première sélection : longueur null, liseret best-* restauré)
+  if (arbSelected[side] === sz) {
+    if (side === 'fo') d.lenFo = null; else d.lenFa = null;
+    arbSelected[side] = null;
+    renderSummary(); updateSumCardState(); renderArb(side);
+    return;
+  }
   // side here is 'fo' or 'fa' from the arb grid
   if (side === 'fo') d.lenFo = String(sz);
   else d.lenFa = String(sz);
@@ -5267,7 +5288,7 @@ function applyArbLen(side, sz) {
   arbSelected[side] = sz; renderArb(side);
   // Green flash on the newly rendered element
   const newEl = [...$id('arb-grid-' + side).querySelectorAll('.arb-row')].find(r => parseInt(r.querySelector('.arb-sz').textContent) === sz);
-  if (newEl) { newEl.classList.add('arb-flash'); setTimeout(() => newEl.classList.remove('arb-flash'), 700); }
+  if (newEl) { newEl.classList.add('arb-flash'); setTimeout(() => newEl.classList.remove('arb-flash'), 400); }
 }
 
 // ── Modale saisie taille rayon ──────────────────────────────────────────────────
