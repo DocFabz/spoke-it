@@ -4942,8 +4942,13 @@ function setCardDone(id, done) {
   card.classList.toggle('card-done', done);
 }
 
+let _calcBtnEl = null;
 function updateCalcBtn() {
-  const btn = document.querySelector('.btn[onclick="calc()"]');
+  // Bouton statique (HTML, jamais recréé) : cache après premier lookup — le
+  // sélecteur d'attribut scannait tout le document à chaque frappe (updateCalcBtn
+  // est câblé sur 'input' de 14 champs).
+  if (!_calcBtnEl) _calcBtnEl = document.querySelector('.btn[onclick="calc()"]');
+  const btn = _calcBtnEl;
   if (btn) btn.classList.toggle('ready', checkReady());
   updateCardStatus();
   clearResults();
@@ -12638,6 +12643,7 @@ function efStopMic() {
 // replay en cours de lecture : la capture est jetée.
 (function() {
   var recCv     = null;   // MediaRecorder de la lecture en cours
+  var recStream = null;   // flux captureStream de la lecture en cours
   var recBlob   = null;   // dernière vidéo complète
   var recFile   = null;
   var onReadyCb = null;
@@ -12656,6 +12662,16 @@ function efStopMic() {
     return '';
   }
 
+  // Arrêt explicite des tracks du flux : une CanvasCaptureMediaStreamTrack
+  // vivante maintient la capture du canvas à 30 fps tant qu'elle n'est pas
+  // GC (paresseuse sur Safari) — travail CPU résiduel après fermeture de la
+  // modale si on se contente de nullifier le recorder.
+  function recStopStream() {
+    if (!recStream) return;
+    try { recStream.getTracks().forEach(function(t) { t.stop(); }); } catch (e) {}
+    recStream = null;
+  }
+
   // Démarre la capture d'une lecture ; toute capture précédente est jetée.
   // Retourne false si l'enregistrement n'est pas possible (le bouton
   // disquette n'apparaîtra simplement pas).
@@ -12670,12 +12686,20 @@ function efStopMic() {
       recCv = mime
         ? new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 })
         : new MediaRecorder(stream, { videoBitsPerSecond: 6000000 });
-    } catch (e) { recCv = null; return false; }
+      recStream = stream;
+    } catch (e) {
+      recCv = null;
+      // new MediaRecorder a pu échouer APRÈS captureStream : stopper la track
+      // orpheline, sinon le canvas reste capturé à 30 fps jusqu'à la GC.
+      if (stream) { try { stream.getTracks().forEach(function(t) { t.stop(); }); } catch (e2) {} }
+      return false;
+    }
 
     var m = recCv.mimeType || mime || 'video/webm';
     recCv.ondataavailable = function(ev) { if (ev.data && ev.data.size) chunks.push(ev.data); };
     recCv.onstop = function() {
       recCv   = null;
+      recStopStream();
       recBlob = new Blob(chunks, { type: m });
       var ext = m.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
       recFile = new File([recBlob], baseName + '.' + ext, { type: m });
@@ -12698,6 +12722,7 @@ function efStopMic() {
   // Abandon silencieux (fermeture de la modale ou replay) : capture jetée
   window.tmRecCanvasAbort = function() {
     onReadyCb = null;
+    recStopStream();
     if (!recCv) return;
     recCv.ondataavailable = null;
     recCv.onstop = null;
@@ -13395,12 +13420,31 @@ function hrIsRimComplete() {
 }
 
 // ── Update button states ─────────────────────────────────────────────────────
+// Mémo anti-reparse pour hrUpdateButtons (hot path : greffé sur updateCalcBtn,
+// donc exécuté à CHAQUE frappe dans les champs du calculateur). Relire et
+// JSON.parse hubs + rims + configs par keystroke coûte plusieurs ms sur mobile
+// dès que le store grossit (snapshots, données tension). Clé du cache = chaîne
+// brute localStorage : TOUTE écriture (lsSet, removeItem, import, erase all)
+// change la chaîne → re-parse automatique au prochain appel. Aucun chemin
+// d'invalidation à maintenir. Les tableaux mémoïsés restent privés à ce module
+// (jamais retournés à l'extérieur) : aucune mutation externe possible.
+var _hrBtnMemo = { hub: { raw: undefined, arr: [] }, rim: { raw: undefined, arr: [] }, cfg: { raw: undefined, arr: [] } };
+function _hrBtnRead(slot, key) {
+  var raw = null;
+  try { raw = localStorage.getItem(key); } catch(e) {}
+  if (raw !== slot.raw) {
+    slot.raw = raw;
+    try { slot.arr = JSON.parse(raw) || []; } catch(e) { slot.arr = []; }
+  }
+  return slot.arr;
+}
+
 function hrUpdateButtons() {
   var hubOk  = hrIsHubComplete();
   var rimOk  = hrIsRimComplete();
-  var hubs   = hrLoadAll('hub').filter(function(e) { return (e.data && e.data.wtype ? e.data.wtype : 'avant') === wtype; });
-  var rims   = hrLoadAll('rim');
-  var configs = (typeof loadConfigs === 'function') ? loadConfigs() : [];
+  var hubs   = _hrBtnRead(_hrBtnMemo.hub, LS_HUBS).filter(function(e) { return (e.data && e.data.wtype ? e.data.wtype : 'avant') === wtype; });
+  var rims   = _hrBtnRead(_hrBtnMemo.rim, LS_RIMS);
+  var configs = (typeof LS_KEY !== 'undefined') ? _hrBtnRead(_hrBtnMemo.cfg, LS_KEY) : [];
   var wheelOk   = !!parseInt((document.getElementById('nb-rayons') || {}).value);
   var hasWheels = configs.some(function(c) { return (c.state.wtype || 'avant') === wtype; });
 
@@ -14922,8 +14966,11 @@ async function snapCompareJPEG() {
 
 // ── Animation morphing radar entre deux snapshots ─────────────────────────────
 var _snapAnimRAF = null;
+var _snapAnimGen = 0;    // jeton de génération : invalide les holdLoop périmés
+                         // (close ou nouvelle lecture pendant le hold 2 s)
 
 function snapAnimClose() {
+  _snapAnimGen++;
   if (_snapAnimRAF) { cancelAnimationFrame(_snapAnimRAF); _snapAnimRAF = null; }
   if (window.tmRecCanvasAbort) tmRecCanvasAbort();   // capture en cours : jetée
   document.getElementById('snapanim-overlay').classList.remove('show');
@@ -15191,6 +15238,7 @@ async function snapCompareAnim() {
     if (replayBtn) { replayBtn.disabled = false; replayBtn.classList.add('rec-ready'); }
   }
   function startPlayback() {
+    var gen = ++_snapAnimGen;   // toute lecture précédente (dont son hold) devient périmée
     if (saveBtn) { saveBtn.style.display = ''; saveBtn.disabled = true; saveBtn.classList.remove('rec-ready'); }
     if (replayBtn) { replayBtn.disabled = true; replayBtn.classList.remove('rec-ready'); }
     // Peindre la frame 0 (snapshot A complet) AVANT de démarrer la capture :
@@ -15208,13 +15256,18 @@ async function snapCompareAnim() {
       var HOLD_END_MS = 2000;
       var t0 = performance.now();
       (function holdLoop() {
+        // Jeton : close ou nouvelle lecture pendant le hold incrémente
+        // _snapAnimGen — la boucle périmée s'arrête même si la modale a été
+        // rouverte entre-temps (le seul test .show laissait l'ancienne boucle
+        // repeindre le canvas en concurrence avec la nouvelle lecture).
+        if (gen !== _snapAnimGen) return;
         var modal = document.getElementById('snapanim-modal');
         if (!modal || !modal.classList.contains('show')) return;   // modale fermée : abort déjà fait
         drawFrame(TOTAL_MS);
         drawRecap(1);
         drawBorder();
         if (performance.now() - t0 < HOLD_END_MS) {
-          requestAnimationFrame(holdLoop);
+          _snapAnimRAF = requestAnimationFrame(holdLoop);
         } else {
           tmRecCanvasFinish(function() {
             if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.add('rec-ready'); }
