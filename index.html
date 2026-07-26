@@ -12595,20 +12595,17 @@ function efStopMic() {
     var color    = isFo ? [232,146,124] : [126,200,227];
     var perSide  = foKgfs.length;
 
-    // Géométrie du point
+    // Géométrie du point — seule la partie indépendante de la taille
+    // (angle, échelle) est calculée une fois par step. px/py dépendent de
+    // la taille du canvas et sont recalculés à chaque frame dans
+    // tmDrawFrame : voir commentaire là-bas.
     var canvas      = $id('tm-radar');
-    var dpr         = window.devicePixelRatio || 1;
-    var size        = parseFloat(canvas.style.width) || (canvas.width / dpr);
-    var cx = size/2, cy = size/2, R = size*0.38;
     var N           = foKgfs.length * 2;
     var aStep       = (2*Math.PI)/N;
     var allVals     = foKgfs.concat(faKgfs).filter(function(v){return v!==null;});
     var scaleMax    = Math.ceil(Math.max.apply(null,allVals)/20)*20||20;
     var angleOffset = isFo ? 0 : 1;
     var a   = (spokeIdx*2 + angleOffset)*aStep - Math.PI/2;
-    var rr  = val !== null ? (val/scaleMax)*R : 0;
-    var px  = cx + rr*Math.cos(a);
-    var py  = cy + rr*Math.sin(a);
 
     var startTime = null;
     var rafId     = null;
@@ -12616,6 +12613,15 @@ function efStopMic() {
     function tmDrawFrame(alpha) {
       tmDrawRadar(foKgfs, faKgfs, null);
       if (val === null) return;
+      // px/py recalculés APRÈS tmDrawRadar : une rotation en cours de step
+      // redimensionne le canvas (_lastPx), des coordonnées figées au début
+      // du step laisseraient le dot décalé jusqu'au step suivant.
+      var dpr  = window.devicePixelRatio || 1;
+      var size = parseFloat(canvas.style.width) || (canvas.width / dpr);
+      var cx = size/2, cy = size/2, R = size*0.38;
+      var rr = (val/scaleMax)*R;
+      var px = cx + rr*Math.cos(a);
+      var py = cy + rr*Math.sin(a);
       var ctx = canvas.getContext('2d');
       ctx.save();
       ctx.globalAlpha = alpha;
