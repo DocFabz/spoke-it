@@ -9245,27 +9245,36 @@ function tmDrawRadar(foKgfs, faKgfs, outliers, canvasEl) {
     }
   }
 
-  // Axes
-  for (let i = 0; i < N; i++) {
-    const a    = i * angleStep - Math.PI / 2;
-    const isFo = (i % 2 === 0);
+  // Axes — batchés par couleur : 2 beginPath/stroke au lieu de N. Chaque
+  // stroke séparé force un flush du pipeline de rendu du navigateur ;
+  // critique quand le radar est rendu souvent (pulse EF, exports).
+  // Rendu identique au pixel près : les sous-paths d'un même path ne se
+  // croisent qu'au centre, où la couleur est de toute façon superposée.
+  ctx.lineWidth = 1;
+  for (let pass = 0; pass < 2; pass++) {
     ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
-    ctx.strokeStyle = isFo ? 'rgba(232,146,124,0.22)' : 'rgba(126,200,227,0.22)';
-    ctx.lineWidth   = 1;
-    ctx.stroke();
-
-    // Numéro rayon
-    if (perSide <= 16 || i % 2 === 0) {
-      const spokeNum = Math.floor(i / 2) + 1;
-      const labelR   = R + Math.max(10, W * 0.032);
-      ctx.fillStyle  = isFo ? 'rgba(232,146,124,0.75)' : 'rgba(126,200,227,0.65)';
-      ctx.font       = `${Math.round(W * 0.023)}px 'DM Mono', monospace`;
-      ctx.textAlign  = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(spokeNum, cx + labelR * Math.cos(a), cy + labelR * Math.sin(a));
+    for (let i = pass; i < N; i += 2) {
+      const a = i * angleStep - Math.PI / 2;
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
     }
+    ctx.strokeStyle = pass === 0 ? 'rgba(232,146,124,0.22)' : 'rgba(126,200,227,0.22)';
+    ctx.stroke();
+  }
+
+  // Numéros rayons (dessinés après tous les axes : ordre de superposition
+  // inchangé en pratique, les labels vivent au-delà de R)
+  for (let i = 0; i < N; i++) {
+    if (perSide > 16 && i % 2 !== 0) continue;
+    const a        = i * angleStep - Math.PI / 2;
+    const isFo     = (i % 2 === 0);
+    const spokeNum = Math.floor(i / 2) + 1;
+    const labelR   = R + Math.max(10, W * 0.032);
+    ctx.fillStyle  = isFo ? 'rgba(232,146,124,0.75)' : 'rgba(126,200,227,0.65)';
+    ctx.font       = `${Math.round(W * 0.023)}px 'DM Mono', monospace`;
+    ctx.textAlign  = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(spokeNum, cx + labelR * Math.cos(a), cy + labelR * Math.sin(a));
   }
 
   // Draw polygon helper
@@ -11061,10 +11070,14 @@ function efDiagramRender() {
 // redessiné à plat. Step allumé : le courant si sa valeur existe (navigation
 // dans un diagramme déjà rempli), sinon le précédent (saisie fraîche : après
 // un Next le step courant est vide, le dot intéressant est celui qui vient
-// d'être commité). Aucune valeur → rien. La géométrie est recalculée à
-// chaque frame : tmDrawRadar remesure la largeur du conteneur et ne
-// redimensionne le canvas que si elle a changé (cache _lastPx) — un
-// resize/rotation en cours de pulse resterait sinon décalé.
+// d'être commité). Aucune valeur → rien. La base du radar (grille, axes,
+// labels, polygones, dots) est identique d'une frame à l'autre : elle est
+// rendue une fois puis capturée dans un canvas offscreen, chaque frame ne
+// coûtant plus qu'un drawImage(base) + le dot pulsant. La largeur du
+// conteneur est remesurée à chaque frame (même mesure que tmDrawRadar) :
+// si elle change en cours de pulse (rotation/resize), la base est
+// recapturée — même garantie qu'avant, mais payée uniquement à la frame
+// où la géométrie change réellement.
 var efDotAnim   = null;
 var EF_DOT_MS   = 800;
 var EF_DOT_FADE = 250;
@@ -11101,15 +11114,39 @@ function efPulseDot() {
 
   var startTime = null, rafId = null, cancelled = false;
 
-  function drawFrame(alpha) {
+  // Base offscreen : rendu complet une fois dans le canvas visible, puis
+  // snapshot. basePx = 0 force la capture à la première frame.
+  var off = document.createElement('canvas');
+  var basePx = 0;
+
+  function captureBase() {
     tmDrawRadar(foKgfs, faKgfs, null, canvas);
-    var dpr  = window.devicePixelRatio || 1;
+    off.width  = canvas.width;
+    off.height = canvas.height;
+    off.getContext('2d').drawImage(canvas, 0, 0);
+    basePx = canvas._lastPx;
+  }
+
+  function drawFrame(alpha) {
+    var dpr = window.devicePixelRatio || 1;
+    // Même mesure que tmDrawRadar : détecte une rotation/resize en cours
+    // de pulse et ne recapture la base que dans ce cas
+    var wrapper  = canvas.parentElement;
+    var wrapperW = wrapper ? wrapper.getBoundingClientRect().width : 440;
+    var sizeCss  = Math.min(wrapperW || canvas.width / dpr, 440);
+    if (Math.round(sizeCss * dpr) !== basePx) captureBase();
+
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);        // blit pixel-à-pixel
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(off, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);    // repère CSS px pour le dot
+
     var size = parseFloat(canvas.style.width) || (canvas.width / dpr);
     var cx = size / 2, cy = size / 2, R = size * 0.38;
     var rr = (val / scaleMax) * R;
     var px = cx + rr * Math.cos(angle);
     var py = cy + rr * Math.sin(angle);
-    var ctx = canvas.getContext('2d');
     ctx.save();
     ctx.globalAlpha = alpha;
     var grad = ctx.createRadialGradient(px, py, 2, px, py, 18);
