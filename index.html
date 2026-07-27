@@ -14590,6 +14590,19 @@ async function snapComparePDF() {
     });
     if (cfgMatch) wheelName = cfgMatch.name || '';
   }
+  // Rider de la roue : config chargée sinon config contenant ces snapshots ->
+  // riderId -> riderById().name (jamais l'ID) — mêmes modalités que le PDF simple
+  var pdfRiderName = null;
+  var _riderCfg = null;
+  if (typeof _loadedConfigName !== 'undefined' && _loadedConfigName[wtype]) {
+    _riderCfg = loadConfigs().find(function(c) { return c.name === _loadedConfigName[wtype] && (c.state && (c.state.wtype || 'avant')) === wtype; });
+  } else if (typeof cfgMatch !== 'undefined' && cfgMatch) {
+    _riderCfg = cfgMatch;
+  }
+  if (_riderCfg && _riderCfg.riderId && typeof riderById === 'function') {
+    var _rd = riderById(_riderCfg.riderId);
+    if (_rd && _rd.name) pdfRiderName = _rd.name;
+  }
   var now = new Date();
   var dateStr = now.toLocaleDateString(L==='fr'?'fr-FR':'en-GB',{day:'2-digit',month:'long',year:'numeric'});
 
@@ -14659,11 +14672,23 @@ async function snapComparePDF() {
   }
   Y += headerH + 5;
 
-  // Nom de roue + séparateur
-  if (wheelName) {
-    var wlabel = wtype === 'arriere' ? t('rearLabel') : t('frontLabel');
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor.apply(doc,C_TEXT2);
-    doc.text(sanitize(wlabel)+' — '+sanitize(wheelName), ML, Y);
+  // Nom de roue + rider + séparateur — rider en C_WARM après ' - ',
+  // comme le PDF simple (roue en C_TEXT2, rider seul possible si nom vide)
+  if (wheelName || pdfRiderName) {
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+    var _wx = ML;
+    if (wheelName) {
+      var wlabel = wtype === 'arriere' ? t('rearLabel') : t('frontLabel');
+      var _wPart = sanitize(wlabel)+' — '+sanitize(wheelName);
+      doc.setTextColor.apply(doc,C_TEXT2);
+      doc.text(_wPart, _wx, Y);
+      _wx += doc.getTextWidth(_wPart);
+    }
+    if (pdfRiderName) {
+      if (wheelName) { doc.setTextColor.apply(doc,C_TEXT2); doc.text(' - ', _wx, Y); _wx += doc.getTextWidth(' - '); }
+      doc.setTextColor.apply(doc,C_WARM);
+      doc.text(sanitize(pdfRiderName), _wx, Y);
+    }
     Y += 5;
   }
   doc.setDrawColor.apply(doc,C_ACCENT); doc.setLineWidth(0.3);
