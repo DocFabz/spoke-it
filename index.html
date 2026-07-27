@@ -11903,14 +11903,16 @@ function efStartMic(forceLang) {
         var efDecProlong = efDecPart !== null && (efDecPart.length === 1 || /0$/.test(efDecPart));
         var efIntProlong = efDecPart === null && /^\d+$/.test(numInterim) &&
                            Number(numInterim) > 0 && Number(numInterim) % 10 === 0;
-        // Inversion germanique (de/nl/da) : l'unité est dite en PREMIER
-        // ("einundzwanzig" = un-et-vingt, nl "tweeëndertig", da "enogtyve") → l'intermédiaire
+        // Inversion germanique (de/nl/da) + sl/cs : l'unité est dite en PREMIER
+        // ("einundzwanzig" = un-et-vingt, nl "tweeëndertig", da "enogtyve",
+        // sl "enaindvajset", cs familier "jednadvacet") → l'intermédiaire
         // prolongeable est un chiffre 1-9, pas un palier de dizaine. Sans
         // rallonge, "2" se stabilise en 500ms, l'auto-avance committe 2 et le
         // final 32 atterrit sur le rayon suivant — symétrique du cas fr/en
         // couvert par efIntProlong. recogLang : var d'efStartMic, captée ici
         // par la closure onresult.
-        var efUnitProlong = (recogLang === 'de' || recogLang === 'nl' || recogLang === 'da') &&
+        var efUnitProlong = (recogLang === 'de' || recogLang === 'nl' || recogLang === 'da' ||
+                             recogLang === 'sl' || recogLang === 'cs') &&
                             efDecPart === null && /^[1-9]$/.test(numInterim);
         var efStableDelay = (efDecProlong || efIntProlong || efUnitProlong) ? 850 : 500;
         if (parsedInterim !== null) {
