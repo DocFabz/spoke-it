@@ -11343,6 +11343,7 @@ var efSessionGranted = false; // true dès que le micro capture réellement (ona
                               // écran blanc puis relance), NI effacer ef_restore (sinon la
                               // relance après crash retombe sur l'accueil).
 var efForcedLang     = null;  // langue forcée via la modale — iOS recrée l'instance SR à chaque onend
+var efLangFallbackTried = false; // repli en-US déjà tenté après language-not-supported (un seul par choix de langue)
                               // sans repasser forceLang : sans cette mémo, le choix en-US serait perdu après 2-3s
 var efAutoStep       = null;  // step réellement commité par l'auto-avance. La correction du final ne peut
                               // PAS se fier à efSteps[efCurrent-1] : si l'auto-avance a franchi une bascule
@@ -11623,6 +11624,7 @@ function efSpeechLang() {
 // immédiatement. Le retour vocal suit seul (efSpeak relit efSpeechLang à chaque énoncé).
 function efOnLangChange() {
   efForcedLang = (lang === 'fr') ? null : 'en-US';
+  efLangFallbackTried = false; // changement de langue UI → réarmer le repli
   // Jeter l'instance préchauffée : efWarmSR a figé r.lang à l'ouverture de la
   // modale. Bascule EN→FR : efForcedLang redevient null → efStartMic
   // consommerait l'instance dans l'ANCIENNE langue navigateur (ex: de-DE sous
@@ -11674,14 +11676,14 @@ function efLangDisplayName(code) {
       'ru':'Русский','ja':'日本語','zh':'中文','ko':'한국어',
       'ar':'العربية','sv':'Svenska','da':'Dansk','fi':'Suomi',
       'nb':'Norsk','tr':'Türkçe','cs':'Čeština','hu':'Magyar',
-      'ro':'Română','sk':'Slovenčina','uk':'Українська','hr':'Hrvatski'
+      'ro':'Română','sk':'Slovenčina','sl':'Slovenščina','uk':'Українська','hr':'Hrvatski'
     };
     var regionNames = {
       'FR':'France','BE':'Belgique','CH':'Suisse','CA':'Canada',
       'GB':'United Kingdom','US':'United States','AU':'Australia',
       'DE':'Deutschland','AT':'Österreich','BR':'Brasil','PT':'Portugal',
       'MX':'México','ES':'España','IT':'Italia','RU':'Россия',
-      'JP':'Japan','CN':'China','KR':'Korea','TW':'Taiwan'
+      'JP':'Japan','CN':'China','KR':'Korea','TW':'Taiwan','SI':'Slovenija'
     };
     var name = names[base] || code;
     if (region && regionNames[region]) name += ' (' + regionNames[region] + ')';
@@ -11718,6 +11720,7 @@ function efCloseMicLangModal() {
 
 function efPickMicLang(choice) {
   efCloseMicLangModal();
+  efLangFallbackTried = false; // nouveau choix de langue → droit à un nouveau repli
   if (choice === 'browser') {
     // utilise la langue navigateur telle quelle
     efForcedLang = null;
@@ -12089,10 +12092,23 @@ function efStartMic(forceLang) {
   };
   r.onerror = function(e) {
     // Erreurs non récupérables : permission refusée, services de reconnaissance
-    // absents/désactivés (fréquent sur vieilles tablettes Android), langue non
-    // installée sur le moteur, ou micro indisponible. Réessayer ne corrige rien →
+    // absents/désactivés (fréquent sur vieilles tablettes Android), micro
+    // indisponible, ou langue non installée APRÈS échec du repli en-US ci-dessous.
+    // Réessayer ne corrige rien →
     // on coupe et on masque le bouton, exactement comme pour le hors-ligne ; le
     // numpad reste le repli de saisie.
+    if (e.error === 'language-not-supported' && !efLangFallbackTried &&
+        (r.lang || '').toLowerCase() !== 'en-us') {
+      // Langue navigateur absente du moteur de l'appareil : un repli unique
+      // vers en-US avant d'abandonner. efForcedLang mémorisé → survit aux
+      // restarts onend iOS, et efSpeechLang() bascule le retour vocal en
+      // cohérence. Si en-US échoue à son tour (moteur totalement absent),
+      // efLangFallbackTried bloque la boucle → branche non-récupérable.
+      efLangFallbackTried = true;
+      efForcedLang = 'en-US';
+      efStartMic('en-US');
+      return;
+    }
     if (e.error === 'not-allowed' ||
         e.error === 'service-not-allowed' ||
         e.error === 'language-not-supported' ||
