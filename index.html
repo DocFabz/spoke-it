@@ -3117,6 +3117,14 @@ function ensureJsPDF() {
     const s = document.createElement('script');
     s.textContent = src.textContent;
     document.body.appendChild(s);
+    // Libération mémoire : le code vit désormais compilé sur window.jspdf.
+    // Retirer le <script> injecté (le code compilé survit au retrait du nœud)
+    // et vider la source text/plain (~730 Ko UTF-16 chacun, ~1,4 Mo au total —
+    // pression mémoire WebContent sur iPad). Le garde window.jspdf en tête de
+    // fonction court-circuite tout second appel ; un rechargement de page
+    // reparse le HTML et restaure la source. NE PAS relire #jspdf-src ailleurs.
+    s.remove();
+    src.textContent = '';
     resolve();
   });
   return _jspdfPromise;
