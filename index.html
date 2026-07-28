@@ -1593,11 +1593,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
   overscroll-behavior: contain;
 }
 
-/* ── Number input spin buttons ─────────────────────────────────────────────── */
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0 }
-input[type=number] { -moz-appearance:textfield }
-
 /* ── Module nav icon ──────────────────────────────────────────────────── */
 .nav-icon      { width:13px; height:13px; flex-shrink:0 }
 .spoke-icon    { width:18px; height:8px; flex-shrink:0 }
@@ -6189,7 +6184,7 @@ window.addEventListener('resize', function() {
   // touchstart { passive:false } sur document obligeait le navigateur à
   // attendre JS avant chaque début de scroll tactile, sur toute la page,
   // alors que le preventDefault ne sert qu'aux tips (bloquer l'activation
-  // du <label> parent + l'émulation click/hover iOS). Les 15 .tip-icon
+  // du <label> parent + l'émulation click/hover iOS). Les 13 .tip-icon
   // sont toutes dans le HTML statique (aucune générée en JS) : convention
   // à maintenir, sinon attacher ce listener à la création de l'icône.
   document.querySelectorAll('.tip-icon').forEach(function(icon) {
@@ -6633,7 +6628,10 @@ function renderEraseMgr(openKeys) {
   }
 
   // Riders (en tête)
-  const riders = (typeof loadRiders === 'function') ? loadRiders() : [];
+  const riders = ((typeof loadRiders === 'function') ? loadRiders() : [])
+    // Ordre alphabétique (insensible casse/accents), sur copie — même tri
+    // que les modales rider.
+    .slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
   const riderItems = riders.map(r => {
     const nb = configs.filter(c => c.riderId === r.id).length;
     const sub = nb > 0
@@ -10240,11 +10238,18 @@ async function tmScreenshot(whiteBg) {
   let shared     = false;
 
   if (isMobile && navigator.canShare) {
-    const blob = await (await fetch(jpeg)).blob();
-    const file = new File([blob], filename, { type: 'image/jpeg' });
-    if (navigator.canShare({ files: [file] })) {
-      try   { await navigator.share({ files: [file], title: 'Tension Diagram' }); shared = true; }
-      catch (err) { if (err.name === 'AbortError') return; }
+    // try englobant (même pattern que l'export Évolution) : fetch(dataURL) ou
+    // new File peuvent jeter sous pression mémoire WebContent (iPad) — sans
+    // garde, rejet non géré et le fallback téléchargement ne s'exécutait pas.
+    try {
+      const blob = await (await fetch(jpeg)).blob();
+      const file = new File([blob], filename, { type: 'image/jpeg' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Tension Diagram' });
+        shared = true;
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') return; // annulation volontaire : pas de fallback
     }
   }
 
@@ -15790,6 +15795,11 @@ document.addEventListener('keydown', function(e) {
     var list = document.getElementById('wsr-list');
     if (!list) return;
     var riders = (typeof loadRiders === 'function') ? loadRiders() : [];
+    // Ordre alphabétique (insensible casse/accents), sur copie — même tri
+    // que la modale de chargement ; l'option « Aucun » reste en tête.
+    riders = riders.slice().sort(function(a, b) {
+      return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+    });
     list.innerHTML = '';
 
     function makeOpt(label, id) {
@@ -16189,6 +16199,11 @@ document.addEventListener('keydown', function(e) {
       list.innerHTML = '<div class="wheel-load-empty">' + t('riderNone') + '</div>';
       return;
     }
+    // Ordre alphabétique (insensible casse/accents), sur copie : le
+    // localStorage conserve son ordre chronologique (unshift à la création).
+    riders = riders.slice().sort(function(a, b) {
+      return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+    });
     list.innerHTML = '';
     riders.forEach(function(r) {
       var item = document.createElement('div');
