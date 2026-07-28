@@ -599,17 +599,8 @@ select option             { background:#161b27 }
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
 .btn           { width:100%; padding:1.1rem 1.5rem; background:rgba(126,200,227,.07); border:1.5px solid rgba(126,200,227,.3); border-radius:8px; color:var(--accent); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:background .22s, border-color .22s, color .22s, opacity .22s, transform .22s, box-shadow .22s; display:flex; align-items:center; justify-content:center; gap:.5rem }
 .btn:active    { background:rgba(126,200,227,.18); transform:scale(.97) }
-.btn.ready     { border-color:var(--accent); color:#10141c; background:var(--accent); box-shadow:0 4px 18px rgba(126,200,227,.28); transition:background .25s, border-color .25s, color .25s, opacity .25s, transform .25s, box-shadow .25s }
-.btn.ready:active { background:var(--accent2); border-color:var(--accent2) }
+.btn.ready     { border-color:rgba(126,200,227,.55); color:var(--accent); background:rgba(126,200,227,.13); box-shadow:inset 0 1px 0 rgba(126,200,227,.12); transition:background .25s, border-color .25s, color .25s, opacity .25s, transform .25s, box-shadow .25s }
 .btn-row       { display:block }
-
-/* ── Barre d'actions fixe (module calcul) ──────────────────────────── */
-.action-bar { position:fixed; left:0; right:0; bottom:0; z-index:500; display:flex; gap:.6rem; align-items:center; justify-content:center; padding:.6rem .9rem calc(.6rem + env(safe-area-inset-bottom,0px)); background:rgba(24,28,36,.92); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border-top:1px solid var(--border-s); transition:transform .25s }
-.action-bar.kb-hidden { transform:translateY(110%) }
-.action-bar .btn { max-width:420px; padding:.75rem 1.5rem; border-radius:999px }
-.ab-reset { flex-shrink:0; width:40px; height:40px; background:none; border:1px solid rgba(232,146,124,.45); border-radius:50%; color:rgba(232,146,124,.75); display:flex; align-items:center; justify-content:center; cursor:pointer; touch-action:manipulation; transition:color .2s, border-color .2s, background .2s }
-.ab-reset:active { background:rgba(232,146,124,.14); color:var(--warm2) }
-#calc-module .wrap { padding-bottom:calc(4rem + 66px + env(safe-area-inset-bottom,0px)) }
 
 /* ── Error ─────────────────────────────────────────────────────────────────── */
 .err       { background:rgba(240,100,100,.08); border:1px solid rgba(240,100,100,.2); border-radius:var(--rs); padding:.7rem 1rem; color:#f08080; font-family:'DM Mono',monospace; font-size:.77rem; display:none }
@@ -1909,6 +1900,9 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <button class="sb active" id="btn-avant"   onclick="setWheel('avant')"   data-i18n="frontWheel">ROUE AVANT</button>
       <button class="sb"        id="btn-arriere" onclick="setWheel('arriere')" data-i18n="rearWheel">ROUE ARRIÈRE</button>
     </div>
+    <div style="text-align:right;margin-top:.75rem">
+      <button class="wheel-reset-btn" onclick="clearForm()"><svg class="reset-icon" width="9" height="9" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.5 5a3.5 3.5 0 1 0 .7-2.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><polyline points="1.5,1.5 1.5,3 3,3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>Reset</button>
+    </div>
   </div>
 
   <!-- ── Hub ── -->
@@ -2238,8 +2232,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
   </div>
 
   <div class="err" id="err"></div>
-  <div class="action-bar" id="action-bar">
-    <button class="ab-reset" onclick="clearForm()" title="Reset" aria-label="Reset"><svg width="13" height="13" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.5 5a3.5 3.5 0 1 0 .7-2.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><polyline points="1.5,1.5 1.5,3 3,3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>
+  <div class="btn-row">
     <button class="btn" onclick="calc()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.85">
         <rect x="4" y="2" width="16" height="20" rx="2"/>
@@ -6005,8 +5998,7 @@ function checkTensionComplete() {
   if (_tensionScrolled) return;
   if ($id('tension-forte').value) {
     _tensionScrolled = true;
-    // Barre d'actions fixe : le Calculer est toujours visible, le signal de
-    // complétude est son passage à l'état .ready (fond plein accent).
+    setTimeout(() => $id('err').nextElementSibling.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
   }
 }
 
@@ -6277,15 +6269,6 @@ function switchModule(mod) {
     try { tmInit(); } catch(e) { console.error('tmInit error:', e); }
   }
 }
-
-// ── Barre d'actions : masquée pendant la saisie (clavier iOS au-dessus du fixed) ──
-(function () {
-  const abBar = $id('action-bar');
-  if (!abBar || !window.visualViewport) return;
-  visualViewport.addEventListener('resize', () => {
-    abBar.classList.toggle('kb-hidden', (window.innerHeight - visualViewport.height) > 150);
-  });
-})();
 
 // ── Tension Module ───────────────────────────────────────────────────────────
 
