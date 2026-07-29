@@ -1342,6 +1342,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 }
 .cfg-loaded-name.show { display:inline-flex }
 .cfg-loaded-text { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:400; color:#fff; letter-spacing:.06em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px }
+.cfg-loaded-name .wheel-load-item-rider { max-width:110px; font-size:.55rem; line-height:1; padding:0; gap:.2rem; border:none; border-radius:0; background:transparent }
+.cfg-loaded-name .wheel-load-item-rider svg { width:8px; height:8px }
 
 /* ── Conversion table modal ────────────────────────────────────────────────── */
 .tm-conv-overlay  { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
@@ -4046,6 +4048,7 @@ function _refreshLoadedBadges() {
   const name = _loadedConfigName[wtype];
   _setBadge('cfg-loaded-name', 'cfg-loaded-text', name);
   _setBadge('tm-cfg-loaded-name', 'tm-cfg-loaded-text', name);
+  _refreshLoadedRiderChip(name);
   // Verrouiller/déverrouiller les boutons hub type
   $id('btn-hub-jbend').classList.toggle('locked', !!name && hubType !== 'jbend');
   $id('btn-hub-sp').classList.toggle('locked', !!name && hubType !== 'straightpull');
@@ -4065,6 +4068,27 @@ function _setBadge(badgeId, textId, name) {
 function clearLoadedConfigName() {
   _loadedConfigName[wtype] = null;
   _refreshLoadedBadges();
+}
+
+// ── Capsule rider apres le nom de la roue chargée (card Roue) ────────────────────
+// Même rendu que le Data manager : icône user + nom du rider (jamais l'ID).
+// Retirée si la roue est désaffectée, le rider supprimé, ou le nom effacé.
+function _refreshLoadedRiderChip(name) {
+  const badge = $id('cfg-loaded-name');
+  if (!badge) return;
+  const old = badge.querySelector('.wheel-load-item-rider');
+  if (old) old.remove();
+  if (!name || typeof loadConfigs !== 'function' || typeof riderById !== 'function') return;
+  const cfg = loadConfigs().find(c => c.name === name && (c.state && (c.state.wtype || 'avant')) === wtype);
+  if (!cfg || !cfg.riderId) return;
+  const rd = riderById(cfg.riderId);
+  if (!rd || !rd.name) return;
+  const chip = document.createElement('span');
+  chip.className = 'wheel-load-item-rider';
+  chip.title = rd.name;
+  chip.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  chip.appendChild(document.createTextNode(rd.name));
+  badge.appendChild(chip);
 }
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -6646,6 +6670,8 @@ function renderEraseMgr(openKeys) {
       // Supprimer le rider
       const arr = loadRiders().filter(x => x.id !== r.id);
       persistRiders(arr);
+      // Retirer la capsule rider de la card Roue si concernée
+      if (typeof _refreshLoadedBadges === 'function') _refreshLoadedBadges();
     });
   });
   acc.appendChild(makeAccSection('eraseMgrRiders', riderItems, openKeys));
@@ -6690,6 +6716,7 @@ function eraseMgrEraseAll() {
     // Roues (snapshots inclus, portés par chaque config)
     persistConfigs([]);
     renderConfigsList();
+    if (typeof _refreshLoadedBadges === 'function') _refreshLoadedBadges();
     // Tensiomètres perso — ctDelete gère les effets de bord (tensio actif,
     // TM_TABLES, chartes custom associées, dropdowns)
     while (ctLoadAll().length > 0) ctDelete(0);
@@ -16106,6 +16133,8 @@ document.addEventListener('keydown', function(e) {
       riders.unshift({ id: _editingRiderId, name: name, email: email, phone: phone, ts: Date.now() });
     }
     persistRiders(riders);
+    // Mettre à jour la capsule rider de la card Roue (renommage)
+    if (typeof _refreshLoadedBadges === 'function') _refreshLoadedBadges();
     closeRiderEdit();
   };
 
@@ -16154,6 +16183,8 @@ document.addEventListener('keydown', function(e) {
         var cfgs = loadConfigs();
         if (cfgs[i]) { cfgs[i].riderId = null; persistConfigs(cfgs); }
         riderRenderWheels(riderId);
+        // Retirer la capsule rider de la card Roue si cette roue est chargée
+        if (typeof _refreshLoadedBadges === 'function') _refreshLoadedBadges();
       });
 
       item.appendChild(nameEl);
