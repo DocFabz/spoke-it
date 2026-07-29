@@ -254,8 +254,7 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .erasemgr-item-info { flex:1; display:flex; align-items:baseline; gap:.4rem; overflow:hidden }
 .erasemgr-item-name { font-family:'DM Mono',monospace; font-size:.72rem; color:var(--accent2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .erasemgr-item-sub { font-size:.58rem; color:var(--text3); flex-shrink:0 }
-.erasemgr-item-info .wheel-load-item-rider { align-self:center; max-width:55%; font-size:.52rem; line-height:1; padding:0; gap:.2rem; border:none; border-radius:0; background:transparent }
-.erasemgr-item-info .wheel-load-item-rider svg { width:8px; height:8px }
+.erasemgr-item-info .wheel-load-item-rider { align-self:center; max-width:55%; font-size:.52rem }
 .erasemgr-item-btn { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
 .erasemgr-item-btn:hover { color:var(--warm) }
 .erasemgr-footer { display:flex; justify-content:flex-end }
@@ -357,8 +356,8 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .wheel-load-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .wheel-load-item:hover { border-color:var(--border-s); background:rgba(126,200,227,.03) }
 .wheel-load-item-name { flex:1; font-family:'DM Mono',monospace; font-size:.78rem; color:var(--accent2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-.wheel-load-item-rider { display:inline-flex; align-items:center; gap:.25rem; flex-shrink:0; max-width:42%; font-family:'DM Mono',monospace; font-size:.62rem; color:var(--accent2); background:transparent; border:1px solid rgba(126,200,227,.35); border-radius:999px; padding:.12rem .5rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-.wheel-load-item-rider svg { flex-shrink:0; opacity:.85 }
+.wheel-load-item-rider { display:inline-flex; align-items:center; gap:.2rem; flex-shrink:0; max-width:42%; font-family:'DM Mono',monospace; font-size:.55rem; line-height:1; color:var(--accent2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.wheel-load-item-rider svg { flex-shrink:0; opacity:.85; width:8px; height:8px }
 .wheel-load-item-meta { font-family:'DM Mono',monospace; font-size:.63rem; color:var(--text3); white-space:nowrap }
 .wheel-load-item-del { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; touch-action:manipulation; padding:.1rem .25rem; transition:color .2s; flex-shrink:0 }
 .wheel-load-item-del:hover { color:var(--warm) }
@@ -1342,8 +1341,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 }
 .cfg-loaded-name.show { display:inline-flex }
 .cfg-loaded-text { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:400; color:#fff; letter-spacing:.06em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px }
-.cfg-loaded-name .wheel-load-item-rider { max-width:110px; font-size:.55rem; line-height:1; padding:0; gap:.2rem; border:none; border-radius:0; background:transparent }
-.cfg-loaded-name .wheel-load-item-rider svg { width:8px; height:8px }
+.cfg-loaded-name .wheel-load-item-rider { max-width:110px }
 
 /* ── Conversion table modal ────────────────────────────────────────────────── */
 .tm-conv-overlay  { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
@@ -4070,25 +4068,33 @@ function clearLoadedConfigName() {
   _refreshLoadedBadges();
 }
 
+// ── Capsule rider (icône user + nom, jamais l'ID) ──────────────────────────────
+// Source unique du markup : card Roue, Data manager, modale de chargement.
+// Dimensionnement de l'icône par le CSS (.wheel-load-item-rider svg).
+function riderChipEl(riderId) {
+  if (!riderId || typeof riderById !== 'function') return null;
+  const rd = riderById(riderId);
+  if (!rd || !rd.name) return null;
+  const chip = document.createElement('span');
+  chip.className = 'wheel-load-item-rider';
+  chip.title = rd.name;
+  chip.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  chip.appendChild(document.createTextNode(rd.name));
+  return chip;
+}
+
 // ── Capsule rider apres le nom de la roue chargée (card Roue) ────────────────────
-// Même rendu que le Data manager : icône user + nom du rider (jamais l'ID).
 // Retirée si la roue est désaffectée, le rider supprimé, ou le nom effacé.
 function _refreshLoadedRiderChip(name) {
   const badge = $id('cfg-loaded-name');
   if (!badge) return;
   const old = badge.querySelector('.wheel-load-item-rider');
   if (old) old.remove();
-  if (!name || typeof loadConfigs !== 'function' || typeof riderById !== 'function') return;
+  if (!name || typeof loadConfigs !== 'function') return;
   const cfg = loadConfigs().find(c => c.name === name && (c.state && (c.state.wtype || 'avant')) === wtype);
-  if (!cfg || !cfg.riderId) return;
-  const rd = riderById(cfg.riderId);
-  if (!rd || !rd.name) return;
-  const chip = document.createElement('span');
-  chip.className = 'wheel-load-item-rider';
-  chip.title = rd.name;
-  chip.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-  chip.appendChild(document.createTextNode(rd.name));
-  badge.appendChild(chip);
+  if (!cfg) return;
+  const chip = riderChipEl(cfg.riderId);
+  if (chip) badge.appendChild(chip);
 }
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -6589,17 +6595,8 @@ function renderEraseMgr(openKeys) {
       info.appendChild(subEl);
     }
     // Capsule rider si la roue est affectée
-    if (riderId && typeof riderById === 'function') {
-      const rd = riderById(riderId);
-      if (rd && rd.name) {
-        const chip = document.createElement('span');
-        chip.className = 'wheel-load-item-rider';
-        chip.title = rd.name;
-        chip.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-        chip.appendChild(document.createTextNode(rd.name));
-        info.appendChild(chip);
-      }
-    }
+    const riderChip = (typeof riderChipEl === 'function') ? riderChipEl(riderId) : null;
+    if (riderChip) info.appendChild(riderChip);
     const btn = document.createElement('button');
     btn.className = 'erasemgr-item-btn';
     btn.textContent = t('eraseMgrDel');
@@ -15972,17 +15969,7 @@ document.addEventListener('keydown', function(e) {
       nameEl.textContent = cfg.name;
 
       // Chip rider si la roue est affectée
-      var riderEl = null;
-      if (cfg.riderId && typeof riderById === 'function') {
-        var rd = riderById(cfg.riderId);
-        if (rd && rd.name) {
-          riderEl = document.createElement('span');
-          riderEl.className = 'wheel-load-item-rider';
-          riderEl.title = rd.name;
-          riderEl.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-          riderEl.appendChild(document.createTextNode(rd.name));
-        }
-      }
+      var riderEl = (typeof riderChipEl === 'function') ? riderChipEl(cfg.riderId) : null;
 
       var dateStr = '';
       if (cfg.ts) {
