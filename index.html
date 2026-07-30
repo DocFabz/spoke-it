@@ -3604,6 +3604,7 @@ const i18n = {
     tmDishTitle:'Centrage estimé', tmRatioTheo:'Ratio théorique', tmRatioMeas:'Ratio mesuré',
     tmDishOffset:'Décentrage estimé', tmDishOk:'Centrage cohérent dans la marge de mesure',
     tmDishCheck:'À confirmer au pied de centrage',
+    tmDishUnreliable:'Dispersion élevée — estimation non fiable',
     tmRecShare:'Partager la vidéo', tmRecSave:'Télécharger la vidéo',
     tmCVMaxLabel:'Seuil outliers',
     tmOutlierModalTitle:'Seuil de détection',
@@ -3788,6 +3789,7 @@ const i18n = {
     tmDishTitle:'Estimated dish', tmRatioTheo:'Theoretical ratio', tmRatioMeas:'Measured ratio',
     tmDishOffset:'Estimated offset', tmDishOk:'Dish consistent within measurement margin',
     tmDishCheck:'Confirm with a dishing gauge',
+    tmDishUnreliable:'High spread — estimate unreliable',
     tmRecShare:'Share video', tmRecSave:'Download video',
     tmCVMaxLabel:'Outliers threshold',
     tmOutlierModalTitle:'Detection threshold',
@@ -10459,11 +10461,16 @@ function tmRenderDish(fo, fa, container) {
   const sideFo = wtype === 'arriere' ? 'DS'  : 'NDS';
   const side   = delta >= 0 ? sideFa : sideFo;
 
+  // Garde de fiabilité : au-delà du seuil de CV (le même que le surlignage
+  // des outliers), les moyennes par nappe peuvent masquer une covariance
+  // tension/voile — un ratio moyen conforme ne garantit alors plus le
+  // centrage. Le δ reste affiché mais grisé, sans verdict de couleur.
+  const cvOver = fo.cvNum > tmCVThreshold || fa.cvNum > tmCVThreshold;
   // < 0.5 mm : sous le plancher de résolution du tensiomètre → non significatif
   const ok     = abs < 0.5;
-  const col    = ok ? 'color:var(--success)' : (abs < 1 ? 'color:#e8a040' : 'color:#e06060');
+  const col    = cvOver ? 'color:var(--text3)' : (ok ? 'color:var(--success)' : (abs < 1 ? 'color:#e8a040' : 'color:#e06060'));
   const offStr = ok ? '&lt; 0.5 mm' : '&asymp; ' + abs.toFixed(1) + ' mm ' + side;
-  const hint   = ok ? t('tmDishOk') : t('tmDishCheck');
+  const hint   = cvOver ? t('tmDishUnreliable') : (ok ? t('tmDishOk') : t('tmDishCheck'));
 
   const div = document.createElement('div');
   div.className = 'tm-dish';
