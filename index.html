@@ -905,6 +905,9 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-stat-label.fa { color:var(--accent) }
 .tm-stat-row     { display:flex; justify-content:space-between; font-size:.72rem; color:var(--text2); margin-bottom:.18rem }
 .tm-stat-row strong { font-family:'DM Mono',monospace; font-weight:400; color:var(--text); font-size:.75rem }
+.tm-dish         { grid-column:1 / -1; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); padding:.75rem 1rem }
+.tm-dish .tm-stat-label { color:var(--text3) }
+.tm-dish-hint    { font-size:.62rem; color:var(--text3); margin-top:.45rem; font-style:italic }
 
 /* Hint */
 .tm-hint         { font-size:.63rem; color:var(--text3); font-style:italic; text-align:center; margin-top:.6rem; line-height:1.5 }
@@ -3598,6 +3601,9 @@ const i18n = {
     tmSpokeLabel:'Rayon',
     tmRadarTitle:'Diagramme de tension',
     tmAvg:'Moyenne', tmStd:'Écart-type',
+    tmDishTitle:'Centrage estimé', tmRatioTheo:'Ratio théorique', tmRatioMeas:'Ratio mesuré',
+    tmDishOffset:'Décentrage estimé', tmDishOk:'Centrage cohérent dans la marge de mesure',
+    tmDishCheck:'À confirmer au pied de centrage',
     tmRecShare:'Partager la vidéo', tmRecSave:'Télécharger la vidéo',
     tmCVMaxLabel:'Seuil outliers',
     tmOutlierModalTitle:'Seuil de détection',
@@ -3779,6 +3785,9 @@ const i18n = {
     tmSpokeLabel:'Spoke',
     tmRadarTitle:'Tension diagram',
     tmAvg:'Average', tmStd:'Std deviation',
+    tmDishTitle:'Estimated dish', tmRatioTheo:'Theoretical ratio', tmRatioMeas:'Measured ratio',
+    tmDishOffset:'Estimated offset', tmDishOk:'Dish consistent within measurement margin',
+    tmDishCheck:'Confirm with a dishing gauge',
     tmRecShare:'Share video', tmRecSave:'Download video',
     tmCVMaxLabel:'Outliers threshold',
     tmOutlierModalTitle:'Detection threshold',
@@ -5196,7 +5205,7 @@ function calc() {
 
   const sl = (sd !== null && !isNaN(sd)) ? (sa ? `${sd}×${sa} mm` : `${sd} mm`) : '—';
   // Conserver les longueurs saisies manuellement si elles existent
-  summaryData = { erd: erd.toFixed(1), wtype, n, h, cross, crossFo, crossFa, diffMode, isSP, sl, asym, ratio, lenFo: null, lenFa: null };
+  summaryData = { erd: erd.toFixed(1), wtype, n, h, cross, crossFo, crossFa, diffMode, isSP, sl, asym, ratio, foOff, faOff, lFo: Lfo, lFa: Lfa, lenFo: null, lenFa: null };
   resetSumCardState();
   $id('sum-card-body').style.display = 'none'; $id('sum-card-chevron').style.transform = '';
   $id('summary-wrap').classList.add('show');
@@ -10298,7 +10307,7 @@ function tmRenderStats(foKgfs, faKgfs) {
     const delta = max - min;
     const std   = Math.sqrt(v.reduce((a, b) => a + (b - avg) ** 2, 0) / v.length);
     const cv    = avg > 0 ? (std / avg * 100) : 0;
-    return { avg: avg.toFixed(1), min, max, delta, std: std.toFixed(1), cv: cv.toFixed(1), cvNum: cv };
+    return { avg: avg.toFixed(1), avgNum: avg, min, max, delta, std: std.toFixed(1), cv: cv.toFixed(1), cvNum: cv };
   }
 
   const fo = stats(foKgfs), fa = stats(faKgfs);
@@ -10336,6 +10345,51 @@ function tmRenderStats(foKgfs, faKgfs) {
     card(fa, faLabel, 'fa');
     card(fo, foLabel, 'fo');
   }
+
+  tmRenderDish(fo, fa, container);
+}
+
+// ── Estimation du décentrage à partir de l'écart ratio mesuré / théorique ───
+// Équilibre latéral par paire : T_fa·(faOff/lFa) = T_fo·(foOff/lFo).
+// k  = ratio mesuré (nappe faible / nappe forte, moyennes converties en kgf)
+// k0 = ratio théorique complet (offsets ET longueurs — légèrement ≠ du ratio
+//      affiché sur la card Résultats, qui n'utilise que les offsets)
+// δ  = déplacement de jante qui expliquerait l'écart ; δ > 0 → vers la nappe
+//      faible (fa). Nécessite la géométrie du calcul de longueurs : masqué en
+//      workflow tension seule (summaryData null ou sans géométrie).
+function tmRenderDish(fo, fa, container) {
+  const sd = summaryData;
+  if (!sd || !fo || !fa) return;
+  if (sd.wtype !== wtype) return;
+  const foOff = sd.foOff, faOff = sd.faOff, lFo = sd.lFo, lFa = sd.lFa;
+  if (!(foOff > 0 && faOff > 0 && lFo > 0 && lFa > 0)) return;
+  if (!(fo.avgNum > 0 && fa.avgNum > 0)) return;
+
+  const k     = fa.avgNum / fo.avgNum;
+  const k0    = (foOff * lFa) / (faOff * lFo);
+  const delta = (k * faOff * lFo - foOff * lFa) / (lFa + k * lFo);
+
+  const abs = Math.abs(delta);
+  // fa = NDS sur roue arrière, DS sur roue avant (convention des cards)
+  const sideFa = wtype === 'arriere' ? 'NDS' : 'DS';
+  const sideFo = wtype === 'arriere' ? 'DS'  : 'NDS';
+  const side   = delta >= 0 ? sideFa : sideFo;
+
+  // < 0.5 mm : sous le plancher de résolution du tensiomètre → non significatif
+  const ok     = abs < 0.5;
+  const col    = ok ? 'color:var(--success)' : (abs < 1 ? 'color:#e8a040' : 'color:#e06060');
+  const offStr = ok ? '&lt; 0.5 mm' : '&asymp; ' + abs.toFixed(1) + ' mm ' + side;
+  const hint   = ok ? t('tmDishOk') : t('tmDishCheck');
+
+  const div = document.createElement('div');
+  div.className = 'tm-dish';
+  div.innerHTML = `
+    <div class="tm-stat-label">${t('tmDishTitle')}</div>
+    <div class="tm-stat-row"><span>${t('tmRatioTheo')}</span><strong>${(k0 * 100).toFixed(1)} %</strong></div>
+    <div class="tm-stat-row"><span>${t('tmRatioMeas')}</span><strong>${(k * 100).toFixed(1)} %</strong></div>
+    <div class="tm-stat-row"><span>${t('tmDishOffset')}</span><strong style="${col}">${offStr}</strong></div>
+    <div class="tm-dish-hint">${hint}</div>`;
+  container.appendChild(div);
 }
 // ── Select placeholder colour (sync avec input::placeholder) ─────────────────
 function syncSelectPlaceholder(sel) {
