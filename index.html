@@ -3602,8 +3602,8 @@ const i18n = {
     tmRadarTitle:'Diagramme de tension',
     tmAvg:'Moyenne', tmStd:'Écart-type',
     tmDishTitle:'Centrage estimé', tmRatioTheo:'Ratio théorique', tmRatioMeas:'Ratio mesuré',
-    tmDishOffset:'Décentrage estimé', tmDishOk:'Centrage théoriquement cohérent dans la marge de mesure. À confirmer avec un outil de centrage.',
-    tmDishCheck:'À confirmer avec un outil de centrage',
+    tmDishOk:'Centrage théoriquement cohérent dans la marge de mesure. À confirmer avec un outil de centrage.',
+    tmDishCheck:'Écart significatif. Vérifier avec un outil de centrage.',
     tmDishUnreliable:'Dispersion élevée — estimation non fiable',
     tmRecShare:'Partager la vidéo', tmRecSave:'Télécharger la vidéo',
     tmCVMaxLabel:'Seuil outliers',
@@ -3787,8 +3787,8 @@ const i18n = {
     tmRadarTitle:'Tension diagram',
     tmAvg:'Average', tmStd:'Std deviation',
     tmDishTitle:'Estimated dish', tmRatioTheo:'Theoretical ratio', tmRatioMeas:'Measured ratio',
-    tmDishOffset:'Estimated offset', tmDishOk:'Dish theoretically consistent within measurement margin. Confirm with a dishing tool.',
-    tmDishCheck:'Confirm with a dishing tool',
+    tmDishOk:'Dish theoretically consistent within measurement margin. Confirm with a dishing tool.',
+    tmDishCheck:'Significant deviation. Check with a dishing tool.',
     tmDishUnreliable:'High spread — estimate unreliable',
     tmRecShare:'Share video', tmRecSave:'Download video',
     tmCVMaxLabel:'Outliers threshold',
@@ -10457,20 +10457,15 @@ function tmRenderDish(fo, fa, container) {
   const delta = (k * faOff * lFo - foOff * lFa) / (lFa + k * lFo);
 
   const abs = Math.abs(delta);
-  // fa = NDS sur roue arrière, DS sur roue avant (convention des cards)
-  const sideFa = wtype === 'arriere' ? 'NDS' : 'DS';
-  const sideFo = wtype === 'arriere' ? 'DS'  : 'NDS';
-  const side   = delta >= 0 ? sideFa : sideFo;
 
   // Garde de fiabilité : au-delà du seuil de CV (le même que le surlignage
   // des outliers), les moyennes par nappe peuvent masquer une covariance
   // tension/voile — un ratio moyen conforme ne garantit alors plus le
-  // centrage. Le δ reste affiché mais grisé, sans verdict de couleur.
+  // centrage. Le message reste grisé, sans verdict de couleur.
   const cvOver = fo.cvNum > tmCVThreshold || fa.cvNum > tmCVThreshold;
   // < 0.5 mm : sous le plancher de résolution du tensiomètre → non significatif
   const ok     = abs < 0.5;
-  const col    = cvOver ? 'color:var(--text3)' : (ok ? 'color:var(--success)' : (abs < 1 ? 'color:#e8a040' : 'color:#e06060'));
-  const offStr = ok ? '&lt; 0.5 mm' : '&asymp; ' + abs.toFixed(1) + ' mm ' + side;
+  const col    = cvOver ? 'color:var(--text3)' : (ok ? 'color:var(--success)' : 'color:#e8a040');
   const hint   = cvOver ? t('tmDishUnreliable') : (ok ? t('tmDishOk') : t('tmDishCheck'));
 
   const div = document.createElement('div');
@@ -10479,8 +10474,7 @@ function tmRenderDish(fo, fa, container) {
     <div class="tm-stat-label">${t('tmDishTitle')}</div>
     <div class="tm-stat-row"><span>${t('tmRatioTheo')}</span><strong>${(k0 * 100).toFixed(1)} %</strong></div>
     <div class="tm-stat-row"><span>${t('tmRatioMeas')}</span><strong>${(k * 100).toFixed(1)} %</strong></div>
-    <div class="tm-stat-row"><span>${t('tmDishOffset')}</span><strong style="${col}">${offStr}</strong></div>
-    <div class="tm-dish-hint">${hint}</div>`;
+    <div class="tm-dish-hint" style="${col}">${hint}</div>`;
   container.appendChild(div);
 }
 // ── Select placeholder colour (sync avec input::placeholder) ─────────────────
