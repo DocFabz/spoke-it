@@ -3602,7 +3602,7 @@ const i18n = {
     tmRadarTitle:'Diagramme de tension',
     tmAvg:'Moyenne', tmStd:'Écart-type',
     tmDishTitle:'Centrage estimé', tmRatioTheo:'Ratio théorique', tmRatioMeas:'Ratio mesuré',
-    tmDishOk:'Centrage théoriquement cohérent dans la marge de mesure. À confirmer avec un outil de centrage.',
+    tmDishOk:'Centrage théoriquement cohérent dans la marge de mesure. Vérifier avec un outil de centrage.',
     tmDishCheck:'Écart significatif. Vérifier avec un outil de centrage.',
     tmDishUnreliable:'Dispersion élevée — estimation non fiable',
     tmRecShare:'Partager la vidéo', tmRecSave:'Télécharger la vidéo',
@@ -3787,7 +3787,7 @@ const i18n = {
     tmRadarTitle:'Tension diagram',
     tmAvg:'Average', tmStd:'Std deviation',
     tmDishTitle:'Estimated dish', tmRatioTheo:'Theoretical ratio', tmRatioMeas:'Measured ratio',
-    tmDishOk:'Dish theoretically consistent within measurement margin. Confirm with a dishing tool.',
+    tmDishOk:'Dish theoretically consistent within measurement margin. Check with a dishing tool.',
     tmDishCheck:'Significant deviation. Check with a dishing tool.',
     tmDishUnreliable:'High spread — estimate unreliable',
     tmRecShare:'Share video', tmRecSave:'Download video',
@@ -10434,9 +10434,10 @@ function tmRenderStats(foKgfs, faKgfs) {
 // k  = ratio mesuré (nappe faible / nappe forte, moyennes converties en kgf)
 // k0 = ratio théorique complet (offsets ET longueurs — légèrement ≠ du ratio
 //      affiché sur la card Résultats, qui n'utilise que les offsets)
-// δ  = déplacement de jante qui expliquerait l'écart ; δ > 0 → vers la nappe
-//      faible (fa). Nécessite la géométrie du calcul de longueurs : masqué en
-//      workflow tension seule (summaryData null ou sans géométrie).
+// δ  = déplacement de jante qui expliquerait l'écart ; seule l'amplitude |δ|
+//      est exploitée (verdict par seuils). Nécessite la géométrie du calcul de
+//      longueurs : masqué en workflow tension seule (summaryData null ou sans
+//      géométrie).
 function tmRenderDish(fo, fa, container) {
   const sd = summaryData;
   if (!sd || !fo || !fa) return;
