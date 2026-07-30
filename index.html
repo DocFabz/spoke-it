@@ -4342,7 +4342,7 @@ function readState() {
     mFo: $id('m-fo').innerHTML,   mFa: $id('m-fa').innerHTML,
     rtagFoKey: $id('rtag-fo').dataset.i18nKey || '',
     rtagFaKey: $id('rtag-fa').dataset.i18nKey || '',
-    summaryData,
+    summaryData: $id('results').classList.contains('show') ? summaryData : null,
     arbData: (arbData.fo && arbData.fa) ? JSON.parse(JSON.stringify(arbData)) : null,
     arbSelected: JSON.parse(JSON.stringify(arbSelected)),
     tmType,
@@ -4459,7 +4459,7 @@ function applyState(s) {
         summaryData.ratio = exactRatio(summaryData);
       }
       renderSummary(); $id('summary-wrap').classList.add('show');
-    }
+    } else { summaryData = null; }
     if (s.arbData && s.arbData.fo && s.arbData.fa) {
       arbData = s.arbData;
       buildArb('fo', arbData.fo.exactLen, arbData.fo.elongation);
@@ -4474,6 +4474,7 @@ function applyState(s) {
       $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
     } else { arbData = { fo: null, fa: null }; arbSelected.fo = null; arbSelected.fa = null; }
   } else {
+    summaryData = null;
     ['results','arb-wrap','summary-wrap'].forEach(id => $id(id).classList.remove('show'));
   }
 
