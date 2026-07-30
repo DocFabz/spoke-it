@@ -4450,6 +4450,12 @@ function applyState(s) {
         const g = lateralGeometry();
         if (g) { summaryData.foOff = g.foOff; summaryData.faOff = g.faOff; summaryData.lFo = g.lFo; summaryData.lFa = g.lFa; }
       }
+      // Unification du ratio : recalcul avec la formule exacte dès que la
+      // géométrie est disponible — couvre les saves d'avant la formule exacte
+      // (ratio offsets-seuls) au même coût négligeable que la géométrie.
+      if (summaryData.foOff > 0 && summaryData.faOff > 0 && summaryData.lFo > 0 && summaryData.lFa > 0) {
+        summaryData.ratio = exactRatio(summaryData);
+      }
       renderSummary(); $id('summary-wrap').classList.add('show');
     }
     if (s.arbData && s.arbData.fo && s.arbData.fa) {
@@ -4889,33 +4895,48 @@ function updateDiffSideLabels() {
 }
 
 function onTension() {
-  const oL = parseFloat($id('offset-left').value);
-  const oR = parseFloat($id('offset-right').value);
-  const tF = parseFloat($id('tension-forte').value);
-  const disp = $id('tension-faible-display'), field = $id('tension-faible-field');
-  const sel  = $id('tension-forte');
+  const tF  = parseFloat($id('tension-forte').value);
+  const sel = $id('tension-forte');
   const helpKey = wtype === 'arriere' ? 'tensionHelpRear' : 'tensionHelpFront';
   const helpEl = $id('tension-help-text');
   if (helpEl) helpEl.textContent = t(helpKey);
   // Liseret select : orange/bleu selon côté, actif dès qu'une valeur est choisie
   sel.classList.toggle('has-val', !isNaN(tF));
-  if (isNaN(tF) || isNaN(oL) || isNaN(oR)) {
-    disp.textContent = '';
-    disp.classList.remove('has-val-accent', 'has-val-warm');
-    field.classList.add('tension-field-calc');
-    return;
-  }
-  field.classList.remove('tension-field-calc');
-  const asym = parseFloat($id('asym').value) || 0, sign = wtype === 'arriere' ? -1 : 1;
-  const effL = oL + sign * asym, effR = oR - sign * asym;
-  const ratio = (Math.max(effL,effR) > 0 && Math.min(effL,effR) > 0) ? Math.min(effL,effR) / Math.max(effL,effR) : 1;
+  // La tension nappe faible n'est plus estimée ici : synchronisation
+  // idempotente sur l'état des résultats. Invariant global : valeur nappe
+  // faible affichée ⟺ résultats affichés ⟺ formulaire inchangé depuis calc.
+  // Couvre tous les appelants : applyLang (recalcule, même valeur), applyState
+  // (.show déjà restauré en amont → remplit), bascule de roue, boot (vide).
+  if ($id('results').classList.contains('show')) renderTensionFaible();
+  else clearTensionFaible();
+}
+
+// ── Tension nappe faible : tf = tF × k₀ (formule exacte via exactRatio) ─────
+// Rempli uniquement quand un calcul est en vigueur — appelé par calc() et,
+// via onTension, par toute resynchronisation. Vidé par clearResults() dès
+// qu'une entrée du formulaire change (câblage updateCalcBtn existant).
+function renderTensionFaible() {
+  const disp = $id('tension-faible-display'), field = $id('tension-faible-field');
+  if (!disp) return;
+  const tF = parseFloat($id('tension-forte').value);
+  const g  = lateralGeometry();
+  if (isNaN(tF) || !g) { clearTensionFaible(); return; }
   // Entier → sans décimale ("105" et non "105.0") ; arrondi à 1 déc. AVANT le
-  // test pour couvrir les ratios asym. donnant 104.9999… (flottants).
-  const tFaibleStr = (tF * ratio).toFixed(1);
+  // test pour couvrir les ratios donnant 104.9999… (flottants).
+  const tFaibleStr = (tF * exactRatio(g)).toFixed(1);
   disp.textContent = tFaibleStr.endsWith('.0') ? tFaibleStr.slice(0, -2) : tFaibleStr;
+  if (field) field.classList.remove('tension-field-calc');
   const colorClass = disp._colorClass || 'has-val-accent';
   disp.classList.remove('has-val-accent', 'has-val-warm');
   disp.classList.add(colorClass);
+}
+
+function clearTensionFaible() {
+  const disp = $id('tension-faible-display'), field = $id('tension-faible-field');
+  if (!disp) return;
+  disp.textContent = '';
+  disp.classList.remove('has-val-accent', 'has-val-warm');
+  if (field) field.classList.add('tension-field-calc');
 }
 
 // ── Flange hole diameter validation ──────────────────────────────────────────
@@ -4985,6 +5006,7 @@ function checkReady() {
 function clearResults() {
   if (_applyingState) return;
   ['results','arb-wrap','summary-wrap'].forEach(id => $id(id).classList.remove('show'));
+  clearTensionFaible();
 }
 
 function updateCardStatus() {
@@ -5112,6 +5134,15 @@ function lateralGeometry() {
   return { foOff, faOff, lFo, lFa };
 }
 
+// Ratio de tension nappe faible / nappe forte — formule exacte issue de
+// l'équilibre latéral (offsets ET longueurs), forme min/max donc invariante
+// au côté physiquement fort. Source unique pour : calc(), la migration
+// d'applyState, renderTensionFaible, et cohérente avec le k₀ du décentrage.
+function exactRatio(g) {
+  const a = g.foOff * g.lFa, b = g.faOff * g.lFo;
+  return Math.min(a, b) / Math.max(a, b);
+}
+
 function calc() {
   if (document.activeElement) document.activeElement.blur();
 
@@ -5196,7 +5227,7 @@ function calc() {
   const Lfo = geom.lFo, Lfa = geom.lFa;
   const isArriere = wtype === 'arriere';
 
-  const ratio = Math.min(faOff, foOff) / Math.max(faOff, foOff);
+  const ratio = exactRatio(geom);
   const tf    = tF * ratio;
   // Roue arrière : tF = tension DS, tf = tension NDS
   // Roue avant   : tF = tension NDS (côté fort avant), tf = tension DS
@@ -5288,6 +5319,7 @@ function calc() {
   // décentrage incluse) n'est déclenché nulle part ailleurs par calc().
   // tmTryRenderRadar porte déjà ses propres gardes (body fermé, perSide < 2).
   if (typeof tmTryRenderRadar === 'function') tmTryRenderRadar();
+  renderTensionFaible();
   setTimeout(() => $id('results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
 }
 
@@ -10409,9 +10441,16 @@ function tmRenderDish(fo, fa, container) {
   const sd = summaryData;
   if (!sd || !fo || !fa) return;
   if (sd.wtype !== wtype) return;
-  const foOff = sd.foOff, faOff = sd.faOff, lFo = sd.lFo, lFa = sd.lFa;
-  if (!(foOff > 0 && faOff > 0 && lFo > 0 && lFa > 0)) return;
+  if (!(sd.foOff > 0 && sd.faOff > 0 && sd.lFo > 0 && sd.lFa > 0)) return;
   if (!(fo.avgNum > 0 && fa.avgNum > 0)) return;
+
+  // Correspondance colonnes tension ↔ géométrie : la géométrie est en côtés
+  // physiques (fo = droit/DS, fa = gauche/NDS) alors que les colonnes du
+  // module tension suivent la nappe (fo = forte). Sur roue avant, la nappe
+  // forte est la NDS (gauche) → géométrie fa : il faut swapper les paires.
+  const isFront = wtype !== 'arriere';
+  const foOff = isFront ? sd.faOff : sd.foOff, lFo = isFront ? sd.lFa : sd.lFo;
+  const faOff = isFront ? sd.foOff : sd.faOff, lFa = isFront ? sd.lFo : sd.lFa;
 
   const k     = fa.avgNum / fo.avgNum;
   const k0    = (foOff * lFa) / (faOff * lFo);
