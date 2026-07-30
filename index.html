@@ -5185,7 +5185,6 @@ function calc() {
   }
 
   const asym = parseFloat($id('asym').value) || 0;
-  const trou = parseFloat($id('diam-trou').value) || 2.55;
 
   if (diffMode) {
     if (crossFo === null || crossFa === null) {
@@ -5205,8 +5204,6 @@ function calc() {
     if (soLraw === '') setInvalid('sp-so-left'); if (soRraw === '') setInvalid('sp-so-right');
     return showErr('errSO');
   }
-  const soL = parseFloat(soLraw) || 0, soR = parseFloat(soRraw) || 0;
-
   const tF = parseFloat($id('tension-forte').value);
   // Tension cible optionnelle : sans elle, résultat dégradé (sans élongation/kgf),
   // au même titre qu'une section rayon absente ou un matériau non-acier.
