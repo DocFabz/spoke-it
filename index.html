@@ -5240,6 +5240,11 @@ function calc() {
     // et une restauration rebâtirait des grilles obsolètes.
     arbData = { fo: null, fa: null }; arbSelected.fo = null; arbSelected.fa = null;
   }
+  // Rafraîchir le diagramme de tension si sa card est déjà ouverte : la
+  // géométrie de summaryData vient de changer et tmRenderStats (card
+  // décentrage incluse) n'est déclenché nulle part ailleurs par calc().
+  // tmTryRenderRadar porte déjà ses propres gardes (body fermé, perSide < 2).
+  if (typeof tmTryRenderRadar === 'function') tmTryRenderRadar();
   setTimeout(() => $id('results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
 }
 
