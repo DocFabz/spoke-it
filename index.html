@@ -4439,7 +4439,19 @@ function applyState(s) {
       const _ten = !isNaN(parseFloat(s.tensionForte));
       updateElongHint(_mat === 'steel', _sec, _ten);
     }
-    if (s.summaryData) { summaryData = s.summaryData; renderSummary(); $id('summary-wrap').classList.add('show'); }
+    if (s.summaryData) {
+      summaryData = s.summaryData;
+      // Migration : saves antérieures à l'estimation de décentrage —
+      // summaryData sans géométrie (foOff/faOff/lFo/lFa). Inputs et globals
+      // viennent d'être restaurés ci-dessus : recalcul via le helper partagé
+      // avec calc(). Recalculé à chaque charge, rien n'est réécrit en
+      // localStorage — coût négligeable, zéro écriture supplémentaire.
+      if (!(summaryData.foOff > 0 && summaryData.faOff > 0 && summaryData.lFo > 0 && summaryData.lFa > 0)) {
+        const g = lateralGeometry();
+        if (g) { summaryData.foOff = g.foOff; summaryData.faOff = g.faOff; summaryData.lFo = g.lFo; summaryData.lFa = g.lFa; }
+      }
+      renderSummary(); $id('summary-wrap').classList.add('show');
+    }
     if (s.arbData && s.arbData.fo && s.arbData.fa) {
       arbData = s.arbData;
       buildArb('fo', arbData.fo.exactLen, arbData.fo.elongation);
@@ -5063,6 +5075,43 @@ function updateElongHint(isSteel, hasSec, hasTen) {
 }
 
 // ── Calc ──────────────────────────────────────────────────────────────────────
+// ── Géométrie latérale (source unique, partagée calc() / migration saves) ───
+// Calcule offsets effectifs et longueurs des deux nappes depuis l'état courant
+// du formulaire + les globals cross/diffMode/hubType/erdMode/wtype.
+// Retourne null si entrées incomplètes ou invalides — aucun effet de bord UI
+// (validations et messages d'erreur restent du ressort exclusif de calc()).
+function lateralGeometry() {
+  const n    = parseInt($id('nb-rayons').value);
+  const pL   = parseFloat($id('pcd-left').value),    pR = parseFloat($id('pcd-right').value);
+  const oL   = parseFloat($id('offset-left').value), oR = parseFloat($id('offset-right').value);
+  const erd  = getERD();
+  const asym = parseFloat($id('asym').value) || 0;
+  const trou = parseFloat($id('diam-trou').value) || 2.55;
+  if (!n || [pL, pR, oL, oR].some(isNaN) || pL <= 0 || pR <= 0 || isNaN(erd) || erd <= 0) return null;
+
+  const isSP = hubType === 'straightpull';
+  const soL  = parseFloat($id('sp-so-left').value)  || 0;
+  const soR  = parseFloat($id('sp-so-right').value) || 0;
+
+  const sign = wtype === 'arriere' ? -1 : 1;
+  const effL = oL + sign * asym, effR = oR - sign * asym;
+  if (effL <= 0 || effR <= 0) return null;
+
+  // fo = Drive Side (Côté Droit), fa = Non-Drive Side (Côté Gauche)
+  const foOff = effR, faOff = effL;
+  const isArriere = wtype === 'arriere';
+  // En mode différentiel, crossFo = croisement de la rangée orange (UI), crossFa = rangée bleue (UI)
+  // Roue arrière : rangée orange = DS → crFo doit alimenter Lfo (DS) ✓
+  // Roue avant   : rangée orange = NDS → crFo alimente en réalité NDS = Lfa ; il faut swapper
+  const crFo = diffMode ? (isArriere ? crossFo : crossFa) : cross;
+  const crFa = diffMode ? (isArriere ? crossFa : crossFo) : cross;
+  if (crFo === null || crFo === undefined || crFa === null || crFa === undefined) return null;
+  const lFo = isSP ? slenSP(pR, foOff, crFo, n, erd, soR) : slen(pR, foOff, crFo, n, erd, trou);
+  const lFa = isSP ? slenSP(pL, faOff, crFa, n, erd, soL) : slen(pL, faOff, crFa, n, erd, trou);
+  if (!(lFo > 0 && lFa > 0)) return null;
+  return { foOff, faOff, lFo, lFa };
+}
+
 function calc() {
   if (document.activeElement) document.activeElement.blur();
 
@@ -5139,22 +5188,16 @@ function calc() {
     return showErr('errOffset');
   }
 
-  // fo = Drive Side (Côté Droit), fa = Non-Drive Side (Côté Gauche)
-  const foOff = effR, faOff = effL;
-  const foPCD = pR,   faPCD = pL;
-
-  const ratio = (faOff > 0 && foOff > 0) ? Math.min(faOff, foOff) / Math.max(faOff, foOff) : 1;
-  const tf    = tF * ratio;
-  const soFo  = isSP ? soR : 0;
-  const soFa  = isSP ? soL : 0;
+  // Géométrie latérale via le helper partagé (source unique avec la migration
+  // des saves dans applyState). Non-null garanti ici : toutes ses conditions
+  // d'échec sont couvertes par les validations amont de calc().
+  const geom = lateralGeometry();
+  const foOff = geom.foOff, faOff = geom.faOff;
+  const Lfo = geom.lFo, Lfa = geom.lFa;
   const isArriere = wtype === 'arriere';
-  // En mode différentiel, crossFo = croisement de la rangée orange (UI), crossFa = rangée bleue (UI)
-  // Roue arrière : rangée orange = DS → crFo doit alimenter Lfo (DS) ✓
-  // Roue avant   : rangée orange = NDS → crFo alimente en réalité NDS = Lfa ; il faut swapper
-  const crFo = diffMode ? (isArriere ? crossFo : crossFa) : cross;
-  const crFa = diffMode ? (isArriere ? crossFa : crossFo) : cross;
-  const Lfo   = isSP ? slenSP(foPCD, foOff, crFo, n, erd, soFo) : slen(foPCD, foOff, crFo, n, erd, trou);
-  const Lfa   = isSP ? slenSP(faPCD, faOff, crFa, n, erd, soFa) : slen(faPCD, faOff, crFa, n, erd, trou);
+
+  const ratio = Math.min(faOff, foOff) / Math.max(faOff, foOff);
+  const tf    = tF * ratio;
   // Roue arrière : tF = tension DS, tf = tension NDS
   // Roue avant   : tF = tension NDS (côté fort avant), tf = tension DS
   const tDS  = isArriere ? tF : tf;
