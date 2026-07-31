@@ -15935,6 +15935,9 @@ document.addEventListener('keydown', function(e) {
 
   // riderId sélectionné pour la sauvegarde de roue en cours (string | null)
   var _wsRiderId = null;
+  // true si l'utilisateur a explicitement choisi un rider (ou « Aucun »)
+  // dans la modale — sinon on préserve l'affectation existante au save.
+  var _wsRiderTouched = false;
 
   // ── Libellé du bouton déclencheur "Affecter à un rider" ────────────────────
   function wsRenderAssignLabel() {
@@ -15981,6 +15984,7 @@ document.addEventListener('keydown', function(e) {
       }
       item.addEventListener('click', function() {
         _wsRiderId = id;
+        _wsRiderTouched = true;
         wsRenderAssignLabel();
         closeWheelSaveRiderModal();
       });
@@ -16027,6 +16031,7 @@ document.addEventListener('keydown', function(e) {
     }
     // Affectation rider : reprendre celle de la config déjà chargée s'il y en a une
     _wsRiderId = null;
+    _wsRiderTouched = false;
     var loadedName = (typeof _loadedConfigName !== 'undefined') ? _loadedConfigName[wtype] : null;
     if (loadedName && typeof loadConfigs === 'function') {
       var cfgs = loadConfigs();
@@ -16057,9 +16062,17 @@ document.addEventListener('keydown', function(e) {
       if (fb) { fb.textContent = lang === 'fr' ? 'Veuillez saisir un nom.' : 'Please enter a name.'; }
       return;
     }
+    // Choix explicite (rider ou « Aucun ») ou affectation reprise et affichée
+    // dans la modale : valeur transmise telle quelle. Sinon (badge effacé par
+    // markModified, nom retapé) : argument omis -> saveConfig préserve le
+    // riderId d'une éventuelle config homonyme au lieu de l'écraser à null.
     var riderId = _wsRiderId;
+    var riderExplicit = _wsRiderTouched || !!_wsRiderId;
     closeWheelSaveModal();
-    if (typeof saveConfig === 'function') saveConfig(name, riderId);
+    if (typeof saveConfig === 'function') {
+      if (riderExplicit) saveConfig(name, riderId);
+      else saveConfig(name);
+    }
   };
 
   // ── Open / close load modal ───────────────────────────────────────────────
