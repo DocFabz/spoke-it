@@ -1737,23 +1737,23 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
     <button class="ateliermgr-close" onclick="closeAtelierMgr()">✕</button>
   </div>
   <div class="ateliermgr-field">
-    <span class="ateliermgr-label" data-i18n="atelierName">Atelier</span>
+    <span class="ateliermgr-label" id="atelier-shop-label" data-i18n="atelierName">Atelier</span>
     <div class="ateliermgr-inp-wrap">
-      <input class="ateliermgr-inp" id="atelier-shop" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <input class="ateliermgr-inp" id="atelier-shop" aria-labelledby="atelier-shop-label" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       <button class="ateliermgr-clear" onclick="atelierClear('atelier-shop')">✕</button>
     </div>
   </div>
   <div class="ateliermgr-field">
-    <span class="ateliermgr-label">Email</span>
+    <span class="ateliermgr-label" id="atelier-email-label">Email</span>
     <div class="ateliermgr-inp-wrap">
-      <input class="ateliermgr-inp" id="atelier-email" type="email" maxlength="80" autocomplete="off">
+      <input class="ateliermgr-inp" id="atelier-email" aria-labelledby="atelier-email-label" type="email" maxlength="80" autocomplete="off">
       <button class="ateliermgr-clear" onclick="atelierClear('atelier-email')">✕</button>
     </div>
   </div>
   <div class="ateliermgr-field">
-    <span class="ateliermgr-label">Instagram</span>
+    <span class="ateliermgr-label" id="atelier-insta-label">Instagram</span>
     <div class="ateliermgr-inp-wrap">
-      <input class="ateliermgr-inp" id="atelier-insta" type="text" maxlength="60" autocomplete="off">
+      <input class="ateliermgr-inp" id="atelier-insta" aria-labelledby="atelier-insta-label" type="text" maxlength="60" autocomplete="off">
       <button class="ateliermgr-clear" onclick="atelierClear('atelier-insta')">✕</button>
     </div>
   </div>
@@ -2347,7 +2347,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <button class="slen-close" onclick="slenClose()">✕</button>
   </div>
   <div class="slen-inp-wrap">
-    <input class="slen-inp" id="slen-inp" type="number" step="1" inputmode="numeric">
+    <input class="slen-inp" id="slen-inp" aria-labelledby="slen-title" type="number" step="1" inputmode="numeric">
     <span class="slen-unit">mm</span>
     <button class="slen-ok" onclick="slenConfirm()">OK</button>
   </div>
@@ -2923,8 +2923,8 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 
   <!-- Créer nouveau -->
   <div id="ct-create-section">
-    <div class="cc-step-label" data-i18n="ctLabel">Nom du tensiomètre</div>
-    <input type="text" id="ct-name-inp" class="ct-input" placeholder="Ex : Mon Tensiomètre" maxlength="50" autocomplete="off" autocapitalize="characters"
+    <div class="cc-step-label" id="ct-name-label" data-i18n="ctLabel">Nom du tensiomètre</div>
+    <input type="text" id="ct-name-inp" aria-labelledby="ct-name-label" class="ct-input" placeholder="Ex : Mon Tensiomètre" maxlength="50" autocomplete="off" autocapitalize="characters"
       oninput="$id('ct-feedback').textContent=''"
       onkeydown="if(event.key==='Enter'){event.preventDefault();ctSave()}">
     <div class="ct-feedback" id="ct-feedback"></div>
@@ -2948,7 +2948,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <button class="hr-save-close" onclick="closeHrSaveModal()">✕</button>
   </div>
   <div class="hr-save-inp-row">
-    <input class="hr-save-inp" id="hr-save-inp" type="text" placeholder="Nom…" maxlength="60" autocomplete="off" autocapitalize="characters"
+    <input class="hr-save-inp" id="hr-save-inp" aria-labelledby="hr-save-title" type="text" placeholder="Nom…" maxlength="60" autocomplete="off" autocapitalize="characters"
       onkeydown="if(event.key==='Enter'){event.preventDefault();confirmHrSave()}">
     <button class="hr-save-btn" onclick="confirmHrSave()">OK</button>
   </div>
@@ -2973,7 +2973,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <button class="wheel-save-close" onclick="closeWheelSaveModal()">✕</button>
   </div>
   <div class="wheel-save-inp-row">
-    <input class="wheel-save-inp" id="wheel-save-inp" type="text" placeholder="Nom…" maxlength="60" autocomplete="off" autocapitalize="characters"
+    <input class="wheel-save-inp" id="wheel-save-inp" aria-labelledby="wheel-save-title" type="text" placeholder="Nom…" maxlength="60" autocomplete="off" autocapitalize="characters"
       onkeydown="if(event.key==='Enter') confirmWheelSave()">
     <button class="wheel-save-btn" onclick="confirmWheelSave()">OK</button>
   </div>
@@ -3035,23 +3035,23 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <button class="ateliermgr-close" onclick="closeRiderEdit()">✕</button>
   </div>
   <div class="ateliermgr-field">
-    <span class="ateliermgr-label" data-i18n="riderName">Nom</span>
+    <span class="ateliermgr-label" id="rider-name-label" data-i18n="riderName">Nom</span>
     <div class="ateliermgr-inp-wrap">
-      <input class="ateliermgr-inp" id="rider-name" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+      <input class="ateliermgr-inp" id="rider-name" aria-labelledby="rider-name-label" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
       <button class="ateliermgr-clear" onclick="riderClear('rider-name')">✕</button>
     </div>
   </div>
   <div class="ateliermgr-field">
-    <span class="ateliermgr-label">Email</span>
+    <span class="ateliermgr-label" id="rider-email-label">Email</span>
     <div class="ateliermgr-inp-wrap">
-      <input class="ateliermgr-inp" id="rider-email" type="email" maxlength="80" autocomplete="off">
+      <input class="ateliermgr-inp" id="rider-email" aria-labelledby="rider-email-label" type="email" maxlength="80" autocomplete="off">
       <button class="ateliermgr-clear" onclick="riderClear('rider-email')">✕</button>
     </div>
   </div>
   <div class="ateliermgr-field">
-    <span class="ateliermgr-label" data-i18n="riderPhone">Téléphone</span>
+    <span class="ateliermgr-label" id="rider-phone-label" data-i18n="riderPhone">Téléphone</span>
     <div class="ateliermgr-inp-wrap">
-      <input class="ateliermgr-inp" id="rider-phone" type="tel" maxlength="40" autocomplete="off">
+      <input class="ateliermgr-inp" id="rider-phone" aria-labelledby="rider-phone-label" type="tel" maxlength="40" autocomplete="off">
       <button class="ateliermgr-clear" onclick="riderClear('rider-phone')">✕</button>
     </div>
   </div>
@@ -10687,7 +10687,7 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
     </div>
 
     <div class="ef-input-row">
-      <input class="ef-inp" id="ef-inp" type="text"
+      <input class="ef-inp" id="ef-inp" type="text" aria-labelledby="ef-spoke-label"
         autocomplete="off" autocorrect="off" spellcheck="false" placeholder="—"
         oninput="efUpdateKgf()">
       <div class="ef-kgf-preview" id="ef-kgf-preview"></div>
@@ -13116,7 +13116,7 @@ function efStopMic() {
     <div class="diag-field">
       <div class="diag-field-label" id="diag-wheel-label">Roue</div>
       <div class="diag-inp-wrap">
-        <input class="diag-inp" type="text" id="diag-wheel" autocomplete="off" oninput="diagSaveWheel(wtype)">
+        <input class="diag-inp" type="text" id="diag-wheel" aria-labelledby="diag-wheel-label" autocomplete="off" oninput="diagSaveWheel(wtype)">
         <button class="diag-clear-btn" onclick="diagClearField('diag-wheel')" title="Effacer">✕</button>
       </div>
     </div>
