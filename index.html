@@ -3109,20 +3109,30 @@ let _jspdfPromise = null;
 function ensureJsPDF() {
   if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
   if (_jspdfPromise) return _jspdfPromise;
-  _jspdfPromise = new Promise((resolve) => {
+  _jspdfPromise = new Promise((resolve, reject) => {
     const src = document.getElementById('jspdf-src');
     const s = document.createElement('script');
     s.textContent = src.textContent;
     document.body.appendChild(s);
+    s.remove();
     // Libération mémoire : le code vit désormais compilé sur window.jspdf.
     // Retirer le <script> injecté (le code compilé survit au retrait du nœud)
     // et vider la source text/plain (~730 Ko UTF-16 chacun, ~1,4 Mo au total —
     // pression mémoire WebContent sur iPad). Le garde window.jspdf en tête de
     // fonction court-circuite tout second appel ; un rechargement de page
     // reparse le HTML et restaure la source. NE PAS relire #jspdf-src ailleurs.
-    s.remove();
-    src.textContent = '';
-    resolve();
+    // GARDE : ne vider la source QUE si l'évaluation a réellement produit
+    // window.jspdf. En cas d'échec (pression mémoire WebContent, source
+    // altérée), la source reste intacte et _jspdfPromise est réarmé → le
+    // prochain clic export retente l'injection au lieu d'échouer
+    // silencieusement jusqu'au reload.
+    if (window.jspdf && window.jspdf.jsPDF) {
+      src.textContent = '';
+      resolve();
+    } else {
+      _jspdfPromise = null;
+      reject(new Error('jsPDF injection failed'));
+    }
   });
   return _jspdfPromise;
 }
@@ -10964,6 +10974,12 @@ function efCommitCurrent() {
     efBeepError();
     var range = tmGetRange();
     if (range) {
+      // Clear-avant-set : deux commits OOR < OOR_DISPLAY_MS (double Entrée,
+      // Entrée + nav vocale) orphelinaient le second timer hors du handle —
+      // le premier remettait efOorTimer à null en expirant, et le second
+      // échappait à tous les guards `if (efOorTimer) clearTimeout(...)`.
+      // Même mécanique que tmTcCommit (clear à l'entrée du commit).
+      if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
       prev.textContent = tmDisplayValue(range.min) + ' – ' + tmDisplayValue(range.max);
       prev.classList.add('oor');
       efOorTimer = setTimeout(function() {
