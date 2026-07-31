@@ -4118,18 +4118,22 @@ function riderChipEl(riderId) {
   return chip;
 }
 
-// ── Capsule rider apres le nom de la roue chargée (card Roue) ────────────────────
+// ── Capsule rider apres le nom de la roue chargée (cards Roue calc + tension) ──
 // Retirée si la roue est désaffectée, le rider supprimé, ou le nom effacé.
 function _refreshLoadedRiderChip(name) {
-  const badge = $id('cfg-loaded-name');
-  if (!badge) return;
-  const old = badge.querySelector('.wheel-load-item-rider');
-  if (old) old.remove();
-  if (!name || typeof loadConfigs !== 'function') return;
-  const cfg = loadConfigs().find(c => c.name === name && (c.state && (c.state.wtype || 'avant')) === wtype);
-  if (!cfg) return;
-  const chip = riderChipEl(cfg.riderId);
-  if (chip) badge.appendChild(chip);
+  let cfg = null;
+  if (name && typeof loadConfigs === 'function') {
+    cfg = loadConfigs().find(c => c.name === name && (c.state && (c.state.wtype || 'avant')) === wtype) || null;
+  }
+  ['cfg-loaded-name', 'tm-cfg-loaded-name'].forEach(id => {
+    const badge = $id(id);
+    if (!badge) return;
+    const old = badge.querySelector('.wheel-load-item-rider');
+    if (old) old.remove();
+    if (!cfg) return;
+    const chip = riderChipEl(cfg.riderId);
+    if (chip) badge.appendChild(chip);
+  });
 }
 
 // ── State ────────────────────────────────────────────────────────────────────
