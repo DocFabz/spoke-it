@@ -1605,6 +1605,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
 
 /* ── Tension module: wheel toggle buttons ─────────────────────────────── */
 .tm-select.locked { opacity:.45; pointer-events:none; cursor:not-allowed }
+#nb-rayons.locked { opacity:.45; pointer-events:none; cursor:not-allowed }
 .tm-clear-tensio { background:none; border:none; color:var(--text3); font-size:.8rem; cursor:pointer; padding:.2rem .4rem; line-height:1; transition:color .2s, opacity .2s; flex-shrink:0 }
 .tm-clear-tensio:hover { color:var(--warm) }
 .tm-clear-tensio.inactive { opacity:0; pointer-events:none }
@@ -4038,6 +4039,12 @@ function flashWheelCard(configName) {
   if (configName) {
     _loadedConfigName[wtype] = configName;
     _lastLoadTime = Date.now();
+    // Recalcul du mode complétion depuis l'état persisté : une roue devenue
+    // complète à la sauvegarde repasse en sémantique normale (modif = détache).
+    const _c = (typeof loadConfigs === 'function')
+      ? loadConfigs().find(c => c.name === configName && (c.state && (c.state.wtype || 'avant')) === wtype)
+      : null;
+    _cfgFillMode[wtype] = !!(_c && _cfgStateIncomplete(_c.state));
   }
   _refreshLoadedBadges();
   snapRefreshBtn();
@@ -4053,12 +4060,16 @@ function markModified() {
   // Restauration programmatique (bascule avant/arriere) : jamais une modification
   if (_applyingState) return;
   if (Date.now() - _lastLoadTime < 500) return;
+  // Complétion a posteriori d'une roue incomplète : ni désaffectation,
+  // ni purge tension — la roue reste chargée pendant qu'on la complète.
+  if (_cfgFilling()) return;
   if (_loadedConfigName[wtype]) {
     // Première modification = nouvelle roue : reset complet du module tension
     tmClearTensio();
     Object.keys(tmStore).forEach(k => delete tmStore[k]);
   }
   _loadedConfigName[wtype] = null;
+  _cfgFillMode[wtype] = false;
   _refreshLoadedBadges();
 }
 
@@ -4068,8 +4079,11 @@ function _refreshLoadedBadges() {
   _setBadge('tm-cfg-loaded-name', 'tm-cfg-loaded-text', name);
   _refreshLoadedRiderChip(name);
   // Verrouiller/déverrouiller les boutons hub type
-  $id('btn-hub-jbend').classList.toggle('locked', !!name && hubType !== 'jbend');
-  $id('btn-hub-sp').classList.toggle('locked', !!name && hubType !== 'straightpull');
+  const _lockHub = !!name && !_cfgFillMode[wtype];
+  $id('btn-hub-jbend').classList.toggle('locked', _lockHub && hubType !== 'jbend');
+  $id('btn-hub-sp').classList.toggle('locked', _lockHub && hubType !== 'straightpull');
+  // Roue incomplète : nb rayons figé si des données tension en dépendent
+  $id('nb-rayons').classList.toggle('locked', !!name && _cfgFillMode[wtype] && tmHasData());
   // Badges hub et rim (per-wheel)
   if (typeof hrRefreshBadges === 'function') hrRefreshBadges();
 }
@@ -4085,6 +4099,7 @@ function _setBadge(badgeId, textId, name) {
 
 function clearLoadedConfigName() {
   _loadedConfigName[wtype] = null;
+  _cfgFillMode[wtype] = false;
   _refreshLoadedBadges();
 }
 
@@ -4168,6 +4183,20 @@ let ccInputOrder = null; // null | 'kgf-first' | 'read-first'
 // ── Scroll flags ─────────────────────────────────────────────────────────────
 let _hubScrolled = false, _rimScrolled = false, _tensionScrolled = false;
 const _loadedConfigName = { avant: null, arriere: null };
+// Roue incomplète (typiquement créée depuis le module tension sans passer
+// par le calculateur) : la saisie des champs du calculateur la complète a
+// posteriori au lieu de la désaffecter. Critère : l'état persisté ne
+// contient pas de résultat calculé — les remplissages partiels peuvent donc
+// être sauvegardés en plusieurs fois, le mode persiste jusqu'à la
+// sauvegarde d'une roue calculée. Nb rayons figé tant que des données
+// tension existent (elles en dépendent), le reste modifiable. Flag
+// recalculé à chaque chargement/sauvegarde depuis l'état persisté.
+const _cfgFillMode = { avant: false, arriere: false };
+function _cfgStateIncomplete(s) {
+  return !(s && s.hasResult);
+}
+// Roue chargée ET en cours de complétion (condition composée factorisée)
+function _cfgFilling() { return !!(_loadedConfigName[wtype] && _cfgFillMode[wtype]); }
 let _switchingHub = false;
 let _applyingState = false;
 let _toastTimer = null;
@@ -4798,8 +4827,9 @@ function updateCrossForHubType() {
 }
 
 function setHubType(htype, skipClearSO) {
-  // Verrouillé quand une config est chargée
-  if (!skipClearSO && _loadedConfigName[wtype]) return;
+  // Verrouillé quand une config est chargée — sauf roue incomplète en
+  // cours de complétion (le type de moyeu fait partie des champs à remplir)
+  if (!skipClearSO && _loadedConfigName[wtype] && !_cfgFilling()) return;
   hubType = htype;
   hubTypeByWheel[wtype] = htype;
   $id('btn-hub-jbend').classList.toggle('active', htype === 'jbend');
@@ -4808,8 +4838,12 @@ function setHubType(htype, skipClearSO) {
   $id('field-sp-so-left').style.display  = htype === 'straightpull' ? '' : 'none';
   $id('field-sp-so-right').style.display = htype === 'straightpull' ? '' : 'none';
   if (!skipClearSO) {
+    // Complétion a posteriori : préserver le nb de rayons à travers le
+    // reset (synchronisé avec le module tension, jamais réinitialisé ici)
+    const _keepNb = _cfgFilling() ? $id('nb-rayons').value : null;
     markModified();
     resetFields();
+    if (_keepNb !== null) $id('nb-rayons').value = _keepNb;
     _hubScrolled = false;
     _switchingHub = true;
     setTimeout(() => { _switchingHub = false; }, 100);
@@ -6206,13 +6240,21 @@ $id('nb-rayons').addEventListener('change', function() {
   const sel = $id('tm-nb-select');
   // Sync le sélecteur tension ; si c'est lui qui a déclenché l'event, les valeurs sont déjà identiques
   if (sel && sel.value !== this.value) {
+    // Complétion a posteriori avec données tension : le nb de rayons est
+    // l'identité de la roue — changement annulé, verrou (re)posé. Garde
+    // autoritaire : protège même si la classe .locked n'était pas à jour.
+    if (_cfgFilling() && tmHasData()) {
+      this.value = sel.value;
+      _refreshLoadedBadges();
+      window.updateCalcBtn();
+      return;
+    }
     sel.value = this.value;
     tmResetData();
     tmBuildTable();
     tmHideResult();
     diagClearData();
   }
-  // Afficher le bloc sauvegarde dès qu'un nombre de rayons est choisi
 });
 
 // ── iOS focus: select field content ──────────────────────────────────────────
@@ -7159,6 +7201,7 @@ function tmClearTensio() {
   tmLockSpokeSelect(false);
   tmPopulateSpokeSelect();
   tmUpdateBadges();
+  _refreshLoadedBadges(); // verrou nb-rayons suit tmHasData()
   tmUpdateConvBtn();
   tmBuildTable();
   tmHideResult();
@@ -8892,7 +8935,9 @@ function tmUpdateBadges() {
   const tmSel = $id('tm-nb-select');
   if (tmSel) {
     tmSel.value = nb > 0 ? String(nb) : '';
-    tmSel.classList.toggle('locked', !!_loadedConfigName[wtype]);
+    // Miroir du verrou calculateur : en complétion a posteriori, nb éditable
+    // tant qu'aucune donnée tension n'en dépend
+    tmSel.classList.toggle('locked', !!_loadedConfigName[wtype] && (!_cfgFillMode[wtype] || tmHasData()));
   }
 
   // Rayon : verrouiller si config chargée ET données tension présentes
@@ -9091,6 +9136,7 @@ function tmBuildTable() {
         _snapSetLabel(0);
         snapRefreshBtn();
         tmUpdateInvertibleHeaders();
+        _refreshLoadedBadges(); // verrou nb-rayons suit tmHasData()
       });
 
       inp.addEventListener('keydown', function(e) {
@@ -10963,6 +11009,7 @@ function efCommitCurrent() {
     tmUpdateCell(step.idx, step.side);
     tmTryRenderRadar();
     tmUpdateResultCardState();
+    _refreshLoadedBadges(); // verrou nb-rayons suit tmHasData()
     efDiagramRender();
     return true;
   }
@@ -11019,6 +11066,7 @@ function efCommitCurrent() {
   tmUpdateCell(step.idx, step.side);
   snapRefreshBtn();
   tmUpdateInvertibleHeaders();
+  _refreshLoadedBadges(); // verrou nb-rayons suit tmHasData()
   efDiagramRender();
   return true;
 }
@@ -13954,14 +14002,28 @@ function hrRenderLoadList(type) {
     item.appendChild(nameEl);
     item.appendChild(delBtn);
     item.addEventListener('click', function() {
-      // Charger un moyeu ou une jante invalide la roue courante (même comportement que modifier un champ)
-      if (_loadedConfigName[wtype]) {
+      // Charger un moyeu ou une jante invalide la roue courante (même
+      // comportement que modifier un champ) — sauf roue incomplète en cours
+      // de complétion : le hub/la jante viennent précisément la remplir.
+      if (_loadedConfigName[wtype] && !_cfgFilling()) {
         tmClearTensio();
         Object.keys(tmStore).forEach(function(k) { delete tmStore[k]; });
         _loadedConfigName[wtype] = null;
         _refreshLoadedBadges();
       }
-      if (type === 'hub') { hrApplyHub(entry.data); hrSetLoadedHub(entry.name); }
+      if (type === 'hub') {
+        // Complétion a posteriori avec données tension : le nb de rayons de
+        // la roue prime sur celui du moyeu chargé (hrApplyHub écrit nbRayons
+        // sans événement — aucun listener ne peut l'intercepter)
+        var _keepNb = (_cfgFilling() && tmHasData())
+          ? document.getElementById('nb-rayons').value : null;
+        hrApplyHub(entry.data);
+        if (_keepNb !== null && document.getElementById('nb-rayons').value !== _keepNb) {
+          document.getElementById('nb-rayons').value = _keepNb;
+          window.updateCalcBtn();
+        }
+        hrSetLoadedHub(entry.name);
+      }
       else { hrApplyRim(entry.data); hrSetLoadedRim(entry.name); }
       closeHrLoadModal();
     });
@@ -14266,6 +14328,7 @@ function snapRegisterAndSave() {
     else configs2.unshift(entry);
     persistConfigs(configs2);
     _loadedConfigName[wtype] = name;
+    _cfgFillMode[wtype] = _cfgStateIncomplete(state);
     _refreshLoadedBadges();
     renderConfigsList();
     const panel = $id('snap-name-panel');
