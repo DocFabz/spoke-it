@@ -3629,6 +3629,7 @@ const i18n = {
     tmDishTitle:'Centrage estimé', tmRatioTheo:'Ratio théorique', tmRatioMeas:'Ratio mesuré',
     tmDishOk:'Centrage théoriquement cohérent dans la marge de mesure. Vérifier avec un outil de centrage.',
     tmDishCheck:'Écart significatif. Vérifier avec un outil de centrage.',
+    tmDishMinor:'Écart faible — probablement dans la marge du tensiomètre. Vérifier avec un outil de centrage.',
     tmDishUnreliable:'Dispersion élevée — estimation non fiable',
     tmRecShare:'Partager la vidéo', tmRecSave:'Télécharger la vidéo',
     tmCVMaxLabel:'Seuil outliers',
@@ -3815,6 +3816,7 @@ const i18n = {
     tmDishTitle:'Estimated dish', tmRatioTheo:'Theoretical ratio', tmRatioMeas:'Measured ratio',
     tmDishOk:'Dish theoretically consistent within measurement margin. Check with a dishing tool.',
     tmDishCheck:'Significant deviation. Check with a dishing tool.',
+    tmDishMinor:'Small deviation — likely within tensiometer margin. Check with a dishing tool.',
     tmDishUnreliable:'High spread — estimate unreliable',
     tmRecShare:'Share video', tmRecSave:'Download video',
     tmCVMaxLabel:'Outliers threshold',
@@ -10554,10 +10556,15 @@ function tmRenderDish(fo, fa, container) {
   // tension/voile — un ratio moyen conforme ne garantit alors plus le
   // centrage. Le message reste grisé, sans verdict de couleur.
   const cvOver = fo.cvNum > tmCVThreshold || fa.cvNum > tmCVThreshold;
-  // < 0.5 mm : sous le plancher de résolution du tensiomètre → non significatif
+  // < 0.5 mm   : sous le plancher de résolution du tensiomètre → non significatif (vert)
+  // 0.5–1.0 mm : zone intermédiaire — un δ de cet ordre correspond à ~3–4 kgf
+  //              sur la nappe faible, indiscernable de la précision de lecture
+  //              d'un tensiomètre à charte → verdict neutre, sans alarme (gris)
+  // ≥ 1.0 mm   : écart franc → avertissement (orange)
   const ok     = abs < 0.5;
-  const col    = cvOver ? 'color:var(--text3)' : (ok ? 'color:var(--success)' : 'color:#e8a040');
-  const hint   = cvOver ? t('tmDishUnreliable') : (ok ? t('tmDishOk') : t('tmDishCheck'));
+  const minor  = !ok && abs < 1.0;
+  const col    = cvOver ? 'color:var(--text3)' : (ok ? 'color:var(--success)' : (minor ? 'color:var(--text3)' : 'color:#e8a040'));
+  const hint   = cvOver ? t('tmDishUnreliable') : (ok ? t('tmDishOk') : (minor ? t('tmDishMinor') : t('tmDishCheck')));
 
   const div = document.createElement('div');
   div.className = 'tm-dish';
