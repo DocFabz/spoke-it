@@ -820,7 +820,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
     grid-template-rows:auto auto auto auto 1fr;
     column-gap:1.1rem; row-gap:.6rem;
   }
-  #snapcompare-modal > div:first-child { grid-column:1/-1 }
+  #snapcompare-modal > .snap-header { grid-column:1/-1 }
   #snapcompare-desc { grid-column:1; grid-row:2 }
   #snapcompare-list { grid-column:1; grid-row:3/6; min-height:0;
                       max-height:none !important } /* inline 260px (portrait) */
@@ -15834,7 +15834,7 @@ async function snapCompareAnim() {
 <!-- ── Modale Évolution Tension ── -->
 <div class="snap-overlay" id="snapcompare-overlay" onclick="snapCompareClose()"></div>
 <div class="snap-modal" id="snapcompare-modal">
-  <div style="display:flex;align-items:center;justify-content:space-between">
+  <div class="snap-header">
     <div style="display:flex;align-items:center;gap:.55rem;min-width:0">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent);opacity:.85;flex-shrink:0">
         <line x1="12" y1="3" x2="12" y2="21"/>
@@ -15844,7 +15844,7 @@ async function snapCompareAnim() {
         <line x1="16" y1="11" x2="22" y2="11"/>
         <line x1="5" y1="20" x2="19" y2="20"/>
       </svg>
-      <div id="snapcompare-title" style="font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)">Évolution Tension</div>
+      <div id="snapcompare-title" class="snap-title">Évolution Tension</div>
     </div>
     <button onclick="snapCompareClose()" class="snap-close">&#x2715;</button>
   </div>
