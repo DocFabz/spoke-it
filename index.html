@@ -11733,7 +11733,7 @@ function efVoiceToNumber(txt) {
   // Couvre: virgule (fr/it/de/es/pt…), point, separateurs unicode arabes/persans
   s = s.replace(/[,،٫]/g, '.');
   // Alternatives longues en PREMIER, sinon "virgola" court-circuite "virgola decimale".
-  // Couvre les mots décimaux des 9 langues de langWords : it/es punto, de/pl punkt,
+  // Couvre les mots décimaux des 9 langues d'EF Vocal : it/es punto, de/pl punkt,
   // nl punt, pt ponto + v[ií]rgula (avec ou sans accent), pl przecinek, sl vejica/cela, hr zarez (cs čárka : non-ASCII → regex cyrillique ci-dessous). \b reste
   // fiable ici : toutes les bornes d'alternatives sont des lettres ASCII.
   s = s.replace(/\b(virgola decimale|point d[eé]cimal|v[ií]rgula|virgule|virgola|przecinek|vejica|cela|zarez|punto|punkt|ponto|punt|point|komma|coma|dot)\b/g, '.');
@@ -12063,44 +12063,8 @@ function efStartMic(forceLang) {
     r.lang = effLang || efGetRecogLang();
     r.continuous     = true;
   }
-  // Grammaire JSGF construite dynamiquement selon la langue active.
-  // Inclut les chiffres arabes (universels), les mots-nombres et commandes
-  // dans la langue du moteur → confiance correcte quelle que soit la langue.
+  // recogLang : utilisée plus bas (efUnitProlong, inversion germanique).
   var recogLang = (effLang || efGetRecogLang() || '').toLowerCase().split(/[-_]/)[0];
-  var langWords = {
-    fr: { dec:'virgule', nav:'suivant retour précédent fermer réinitialiser',
-          nums:'zéro un une deux trois quatre cinq six sept huit neuf dix vingt trente quarante cinquante soixante cent' },
-    en: { dec:'point dot', nav:'next back reset close',
-          nums:'zero one two three four five six seven eight nine ten twenty thirty forty fifty sixty hundred' },
-    it: { dec:'virgola punto', nav:'avanti indietro chiudi',
-          nums:'zero uno una due tre quattro cinque sei sette otto nove dieci venti trenta quaranta cinquanta sessanta cento' },
-    de: { dec:'komma punkt', nav:'weiter zurück schließen',
-          nums:'null ein eins zwei drei vier fünf sechs sieben acht neun zehn zwanzig dreißig vierzig fünfzig sechzig hundert' },
-    es: { dec:'coma punto', nav:'siguiente atrás cerrar',
-          nums:'cero uno una dos tres cuatro cinco seis siete ocho nueve diez veinte treinta cuarenta cincuenta sesenta cien' },
-    pt: { dec:'vírgula ponto', nav:'próximo voltar fechar',
-          nums:'zero um uma dois duas três quatro cinco seis sete oito nove dez vinte trinta quarenta cinquenta sessenta cem' },
-    nl: { dec:'komma punt', nav:'volgende terug sluiten',
-          nums:'nul een twee drie vier vijf zes zeven acht negen tien twintig dertig veertig vijftig zestig honderd' },
-    pl: { dec:'przecinek punkt', nav:'dalej wstecz zamknij',
-          nums:'zero jeden jedna dwa trzy cztery pięć sześć siedem osiem dziewięć dziesięć dwadzieścia trzydzieści sto' },
-    ru: { dec:'запятая точка', nav:'далее назад закрыть',
-          nums:'ноль один одна два две три четыре пять шесть семь восемь девять десять двадцать тридцать сто' }
-  };
-  var lw = langWords[recogLang] || langWords['en'];
-  // Toujours inclure les chiffres arabes (universels) + fr/en comme fallback
-  var allWords = '0|1|2|3|4|5|6|7|8|9|' +
-    lw.dec.split(' ').join('|') + '|' +
-    lw.nav.split(' ').join('|') + '|' +
-    lw.nums.split(' ').join('|') +
-    (recogLang !== 'fr' ? '|virgule|suivant|retour|précédent|fermer' : '') +
-    (recogLang !== 'en' ? '|point|next|back|reset|close' : '');
-  var grammar = '#JSGF V1.0; grammar numbers; public <number> = ' + allWords + ';';
-  try {
-    var gl = new (window.SpeechGrammarList || window.webkitSpeechGrammarList)();
-    gl.addFromString(grammar, 1);
-    r.grammars = gl;
-  } catch(e) {}
   r.interimResults = true;
   // La capture audio démarre = la permission a été accordée pour cette session.
   r.onaudiostart = function() { efSessionGranted = true; };
