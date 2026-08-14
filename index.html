@@ -14871,6 +14871,29 @@ function _snapRenderRadarCanvasColored(snap, w, h, whiteBg) {
   return off;
 }
 
+// ── Récap évolution — helpers partagés (animation, PDF, bandeau JPEG) ────────
+function _snapEvoAvg(arr) {
+  var v = arr.filter(function(x){ return x != null; });
+  return v.length ? v.reduce(function(a,b){ return a+b; }, 0) / v.length : null;
+}
+function _snapEvoStd(arr) {
+  var v = arr.filter(function(x){ return x != null; });
+  if (!v.length) return null;
+  var m = v.reduce(function(a,b){ return a+b; }, 0) / v.length;
+  return Math.sqrt(v.reduce(function(s,x){ return s + Math.pow(x-m,2); }, 0) / v.length);
+}
+function _snapEvoDiff(a, b) {
+  if (a === null || b === null) return '—';
+  var d = b - a, pct = a !== 0 ? (d / a * 100) : 0;
+  var sign = d >= 0 ? '+' : '';
+  return sign + d.toFixed(1) + ' kgf  (' + sign + pct.toFixed(0) + '%)';
+}
+function _snapEvoSigmaLine(sA, sB, aA, aB) {
+  if (sA === null || sB === null || !aA || !aB) return '—';
+  function f(n) { var s = n.toFixed(1); return s.endsWith('.0') ? String(Math.round(n)) : s; }
+  return 'σ  ' + f(sA/aA*100) + '% → ' + f(sB/aB*100) + '%';
+}
+
 // ── Stats d'un snapshot ────────────────────────────────────────────────────────
 // ── Génération PDF ─────────────────────────────────────────────────────────────
 async function snapComparePDF() {
@@ -15123,6 +15146,55 @@ async function snapComparePDF() {
 
   Y += bH2 + 8;
 
+  // ── Évolution S_A → S_B — même récap que la fin de l'animation ────────────
+  // avg/std/diff : helpers partagés _snapEvo* — seule la ligne CV reste
+  // spécifique au PDF (helvetica WinAnsi : pas de glyphe σ, format x.x %)
+  function _cmpCvLine(sA, sB, aA, aB) {
+    if (sA===null||sB===null||!aA||!aB) return '—';
+    return (sA/aA*100).toFixed(1)+' % → '+(sB/aB*100).toFixed(1)+' %';
+  }
+  var ndsKgfA = isAvant ? rendA.foKgfs : rendA.faKgfs;
+  var ndsKgfB = isAvant ? rendB.foKgfs : rendB.faKgfs;
+  var dsKgfA  = isAvant ? rendA.faKgfs : rendA.foKgfs;
+  var dsKgfB  = isAvant ? rendB.faKgfs : rendB.foKgfs;
+  var avgNdsA=_snapEvoAvg(ndsKgfA), avgNdsB=_snapEvoAvg(ndsKgfB);
+  var avgDsA =_snapEvoAvg(dsKgfA),  avgDsB =_snapEvoAvg(dsKgfB);
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc,C_ACCENT);
+  doc.text(sanitize((L==='fr'?'ÉVOLUTION':'EVOLUTION')+' S'+snapA.num+' → S'+snapB.num), ML, Y);
+  Y += 5;
+
+  var dAvgLabel = L==='fr' ? 'Δ Moyenne' : 'Δ Average';
+  var evoBlocks = [
+    { label: ndsLabel, C_col: C_NDS, C_bg: isAvant?C_CARD_FO:C_CARD_FA,
+      diff: _snapEvoDiff(avgNdsA, avgNdsB),
+      cv:   _cmpCvLine(_snapEvoStd(ndsKgfA), _snapEvoStd(ndsKgfB), avgNdsA, avgNdsB) },
+    { label: dsLabel,  C_col: C_DS,  C_bg: isAvant?C_CARD_FA:C_CARD_FO,
+      diff: _snapEvoDiff(avgDsA, avgDsB),
+      cv:   _cmpCvLine(_snapEvoStd(dsKgfA), _snapEvoStd(dsKgfB), avgDsA, avgDsB) }
+  ];
+  var evoW = (CW - STAT_GAP) / 2;
+  var evoH = STAT_PAD + 6 + 2*STAT_ROW_H + STAT_PAD;
+  evoBlocks.forEach(function(block, bi) {
+    var bx = ML + bi*(evoW+STAT_GAP);
+    doc.setFillColor.apply(doc, block.C_bg);
+    doc.setDrawColor.apply(doc, block.C_col); doc.setLineWidth(0.3);
+    doc.roundedRect(bx, Y, evoW, evoH, 2, 2, 'FD');
+    doc.setFillColor.apply(doc, block.C_col);
+    doc.roundedRect(bx, Y, 2, evoH, 1, 1, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor.apply(doc, block.C_col);
+    doc.text(sanitize(block.label).toUpperCase(), bx+4, Y+STAT_PAD+1);
+    [ {key: dAvgLabel, val: block.diff},
+      {key: 'CV',      val: block.cv} ].forEach(function(row, ri) {
+      var ry = Y+STAT_PAD+6+ri*STAT_ROW_H;
+      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor.apply(doc, C_TEXT2);
+      doc.text(sanitize(row.key), bx+4, ry);
+      doc.setFont('helvetica','bold'); doc.setTextColor.apply(doc, C_TEXT);
+      doc.text(sanitize(row.val), bx+evoW-3, ry, {align:'right'});
+    });
+  });
+  Y += evoH + 8;
+
   // ── Footer ─────────────────────────────────────────────────────────────────
   doc.setDrawColor.apply(doc,C_BORDER); doc.setLineWidth(0.3);
   doc.line(ML,PH-10,PW-MR,PH-10);
@@ -15326,28 +15398,76 @@ async function snapCompareJPEG() {
       });
     }
 
-    return { canvas: off, totalH: totalH, dpr: dpr };
+    return { canvas: off, totalH: totalH, dpr: dpr, foKgfs: foKgfs, faKgfs: faKgfs };
   }
 
   // Construire les deux canvas
   var resA = buildSnapCanvas(snapA);
   var resB = buildSnapCanvas(snapB);
 
-  // Canvas final : côte à côte, hauteur = max des deux
+  // Canvas final : côte à côte + bandeau récap évolution en pied,
+  // hauteur = max des deux panneaux + bandeau
+  var RECAP_H  = 300;
   var dpr      = resA.dpr;
   var totalH   = Math.max(resA.totalH, resB.totalH);
   var finalW   = W * 2;
   var finalCanvas  = document.createElement('canvas');
   finalCanvas.width  = Math.round(finalW * dpr);
-  finalCanvas.height = Math.round(totalH * dpr);
+  finalCanvas.height = Math.round((totalH + RECAP_H) * dpr);
   var fctx     = finalCanvas.getContext('2d');
 
-  fctx.fillStyle = '#0d1017';
+  fctx.fillStyle = whiteBg ? '#ffffff' : '#0d1017';
   fctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
   // Coller snapA (gauche) et snapB (droite) en coordonnées pixel natif
   fctx.drawImage(resA.canvas, 0, 0);
   fctx.drawImage(resB.canvas, Math.round(W * dpr), 0);
+
+  // ── Bandeau récap évolution — même contenu que la fin de l'animation ────
+  (function drawEvoRecap() {
+    var ndsA = isAvant ? resA.foKgfs : resA.faKgfs;
+    var ndsB = isAvant ? resB.foKgfs : resB.faKgfs;
+    var dsA  = isAvant ? resA.faKgfs : resA.foKgfs;
+    var dsB  = isAvant ? resB.faKgfs : resB.foKgfs;
+    var avgNdsA = _snapEvoAvg(ndsA), avgNdsB = _snapEvoAvg(ndsB);
+    var avgDsA  = _snapEvoAvg(dsA),  avgDsB  = _snapEvoAvg(dsB);
+
+    var colorNDS = isAvant
+      ? (whiteBg ? 'rgba(190,85,55,1)'  : 'rgba(232,146,124,1)')
+      : (whiteBg ? 'rgba(40,140,185,1)' : 'rgba(126,200,227,1)');
+    var colorDS = isAvant
+      ? (whiteBg ? 'rgba(40,140,185,1)' : 'rgba(126,200,227,1)')
+      : (whiteBg ? 'rgba(190,85,55,1)'  : 'rgba(232,146,124,1)');
+    var C_val = whiteBg ? '#1e2837' : 'rgba(220,228,237,0.92)';
+
+    fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Séparateur
+    fctx.strokeStyle = whiteBg ? 'rgba(30,50,70,0.25)' : 'rgba(80,100,130,0.4)';
+    fctx.lineWidth = 2;
+    fctx.beginPath();
+    fctx.moveTo(finalW * 0.1, totalH + 1);
+    fctx.lineTo(finalW * 0.9, totalH + 1);
+    fctx.stroke();
+
+    fctx.textAlign = 'center'; fctx.textBaseline = 'middle';
+    function drawSide(cx, label, color, diffStr, stdLine) {
+      fctx.font = '600 46px DM Mono, monospace';
+      fctx.fillStyle = color;
+      fctx.fillText(label, cx, totalH + 70);
+      fctx.font = '500 50px DM Sans, sans-serif';
+      fctx.fillStyle = C_val;
+      fctx.fillText(diffStr, cx, totalH + 150);
+      fctx.fillText(stdLine, cx, totalH + 230);
+    }
+    drawSide(finalW * 0.27, 'NDS', colorNDS,
+             _snapEvoDiff(avgNdsA, avgNdsB),
+             _snapEvoSigmaLine(_snapEvoStd(ndsA), _snapEvoStd(ndsB), avgNdsA, avgNdsB));
+    drawSide(finalW * 0.73, 'DS', colorDS,
+             _snapEvoDiff(avgDsA, avgDsB),
+             _snapEvoSigmaLine(_snapEvoStd(dsA), _snapEvoStd(dsB), avgDsA, avgDsB));
+    fctx.setTransform(1, 0, 0, 1, 0, 0);
+  })();
 
   // Export
   var jpeg     = finalCanvas.toDataURL('image/jpeg', 0.96);
@@ -15534,21 +15654,11 @@ async function snapCompareAnim() {
   VW = SIZE2; VH = SIZE2 + RECAP_H;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  // Calcul récap moyennes + écart-type
-  function avg(arr) {
-    var vals = arr.filter(function(v) { return v !== null; });
-    return vals.length ? vals.reduce(function(a,b){ return a+b; }, 0) / vals.length : null;
-  }
-  function std(arr) {
-    var vals = arr.filter(function(v) { return v !== null; });
-    if (!vals.length) return null;
-    var m = vals.reduce(function(a,b){ return a+b; }, 0) / vals.length;
-    return Math.sqrt(vals.reduce(function(s,x){ return s + Math.pow(x-m,2); }, 0) / vals.length);
-  }
-  var avgFoA = avg(foA), avgFoB = avg(foB);
-  var avgFaA = avg(faA), avgFaB = avg(faB);
-  var stdFoA = std(foA), stdFoB = std(foB);
-  var stdFaA = std(faA), stdFaB = std(faB);
+  // Calcul récap moyennes + écart-type (helpers partagés _snapEvo*)
+  var avgFoA = _snapEvoAvg(foA), avgFoB = _snapEvoAvg(foB);
+  var avgFaA = _snapEvoAvg(faA), avgFaB = _snapEvoAvg(faB);
+  var stdFoA = _snapEvoStd(foA), stdFoB = _snapEvoStd(foB);
+  var stdFaA = _snapEvoStd(faA), stdFaB = _snapEvoStd(faB);
   var isAvant = (typeof wtype !== 'undefined') ? wtype !== 'arriere' : true;
   // fo=orange, fa=bleu — roue arrière : fo=DS / fa=NDS — roue avant : fo=NDS / fa=DS
   var avgDS_A  = isAvant ? avgFaA : avgFoA;
@@ -15561,14 +15671,6 @@ async function snapCompareAnim() {
   var stdNDS_B = isAvant ? stdFoB : stdFaB;
   var colorDS  = isAvant ? 'rgba(126,200,227,1)' : 'rgba(232,146,124,1)';
   var colorNDS = isAvant ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
-
-  function fmtDiff(a, b) {
-    if (a === null || b === null) return '—';
-    var d = b - a, pct = a !== 0 ? (d / a * 100) : 0;
-    var sign = d >= 0 ? '+' : '';
-    return sign + d.toFixed(1) + ' kgf  (' + sign + pct.toFixed(0) + '%)';
-  }
-
 
   function drawRecap(alpha) {
     var w = VW, h = VH, radarH = w;
@@ -15606,18 +15708,11 @@ async function snapCompareAnim() {
       ctx.fillText(stdLine, cx, startY + lineH * 2);
     }
 
-    function fmtStdLine(stdA, stdB, avgA, avgB) {
-      if (stdA === null || stdB === null || !avgA || !avgB) return '—';
-      function f(n) { var s = n.toFixed(1); return s.endsWith('.0') ? String(Math.round(n)) : s; }
-      var cvA = stdA / avgA * 100, cvB = stdB / avgB * 100;
-      return 'σ  ' + f(cvA) + '% → ' + f(cvB) + '%';
-    }
+    var ndsLine = _snapEvoSigmaLine(stdNDS_A, stdNDS_B, avgNDS_A, avgNDS_B);
+    var dsLine  = _snapEvoSigmaLine(stdDS_A,  stdDS_B,  avgDS_A,  avgDS_B);
 
-    var ndsLine = fmtStdLine(stdNDS_A, stdNDS_B, avgNDS_A, avgNDS_B);
-    var dsLine  = fmtStdLine(stdDS_A,  stdDS_B,  avgDS_A,  avgDS_B);
-
-    drawSide(w * 0.27, 'NDS', colorNDS, fmtDiff(avgNDS_A, avgNDS_B), ndsLine);
-    drawSide(w * 0.73, 'DS',  colorDS,  fmtDiff(avgDS_A,  avgDS_B),  dsLine);
+    drawSide(w * 0.27, 'NDS', colorNDS, _snapEvoDiff(avgNDS_A, avgNDS_B), ndsLine);
+    drawSide(w * 0.73, 'DS',  colorDS,  _snapEvoDiff(avgDS_A,  avgDS_B),  dsLine);
 
     ctx.globalAlpha = 1;
   }
