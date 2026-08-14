@@ -11733,11 +11733,12 @@ function efVoiceToNumber(txt) {
   // Couvre: virgule (fr/it/de/es/pt…), point, separateurs unicode arabes/persans
   s = s.replace(/[,،٫]/g, '.');
   // Alternatives longues en PREMIER, sinon "virgola" court-circuite "virgola decimale".
-  // Couvre les mots décimaux des 9 langues d'EF Vocal : it/es punto, de/pl punkt,
-  // nl punt, pt ponto + v[ií]rgula (avec ou sans accent), pl przecinek, sl vejica/cela, hr zarez (cs čárka : non-ASCII → regex cyrillique ci-dessous). \b reste
+  // Couvre les mots décimaux de 10 langues (+ fr/en de base) : it/es punto, de/pl punkt,
+  // nl punt, pt ponto + v[ií]rgula (avec ou sans accent), pl przecinek, sl vejica/cela, hr zarez,
+  // ru запятая/точка et cs čárka (non-ASCII → regex dédiée ci-dessous). \b reste
   // fiable ici : toutes les bornes d'alternatives sont des lettres ASCII.
   s = s.replace(/\b(virgola decimale|point d[eé]cimal|v[ií]rgula|virgule|virgola|przecinek|vejica|cela|zarez|punto|punkt|ponto|punt|point|komma|coma|dot)\b/g, '.');
-  // Cyrillique à part : \b est ASCII-only en JS (з n'est pas \w → \bзапятая ne
+  // Non-ASCII à part : \b est ASCII-only en JS (ni з ni č ne sont \w → \bзапятая ne
   // matche JAMAIS). Ancres espace/bords explicites ; le lookahead préserve
   // l'espace de queue pour la jointure (\d)\s*\.\s*(\d) qui suit.
   s = s.replace(/(^|\s)(?:запятая|точка|čárka)(?=\s|$)/g, '$1.');
