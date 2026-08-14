@@ -817,16 +817,16 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   #snapcompare-modal.show {
     display:grid; max-width:620px;
     grid-template-columns:minmax(0,1fr) 220px;
-    grid-template-rows:auto auto auto 1fr;
+    grid-template-rows:auto auto auto auto 1fr;
     column-gap:1.1rem; row-gap:.6rem;
   }
   #snapcompare-modal > div:first-child { grid-column:1/-1 }
-  #snapcompare-desc { grid-column:1; grid-row:2; align-self:center }
-  #snapcompare-list { grid-column:1; grid-row:3/5; min-height:0;
+  #snapcompare-desc { grid-column:1; grid-row:2 }
+  #snapcompare-list { grid-column:1; grid-row:3/6; min-height:0;
                       max-height:none !important } /* inline 260px (portrait) */
-  #snapcompare-go-btn    { grid-column:2; grid-row:2 }
-  #snapcompare-jpeg-btn  { grid-column:2; grid-row:3 }
-  #snapcompare-video-btn { grid-column:2; grid-row:4; align-self:start }
+  #snapcompare-go-btn    { grid-column:2; grid-row:3 }
+  #snapcompare-jpeg-btn  { grid-column:2; grid-row:4 }
+  #snapcompare-video-btn { grid-column:2; grid-row:5; align-self:start }
 }
 .snap-header { display:flex; align-items:center; justify-content:space-between; flex-shrink:0 }
 .snap-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
