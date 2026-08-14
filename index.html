@@ -828,7 +828,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 @media (hover: hover) { .snap-save-btn:hover { border-color:rgba(126,200,227,.5); color:var(--accent2); background:rgba(126,200,227,.05) } }
 
 .snap-divider { height:1px; background:var(--border); flex-shrink:0 }
-.snap-list { display:flex; flex-direction:column; gap:.35rem }
+.snap-list { display:flex; flex-direction:column; gap:.35rem; max-height:340px; overflow-y:auto; overscroll-behavior:contain }
 .snap-empty { font-size:.72rem; color:var(--text3); text-align:center; padding:.6rem 0; font-style:italic }
 .snap-item {
   display:flex; align-items:center; gap:.5rem;
@@ -14264,10 +14264,10 @@ function hrClearLoadedRim() {
 
 <script>
 // ── Snapshots de tension ──────────────────────────────────────────────────────
-// 5 snapshots max (1→5). Le snapshot 1 est créé automatiquement.
+// 10 snapshots max (1→10). Le snapshot 1 est créé automatiquement.
 // Renumérotation après suppression. Champ absent = [] (rétrocompat).
 
-const SNAP_MAX = 5;
+const SNAP_MAX = 10;
 
 function _snapResolveTensio(snap) {
   // Résout le nom du tensiomètre perso en direct depuis snap.tmType
