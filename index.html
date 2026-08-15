@@ -3831,7 +3831,7 @@ const i18n = {
     tmEraseNdsTitle:'Effacer NDS', tmEraseDsTitle:'Effacer DS',
     tmPlayBtnTitle:'Animer les points', tmSnapCompareBtnTitle:'Comparer deux snapshots',
     efDiagBtnTitle:'Diagramme', efMicBtnTitle:'Saisie vocale', efBtBtnTitle:'Clavier Bluetooth',
-    snapAnimSaveTitle:'Partager la vidéo', snapAnimReplayTitle:'Rejouer',
+    snapAnimReplayTitle:'Rejouer',
     delTitle:'Supprimer', clearValuesTitle:'Effacer les valeurs', clearFieldTitle:'Effacer',
     tmRecShare:'Partager la vidéo', tmRecSave:'Télécharger la vidéo',
     tmCVMaxLabel:'Seuil outliers',
@@ -4034,7 +4034,7 @@ const i18n = {
     tmEraseNdsTitle:'Clear NDS', tmEraseDsTitle:'Clear DS',
     tmPlayBtnTitle:'Animate points', tmSnapCompareBtnTitle:'Compare two snapshots',
     efDiagBtnTitle:'Diagram', efMicBtnTitle:'Voice input', efBtBtnTitle:'Bluetooth keyboard',
-    snapAnimSaveTitle:'Share video', snapAnimReplayTitle:'Replay',
+    snapAnimReplayTitle:'Replay',
     delTitle:'Delete', clearValuesTitle:'Clear values', clearFieldTitle:'Clear',
     tmRecShare:'Share video', tmRecSave:'Download video',
     tmCVMaxLabel:'Outliers threshold',
@@ -4530,7 +4530,9 @@ function applyLang() {
     'tm-th-nds-reset':'tmEraseNdsTitle',     'tm-th-ds-reset':'tmEraseDsTitle',
     'tm-play-btn':'tmPlayBtnTitle',          'tm-snapcompare-btn':'tmSnapCompareBtnTitle',
     'ef-diag-btn':'efDiagBtnTitle', 'ef-mic-btn':'efMicBtnTitle', 'ef-bt-btn':'efBtBtnTitle',
-    'snapanim-save':'snapAnimSaveTitle',     'snapanim-replay':'snapAnimReplayTitle',
+    // snapanim-save absent à dessein : son title est contextuel (device),
+    // posé à l'affichage du bouton via tmRecShare/tmRecSave — cf. snapCompareAnim.
+    'snapanim-replay':'snapAnimReplayTitle',
   }).forEach(([id, key]) => {
     var b = $id(id); if (b) { b.title = t(key); b.setAttribute('aria-label', t(key)); }
   });
@@ -15155,13 +15157,14 @@ function _snapEvoSigmaLine(sA, sB, aA, aB) {
   var pair = _snapEvoPctPair(sA, sB, aA, aB);
   return pair === null ? '—' : 'σ  ' + pair;
 }
-// Paire de CV « x.x% → y.y% » (trim du .0) — formatage numérique unique pour
-// les trois surfaces : animation et JPEG (préfixe σ ci-dessus), PDF (ligne
-// labellisée CV, helvetica WinAnsi sans glyphe σ — cf. _cmpCvLine).
+// Paire de CV « x.x % → y.y % » (trim du .0, espace avant %) — formatage
+// numérique unique pour les trois surfaces : animation et JPEG (préfixe σ
+// ci-dessus), PDF (ligne labellisée CV, helvetica WinAnsi sans glyphe σ —
+// cf. _cmpCvLine).
 function _snapEvoPctPair(sA, sB, aA, aB) {
   if (sA === null || sB === null || !aA || !aB) return null;
   function f(n) { var s = n.toFixed(1); return s.endsWith('.0') ? String(Math.round(n)) : s; }
-  return f(sA/aA*100) + '% → ' + f(sB/aB*100) + '%';
+  return f(sA/aA*100) + ' % → ' + f(sB/aB*100) + ' %';
 }
 
 // ── Stats d'un snapshot ────────────────────────────────────────────────────────
