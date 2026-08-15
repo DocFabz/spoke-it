@@ -9175,7 +9175,7 @@ function tmBuildTable() {
         tmTryRenderRadar();
         tmSyncResultAfterEdit();
         _snapSetLabel(0);
-        snapRefreshBtn();
+        snapRefreshBtnFast(); // par-cellule : pas de reparse localStorage ; le label vient d'être remis par _snapSetLabel(0)
         tmUpdateInvertibleHeaders();
         _refreshLoadedBadges(); // verrou nb-rayons suit tmHasData()
       });
@@ -11119,7 +11119,7 @@ function efCommitCurrent() {
   inp.value = tmDisplayValue(parsed);
   efSyncTableCell(step);
   tmUpdateCell(step.idx, step.side);
-  snapRefreshBtn();
+  snapRefreshBtnFast(); // par-rayon : pas de reparse localStorage (voir snapRefreshBtnFast)
   tmUpdateInvertibleHeaders();
   _refreshLoadedBadges(); // verrou nb-rayons suit tmHasData()
   efDiagramRender();
@@ -12072,11 +12072,13 @@ function efStartMic(forceLang) {
   r.onresult = function(e) {
     efSessionGranted = true;
     efRestartCount = 0; // un résultat reçu = micro opérationnel
-    var result = e.results[e.results.length - 1];
-    var txt = result[0].transcript.trim().toLowerCase();
 
     // Fenêtre sourde TTS : la reco entend la synthèse → tout ignorer.
+    // Gate en TOUTE première position : pas d'extraction/normalisation du
+    // transcript pour un résultat qui sera jeté.
     if (efTtsSpeaking) return;
+    var result = e.results[e.results.length - 1];
+    var txt = result[0].transcript.trim().toLowerCase();
     // Filtre anti-écho résiduel : un résultat arrivant juste après la fenêtre
     // peut encore être le tampon audio de la TTS. Deux gardes (libérées peu
     // après le tail) : (a) la phrase reprend ce qu'on vient de prononcer ;
@@ -12130,6 +12132,20 @@ function efStartMic(forceLang) {
       }
       var numInterim = efVoiceToNumber(txt);
       if (numInterim) {
+        // DEDUP moteur : même nombre que le dernier interim ET timer de
+        // stabilisation déjà armé → le moteur ré-émet son transcript
+        // (raffinement de confiance, ponctuation) SANS que l'énoncé change.
+        // Sans ce court-circuit, chaque ré-émission remettait le chrono à
+        // zéro : la « stabilité 500ms » mesurait 500ms depuis le DERNIER
+        // écho moteur (ré-émissions toutes les 100-300ms sur Chrome/Android)
+        // et non depuis la première occurrence de la valeur — l'auto-avance
+        // partait des centaines de ms trop tard. Sûr : timer armé ⇒
+        // pré-commit (efAutoAdvanced posé uniquement à l'expiration du
+        // timer, donc false ici), valeur identique ⇒ efStableDelay
+        // recalculé serait identique, closure du timer identique. Couvre
+        // aussi le timer OOR (efOorFired reste posé — cohérent : même
+        // valeur, même verdict).
+        if (efBeepTimer && numInterim === efLastInterimNum) return;
         // Un nouvel énoncé démarre. Si une auto-avance est encore "en attente de final"
         // (efAutoAdvanced true), son final tardif arriverait après la fermeture de la
         // fenêtre de correction ci-dessous et écraserait le rayon courant : on mémorise
@@ -14516,6 +14532,20 @@ function snapRefreshBtn() {
     cmpBtn.style.opacity      = hasEnough ? '' : '0.3';
     cmpBtn.style.pointerEvents = hasEnough ? '' : 'none';
   }
+}
+
+// Variante allégée pour les chemins de COMMIT PAR VALEUR (efCommitCurrent à
+// chaque rayon Easy Fill, blur d'une cellule du tableau) : snapRefreshBtn()
+// reparse TOUTES les configs depuis localStorage (_snapFindCurrentConfig →
+// loadConfigs → JSON.parse, N roues × 10 snapshots × arrays) pour des états
+// — nombre de snapshots, label — qui ne peuvent PAS changer pendant la
+// saisie d'une valeur (seuls snapSave/snapDelete/chargement les modifient,
+// et ces chemins appellent le snapRefreshBtn complet). Seul tmHasData()
+// bouge ici. Le parse complet coûtait plusieurs ms synchrones (vieil iPad)
+// en plein rendu + beep, à CHAQUE rayon dicté.
+function snapRefreshBtnFast() {
+  const btn = $id('tm-snap-open-btn');
+  if (btn) btn.disabled = !tmHasData();
 }
 
 // ── Inversion colonne DS / NDS ────────────────────────────────────────────────
