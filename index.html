@@ -1794,6 +1794,9 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
   <button class="ct-save-btn" onclick="saveAtelierInfo()" style="margin-top:1.28rem">
     <span data-i18n="atelierSave">✓ Sauvegarder</span>
   </button>
+  <button class="ct-save-btn" onclick="atelierClearAll()">
+    <span data-i18n="atelierClearBtn">✕ Effacer</span>
+  </button>
 </div>
 
 <!-- ── Save manager modal ── -->
@@ -3118,6 +3121,9 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
   <button class="ct-save-btn" onclick="wheelInfoSave()">
     <span data-i18n="atelierSave">✓ Sauvegarder</span>
   </button>
+  <button class="ct-save-btn" onclick="wheelInfoClearAll()">
+    <span data-i18n="atelierClearBtn">✕ Effacer</span>
+  </button>
 </div>
 
 <script>
@@ -3146,6 +3152,17 @@ window.closeWheelInfoModal = function() {
 // le même nom (skipConfirm : c'est une mise à jour volontaire, pas de popup
 // « Remplacer ? » ; riderId préservé par saveConfig). Sinon, pas de nom connu →
 // flux normal via la modale de sauvegarde (nom, rider, doublons).
+// Effacer tous les champs de la modale — champs live uniquement (selects + notes),
+// la modale reste ouverte ; rien n'est sauvegardé tant que ✓ Sauvegarder
+// n'est pas pressé (les champs sont lus par readState au moment de la save).
+window.wheelInfoClearAll = function() {
+  ['wi-discipline', 'wi-size', 'wi-brake', 'wi-material'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  var ta = document.getElementById('wi-notes');
+  if (ta) ta.value = '';
+};
 window.wheelInfoSave = function() {
   closeWheelInfoModal();
   var name = (typeof _loadedConfigName !== 'undefined') ? _loadedConfigName[wtype] : null;
@@ -3853,6 +3870,7 @@ const i18n = {
     atelierTitle:'Atelier',
     atelierName:'Atelier',
     atelierSave:'✓ Sauvegarder',
+    atelierClearBtn:'✕ Effacer',
     riderTitle:'Rider',
     riderLoad:'Charger',
     riderCreate:'Créer',
@@ -4046,6 +4064,7 @@ const i18n = {
     atelierTitle:'Workshop',
     atelierName:'Workshop',
     atelierSave:'✓ Save',
+    atelierClearBtn:'✕ Clear',
     riderTitle:'Rider',
     riderLoad:'Load',
     riderCreate:'Create',
@@ -5830,6 +5849,14 @@ function closeAtelierMgr() {
 function atelierClear(id) {
   $id(id).value = '';
   $id(id).focus();
+}
+
+// Effacer tous les champs de la modale Atelier — champs uniquement,
+// pas d'écriture localStorage (la save se fait via ✓ Sauvegarder),
+// et la modale reste ouverte.
+function atelierClearAll() {
+  ['atelier-shop', 'atelier-email', 'atelier-insta'].forEach(id => { $id(id).value = ''; });
+  $id('atelier-shop').focus();
 }
 
 function saveAtelierInfo() {
