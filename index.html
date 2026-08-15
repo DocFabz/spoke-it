@@ -2611,7 +2611,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
               <div class="tm-th-row">
                 <span id="tm-th-nds-label">NDS</span>
                 <button class="tm-th-invert" id="tm-th-nds-invert" onclick="invColDirect('nds')" title="Inverser NDS">⇅</button>
-                <button class="tm-th-reset" onclick="tmResetSide('nds')" title="Effacer NDS">✕</button>
+                <button class="tm-th-reset" id="tm-th-nds-reset" onclick="tmResetSide('nds')" title="Effacer NDS">✕</button>
               </div>
               <div class="tm-th-sub" id="tm-th-nds-sub">Lecture</div>
             </th>
@@ -2619,7 +2619,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
               <div class="tm-th-row">
                 <span id="tm-th-ds-label">DS</span>
                 <button class="tm-th-invert" id="tm-th-ds-invert" onclick="invColDirect('ds')" title="Inverser DS">⇅</button>
-                <button class="tm-th-reset" onclick="tmResetSide('ds')" title="Effacer DS">✕</button>
+                <button class="tm-th-reset" id="tm-th-ds-reset" onclick="tmResetSide('ds')" title="Effacer DS">✕</button>
               </div>
               <div class="tm-th-sub" id="tm-th-ds-sub">Lecture</div>
             </th>
@@ -3328,6 +3328,16 @@ function ensureJsPDF() {
   });
   return _jspdfPromise;
 }
+// ── Sanitisation PDF partagée ─────────────────────────────────────────────────
+// helvetica WinAnsi (jsPDF) n'a pas de glyphes →, Δ, ±, ★ : correspondances
+// ASCII. Source unique pour les quatre exports PDF (charte de conversion,
+// tension, diagnostic, comparaison de snapshots) — toute nouvelle
+// correspondance s'ajoute ici, jamais dans les délégués locaux `sanitize`.
+function pdfSanitize(s) {
+  if (!s) return '';
+  var map = { '→':'->', 'Δ':'D', '±':'+/-', '★':'*' };
+  return String(s).replace(/[→Δ±★]/g, function(c) { return map[c] || c; });
+}
 </script>
 <!-- jsPDF 2.5.1 (UMD min) embarqué — anciennement chargé depuis cdnjs ; zéro dépendance réseau -->
 <!-- Rendu inerte (type=text/plain) : activé à la volée par ensureJsPDF(), hors chemin critique du rendu -->
@@ -3814,6 +3824,15 @@ const i18n = {
     tmDishCheck:'Écart significatif. Vérifier avec un outil de centrage.',
     tmDishMinor:'Écart faible — probablement dans la marge du tensiomètre. Vérifier avec un outil de centrage.',
     tmDishUnreliable:'Dispersion élevée — estimation non fiable',
+    // Tooltips (title figé FR dans le HTML statique ou généré, retraduit par
+    // la map id→clé d'applyLang ou au rendu — cf. delTitle/clearValuesTitle)
+    hookeBtnTitle:'Courbe de Hooke',
+    tmInvertNdsTitle:'Inverser NDS', tmInvertDsTitle:'Inverser DS',
+    tmEraseNdsTitle:'Effacer NDS', tmEraseDsTitle:'Effacer DS',
+    tmPlayBtnTitle:'Animer les points', tmSnapCompareBtnTitle:'Comparer deux snapshots',
+    efDiagBtnTitle:'Diagramme', efMicBtnTitle:'Saisie vocale', efBtBtnTitle:'Clavier Bluetooth',
+    snapAnimSaveTitle:'Partager la vidéo', snapAnimReplayTitle:'Rejouer',
+    delTitle:'Supprimer', clearValuesTitle:'Effacer les valeurs', clearFieldTitle:'Effacer',
     tmRecShare:'Partager la vidéo', tmRecSave:'Télécharger la vidéo',
     tmCVMaxLabel:'Seuil outliers',
     tmOutlierModalTitle:'Seuil de détection',
@@ -4008,6 +4027,15 @@ const i18n = {
     tmDishCheck:'Significant deviation. Check with a dishing tool.',
     tmDishMinor:'Small deviation — likely within tensiometer margin. Check with a dishing tool.',
     tmDishUnreliable:'High spread — estimate unreliable',
+    // Tooltips (FR-hardcoded title attributes, retranslated via applyLang's
+    // id→key map or at render time — cf. delTitle/clearValuesTitle)
+    hookeBtnTitle:'Hooke curve',
+    tmInvertNdsTitle:'Invert NDS', tmInvertDsTitle:'Invert DS',
+    tmEraseNdsTitle:'Clear NDS', tmEraseDsTitle:'Clear DS',
+    tmPlayBtnTitle:'Animate points', tmSnapCompareBtnTitle:'Compare two snapshots',
+    efDiagBtnTitle:'Diagram', efMicBtnTitle:'Voice input', efBtBtnTitle:'Bluetooth keyboard',
+    snapAnimSaveTitle:'Share video', snapAnimReplayTitle:'Replay',
+    delTitle:'Delete', clearValuesTitle:'Clear values', clearFieldTitle:'Clear',
     tmRecShare:'Share video', tmRecSave:'Download video',
     tmCVMaxLabel:'Outliers threshold',
     tmOutlierModalTitle:'Detection threshold',
@@ -4497,9 +4525,17 @@ function applyLang() {
     'wheel-info-btn':'wiInfoBtnTitle',       'tm-wheel-info-btn':'wiInfoBtnTitle',
     'hub-load-btn':'hubLoadBtnTitle',        'hub-save-btn':'hubSaveBtnTitle',
     'rim-load-btn':'rimLoadBtnTitle',        'rim-save-btn':'rimSaveBtnTitle',
+    'hooke-btn':'hookeBtnTitle',
+    'tm-th-nds-invert':'tmInvertNdsTitle',   'tm-th-ds-invert':'tmInvertDsTitle',
+    'tm-th-nds-reset':'tmEraseNdsTitle',     'tm-th-ds-reset':'tmEraseDsTitle',
+    'tm-play-btn':'tmPlayBtnTitle',          'tm-snapcompare-btn':'tmSnapCompareBtnTitle',
+    'ef-diag-btn':'efDiagBtnTitle', 'ef-mic-btn':'efMicBtnTitle', 'ef-bt-btn':'efBtBtnTitle',
+    'snapanim-save':'snapAnimSaveTitle',     'snapanim-replay':'snapAnimReplayTitle',
   }).forEach(([id, key]) => {
     var b = $id(id); if (b) { b.title = t(key); b.setAttribute('aria-label', t(key)); }
   });
+  // Boutons ✕ des champs du diagnostic (pas d'id, classe partagée)
+  document.querySelectorAll('.diag-clear-btn').forEach(b => { b.title = t('clearFieldTitle'); });
   if ($id('arb-wrap').classList.contains('show')) {
     // En-têtes arb-head-* retraduits par la boucle [data-i18n-key] ci-dessus ;
     // ici on redessine seulement le contenu (valeurs/boutons d'arbitrage).
@@ -6925,7 +6961,7 @@ function ctRenderList() {
     div.id = 'ct-item-' + i;
     div.innerHTML =
       `<span class="ct-item-name">${CC_PREFIX}${escHtml(ct.name)}</span>` +
-      `<button class="ct-item-del" title="Supprimer">×</button>`;
+      `<button class="ct-item-del" title="${t('delTitle')}">×</button>`;
     div.querySelector('.ct-item-del').addEventListener('click', function(e) {
       e.stopPropagation();
       ctDelete(i);
@@ -8171,11 +8207,7 @@ async function tmConvExportPdf() {
   if (!pts || !pts.length) return;
 
   const L = (typeof lang !== 'undefined') ? lang : 'fr';
-  function sanitize(s) {
-    if (!s) return '';
-    const m = { '→':'->', 'Δ':'D', '±':'+/-', '★':'*' };
-    return String(s).replace(/[→Δ±★]/g, c => m[c] || c);
-  }
+  function sanitize(s) { return pdfSanitize(s); } // délégué → pdfSanitize (source unique)
 
   // A5 portrait : 148 × 210 mm
   const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a5', putOnlyUsedFonts:true });
@@ -8530,7 +8562,7 @@ function ccBuildGrid() {
       `<td class="cc-row-num">${i + 1}</td>` +
       `<td><input class="cc-grid-inp cc-kgf${kgfHas}" type="text" inputmode="decimal" value="${kgfVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
       `<td><input class="cc-grid-inp cc-read${readHas}" type="text" inputmode="decimal" value="${readVal}" placeholder="—" autocomplete="off" autocorrect="off" spellcheck="false"></td>` +
-      `<td><button class="cc-del-btn" tabindex="-1" title="Effacer les valeurs">✕</button></td>`;
+      `<td><button class="cc-del-btn" tabindex="-1" title="${t('clearValuesTitle')}">✕</button></td>`;
 
     tbody.appendChild(tr);
 
@@ -8758,7 +8790,7 @@ function ccRenderExisting() {
     const globalIdx = allCustoms.findIndex(c => c.name === cc.name && c.tensioKey === cc.tensioKey);
     html += `<div class="cc-item" id="cc-item-${globalIdx}" data-ccidx="${globalIdx}">
       <span class="cc-item-name">${escHtml(CC_PREFIX + cc.name)}</span>
-      <button class="cc-item-del" data-ccidx="${globalIdx}" title="Supprimer">×</button>
+      <button class="cc-item-del" data-ccidx="${globalIdx}" title="${t('delTitle')}">×</button>
     </div>`;
   });
   html += '</div>';
@@ -9874,11 +9906,7 @@ async function tmExportPdfWithOpts(opts) {
   // ── Setup jsPDF ───────────────────────────────────────────────────────────
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', putOnlyUsedFonts: true });
 
-  function sanitize(str) {
-    if (!str) return '';
-    var map = { '→':'->','Δ':'D','±':'+/-','★':'*' };
-    return str.replace(/[→Δ±★]/g, function(c) { return map[c] || c; });
-  }
+  function sanitize(str) { return pdfSanitize(str); } // délégué → pdfSanitize (source unique)
 
   function getElongation(id) {
     const el = document.getElementById(id);
@@ -10327,6 +10355,32 @@ async function tmExportPdfWithOpts(opts) {
   if (btn2) { btn2.classList.add('flash'); setTimeout(() => btn2.classList.remove('flash'), 800); }
 }
 
+// ── Tracé d'une nappe sur radar (polygone + points, rendu off-screen) ────────
+// Géométrie partagée des trois rendus off-screen identiques : screenshot du
+// module tension, radar d'un snapshot, radar snapshot coloré (JPEG évolution).
+// Les deux autres drawPoly restent volontairement spécialisés et ne délèguent
+// pas ici : celui du radar à l'écran (halo des outliers, rayon variable) et
+// celui de l'animation (interpolation A→B recalculée à chaque frame).
+function radarDrawPoly(ctx, g, vals, angleOff, stroke, fill) {
+  var pts = vals.map(function(v, i) {
+    var a  = (i * 2 + angleOff) * g.angleStep - Math.PI / 2;
+    var rp = v !== null ? (v / g.scaleMax) * g.R : 0;
+    return [g.cx + rp * Math.cos(a), g.cy + rp * Math.sin(a)];
+  });
+  ctx.beginPath();
+  pts.forEach(function(p, i) { i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]); });
+  ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.strokeStyle = stroke; ctx.lineWidth = 1.8; ctx.stroke();
+  vals.forEach(function(v, i) {
+    if (v === null) return;
+    var a  = (i * 2 + angleOff) * g.angleStep - Math.PI / 2;
+    var rp = (v / g.scaleMax) * g.R;
+    ctx.beginPath(); ctx.arc(g.cx + rp * Math.cos(a), g.cy + rp * Math.sin(a), 3, 0, 2 * Math.PI);
+    ctx.fillStyle = stroke; ctx.fill();
+  });
+}
+
 function tmRenderRadarOffscreen(w, h, whiteBg) {
   // Récupère les données kgf depuis le radar DOM existant
   const radar = $id('tm-radar');
@@ -10402,24 +10456,8 @@ function tmRenderRadarOffscreen(w, h, whiteBg) {
   }
 
   // Polygones
-  function drawPoly(vals, angleOffset, stroke, fill) {
-    const pts = vals.map((v, i) => {
-      const a  = (i * 2 + angleOffset) * angleStep - Math.PI / 2;
-      const rr = v !== null ? (v / scaleMax) * R : 0;
-      return [cx + rr * Math.cos(a), cy + rr * Math.sin(a)];
-    });
-    ctx.beginPath();
-    pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
-    ctx.closePath();
-    ctx.fillStyle = fill; ctx.fill();
-    ctx.strokeStyle = stroke; ctx.lineWidth = 1.8; ctx.stroke();
-    vals.forEach((v, i) => {
-      if (v === null) return;
-      const a  = (i * 2 + angleOffset) * angleStep - Math.PI / 2;
-      const rr = (v / scaleMax) * R;
-      ctx.beginPath(); ctx.arc(cx + rr * Math.cos(a), cy + rr * Math.sin(a), 3, 0, 2 * Math.PI);
-      ctx.fillStyle = stroke; ctx.fill();
-    });
+  function drawPoly(vals, angleOffset, stroke, fill) { // délégué → radarDrawPoly (géométrie partagée)
+    radarDrawPoly(ctx, { cx: cx, cy: cy, R: R, scaleMax: scaleMax, angleStep: angleStep }, vals, angleOffset, stroke, fill);
   }
 
   const foFill = whiteBg ? 'rgba(232,146,124,0.18)' : 'rgba(232,146,124,0.06)';
@@ -12156,7 +12194,8 @@ function efOnLangChange() {
   // une UI française). Instance jamais startée → GC, rien à abort().
   efWarmInstance = null;
   // La modale EF ouverte doit basculer son texte (titre, switcher, étape courante),
-  // que le micro tourne ou non : applyLang() ne couvre aucun élément ef-*.
+  // que le micro tourne ou non : applyLang() ne couvre aucun contenu ef-*
+  // (seuls les tooltips des 3 boutons d'outils passent par sa map id→clé).
   // Re-préchauffer dans la nouvelle langue (no-op sur iOS).
   var ov = $id('ef-overlay');
   if (ov && ov.classList.contains('show')) { efRefreshLang(); efWarmSR(); }
@@ -13460,11 +13499,7 @@ async function diagGeneratePdf() {
     statBlocks.push({ label: label && label.textContent.trim() || '', isFo: label && label.classList.contains('fo'), entries: entries });
   });
 
-  function sanitize(str) {
-    if (!str) return '';
-    var map = {'→':'->','Δ':'D','±':'+/-','★':'*'};
-    return str.replace(/[→Δ±★]/g, function(c) { return map[c] || c; });
-  }
+  function sanitize(str) { return pdfSanitize(str); } // délégué → pdfSanitize (source unique)
 
   // ── Palette (identique au PDF principal) ──────────────────────────────────
   var PW = 210, PH = 297, ML = 14, MR = 14, MT = 14, CW = PW - ML - MR;
@@ -14347,7 +14382,11 @@ window.renderEraseMgr = function(openKeys) {
     return div;
   }
 
-  function makeAccSection(labelKey, labelFallback, items, openKeys, sectionId) {
+  // NB : homonyme volontairement renommé — renderEraseMgr (module principal)
+  // possède son propre makeAccSection(labelKey, items, openKeys) à signature
+  // différente. Les deux sont locaux et indépendants ; le préfixe hr évite
+  // toute confusion en cas de retouche de l'un sans l'autre.
+  function hrMakeAccSection(labelKey, labelFallback, items, openKeys, sectionId) {
     var wrap = document.createElement('div');
     wrap.id = sectionId;
     var empty = items.length === 0;
@@ -14391,7 +14430,7 @@ window.renderEraseMgr = function(openKeys) {
       hrUpdateButtons();
     });
   });
-  acc.appendChild(makeAccSection('__hubs__', lang === 'fr' ? 'Moyeux' : 'Hubs', hubItems, openKeys, 'erasemgr-hub-section'));
+  acc.appendChild(hrMakeAccSection('__hubs__', lang === 'fr' ? 'Moyeux' : 'Hubs', hubItems, openKeys, 'erasemgr-hub-section'));
 
   var rims = hrLoadAll('rim');
   var rimItems = rims.map(function(entry, idx) {
@@ -14402,7 +14441,7 @@ window.renderEraseMgr = function(openKeys) {
       hrUpdateButtons();
     });
   });
-  acc.appendChild(makeAccSection('__rims__', lang === 'fr' ? 'Jantes' : 'Rims', rimItems, openKeys, 'erasemgr-rim-section'));
+  acc.appendChild(hrMakeAccSection('__rims__', lang === 'fr' ? 'Jantes' : 'Rims', rimItems, openKeys, 'erasemgr-rim-section'));
 };
 
 // ── Hub/Rim loaded name badges ───────────────────────────────────────────────
@@ -14591,8 +14630,19 @@ function snapRegisterAndSave() {
     const configs2 = loadConfigs();
     const ei2 = configs2.findIndex(c => c.name === name && (c.state.wtype || 'avant') === wtype);
     const entry = { name, metaKey: wtype === 'avant' ? 'frontLabel' : 'rearLabel', state, ts: Date.now() };
-    if (ei2 >= 0) configs2.splice(ei2, 1, entry);
-    else configs2.unshift(entry);
+    // Remplacement d'une roue existante : même sémantique que saveConfig/doSave —
+    // le rider et l'historique de snapshots appartiennent à la roue, pas à l'état.
+    // Le snapSave() qui suit ajoutera le nouveau snapshot À LA SUITE de
+    // l'historique préservé (numéroté N+1) au lieu de repartir d'une liste vide.
+    if (ei2 >= 0) {
+      if (configs2[ei2].riderId) entry.riderId = configs2[ei2].riderId;
+      if (Array.isArray(configs2[ei2].snapshots) && configs2[ei2].snapshots.length) {
+        entry.snapshots = configs2[ei2].snapshots;
+      }
+      configs2.splice(ei2, 1, entry);
+    } else {
+      configs2.unshift(entry);
+    }
     persistConfigs(configs2);
     _loadedConfigName[wtype] = name;
     _cfgFillMode[wtype] = _cfgStateIncomplete(state);
@@ -14746,7 +14796,7 @@ function snapRenderList() {
       + (infoStr ? '<span class="snap-item-meta">' + infoStr + '</span>' : '')
       + '</div>'
       + '<div class="snap-item-actions">'
-      + '<button class="snap-del-btn" onclick="event.stopPropagation();snapDelete(' + i + ')" title="Supprimer">×</button>'
+      + '<button class="snap-del-btn" onclick="event.stopPropagation();snapDelete(' + i + ')" title="' + t('delTitle') + '">×</button>'
       + '</div></div>';
   }).reverse().join('');
 }
@@ -15000,24 +15050,8 @@ function _snapRenderRadarCanvas(snap, size) {
       ctx.fillText(spokeNum3, cx+labelR3*Math.cos(a3), cy+labelR3*Math.sin(a3));
     }
   }
-  function drawPoly(vals, angleOff, stroke, fill) {
-    var pts = vals.map(function(v,i) {
-      var a = (i*2+angleOff)*angleStep-Math.PI/2;
-      var rp = v!==null?(v/scaleMax)*R:0;
-      return [cx+rp*Math.cos(a), cy+rp*Math.sin(a)];
-    });
-    ctx.beginPath();
-    pts.forEach(function(p,i){ i===0?ctx.moveTo(p[0],p[1]):ctx.lineTo(p[0],p[1]); });
-    ctx.closePath();
-    ctx.fillStyle=fill; ctx.fill();
-    ctx.strokeStyle=stroke; ctx.lineWidth=1.8; ctx.stroke();
-    vals.forEach(function(v,i) {
-      if (v===null) return;
-      var a=(i*2+angleOff)*angleStep-Math.PI/2;
-      var rp=(v/scaleMax)*R;
-      ctx.beginPath(); ctx.arc(cx+rp*Math.cos(a),cy+rp*Math.sin(a),3,0,2*Math.PI);
-      ctx.fillStyle=stroke; ctx.fill();
-    });
+  function drawPoly(vals, angleOff, stroke, fill) { // délégué → radarDrawPoly (géométrie partagée)
+    radarDrawPoly(ctx, { cx: cx, cy: cy, R: R, scaleMax: scaleMax, angleStep: angleStep }, vals, angleOff, stroke, fill);
   }
   drawPoly(faKgfs,1,'rgba(126,200,227,0.8)','rgba(126,200,227,0.06)');
   drawPoly(foKgfs,0,'rgba(232,146,124,0.8)','rgba(232,146,124,0.06)');
@@ -15088,24 +15122,8 @@ function _snapRenderRadarCanvasColored(snap, w, h, whiteBg) {
       ctx.fillText(spokeNum3, cx + labelR3 * Math.cos(a3), cy + labelR3 * Math.sin(a3));
     }
   }
-  function drawPoly(vals, angleOff, stroke, fill) {
-    var pts = vals.map(function(v, i) {
-      var a = (i * 2 + angleOff) * angleStep - Math.PI / 2;
-      var rp = v !== null ? (v / scaleMax) * R : 0;
-      return [cx + rp * Math.cos(a), cy + rp * Math.sin(a)];
-    });
-    ctx.beginPath();
-    pts.forEach(function(p, i) { i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]); });
-    ctx.closePath();
-    ctx.fillStyle = fill; ctx.fill();
-    ctx.strokeStyle = stroke; ctx.lineWidth = 1.8; ctx.stroke();
-    vals.forEach(function(v, i) {
-      if (v === null) return;
-      var a = (i * 2 + angleOff) * angleStep - Math.PI / 2;
-      var rp = (v / scaleMax) * R;
-      ctx.beginPath(); ctx.arc(cx + rp * Math.cos(a), cy + rp * Math.sin(a), 3, 0, 2 * Math.PI);
-      ctx.fillStyle = stroke; ctx.fill();
-    });
+  function drawPoly(vals, angleOff, stroke, fill) { // délégué → radarDrawPoly (géométrie partagée)
+    radarDrawPoly(ctx, { cx: cx, cy: cy, R: R, scaleMax: scaleMax, angleStep: angleStep }, vals, angleOff, stroke, fill);
   }
   var foFill = whiteBg ? 'rgba(232,146,124,0.18)' : 'rgba(232,146,124,0.06)';
   var faFill = whiteBg ? 'rgba(126,200,227,0.18)' : 'rgba(126,200,227,0.06)';
@@ -15134,9 +15152,16 @@ function _snapEvoDiff(a, b) {
   return sign + d.toFixed(1) + ' kgf  (' + sign + pct.toFixed(0) + '%)';
 }
 function _snapEvoSigmaLine(sA, sB, aA, aB) {
-  if (sA === null || sB === null || !aA || !aB) return '—';
+  var pair = _snapEvoPctPair(sA, sB, aA, aB);
+  return pair === null ? '—' : 'σ  ' + pair;
+}
+// Paire de CV « x.x% → y.y% » (trim du .0) — formatage numérique unique pour
+// les trois surfaces : animation et JPEG (préfixe σ ci-dessus), PDF (ligne
+// labellisée CV, helvetica WinAnsi sans glyphe σ — cf. _cmpCvLine).
+function _snapEvoPctPair(sA, sB, aA, aB) {
+  if (sA === null || sB === null || !aA || !aB) return null;
   function f(n) { var s = n.toFixed(1); return s.endsWith('.0') ? String(Math.round(n)) : s; }
-  return 'σ  ' + f(sA/aA*100) + '% → ' + f(sB/aB*100) + '%';
+  return f(sA/aA*100) + '% → ' + f(sB/aB*100) + '%';
 }
 
 // ── Stats d'un snapshot ────────────────────────────────────────────────────────
@@ -15183,10 +15208,7 @@ async function snapComparePDF() {
   var now = new Date();
   var dateStr = now.toLocaleDateString(L==='fr'?'fr-FR':'en-GB',{day:'2-digit',month:'long',year:'numeric'});
 
-  function sanitize(str) {
-    if (!str) return '';
-    return str.replace(/[→Δ±★]/g, function(c){ return({'→':'->','Δ':'D','±':'+/-','★':'*'})[c]||c; });
-  }
+  function sanitize(str) { return pdfSanitize(str); } // délégué → pdfSanitize (source unique)
   var PW=210, PH=297, ML=14, MR=14, MT=14, CW=PW-ML-MR;
   var C_TEXT=[30,40,55], C_TEXT2=[90,105,120], C_TEXT3=[150,165,175];
   var C_ACCENT=[60,160,200], C_WARM=[210,110,85], C_BORDER=[220,228,235];
@@ -15392,11 +15414,13 @@ async function snapComparePDF() {
   Y += bH2 + 8;
 
   // ── Évolution S_A → S_B — même récap que la fin de l'animation ────────────
-  // avg/std/diff : helpers partagés _snapEvo* — seule la ligne CV reste
-  // spécifique au PDF (helvetica WinAnsi : pas de glyphe σ, format x.x %)
+  // avg/std/diff : helpers partagés _snapEvo* — la ligne CV délègue au
+  // formateur commun _snapEvoPctPair (mêmes nombres que JPEG/animation) ;
+  // seul le préfixe σ reste absent (helvetica WinAnsi sans glyphe σ, la
+  // ligne est labellisée « CV » dans le bloc).
   function _cmpCvLine(sA, sB, aA, aB) {
-    if (sA===null||sB===null||!aA||!aB) return '—';
-    return (sA/aA*100).toFixed(1)+' % → '+(sB/aB*100).toFixed(1)+' %';
+    var pair = _snapEvoPctPair(sA, sB, aA, aB);
+    return pair === null ? '—' : pair;
   }
   var ndsKgfA = isAvant ? rendA.foKgfs : rendA.faKgfs;
   var ndsKgfB = isAvant ? rendB.foKgfs : rendB.faKgfs;
