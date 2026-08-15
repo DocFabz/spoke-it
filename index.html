@@ -439,6 +439,15 @@ select.placeholder        { color:var(--text2) }
 select option             { background:#161b27 }
 .inp-readonly             { opacity:.55; cursor:not-allowed }
 .inp-disabled             { opacity:.35; cursor:not-allowed; pointer-events:none }
+.wi-notes {
+  background:var(--inp); border:1px solid var(--border); border-radius:var(--rs);
+  color:var(--text); font-family:'DM Mono',monospace; font-size:.85rem; font-weight:300; line-height:1.4;
+  padding:.55rem .9rem; width:100%; box-sizing:border-box; resize:none;
+  height:8.4rem; /* 6 lignes (6×1.4×.85rem + padding) */
+  transition:border-color .2s, background .2s;
+}
+.wi-notes:focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
+@supports (-webkit-touch-callout: none) { .wi-notes { font-size:16px } }
 
 /* ── Asym warning ──────────────────────────────────────────────────────────── */
 .asym-warn {
@@ -1923,7 +1932,14 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <button class="sb active" id="btn-avant"   onclick="setWheel('avant')"   data-i18n="frontWheel">ROUE AVANT</button>
       <button class="sb"        id="btn-arriere" onclick="setWheel('arriere')" data-i18n="rearWheel">ROUE ARRIÈRE</button>
     </div>
-    <div style="text-align:right;margin-top:.75rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.75rem">
+      <button class="card-icon-btn" id="wheel-info-btn" onclick="openWheelInfoModal()" title="Informations roue" disabled>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="11.5"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+      </button>
       <button class="wheel-reset-btn" onclick="clearForm()"><svg class="reset-icon" width="9" height="9" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.5 5a3.5 3.5 0 1 0 .7-2.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><polyline points="1.5,1.5 1.5,3 3,3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>Reset</button>
     </div>
   </div>
@@ -2425,7 +2441,14 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <button class="sb active" id="tm-btn-avant"   onclick="tmSetWheel('avant')"   data-i18n="frontWheel">ROUE AVANT</button>
       <button class="sb"        id="tm-btn-arriere" onclick="tmSetWheel('arriere')" data-i18n="rearWheel">ROUE ARRIÈRE</button>
     </div>
-    <div style="text-align:right;margin-top:.75rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.75rem">
+      <button class="card-icon-btn" id="tm-wheel-info-btn" onclick="openWheelInfoModal()" title="Informations roue" disabled>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="11.5"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+      </button>
       <button class="wheel-reset-btn" onclick="clearForm()"><svg class="reset-icon" width="9" height="9" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.5 5a3.5 3.5 0 1 0 .7-2.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><polyline points="1.5,1.5 1.5,3 3,3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>Reset</button>
     </div>
   </div>
@@ -3031,6 +3054,121 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
   <div class="wheel-load-list" id="wheel-load-list"></div>
 </div>
 
+<!-- ── Wheel info modal ── -->
+<div class="wheel-save-overlay" id="wheel-info-overlay" onclick="closeWheelInfoModal()"></div>
+<div class="wheel-save-modal" id="wheel-info-modal" onclick="event.stopPropagation()">
+  <div class="wheel-save-header">
+    <div class="wheel-save-title" id="wheel-info-title">Informations Roue</div>
+    <button class="wheel-save-close" onclick="closeWheelInfoModal()">✕</button>
+  </div>
+  <div class="g2">
+    <div class="f">
+      <label for="wi-discipline" data-i18n="wiDiscipline">Discipline</label>
+      <select id="wi-discipline">
+        <option value="" selected>_</option>
+        <option value="vtt"    data-i18n="wiVtt">VTT</option>
+        <option value="route"  data-i18n="wiRoute">ROUTE</option>
+        <option value="gravel">GRAVEL</option>
+        <option value="bmx">BMX</option>
+        <option value="evtt"   data-i18n="wiEVtt">E-VTT</option>
+        <option value="eroute" data-i18n="wiERoute">E-ROUTE</option>
+        <option value="autre"  data-i18n="wiAutre">AUTRE</option>
+      </select>
+    </div>
+    <div class="f">
+      <label for="wi-size" data-i18n="wiSize">Taille</label>
+      <select id="wi-size">
+        <option value="" selected>_</option>
+        <option value="16">16"</option>
+        <option value="20">20"</option>
+        <option value="24">24"</option>
+        <option value="26">26"</option>
+        <option value="27.5" data-i18n="wiSize275">27,5"</option>
+        <option value="700c">700c</option>
+        <option value="29">29"</option>
+        <option value="32">32"</option>
+      </select>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="f">
+      <label for="wi-brake" data-i18n="wiBrake">Freinage</label>
+      <select id="wi-brake">
+        <option value="" selected>_</option>
+        <option value="disque" data-i18n="wiDisque">Disque</option>
+        <option value="patins" data-i18n="wiPatins">Patins</option>
+      </select>
+    </div>
+    <div class="f">
+      <label for="wi-material" data-i18n="wiMaterial">Matériau</label>
+      <select id="wi-material">
+        <option value="" selected>_</option>
+        <option value="alu"     data-i18n="wiAlu">Aluminium</option>
+        <option value="carbone" data-i18n="wiCarbone">Carbone</option>
+      </select>
+    </div>
+  </div>
+  <div class="f">
+    <label for="wi-notes" data-i18n="wiNotes">Notes</label>
+    <textarea class="wi-notes" id="wi-notes" rows="6" maxlength="500"></textarea>
+  </div>
+  <button class="ct-save-btn" onclick="wheelInfoSave()">
+    <span data-i18n="atelierSave">✓ Sauvegarder</span>
+  </button>
+</div>
+
+<script>
+// ── Wheel info modal ─────────────────────────────────────────────────────────
+// Champs live (lus par readState / posés par applyState) : aucune écriture
+// localStorage ici — les infos partent dans la save via le flux existant.
+window.openWheelInfoModal = function() {
+  var title = document.getElementById('wheel-info-title');
+  if (title) {
+    var L = typeof lang !== 'undefined' ? lang : 'fr';
+    var side = wtype === 'avant'
+      ? (L === 'fr' ? 'avant' : 'front')
+      : (L === 'fr' ? 'arrière' : 'rear');
+    title.textContent = L === 'fr' ? 'Informations Roue ' + side : (side === 'front' ? 'Front' : 'Rear') + ' wheel information';
+  }
+  document.getElementById('wheel-info-overlay').classList.add('show');
+  document.getElementById('wheel-info-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+};
+window.closeWheelInfoModal = function() {
+  document.getElementById('wheel-info-overlay').classList.remove('show');
+  document.getElementById('wheel-info-modal').classList.remove('show');
+  document.body.style.overflow = '';
+};
+// Sauvegarde depuis la modale : roue déjà chargée → resauvegarde directe sous
+// le même nom (skipConfirm : c'est une mise à jour volontaire, pas de popup
+// « Remplacer ? » ; riderId préservé par saveConfig). Sinon, pas de nom connu →
+// flux normal via la modale de sauvegarde (nom, rider, doublons).
+window.wheelInfoSave = function() {
+  closeWheelInfoModal();
+  var name = (typeof _loadedConfigName !== 'undefined') ? _loadedConfigName[wtype] : null;
+  if (name && typeof saveConfig === 'function') saveConfig(name, undefined, true);
+  else if (typeof openWheelSaveModal === 'function') openWheelSaveModal();
+};
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('wheel-info-modal').classList.contains('show')) {
+    e.preventDefault(); closeWheelInfoModal();
+  }
+});
+// Notes : 6 lignes max — Enter bloqué à la 6e ligne, et coupe au collage
+// via le handler input (couvre aussi la dictée / autocomplétion mobile)
+(function() {
+  var ta = document.getElementById('wi-notes');
+  if (!ta) return;
+  ta.addEventListener('input', function() {
+    var lines = ta.value.split('\n');
+    if (lines.length > 6) ta.value = lines.slice(0, 6).join('\n');
+  });
+  ta.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && ta.value.split('\n').length >= 6) e.preventDefault();
+  });
+})();
+</script>
+
 <!-- ── Rider : modale intermédiaire (Charger / Créer) ── -->
 <div class="ateliermgr-overlay" id="riderchoose-overlay" onclick="closeRiderChoose()"></div>
 <div class="ateliermgr-modal ridermgr-chooser" id="riderchoose-modal" style="max-width:300px" onclick="event.stopPropagation()">
@@ -3592,6 +3730,12 @@ let lang = _storedLang || (_browserLang.startsWith('fr') ? 'fr' : 'en');
 const i18n = {
   fr: {
     wheelLabel:'Roue',hub:'Moyeu', rim:'Jante', targetTensions:'Tensions cibles', results:'Résultats',
+    wiDiscipline:'Discipline', wiVtt:'VTT', wiRoute:'ROUTE', wiEVtt:'E-VTT', wiERoute:'E-ROUTE', wiAutre:'AUTRE',
+    wiSize:'Taille', wiSize275:'27,5"', wiBrake:'Freinage', wiPatins:'Patins', wiDisque:'Disque',
+    wiMaterial:'Matériau', wiAlu:'Aluminium', wiCarbone:'Carbone', wiNotes:'Notes', wiInfoBtnTitle:'Informations roue',
+    wheelLoadBtnTitle:'Charger une roue', wheelSaveBtnTitle:'Enregistrer cette roue',
+    hubLoadBtnTitle:'Charger un moyeu', hubSaveBtnTitle:'Enregistrer ce moyeu',
+    rimLoadBtnTitle:'Charger une jante', rimSaveBtnTitle:'Enregistrer cette jante',
     frontWheel:'ROUE AVANT', rearWheel:'ROUE ARRIÈRE',
     totalSpokes:'Nb total de rayons', holeDiam:'Ø trous de bride (mm)',
     left:'Gauche', right:'Droit',
@@ -3798,6 +3942,12 @@ const i18n = {
     tensionHelpFront:'DS tension is calculated automatically from the offset ratio. Setting a target tension enables spoke elongation estimation via Hooke\'s law.',
     calcBtn:'Calculate', perSide:'/side', configSummary:'Configuration summary',
     wheelLabel:'Wheel', spokeCount:'Spoke count', crossLabel:'Lacing',
+    wiDiscipline:'Discipline', wiVtt:'MTB', wiRoute:'ROAD', wiEVtt:'E-MTB', wiERoute:'E-ROAD', wiAutre:'OTHER',
+    wiSize:'Size', wiSize275:'27.5"', wiBrake:'Braking', wiPatins:'Rim', wiDisque:'Disc',
+    wiMaterial:'Material', wiAlu:'Alloy', wiCarbone:'Carbon', wiNotes:'Notes', wiInfoBtnTitle:'Wheel information',
+    wheelLoadBtnTitle:'Load a wheel', wheelSaveBtnTitle:'Save this wheel',
+    hubLoadBtnTitle:'Load a hub', hubSaveBtnTitle:'Save this hub',
+    rimLoadBtnTitle:'Load a rim', rimSaveBtnTitle:'Save this rim',
     hubType:'Hub type', spokeSection2:'Spoke section', rimAsym2:'Rim asym.',
     tensionRatio:'Tension ratio', frontLabel:'Front', rearLabel:'Rear', radial:'Radial',
     errSpokes:'Please select the number of spokes.',
@@ -4104,6 +4254,14 @@ function markModified() {
     // Première modification = nouvelle roue : reset complet du module tension
     tmClearTensio();
     Object.keys(tmStore).forEach(k => delete tmStore[k]);
+    // ... et les infos roue suivent le nom : elles appartenaient à la roue
+    // chargée, qui vient d'être désaffectée. (Hors roue chargée, une saisie
+    // manuelle des infos n'est jamais effacée ici.)
+    ['wi-discipline','wi-size','wi-brake','wi-material'].forEach(function(id) {
+      var el = $id(id);
+      if (el) { el.value = ''; if (typeof syncSelectPlaceholder === 'function') syncSelectPlaceholder(el); }
+    });
+    var _wiN = $id('wi-notes'); if (_wiN) _wiN.value = '';
   }
   _loadedConfigName[wtype] = null;
   _cfgFillMode[wtype] = false;
@@ -4309,6 +4467,17 @@ function applyLang() {
   $id('lang-btn').textContent = lang === 'fr' ? 'EN' : 'FR';
   var bkpSn = $id('bkp-snooze'); if (bkpSn) { bkpSn.title = t('backupSnoozeTitle'); bkpSn.setAttribute('aria-label', t('backupSnoozeTitle')); }
   var pkBtn = $id('save-mgr-btn'); if (pkBtn) { pkBtn.title = t('pickerMenuBtn'); pkBtn.setAttribute('aria-label', t('pickerMenuBtn')); }
+  // Tooltips des boutons d'icône de card (load/save/info) : title figé FR dans
+  // le HTML, retraduit ici — même mécanisme que bkp-snooze / save-mgr-btn.
+  Object.entries({
+    'wheel-load-btn':'wheelLoadBtnTitle',    'tm-wheel-load-btn':'wheelLoadBtnTitle',
+    'wheel-save-btn':'wheelSaveBtnTitle',    'tm-wheel-save-btn':'wheelSaveBtnTitle',
+    'wheel-info-btn':'wiInfoBtnTitle',       'tm-wheel-info-btn':'wiInfoBtnTitle',
+    'hub-load-btn':'hubLoadBtnTitle',        'hub-save-btn':'hubSaveBtnTitle',
+    'rim-load-btn':'rimLoadBtnTitle',        'rim-save-btn':'rimSaveBtnTitle',
+  }).forEach(([id, key]) => {
+    var b = $id(id); if (b) { b.title = t(key); b.setAttribute('aria-label', t(key)); }
+  });
   if ($id('arb-wrap').classList.contains('show')) {
     // En-têtes arb-head-* retraduits par la boucle [data-i18n-key] ci-dessus ;
     // ici on redessine seulement le contenu (valeurs/boutons d'arbitrage).
@@ -4433,6 +4602,13 @@ function readState() {
     tmDataFa: tmData.fa.slice(),
     loadedHubName: _loadedHubName[wtype] || null,
     loadedRimName: _loadedRimName[wtype] || null,
+    wheelInfo: {
+      discipline: $id('wi-discipline').value,
+      size:       $id('wi-size').value,
+      brake:      $id('wi-brake').value,
+      material:   $id('wi-material').value,
+      notes:      $id('wi-notes').value,
+    },
   };
 }
 
@@ -4453,6 +4629,17 @@ function applyState(s) {
   $id('asym').value           = s.asym;
   $id('spoke-select').value   = s.spokeSelect;
   $id('tension-forte').value  = s.tensionForte;
+  // Infos roue (saves antérieures : champ absent → valeurs vides)
+  {
+    const wi = s.wheelInfo || {};
+    $id('wi-discipline').value = wi.discipline || '';
+    $id('wi-size').value       = wi.size       || '';
+    $id('wi-brake').value      = wi.brake      || '';
+    $id('wi-material').value   = wi.material   || '';
+    $id('wi-notes').value      = wi.notes      || '';
+    if (typeof syncSelectPlaceholder === 'function')
+      ['wi-discipline','wi-size','wi-brake','wi-material'].forEach(id => syncSelectPlaceholder($id(id)));
+  }
   sd = s.sd; sa = s.sa; cross = s.cross;
   if (s.spokeMatType) setSpokeMatType(s.spokeMatType);
   diffMode = s.diffMode || false; crossFo = s.crossFo ?? null; crossFa = s.crossFa ?? null;
@@ -4697,6 +4884,12 @@ function resetFields() {
 function clearFormSilent() {
   tmCloseConvTable();
   resetFields();
+  // Infos roue : effacées uniquement au reset complet (bouton Reset, roue
+  // vierge) — PAS dans resetFields, que setHubType appelle au toggle
+  // J-Bend/Straightpull : changer le type de moyeu ne doit pas perdre
+  // discipline / taille / freinage / matériau / notes.
+  ['wi-discipline','wi-size','wi-brake','wi-material'].forEach(id => { $id(id).value = ''; syncSelectPlaceholder($id(id)); });
+  $id('wi-notes').value = '';
   hubType = hubTypeByWheel[wtype];
   $id('btn-hub-jbend').classList.toggle('active', hubType === 'jbend');
   $id('btn-hub-sp').classList.toggle('active', hubType === 'straightpull');
@@ -5700,7 +5893,7 @@ const LS_KEY = 'spokeit_configs';
 function loadConfigs()        { try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch(e) { return []; } }
 function persistConfigs(cfg)  { lsSet(LS_KEY, JSON.stringify(cfg)); }
 
-function saveConfig(nameOverride, riderIdOverride) {
+function saveConfig(nameOverride, riderIdOverride, skipConfirm) {
   const name = (nameOverride || '').trim();
   if (!name) return;
   const configs = loadConfigs();
@@ -5729,7 +5922,7 @@ function saveConfig(nameOverride, riderIdOverride) {
     hrUpdateButtons();
     flashWheelCard(name);
   }
-  if (existIdx >= 0) {
+  if (existIdx >= 0 && !skipConfirm) {
     var L = typeof lang !== 'undefined' ? lang : 'fr';
     var msg = L === 'fr'
       ? '<strong>' + escHtml(name) + '</strong> existe déjà. Remplacer ?'
@@ -13838,7 +14031,7 @@ function hrUpdateButtons() {
   if (rimSaveBtn) { rimSaveBtn.disabled = !rimOk;          rimSaveBtn.classList.toggle('active',   rimOk); }
   if (rimLoadBtn) { rimLoadBtn.disabled = rims.length === 0; rimLoadBtn.classList.toggle('has-data', rims.length > 0); }
 
-  ['wheel-save-btn','tm-wheel-save-btn'].forEach(function(id) {
+  ['wheel-save-btn','tm-wheel-save-btn','wheel-info-btn','tm-wheel-info-btn'].forEach(function(id) {
     var btn = document.getElementById(id);
     if (btn) { btn.disabled = !wheelOk; btn.classList.toggle('active', wheelOk); }
   });
