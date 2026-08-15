@@ -3109,7 +3109,10 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     </div>
   </div>
   <div class="f">
-    <label for="wi-notes" data-i18n="wiNotes">Notes</label>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <label for="wi-notes" data-i18n="wiNotes">Notes</label>
+      <button class="ateliermgr-clear" onclick="atelierClear('wi-notes')">✕</button>
+    </div>
     <textarea class="wi-notes" id="wi-notes" rows="6" maxlength="500"></textarea>
   </div>
   <button class="ct-save-btn" onclick="wheelInfoSave()">
@@ -6414,6 +6417,10 @@ function checkAllScroll() {
 }
 
 document.querySelectorAll('input[type=number], select').forEach(el => {
+  // Modale infos roue : hors validation live et auto-scroll — ses selects
+  // déclenchaient checkAllScroll() et faisaient défiler la page principale
+  // derrière la modale.
+  if (el.closest('#wheel-info-modal')) return;
   el.addEventListener('input', function() {
     if (this.id !== 'asym') hideAsymWarn();
     if (!this.classList.contains('invalid')) return;
