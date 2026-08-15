@@ -11529,8 +11529,12 @@ var efMicRecog       = null;
 // Interactions critiques à connaître avant toute modification :
 //
 // efBeepTimer        — debounce 500ms armé sur chaque résultat intermédiaire.
-//                      Annulé par clearTimeout si un nouveau résultat arrive avant
-//                      expiration. Les deux chemins (valide / hors plage) utilisent
+//                      Annulé par clearTimeout si un résultat portant une VALEUR
+//                      DIFFÉRENTE arrive avant expiration ; une ré-émission moteur
+//                      du même nombre le laisse courir (dedup en tête de branche
+//                      interim) → le chrono mesure la stabilité depuis la PREMIÈRE
+//                      occurrence de la valeur, pas depuis le dernier écho moteur.
+//                      Les deux chemins (valide / hors plage) utilisent
 //                      ce même timer pour garantir la stabilisation de la valeur.
 //
 // efAutoAdvanced     — posé à true dans le timer valide, lu dans le bloc isFinal
@@ -11619,7 +11623,7 @@ var efVoicesReady    = false; // true dès que la liste des voix TTS est chargé
 var EF_TTS_TAIL_MS   = 500;   // marge après onend avant de rouvrir l'écoute
 var efWarmInstance   = null;  // instance SR préchauffée à efOpen() pour tap quasi-instantané sur desktop
 var efPendingNext    = false; // true = valeur validée, avance en cours, ignorer les résultats suivants
-var efBeepTimer      = null;  // debounce 500ms pour beep sur valeur stable
+var efBeepTimer      = null;  // debounce 500ms pour beep sur valeur stable (dedup : court depuis la 1re occurrence de la valeur)
 var efAutoAdvanced   = false; // true = auto-avance déjà déclenchée par le beep intermédiaire
 var efOorFired       = false; // true = feedback hors plage déjà déclenché en intermédiaire
 var efOorTimer       = null;  // timer d'affichage de la plage OOR (annulable, durée = OOR_DISPLAY_MS)
