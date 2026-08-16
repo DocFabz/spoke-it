@@ -217,6 +217,7 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .savemgr-btns { display:flex; flex-direction:row; gap:.5rem; width:100% }
 .savemgr-action-btn { display:flex; align-items:center; justify-content:center; gap:.6rem; padding:.45rem .85rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:background .25s, border-color .25s, color .25s, opacity .25s, transform .25s, box-shadow .25s; flex:1 }
 .savemgr-export:hover, .savemgr-import:hover { border-color:rgba(126,200,227,.65); color:var(--accent2); background:rgba(126,200,227,.06) }
+.savemgr-action-btn:disabled { opacity:.3; cursor:default; pointer-events:none }
 .bkp-exp-fname { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:400; letter-spacing:0; text-transform:none; color:var(--text); margin-left:auto }
 .bkp-exp-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9982; opacity:0; transition:opacity .22s; display:none }
 .bkp-exp-overlay.show { display:block; opacity:1 }
@@ -1826,6 +1827,31 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
 
 </div>
 
+<!-- ── Wheel share modal : partager / recevoir / archiver une roue individuelle.
+     Mêmes codes visuels que le Backup manager (classes savemgr-* réutilisées). ── -->
+<div class="savemgr-overlay" id="wshare-overlay" onclick="closeWheelShareModal()"></div>
+<div class="savemgr-modal" id="wshare-modal">
+  <div class="savemgr-header">
+    <div class="savemgr-header-left">
+      <svg class="savemgr-title-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      <div class="savemgr-title" data-i18n="wshareTitle">Partage de Roue</div>
+    </div>
+    <button class="savemgr-close" onclick="closeWheelShareModal()">&#x2715;</button>
+  </div>
+  <p class="savemgr-desc" data-i18n="wshareDesc">Vous pouvez partager, recevoir ou archiver spécifiquement une roue.</p>
+  <div class="savemgr-btns">
+    <button class="savemgr-action-btn savemgr-import" onclick="$id('wshare-file-input').click()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span data-i18n="importBtn">Importer</span>
+    </button>
+    <button class="savemgr-action-btn savemgr-export" id="wshare-export-btn" style="flex:1" onclick="wshareExport()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span data-i18n="exportBtn">Exporter</span>
+    </button>
+    <input type="file" id="wshare-file-input" accept=".json" style="display:none" onchange="wshareImport(event)">
+  </div>
+</div>
+
 <!-- ── Modal nom du fichier (export backup) : s'ouvre par-dessus le
      Backup manager, mêmes codes visuels, overlay et z-index dédiés. ── -->
 <div class="bkp-exp-overlay" id="bkp-export-overlay" onclick="bkpExportModal(false)"></div>
@@ -1936,13 +1962,24 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <button class="sb"        id="btn-arriere" onclick="setWheel('arriere')" data-i18n="rearWheel">ROUE ARRIÈRE</button>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.75rem">
-      <button class="card-icon-btn" id="wheel-info-btn" onclick="openWheelInfoModal()" title="Informations roue" disabled>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="16" x2="12" y2="11.5"/>
-          <line x1="12" y1="8" x2="12.01" y2="8"/>
-        </svg>
-      </button>
+      <div style="display:flex;gap:.35rem">
+        <button class="card-icon-btn" id="wheel-info-btn" onclick="openWheelInfoModal()" title="Informations roue" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="11.5"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+        </button>
+        <button class="card-icon-btn active" id="wheel-share-btn" onclick="openWheelShareModal()" title="Partage de roue">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="5" r="3"/>
+            <circle cx="6" cy="12" r="3"/>
+            <circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+        </button>
+      </div>
       <button class="wheel-reset-btn" onclick="clearForm()"><svg class="reset-icon" width="9" height="9" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.5 5a3.5 3.5 0 1 0 .7-2.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><polyline points="1.5,1.5 1.5,3 3,3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>Reset</button>
     </div>
   </div>
@@ -2445,13 +2482,24 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <button class="sb"        id="tm-btn-arriere" onclick="tmSetWheel('arriere')" data-i18n="rearWheel">ROUE ARRIÈRE</button>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.75rem">
-      <button class="card-icon-btn" id="tm-wheel-info-btn" onclick="openWheelInfoModal()" title="Informations roue" disabled>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="16" x2="12" y2="11.5"/>
-          <line x1="12" y1="8" x2="12.01" y2="8"/>
-        </svg>
-      </button>
+      <div style="display:flex;gap:.35rem">
+        <button class="card-icon-btn" id="tm-wheel-info-btn" onclick="openWheelInfoModal()" title="Informations roue" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="11.5"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+        </button>
+        <button class="card-icon-btn active" id="tm-wheel-share-btn" onclick="openWheelShareModal()" title="Partage de roue">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="5" r="3"/>
+            <circle cx="6" cy="12" r="3"/>
+            <circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+        </button>
+      </div>
       <button class="wheel-reset-btn" onclick="clearForm()"><svg class="reset-icon" width="9" height="9" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.5 5a3.5 3.5 0 1 0 .7-2.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><polyline points="1.5,1.5 1.5,3 3,3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>Reset</button>
     </div>
   </div>
@@ -3797,6 +3845,12 @@ const i18n = {
     saveWarning:'⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.',
     exportBtn:'Exporter', importBtn:'Importer',
     importSuccess:'✓ Données importées avec succès.', importError:'Fichier invalide ou corrompu.',
+    wshareTitle:'Partage de Roue',
+    wshareDesc:'Vous pouvez partager, recevoir ou archiver spécifiquement une roue.',
+    wshareBtnTitle:'Partage de roue',
+    wshareExportEmpty:'Aucune roue à partager.',
+    wshareImportSuccess:'✓ Roue « {name} » importée.',
+    wshareImportError:'Fichier invalide : ce n\'est pas une roue Spokeit.',
     saveMgrTitle:'Gestion des sauvegardes',
     saveMgrDesc:'Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.',
     lastBackupNever:'Aucune sauvegarde effectuée.',
@@ -4000,6 +4054,12 @@ const i18n = {
     saveWarning:'⚠︎ Locally stored in browser cache. Clearing the cache will erase all data.',
     exportBtn:'Export', importBtn:'Import',
     importSuccess:'✓ Data imported successfully.', importError:'Invalid or corrupted file.',
+    wshareTitle:'Wheel Sharing',
+    wshareDesc:'You can share, receive or archive a specific wheel.',
+    wshareBtnTitle:'Wheel sharing',
+    wshareExportEmpty:'No wheel to share.',
+    wshareImportSuccess:'✓ Wheel "{name}" imported.',
+    wshareImportError:'Invalid file: not a Spokeit wheel.',
     saveMgrTitle:'Backup manager',
     saveMgrDesc:'The JSON file contains all your data: wheel configurations, tension charts and custom tensiometers.',
     lastBackupNever:'No backup yet.',
@@ -4523,6 +4583,7 @@ function applyLang() {
     'wheel-load-btn':'wheelLoadBtnTitle',    'tm-wheel-load-btn':'wheelLoadBtnTitle',
     'wheel-save-btn':'wheelSaveBtnTitle',    'tm-wheel-save-btn':'wheelSaveBtnTitle',
     'wheel-info-btn':'wiInfoBtnTitle',       'tm-wheel-info-btn':'wiInfoBtnTitle',
+    'wheel-share-btn':'wshareBtnTitle',      'tm-wheel-share-btn':'wshareBtnTitle',
     'hub-load-btn':'hubLoadBtnTitle',        'hub-save-btn':'hubSaveBtnTitle',
     'rim-load-btn':'rimLoadBtnTitle',        'rim-save-btn':'rimSaveBtnTitle',
     'hooke-btn':'hookeBtnTitle',
@@ -6303,6 +6364,124 @@ function importConfigs(event) {
       showImportToast(t('importSuccess'), false);
     } catch(err) {
       showImportToast(t('importError'), true);
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ── Partage de roue ───────────────────────────────────────────────────────────
+// Export / import d'une roue individuelle (JSON dédié, kind:'wheel').
+// La roue voyage sans références locales : ni riderId, ni noms de bibliothèque
+// hub/jante (loadedHubName/loadedRimName) — la géométrie, elle, reste dans le
+// state. L'export n'horodate PAS spokeit_lastBackup : partager une roue n'est
+// pas une sauvegarde complète, le rappel backup doit rester armé. L'import,
+// lui, passe par persistConfigs → lsSet, qui horodate spokeit_lastModif.
+function openWheelShareModal() {
+  // Exporter grisé si la card est vierge (même critère wheelOk que les boutons
+  // de card) ; Importer reste toujours disponible — recevoir une roue ne
+  // dépend pas de l'état de la card.
+  var exp = $id('wshare-export-btn');
+  if (exp) exp.disabled = !parseInt(($id('nb-rayons') || {}).value);
+  $id('wshare-overlay').classList.add('show');
+  $id('wshare-modal').classList.add('show');
+}
+function closeWheelShareModal() {
+  $id('wshare-overlay').classList.remove('show');
+  $id('wshare-modal').classList.remove('show');
+}
+
+// Nom de fichier : NomDeLaRoueJJ-MM-AA.json (caractères interdits retirés),
+// fallback « Wheel » si la roue n'a pas de nom.
+function _wshareFileName(name) {
+  var base = (name || '').trim().replace(/[\\\/:*?"<>|]/g, '').trim() || 'Wheel';
+  var d = new Date();
+  return base
+    + String(d.getDate()).padStart(2, '0') + '-'
+    + String(d.getMonth() + 1).padStart(2, '0') + '-'
+    + String(d.getFullYear()).slice(-2) + '.json';
+}
+
+function wshareExport() {
+  // Garde roue vierge : même critère que l'activation des boutons de card (wheelOk).
+  if (!parseInt(($id('nb-rayons') || {}).value)) {
+    showImportToast(t('wshareExportEmpty'), true);
+    return;
+  }
+  var state = readState(); state.wtype = wtype;
+  state.loadedHubName = null;
+  state.loadedRimName = null;
+  var name = (typeof _loadedConfigName !== 'undefined' && _loadedConfigName[wtype]) ? _loadedConfigName[wtype] : '';
+  var entry = { name: name, metaKey: wtype === 'avant' ? 'frontLabel' : 'rearLabel', state: state, ts: Date.now() };
+  // Snapshots : même logique que saveConfig — ceux de la config chargée
+  // homonyme, complétés d'un snapshot n°1 depuis les données vives si absent ;
+  // roue jamais sauvegardée avec tensions vives → snapshot n°1 seul.
+  // loadConfigs() re-parse à chaque appel : la copie est déjà détachée du store.
+  var snaps = [];
+  if (name) {
+    var cur = loadConfigs().find(function(c) { return c.name === name && (c.state.wtype || 'avant') === wtype; });
+    if (cur && cur.snapshots) snaps = cur.snapshots;
+  }
+  if (snaps.length > 0) {
+    if (!snaps.some(function(s) { return s.num === 1; }) && tmHasData()) {
+      snaps.unshift(_snapMakeEntry(1));
+      _snapRenum(snaps);
+    }
+    entry.snapshots = snaps;
+  } else if (tmHasData()) {
+    entry.snapshots = [_snapMakeEntry(1)];
+  }
+  var payload = { spokeit: true, kind: 'wheel', v: 1, name: name, entry: entry };
+  var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url; a.download = _wshareFileName(name); a.click();
+  URL.revokeObjectURL(url);
+  closeWheelShareModal();
+}
+
+function wshareImport(event) {
+  var file = event.target.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      // Validation stricte : un backup complet a spokeit:true mais pas
+      // kind:'wheel' → rejeté proprement, comme tout fichier étranger.
+      if (!data.spokeit || data.kind !== 'wheel' || !data.entry || typeof data.entry !== 'object' ||
+          !data.entry.state || typeof data.entry.state !== 'object') throw new Error();
+      var entry = data.entry;
+      // Re-strip défensif (fichier édité à la main ou version future).
+      delete entry.riderId;
+      entry.state.loadedHubName = null;
+      entry.state.loadedRimName = null;
+      var wh = entry.state.wtype || 'avant';
+      // Collision de nom à (nom, wtype) égal — même clé d'unicité que
+      // saveConfig — → suffixe incrémental (1), (2)…
+      var base = (typeof entry.name === 'string' && entry.name.trim()) ? entry.name.trim() : 'Wheel';
+      var configs = loadConfigs();
+      var name = base, n = 1;
+      while (configs.some(function(c) { return c.name === name && (c.state.wtype || 'avant') === wh; })) {
+        name = base + '(' + n + ')'; n++;
+      }
+      entry.name = name;
+      entry.metaKey = wh === 'avant' ? 'frontLabel' : 'rearLabel';
+      entry.ts = Date.now();
+      configs.unshift(entry);
+      persistConfigs(configs);
+      // Chargement dans la card d'origine : bascule avant/arrière si nécessaire
+      // (loadConfig refuse un wtype différent). tmSetWheel si le module tension
+      // est affiché (il enchaîne setWheel + les syncs tension), setWheel sinon.
+      if (wh !== wtype) {
+        if ($id('tension-module').style.display !== 'none') tmSetWheel(wh);
+        else setWheel(wh);
+      }
+      loadConfig(0);
+      renderConfigsList();
+      closeWheelShareModal();
+      showImportToast(t('wshareImportSuccess').replace('{name}', name), false);
+    } catch(err) {
+      showImportToast(t('wshareImportError'), true);
     }
     event.target.value = '';
   };
@@ -8388,6 +8567,9 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && $id('bkp-export-modal') && $id('bkp-export-modal').classList.contains('show')) {
     bkpExportModal(false);
     return; // ne pas fermer aussi la modale de sauvegarde derrière
+  }
+  if (e.key === 'Escape' && $id('wshare-modal') && $id('wshare-modal').classList.contains('show')) {
+    closeWheelShareModal();
   }
   if (e.key === 'Escape' && $id('picker-popup').classList.contains('show')) {
     closePicker();
