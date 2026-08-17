@@ -7448,6 +7448,7 @@ function ctDelete(idx) {
   // Snapshots mesurés avec ce tensiomètre : leur table entière disparaît
   // (chartes comprises, supprimées ci-dessus) — purge + renumérotation.
   snapPurgeOrphans(function(sn) { return sn.tmType === tmKey; });
+  _snapReposition();
   snapRefreshBtn();
   ctRenderList();
 }
@@ -9332,6 +9333,9 @@ function ccDeleteDirect(idx, itemEl) {
       snapPurgeOrphans(function(sn) {
         return refsDead(sn.tmType, sn.tmDTSub, sn.tmWFSub, sn.tmSpokeKey);
       });
+      // Le module ne doit pas rester sans rayon : repositionnement sur le
+      // dernier snapshot survivant (snapLoad restaure tensio, rayon, relevés).
+      _snapReposition();
     }
     tmPopulateSpokeSelect();
     tmBuildTable();
@@ -15203,6 +15207,21 @@ function snapPurgeOrphans(match) {
   });
   if (touched) persistConfigs(configs);
   return touched;
+}
+
+// ── Repositionnement après purge ──────────────────────────────────────────────
+// Si la suppression d'une table perso a vidé les données vives alors que la
+// roue chargée conserve un historique, recharger le dernier snapshot survivant
+// — il porte son propre couple tensio/rayon et ses relevés — plutôt que de
+// laisser le module sans rayon par défaut. Même geste que la branche de
+// loadConfig « restaurer le dernier snapshot pour rouvrir la card ».
+function _snapReposition() {
+  if (tmHasData()) return false;                 // données vives intactes : ne rien toucher
+  if (!_loadedConfigName[wtype]) return false;   // snapLoad exige une roue chargée
+  const cfg = _snapFindCurrentConfig().cfg;
+  if (!cfg || !cfg.snapshots || !cfg.snapshots.length) return false;
+  snapLoad(cfg.snapshots.length - 1);
+  return true;
 }
 
 function _snapFindCurrentConfig() {
