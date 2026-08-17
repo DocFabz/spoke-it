@@ -7445,6 +7445,10 @@ function ctDelete(idx) {
   ccInjectAll();
   ctRefreshAll();
   tmPopulateSpokeSelect();
+  // Snapshots mesurés avec ce tensiomètre : leur table entière disparaît
+  // (chartes comprises, supprimées ci-dessus) — purge + renumérotation.
+  snapPurgeOrphans(function(sn) { return sn.tmType === tmKey; });
+  snapRefreshBtn();
   ctRenderList();
 }
 
@@ -9307,13 +9311,31 @@ function ccDeleteDirect(idx, itemEl) {
     customs.splice(idx, 1);
     ccPersist(customs);
     ccInjectAll();
-    if (removed && tmSpokeKey === CC_PREFIX + removed.name) {
-      tmSpokeKey = null;
-      tmResetData();
-      tmHideResult();
+    if (removed) {
+      // Clé d'identité de la charte supprimée : couple (tensio normalisé, nom)
+      // — même sémantique que le partage de roue (_wshareNormKey/_wshareStoreKey).
+      const deadTensio = _wshareNormKey(removed.tensioKey);
+      const deadKey    = CC_PREFIX + removed.name;
+      const refsDead   = function(tp, dtSub, wfSub, spokeKey) {
+        return spokeKey === deadKey &&
+               _wshareNormKey(_wshareStoreKey(tp, dtSub, wfSub)) === deadTensio;
+      };
+      // Données vives : reset uniquement si le couple correspond (le nom seul
+      // ne suffit pas — une charte homonyme peut exister sur un autre tensio).
+      if (refsDead(tmType, tmDTSub, tmWFSub, tmSpokeKey)) {
+        tmSpokeKey = null;
+        tmResetData();
+        tmHideResult();
+      }
+      // Snapshots orphelins de TOUTES les roues : purgés et renumérotés —
+      // même décision que l'export (_wshareFilterDeps), appliquée à la source.
+      snapPurgeOrphans(function(sn) {
+        return refsDead(sn.tmType, sn.tmDTSub, sn.tmWFSub, sn.tmSpokeKey);
+      });
     }
     tmPopulateSpokeSelect();
     tmBuildTable();
+    snapRefreshBtn();
     ccPoints = [];
     $id('cc-name').value = '';
     ccToggleNameClear();
@@ -15008,6 +15030,12 @@ function hrClearLoadedRim() {
 
 const SNAP_MAX = 10;
 
+// Historique de la roue chargée (mis en cache par snapRefreshBtn, seul chemin
+// qui reparse les configs) : permet à snapRefreshBtnFast de garder le bouton
+// Snapshots actif quand un historique existe sans données vives, SANS reparse
+// localStorage — la contrainte de perf qui a motivé snapRefreshBtnFast.
+var _snapHasHistory = false;
+
 function _snapResolveTensio(snap) {
   // Résout le nom du tensiomètre perso en direct depuis snap.tmType
   // (répare les snapshots créés avant la correction si le perso existe encore) ;
@@ -15066,6 +15094,13 @@ function snapOpen() {
     return;
   }
   snapRenderList();
+  // Consultation sans données vives : le bouton « Nouveau snapshot » est
+  // grisé (la garde dure est dans snapSave).
+  const saveBtn = $id('snap-save-btn');
+  if (saveBtn) {
+    saveBtn.disabled = !tmHasData();
+    saveBtn.style.opacity = tmHasData() ? '' : '.4';
+  }
   $id('snap-overlay').classList.add('show');
   $id('snap-modal').classList.add('show');
 }
@@ -15149,6 +15184,27 @@ function snapClose() {
   snapRefreshBtn();
 }
 
+// ── Purge des snapshots orphelins ─────────────────────────────────────────────
+// Miroir vivant de _wshareFilterDeps : un snapshot dont la table de conversion
+// vient d'être supprimée n'a plus aucun sens (relevés bruts inconvertibles —
+// « un nom ne doit jamais pouvoir mentir sur un contenu »). Parcourt TOUTES les
+// roues : une charte est partagée entre configs. Les survivants sont
+// renumérotés sans trou (_snapRenum) ; une roue vidée perd son champ snapshots.
+function snapPurgeOrphans(match) {
+  var configs = loadConfigs(), touched = false;
+  configs.forEach(function(cfg) {
+    var snaps = cfg.snapshots;
+    if (!Array.isArray(snaps) || !snaps.length) return;
+    var kept = snaps.filter(function(sn) { return !match(sn); });
+    if (kept.length === snaps.length) return;
+    touched = true;
+    if (kept.length) { _snapRenum(kept); cfg.snapshots = kept; }
+    else delete cfg.snapshots;
+  });
+  if (touched) persistConfigs(configs);
+  return touched;
+}
+
 function _snapFindCurrentConfig() {
   const name = _loadedConfigName[wtype];
   if (!name) return { cfg: null, idx: -1, configs: [] };
@@ -15158,6 +15214,9 @@ function _snapFindCurrentConfig() {
 }
 
 function snapSave() {
+  // La modale est désormais ouvrable avec un historique sans données vives :
+  // ne jamais enregistrer un snapshot vide.
+  if (!tmHasData()) return;
   const { cfg, idx, configs } = _snapFindCurrentConfig();
   if (!cfg) return;
   const snaps = cfg.snapshots || [];
@@ -15274,7 +15333,13 @@ function snapRefreshBtn() {
   const btn = $id('tm-snap-open-btn');
   const { cfg } = _snapFindCurrentConfig();
   const snaps = cfg && cfg.snapshots ? cfg.snapshots : [];
-  if (btn) btn.disabled = !tmHasData();
+  // L'historique appartient à la roue, pas aux données vives : consulter les
+  // snapshots doit rester possible après un reset tension (suppression d'une
+  // charte/tensio perso actif) — même sémantique que la branche de loadConfig
+  // « Snapshots accessibles même si l'état sauvegardé ne contient pas de
+  // données tension ».
+  _snapHasHistory = snaps.length > 0;
+  if (btn) btn.disabled = !tmHasData() && !_snapHasHistory;
   if (!snaps.length) _snapSetLabel(0);
   const cmpBtn = $id('tm-snapcompare-btn');
   if (cmpBtn) {
@@ -15295,7 +15360,7 @@ function snapRefreshBtn() {
 // en plein rendu + beep, à CHAQUE rayon dicté.
 function snapRefreshBtnFast() {
   const btn = $id('tm-snap-open-btn');
-  if (btn) btn.disabled = !tmHasData();
+  if (btn) btn.disabled = !tmHasData() && !_snapHasHistory;
 }
 
 // ── Inversion colonne DS / NDS ────────────────────────────────────────────────
