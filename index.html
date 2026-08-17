@@ -4928,13 +4928,20 @@ function applyState(s) {
     tmSpokeKey = s.tmSpokeKey || null;
     if (tmSpokeKey && tmSpokeKey.startsWith(CC_PREFIX)) ccInjectAll();
     tmPopulateSpokeSelect();   // peuple selon tmType+tmDTSub, sélectionne tmSpokeKey si présent
+    // Clé invalidée par tmPopulateSpokeSelect ? La table de conversion a
+    // disparu depuis la sauvegarde : les relevés du state sont inconvertibles,
+    // ne pas les restaurer (« un nom ne doit jamais pouvoir mentir sur un
+    // contenu »). Guérit les states persistés avant que snapPurgeOrphans ne
+    // purge aussi le state, et laisse tmHasData() faux pour que loadConfig
+    // repositionne sur l'historique survivant (_snapReposition).
+    const _tmCoupleDead = !!s.tmSpokeKey && !tmSpokeKey;
 
     // Badge unité
     tmUpdateUnitBadge();
 
     // Données saisies
-    tmData.fo = (s.tmDataFo || []).slice();
-    tmData.fa = (s.tmDataFa || []).slice();
+    tmData.fo = _tmCoupleDead ? [] : (s.tmDataFo || []).slice();
+    tmData.fa = _tmCoupleDead ? [] : (s.tmDataFa || []).slice();
     tmPrevFo  = tmData.fo.slice();
     tmPrevFa  = tmData.fa.slice();
     // tmActiveKey calculé APRÈS tmType+tmDTSub restaurés — jamais depuis la sauvegarde
@@ -15200,6 +15207,18 @@ function snapClose() {
 function snapPurgeOrphans(match) {
   var configs = loadConfigs(), touched = false;
   configs.forEach(function(cfg) {
+    // L'état vif sauvegardé porte la même identité qu'un snapshot (tmType,
+    // tmDTSub, tmWFSub, tmSpokeKey) : s'il référence la table supprimée, ses
+    // relevés sont tout aussi inconvertibles. Purge du bloc tension — même
+    // geste que _wshareFilterDeps, appliqué à la source. Sans quoi applyState
+    // restaurerait des relevés orphelins au rechargement (tmHasData() vrai)
+    // et _snapReposition refuserait d'ouvrir sur l'historique survivant.
+    var st = cfg.state;
+    if (st && st.tmType && match(st)) {
+      st.tmType = null; st.tmSpokeKey = null;
+      st.tmDataFo = []; st.tmDataFa = [];
+      touched = true;
+    }
     var snaps = cfg.snapshots;
     if (!Array.isArray(snaps) || !snaps.length) return;
     var kept = snaps.filter(function(sn) { return !match(sn); });
