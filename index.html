@@ -1838,8 +1838,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
     </div>
     <button class="savemgr-close" onclick="closeWheelShareModal()">&#x2715;</button>
   </div>
-  <p class="savemgr-desc" data-i18n="wshareDesc">Vous pouvez partager, recevoir ou archiver spécifiquement une roue.</p>
-  <div class="savemgr-btns">
+  <p class="savemgr-desc" id="wshare-desc" data-i18n="wshareDesc">Vous pouvez partager, recevoir ou archiver spécifiquement une roue.</p>
+  <div class="savemgr-btns" id="wshare-btns">
     <button class="savemgr-action-btn savemgr-import" onclick="$id('wshare-file-input').click()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <span data-i18n="importBtn">Importer</span>
@@ -1849,6 +1849,18 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
       <span data-i18n="exportBtn">Exporter</span>
     </button>
     <input type="file" id="wshare-file-input" accept=".json" style="display:none" onchange="wshareImport(event)">
+  </div>
+  <!-- État confirmation : mêmes classes que la rangée Importer/Exporter, seules
+       les icônes ✕ / ✓ distinguent les deux actions (motif établi de la modale). -->
+  <div class="savemgr-btns" id="wshare-confirm-btns" style="display:none">
+    <button class="savemgr-action-btn savemgr-import" onclick="wshareExportCancel()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <span data-i18n="wshareCancel">Annuler</span>
+    </button>
+    <button class="savemgr-action-btn savemgr-export" style="flex:1" onclick="wshareExportConfirm()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+      <span data-i18n="wshareConfirm">Confirmer</span>
+    </button>
   </div>
 </div>
 
@@ -3851,6 +3863,10 @@ const i18n = {
     wshareExportEmpty:'Aucune roue à partager.',
     wshareImportSuccess:'✓ Roue « {name} » importée.',
     wshareImportError:'Fichier invalide : ce n\'est pas une roue Spokeit.',
+    wshareWarnNone:'Tensions non partagées : la charte utilisée n\'existe plus',
+    wshareWarnPartial:'Tensions partiellement partagées : certaines chartes manquantes',
+    wshareCancel:'Annuler',
+    wshareConfirm:'Confirmer',
     saveMgrTitle:'Gestion des sauvegardes',
     saveMgrDesc:'Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.',
     lastBackupNever:'Aucune sauvegarde effectuée.',
@@ -4060,6 +4076,10 @@ const i18n = {
     wshareExportEmpty:'No wheel to share.',
     wshareImportSuccess:'✓ Wheel "{name}" imported.',
     wshareImportError:'Invalid file: not a Spokeit wheel.',
+    wshareWarnNone:'Tensions not shared: the chart used no longer exists',
+    wshareWarnPartial:'Tensions partially shared: some charts are missing',
+    wshareCancel:'Cancel',
+    wshareConfirm:'Confirm',
     saveMgrTitle:'Backup manager',
     saveMgrDesc:'The JSON file contains all your data: wheel configurations, tension charts and custom tensiometers.',
     lastBackupNever:'No backup yet.',
@@ -6188,11 +6208,17 @@ function closePriv() {
 function bkpDatedPref() {
   try { return localStorage.getItem('spokeit_bkpDated') !== '0'; } catch(e) { return true; }
 }
-function bkpDatedName() {
+// Horodatage des noms de fichier : AA-MM-JJ, qui trie chronologiquement dans un
+// dossier. Source unique pour les deux exports — backup complet et roue — qui
+// employaient deux formats différents et cohabitaient dans le même répertoire.
+function _dateStamp() {
   var d = new Date();
-  return 'Spokeit' + String(d.getFullYear()).slice(-2) + '-'
+  return String(d.getFullYear()).slice(-2) + '-'
     + String(d.getMonth() + 1).padStart(2, '0') + '-'
-    + String(d.getDate()).padStart(2, '0') + '.json';
+    + String(d.getDate()).padStart(2, '0');
+}
+function bkpDatedName() {
+  return 'Spokeit' + _dateStamp() + '.json';
 }
 function bkpFileName() {
   return bkpDatedPref() ? bkpDatedName() : 'Spokeit.json';
@@ -6378,33 +6404,152 @@ function importConfigs(event) {
 // pas une sauvegarde complète, le rappel backup doit rester armé. L'import,
 // lui, passe par persistConfigs → lsSet, qui horodate spokeit_lastModif.
 function openWheelShareModal() {
-  // Exporter grisé si la card est vierge (même critère wheelOk que les boutons
-  // de card) ; Importer reste toujours disponible — recevoir une roue ne
-  // dépend pas de l'état de la card.
+  // Exporter grisé si la card est vierge (_wheelOk, comme les boutons de card) ;
+  // Importer reste toujours disponible — recevoir une roue ne dépend pas de
+  // l'état de la card.
   var exp = $id('wshare-export-btn');
-  if (exp) exp.disabled = !parseInt(($id('nb-rayons') || {}).value);
+  if (exp) exp.disabled = !_wheelOk();
+  _wshareResetModal(); // défensif : état par défaut garanti à l'ouverture
   $id('wshare-overlay').classList.add('show');
   $id('wshare-modal').classList.add('show');
 }
 function closeWheelShareModal() {
+  // Reset systématique : la modale ne doit jamais se rouvrir en état
+  // confirmation. Le handler Escape passe aussi par ici.
+  _wshareResetModal();
   $id('wshare-overlay').classList.remove('show');
   $id('wshare-modal').classList.remove('show');
 }
 
-// Nom de fichier : NomDeLaRoueJJ-MM-AA.json (caractères interdits retirés),
-// fallback « Wheel » si la roue n'a pas de nom.
+// Nom de fichier : NomDeLaRoueAA-MM-JJ.json (caractères interdits retirés),
+// fallback « Wheel » si la roue n'a pas de nom. Même horodatage que le backup.
 function _wshareFileName(name) {
   var base = (name || '').trim().replace(/[\\\/:*?"<>|]/g, '').trim() || 'Wheel';
-  var d = new Date();
-  return base
-    + String(d.getDate()).padStart(2, '0') + '-'
-    + String(d.getMonth() + 1).padStart(2, '0') + '-'
-    + String(d.getFullYear()).slice(-2) + '.json';
+  return base + _dateStamp() + '.json';
 }
 
+// ── Dépendances de mesure ────────────────────────────────────────────────────
+// tmType 'ct_*' et tmSpokeKey '★ *' sont des références LOCALES qui PORTENT la
+// donnée : sans leur table de conversion, les relevés bruts de tmDataFo/Fa (et
+// de snapshot.fo/fa) n'ont plus aucun sens — toKgf() renvoie null partout.
+// Contrairement aux noms hub/jante (simples libellés dont la géométrie voyage
+// dans le state), ces références doivent voyager avec la roue.
+// Invariant du fichier v2 : si des tensions sont présentes, leur table l'est aussi.
+
+// Miroir paramétré de tmStoreKey() — s'applique aussi aux snapshots, qui portent
+// chacun leur propre couple tmType/tmDTSub/tmWFSub (cf. _snapMakeEntry).
+function _wshareStoreKey(tp, dtSub, wfSub) {
+  if (!tp) return null;
+  if (tp.indexOf('ct_') === 0) return tp;
+  if (tp === 'dt') return 'dt_' + (dtSub || 'standard');
+  if (tp === 'wf') return 'wf_' + (wfSub || 'new');
+  return tp;
+}
+
+// ccSave normalise wf_old/wf_new → 'wf' : même unification ici, sinon une charte
+// Wheel Fanatyk ne se retrouve jamais.
+function _wshareNormKey(k) {
+  if (!k) return k;
+  if (k.indexOf('ct_') === 0) return k;
+  if (k === 'wf' || k === 'wf_old' || k === 'wf_new') return 'wf';
+  return k;
+}
+
+function _wshareFindCC(name, storeKey, pool) {
+  var want = _wshareNormKey(storeKey);
+  var arr = pool || ccLoadAll();
+  for (var i = 0; i < arr.length; i++) {
+    var c = arr[i];
+    if (!c || c.name !== name) continue;
+    if (_wshareNormKey(c.tensioKey) === want) return c;
+  }
+  return null;
+}
+
+// Un « porteur » = le state vif OU un snapshot : { tmType, tmDTSub, tmWFSub,
+// tmSpokeKey }. Renvoie { ok, ct, cc } ; ok=false → porteur inexploitable ailleurs.
+// NB : une entrée ct ne contient AUCUNE donnée ({id, name}) — la conversion vient
+// toujours d'une charte rattachée. La dépendance est donc le COUPLE, jamais le
+// tensiomètre seul : ctInjectAll recrée TM_TABLES['ct_x'] = {}, vide mais truthy,
+// ce qui franchit toutes les gardes `if (!tbl)`.
+// `allow` (import uniquement) restreint aux tables réellement ARRIVÉES dans le
+// fichier. Sans lui, une charte homonyme créée localement par le receveur serait
+// jugée satisfaisante et convertirait des relevés étrangers contre sa propre
+// courbe, en silence — un nom ne doit jamais pouvoir mentir sur un contenu.
+// Couvre les fichiers v1 (aucun deps) comme un v2 tronqué ou édité à la main.
+// Export : `allow` absent ⇒ aucune restriction, la bibliothèque locale fait foi.
+function _wshareDepOf(src, ctPool, ccPool, allow) {
+  var none = { ok: true, ct: null, cc: null };
+  if (!src || !src.tmType) return none;
+  var isCt = src.tmType.indexOf('ct_') === 0;
+  var isCc = !!src.tmSpokeKey && src.tmSpokeKey.indexOf(CC_PREFIX) === 0;
+  if (!isCt && !isCc) return none;
+  var out = { ok: true, ct: null, cc: null };
+  if (isCt) {
+    if (allow && !allow.cts[src.tmType.slice(3)]) { out.ok = false; return out; }
+    var cts = ctPool || ctLoadAll();
+    for (var i = 0; i < cts.length; i++) {
+      if (cts[i] && 'ct_' + cts[i].id === src.tmType) { out.ct = cts[i]; break; }
+    }
+    if (!out.ct) { out.ok = false; return out; }
+    if (!isCc) { out.ok = false; return out; } // tensio perso sans charte = table vide
+  }
+  if (isCc) {
+    var nm  = src.tmSpokeKey.slice(CC_PREFIX.length);
+    var key = _wshareStoreKey(src.tmType, src.tmDTSub, src.tmWFSub);
+    if (allow && !allow.ccs[_wshareNormKey(key) + '\u0000' + nm]) { out.ok = false; return out; }
+    out.cc = _wshareFindCC(nm, key, ccPool);
+    if (!out.cc) { out.ok = false; return out; }
+  }
+  return out;
+}
+
+function _wshareHasVals(fo, fa) {
+  var has = function(a) {
+    return Array.isArray(a) && a.some(function(v) { return v !== null && v !== undefined; });
+  };
+  return has(fo) || has(fa);
+}
+
+// Filtre state + snapshots selon la disponibilité des tables. Mute `state` (le
+// bloc tension est purgé si sa table manque) et renvoie les snapshots retenus,
+// renumérotés sans trou. `lost` = au moins un porteur AVEC valeurs abandonné,
+// `kept` = au moins un porteur AVEC valeurs conservé : une roue jamais mesurée
+// ne déclenche donc aucun avertissement.
+function _wshareFilterDeps(state, snaps, ctPool, ccPool, allow) {
+  var lost = false, kept = false;
+  var deps = { cts: [], ccs: [] }, seenCt = {}, seenCc = {};
+  var take = function(d) {
+    if (d.ct && !seenCt[d.ct.id]) { seenCt[d.ct.id] = 1; deps.cts.push(d.ct); }
+    if (d.cc) {
+      var tag = _wshareNormKey(d.cc.tensioKey) + '\u0000' + d.cc.name;
+      if (!seenCc[tag]) { seenCc[tag] = 1; deps.ccs.push(d.cc); }
+    }
+  };
+  var dLive = _wshareDepOf(state, ctPool, ccPool, allow);
+  var liveVals = _wshareHasVals(state.tmDataFo, state.tmDataFa);
+  if (dLive.ok) { take(dLive); if (liveVals) kept = true; }
+  else {
+    if (liveVals) lost = true;
+    state.tmType = null; state.tmSpokeKey = null;
+    state.tmDataFo = []; state.tmDataFa = [];
+  }
+  var out = [];
+  (snaps || []).forEach(function(s) {
+    var d = _wshareDepOf(s, ctPool, ccPool, allow);
+    var vals = _wshareHasVals(s.fo, s.fa);
+    if (d.ok) { take(d); out.push(s); if (vals) kept = true; }
+    else if (vals) lost = true;
+  });
+  if (out.length) _snapRenum(out);
+  return { snaps: out, lost: lost, kept: kept, deps: deps };
+}
+
+var _wsharePending = null; // payload en attente de confirmation
+
 function wshareExport() {
-  // Garde roue vierge : même critère que l'activation des boutons de card (wheelOk).
-  if (!parseInt(($id('nb-rayons') || {}).value)) {
+  // Garde roue vierge : _wheelOk, comme l'activation des boutons de card.
+  if (!_wheelOk()) {
     showImportToast(t('wshareExportEmpty'), true);
     return;
   }
@@ -6427,17 +6572,135 @@ function wshareExport() {
       snaps.unshift(_snapMakeEntry(1));
       _snapRenum(snaps);
     }
-    entry.snapshots = snaps;
   } else if (tmHasData()) {
-    entry.snapshots = [_snapMakeEntry(1)];
+    snaps = [_snapMakeEntry(1)];
   }
-  var payload = { spokeit: true, kind: 'wheel', v: 1, name: name, entry: entry };
+  // `snaps` vient de loadConfigs(), qui re-parse à chaque appel : la copie est
+  // détachée du store, filtrer et renuméroter ci-dessous ne touche donc PAS les
+  // snapshots de l'expéditeur.
+  var f = _wshareFilterDeps(state, snaps, ctLoadAll(), ccLoadAll());
+  if (f.snaps.length) entry.snapshots = f.snaps;
+  var payload = { spokeit: true, kind: 'wheel', v: 2, name: name, entry: entry };
+  if (f.deps.cts.length || f.deps.ccs.length) payload.deps = f.deps;
+  if (f.lost) {
+    _wsharePending = payload;
+    _wshareShowWarn(f.kept ? 'wshareWarnPartial' : 'wshareWarnNone');
+    return;
+  }
+  _wshareDownload(payload);
+}
+
+function _wshareDownload(payload) {
   var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   var url  = URL.createObjectURL(blob);
   var a    = document.createElement('a');
-  a.href = url; a.download = _wshareFileName(name); a.click();
+  a.href = url; a.download = _wshareFileName(payload.name); a.click();
   URL.revokeObjectURL(url);
   closeWheelShareModal();
+}
+
+// État confirmation : la description porte l'avertissement, la rangée
+// Importer/Exporter cède la place à Annuler/Confirmer. On réécrit data-i18n (pas
+// seulement textContent) pour qu'un changement de langue pendant l'avertissement
+// ne restaure pas wshareDesc par-dessus.
+function _wshareShowWarn(key) {
+  var d = $id('wshare-desc');
+  if (d) { d.setAttribute('data-i18n', key); d.textContent = t(key); }
+  var a = $id('wshare-btns'), b = $id('wshare-confirm-btns');
+  if (a) a.style.display = 'none';
+  if (b) b.style.display = 'flex';
+}
+
+function _wshareResetModal() {
+  _wsharePending = null;
+  var d = $id('wshare-desc');
+  if (d) { d.setAttribute('data-i18n', 'wshareDesc'); d.textContent = t('wshareDesc'); }
+  var a = $id('wshare-btns'), b = $id('wshare-confirm-btns');
+  if (a) a.style.display = '';
+  if (b) b.style.display = 'none';
+}
+
+function wshareExportCancel() { _wshareResetModal(); }
+
+function wshareExportConfirm() {
+  var p = _wsharePending;
+  if (!p) { _wshareResetModal(); return; }
+  _wshareDownload(p);
+}
+
+// Insère les tables reçues sans JAMAIS écraser une entrée locale.
+//  ct : identifié par id (Date.now+random) — collision d'id impossible en
+//       pratique ; seul le nom peut entrer en conflit → suffixe (1), l'id reste,
+//       donc tmType n'a pas à être réécrit.
+//  cc : clé (nom, tensioKey) — points identiques ⇒ réutilisation (pas de doublon
+//       sur le cas fréquent : deux monteurs ont la même charte) ; points
+//       différents ⇒ copie « Nom(1) » + réécriture de tmSpokeKey dans le state
+//       ET dans chaque snapshot, qui en porte sa propre copie.
+function _wsharePointsEq(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    var p = a[i], q = b[i];
+    if (!Array.isArray(p) || !Array.isArray(q) || p.length !== q.length) return false;
+    for (var j = 0; j < p.length; j++) {
+      var x = p[j], y = q[j];
+      if (x === null || y === null) { if (x !== y) return false; continue; }
+      if (parseFloat(x) !== parseFloat(y)) return false; // "58" ≡ 58.0
+    }
+  }
+  return true;
+}
+
+// Renvoie la liste blanche des tables réellement apportées par le fichier :
+// { cts: { id: 1 }, ccs: { 'tensioKeyNormalisée\u0000nomFinal': 1 } }. Les noms
+// retenus sont les noms APRÈS résolution de collision, puisque tmSpokeKey vient
+// d'être réécrit en conséquence.
+function _wshareResolveDeps(deps, entry) {
+  var allow = { cts: {}, ccs: {} };
+  if (!deps || typeof deps !== 'object') return allow;
+  var cts = ctLoadAll(), ccs = ccLoadAll(), tCt = false, tCc = false;
+  (Array.isArray(deps.cts) ? deps.cts : []).forEach(function(ct) {
+    if (!ct || typeof ct.id !== 'string' || typeof ct.name !== 'string') return;
+    allow.cts[ct.id] = 1;
+    if (cts.some(function(c) { return c && c.id === ct.id; })) return; // déjà présent
+    var base = ct.name, nm = base, n = 1;
+    // ctSave refuse les doublons de nom en insensible à la casse : l'import
+    // écrivant via ctPersist, l'invariant doit être répliqué ici.
+    while (cts.some(function(c) { return c && String(c.name).toLowerCase() === nm.toLowerCase(); })) {
+      nm = base + '(' + n + ')'; n++;
+    }
+    cts.push({ id: ct.id, name: nm }); tCt = true;
+  });
+  var ren = {}; // 'tensioKeyNormalisée\u0000ancienNom' → nouveauNom
+  (Array.isArray(deps.ccs) ? deps.ccs : []).forEach(function(cc) {
+    if (!cc || typeof cc.name !== 'string' || !Array.isArray(cc.points)) return;
+    var local = _wshareFindCC(cc.name, cc.tensioKey, ccs);
+    if (local && _wsharePointsEq(local.points, cc.points)) {
+      allow.ccs[_wshareNormKey(cc.tensioKey) + '\u0000' + cc.name] = 1;
+      return; // identique → réutilisée telle quelle
+    }
+    var nm = cc.name;
+    if (local) {
+      var base = cc.name, n = 1;
+      while (_wshareFindCC(nm, cc.tensioKey, ccs)) { nm = base + '(' + n + ')'; n++; }
+      ren[_wshareNormKey(cc.tensioKey) + '\u0000' + cc.name] = nm;
+    }
+    ccs.push({ name: nm, tensioKey: cc.tensioKey, points: cc.points });
+    allow.ccs[_wshareNormKey(cc.tensioKey) + '\u0000' + nm] = 1;
+    tCc = true;
+  });
+  if (tCt) ctPersist(cts);
+  if (tCc) ccPersist(ccs);
+  if (tCt || tCc) { ctRefreshAll(); ccInjectAll(); }
+  if (!Object.keys(ren).length) return allow;
+  var apply = function(src) {
+    if (!src || !src.tmSpokeKey || src.tmSpokeKey.indexOf(CC_PREFIX) !== 0) return;
+    var k = _wshareNormKey(_wshareStoreKey(src.tmType, src.tmDTSub, src.tmWFSub));
+    var nn = ren[k + '\u0000' + src.tmSpokeKey.slice(CC_PREFIX.length)];
+    if (nn) src.tmSpokeKey = CC_PREFIX + nn;
+  };
+  apply(entry.state);
+  (entry.snapshots || []).forEach(apply);
+  return allow;
 }
 
 function wshareImport(event) {
@@ -6455,6 +6718,15 @@ function wshareImport(event) {
       delete entry.riderId;
       entry.state.loadedHubName = null;
       entry.state.loadedRimName = null;
+      // Dépendances de mesure : insérées AVANT loadConfig(0), sinon
+      // tmPopulateSpokeSelect ne trouverait toujours rien.
+      var _allow = _wshareResolveDeps(data.deps, entry);
+      // Filet pour les fichiers v1 (ou tronqués) : ce qui reste inexploitable est
+      // purgé plutôt que laissé flottant — un nom ne doit jamais pouvoir mentir
+      // sur un contenu (une charte homonyme recréée localement convertirait des
+      // relevés étrangers contre la mauvaise courbe, en silence).
+      var _fi = _wshareFilterDeps(entry.state, entry.snapshots || [], ctLoadAll(), ccLoadAll(), _allow);
+      if (_fi.snaps.length) entry.snapshots = _fi.snaps; else delete entry.snapshots;
       var wh = entry.state.wtype || 'avant';
       // Collision de nom à (nom, wtype) égal — même clé d'unicité que
       // saveConfig — → suffixe incrémental (1), (2)…
@@ -7483,6 +7755,12 @@ function tmPopulateSpokeSelect() {
   const tbl = tmGetActiveTable();
   if (!tbl) { sel.innerHTML = `<option value="">${t('tmSpokeSelectPlaceholder')}</option>`; tmSpokeKey = null; return; }
   const spokes = Object.keys(tbl);
+  // La charte perso référencée a pu être supprimée depuis la sauvegarde (ou
+  // ne jamais être arrivée, cas d'une roue reçue) : invalider la clé plutôt
+  // que de laisser loadConfig verrouiller le select sur un rayon fantôme.
+  // Couvre aussi le tensiomètre perso sans charte, dont la table est un objet
+  // vide mais truthy — il ne tombe donc pas dans la branche `if (!tbl)`.
+  if (tmSpokeKey && !(tmSpokeKey in tbl)) tmSpokeKey = null;
   const prev = tmSpokeKey;
   sel.innerHTML = `<option value="">${t('tmSpokeSelectPlaceholder')}</option>`;
 
@@ -14265,13 +14543,20 @@ function _hrBtnRead(slot, key) {
   return slot.arr;
 }
 
+// Critère « card non vierge » : un nombre de rayons saisi. Source unique —
+// l'activation des boutons de card et les gardes du partage de roue doivent
+// répondre exactement la même chose.
+function _wheelOk() {
+  return !!parseInt((document.getElementById('nb-rayons') || {}).value);
+}
+
 function hrUpdateButtons() {
   var hubOk  = hrIsHubComplete();
   var rimOk  = hrIsRimComplete();
   var hubs   = _hrBtnRead(_hrBtnMemo.hub, LS_HUBS).filter(function(e) { return (e.data && e.data.wtype ? e.data.wtype : 'avant') === wtype; });
   var rims   = _hrBtnRead(_hrBtnMemo.rim, LS_RIMS);
   var configs = (typeof LS_KEY !== 'undefined') ? _hrBtnRead(_hrBtnMemo.cfg, LS_KEY) : [];
-  var wheelOk   = !!parseInt((document.getElementById('nb-rayons') || {}).value);
+  var wheelOk   = _wheelOk();
   var hasWheels = configs.some(function(c) { return (c.state.wtype || 'avant') === wtype; });
 
   var hubSaveBtn  = document.getElementById('hub-save-btn');
