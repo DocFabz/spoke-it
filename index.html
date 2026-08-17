@@ -4897,7 +4897,13 @@ function applyState(s) {
   }
 
   // ── Restaurer Module Tension ──
-  if (s.tmType) {
+  // Tensio perso disparu (données antérieures aux purges, stockage altéré) :
+  // même geste que « pas de tensiomètre » — sinon tmType garderait une clé
+  // morte en mémoire (select vide, bouton clear pourtant actif) qu'une
+  // re-sauvegarde re-persisterait.
+  const _sCtGone = !!s.tmType && s.tmType.startsWith('ct_') &&
+                   !ctLoadAll().some(c => 'ct_' + c.id === s.tmType);
+  if (s.tmType && !_sCtGone) {
     // Tensiomètre
     tmType = s.tmType;
     const tmTensioSel = $id('tm-tensio-select');
@@ -6380,6 +6386,24 @@ function importConfigs(event) {
         }));
       }
 
+      // ── Filet deps : porteurs inconvertibles ──
+      // Un backup incohérent (state/snapshot référençant un tensio perso ou
+      // une charte absents du fichier ET de la bibliothèque locale) laisserait
+      // des relevés inconvertibles et un tmType fantôme au chargement. Même
+      // décision que le partage de roue et les suppressions locales, appliquée
+      // à la source. Un tensio perso présent mais encore sans charte reste
+      // valide ici (contrairement à l'export, qui refuse la table vide).
+      const _ctPool = ctLoadAll(), _ccPool = ccLoadAll();
+      snapPurgeOrphans(function(p) {
+        if (!p || !p.tmType) return false;
+        if (p.tmType.indexOf('ct_') === 0 &&
+            !_ctPool.some(function(c) { return c && 'ct_' + c.id === p.tmType; })) return true;
+        if (p.tmSpokeKey && p.tmSpokeKey.indexOf(CC_PREFIX) === 0 &&
+            !_wshareFindCC(p.tmSpokeKey.slice(CC_PREFIX.length),
+                           _wshareStoreKey(p.tmType, p.tmDTSub, p.tmWFSub), _ccPool)) return true;
+        return false;
+      });
+
       // ── 2. Tout rafraîchir en une seule passe ──
       ctInjectAll();
       ccInjectAll();
@@ -6719,6 +6743,15 @@ function wshareImport(event) {
       if (!data.spokeit || data.kind !== 'wheel' || !data.entry || typeof data.entry !== 'object' ||
           !data.entry.state || typeof data.entry.state !== 'object') throw new Error();
       var entry = data.entry;
+      // Normalisation défensive : un champ snapshots non-tableau (fichier
+      // trafiqué) ferait échouer l'import APRÈS la persistance des deps —
+      // import partiel silencieux. Assaini avant tout effet de bord.
+      if (Array.isArray(entry.snapshots)) {
+        entry.snapshots = entry.snapshots.filter(function(s) { return s && typeof s === 'object'; });
+        if (!entry.snapshots.length) delete entry.snapshots;
+      } else {
+        delete entry.snapshots;
+      }
       // Re-strip défensif (fichier édité à la main ou version future).
       delete entry.riderId;
       entry.state.loadedHubName = null;
@@ -6756,7 +6789,8 @@ function wshareImport(event) {
       loadConfig(0);
       renderConfigsList();
       closeWheelShareModal();
-      showImportToast(t('wshareImportSuccess').replace('{name}', name), false);
+      // split/join : String.replace interpréterait $& / $' dans un nom de roue.
+      showImportToast(t('wshareImportSuccess').split('{name}').join(name), false);
     } catch(err) {
       showImportToast(t('wshareImportError'), true);
     }
@@ -7610,10 +7644,16 @@ function renderEraseMgr(openKeys) {
     const ct = tensios.find(c => 'ct_' + c.id === key);
     return ct ? CC_PREFIX + ct.name : key;
   }
-  const spokeItems = charts.map(cc => {
-    const globalIdx = ccLoadAll().findIndex(c => c.name === cc.name && c.tensioKey === cc.tensioKey);
-    return makeItem(CC_PREFIX + cc.name, tensioLabel(cc.tensioKey), () => ccDeleteDirect(globalIdx, null));
-  });
+  // Index re-résolu par identité AU CLIC, jamais figé au rendu — même patron
+  // que la section tensiomètres (findIndex par id) : un index capturé au rendu
+  // devient faux dès que la liste bouge.
+  const spokeItems = charts.map(cc => makeItem(
+    CC_PREFIX + cc.name, tensioLabel(cc.tensioKey),
+    () => {
+      const idx = ccLoadAll().findIndex(c => c.name === cc.name && c.tensioKey === cc.tensioKey);
+      if (idx >= 0) ccDeleteDirect(idx, null);
+    }
+  ));
   acc.appendChild(makeAccSection('eraseMgrCustomSpokes', spokeItems, openKeys));
 }
 
@@ -9305,44 +9345,45 @@ function ccLoadChart(idx) {
 }
 
 // ── Supprimer une charte ─────────────────────────────────────────────────────
+// Identité figée à l'appel, index re-résolu à l'exécution : un splice différé
+// (fade 250 ms) ne peut plus viser une autre charte si la liste a bougé entre
+// temps. Le chemin sans animation (Data manager) est SYNCHRONE : le re-render
+// qui suit le clic lit un store déjà à jour — sinon, item fantôme + index
+// périmés, et le clic suivant supprimait la MAUVAISE charte.
 function ccDeleteDirect(idx, itemEl) {
-  if (itemEl) {
-    itemEl.style.transition = 'opacity .25s, transform .25s';
-    itemEl.style.opacity = '0';
-    itemEl.style.transform = 'translateX(20px)';
-  }
-  setTimeout(() => {
+  const target = ccLoadAll()[idx];
+  if (!target) return;
+  const run = () => {
     const customs = ccLoadAll();
-    const removed = customs[idx];
-    customs.splice(idx, 1);
+    const tIdx = customs.findIndex(c => c.name === target.name && c.tensioKey === target.tensioKey);
+    if (tIdx < 0) { ccRenderExisting(); return; } // déjà supprimée entre-temps
+    const removed = customs[tIdx];
+    customs.splice(tIdx, 1);
     ccPersist(customs);
     ccInjectAll();
-    let repositioned = false;
-    if (removed) {
-      // Clé d'identité de la charte supprimée : couple (tensio normalisé, nom)
-      // — même sémantique que le partage de roue (_wshareNormKey/_wshareStoreKey).
-      const deadTensio = _wshareNormKey(removed.tensioKey);
-      const deadKey    = CC_PREFIX + removed.name;
-      const refsDead   = function(tp, dtSub, wfSub, spokeKey) {
-        return spokeKey === deadKey &&
-               _wshareNormKey(_wshareStoreKey(tp, dtSub, wfSub)) === deadTensio;
-      };
-      // Données vives : reset uniquement si le couple correspond (le nom seul
-      // ne suffit pas — une charte homonyme peut exister sur un autre tensio).
-      if (refsDead(tmType, tmDTSub, tmWFSub, tmSpokeKey)) {
-        tmSpokeKey = null;
-        tmResetData();
-        tmHideResult();
-      }
-      // Snapshots orphelins de TOUTES les roues : purgés et renumérotés —
-      // même décision que l'export (_wshareFilterDeps), appliquée à la source.
-      snapPurgeOrphans(function(sn) {
-        return refsDead(sn.tmType, sn.tmDTSub, sn.tmWFSub, sn.tmSpokeKey);
-      });
-      // Le module ne doit pas rester sans rayon : repositionnement sur le
-      // dernier snapshot survivant (snapLoad restaure tensio, rayon, relevés).
-      repositioned = _snapReposition();
+    // Clé d'identité de la charte supprimée : couple (tensio normalisé, nom)
+    // — même sémantique que le partage de roue (_wshareNormKey/_wshareStoreKey).
+    const deadTensio = _wshareNormKey(removed.tensioKey);
+    const deadKey    = CC_PREFIX + removed.name;
+    const refsDead   = function(tp, dtSub, wfSub, spokeKey) {
+      return spokeKey === deadKey &&
+             _wshareNormKey(_wshareStoreKey(tp, dtSub, wfSub)) === deadTensio;
+    };
+    // Données vives : reset uniquement si le couple correspond (le nom seul
+    // ne suffit pas — une charte homonyme peut exister sur un autre tensio).
+    if (refsDead(tmType, tmDTSub, tmWFSub, tmSpokeKey)) {
+      tmSpokeKey = null;
+      tmResetData();
+      tmHideResult();
     }
+    // Snapshots orphelins de TOUTES les roues : purgés et renumérotés —
+    // même décision que l'export (_wshareFilterDeps), appliquée à la source.
+    snapPurgeOrphans(function(sn) {
+      return refsDead(sn.tmType, sn.tmDTSub, sn.tmWFSub, sn.tmSpokeKey);
+    });
+    // Le module ne doit pas rester sans rayon : repositionnement sur le
+    // dernier snapshot survivant (snapLoad restaure tensio, rayon, relevés).
+    const repositioned = _snapReposition();
     // snapLoad a déjà tout reconstruit (tmPopulateSpokeSelect, tmBuildTable,
     // et snapRefreshBtn via snapClose) : ne refaire le travail que sinon.
     if (!repositioned) {
@@ -9356,7 +9397,16 @@ function ccDeleteDirect(idx, itemEl) {
     $id('cc-feedback').textContent = '';
     ccRefreshUI();
     ccRenderExisting();
-  }, itemEl ? 250 : 0);
+  };
+  if (itemEl) {
+    itemEl.style.transition = 'opacity .25s, transform .25s';
+    itemEl.style.opacity = '0';
+    itemEl.style.transform = 'translateX(20px)';
+    itemEl.style.pointerEvents = 'none'; // fige l'item pendant le fade (anti double-clic)
+    setTimeout(run, 250);
+  } else {
+    run();
+  }
 }
 
 // ── Sauvegarder la charte ───────────────────────────────────────────────────
