@@ -15198,12 +15198,14 @@ function snapClose() {
   snapRefreshBtn();
 }
 
-// ── Purge des snapshots orphelins ─────────────────────────────────────────────
-// Miroir vivant de _wshareFilterDeps : un snapshot dont la table de conversion
-// vient d'être supprimée n'a plus aucun sens (relevés bruts inconvertibles —
-// « un nom ne doit jamais pouvoir mentir sur un contenu »). Parcourt TOUTES les
-// roues : une charte est partagée entre configs. Les survivants sont
-// renumérotés sans trou (_snapRenum) ; une roue vidée perd son champ snapshots.
+// ── Purge des porteurs orphelins (state + snapshots) ───────────────────────
+// Miroir vivant de _wshareFilterDeps : un porteur (state vif sauvegardé ou
+// snapshot) dont la table de conversion vient d'être supprimée n'a plus aucun
+// sens (relevés bruts inconvertibles — « un nom ne doit jamais pouvoir mentir
+// sur un contenu »). Parcourt TOUTES les roues : une charte est partagée entre
+// configs. Le bloc tension d'un state touché est purgé ; les snapshots
+// survivants sont renumérotés sans trou (_snapRenum) ; une roue vidée perd son
+// champ snapshots.
 function snapPurgeOrphans(match) {
   var configs = loadConfigs(), touched = false;
   configs.forEach(function(cfg) {
