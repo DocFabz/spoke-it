@@ -6343,22 +6343,51 @@ function importConfigs(event) {
       if (!data.spokeit) throw new Error();
 
       // ── 1. Tout persister d'abord ──
+      // Tensios perso : l'id EST l'identité (chartes et roues référencent
+      // ct_<id>), le nom n'est qu'une étiquette — match par id prioritaire.
+      //   · id présent  ⇒ remplacement (restore exact, renommage compris) ;
+      //   · id inconnu  ⇒ ajout, nom dédoublonné en insensible à la casse
+      //     (invariant ctSave). Jamais de remplacement par nom : il
+      //     substituerait un autre id et orphelinerait chartes et roues
+      //     locales (purge silencieuse par le filet ci-dessous).
       if (Array.isArray(data.customTensios)) {
         const existing = ctLoadAll();
         data.customTensios.forEach(entry => {
-          if (!entry || typeof entry.name !== 'string') return;
-          const idx = existing.findIndex(c => c.name === entry.name);
-          if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
+          if (!entry || typeof entry.name !== 'string' || !entry.id) return;
+          const idx = existing.findIndex(c => c && c.id === entry.id);
+          if (idx >= 0) { existing.splice(idx, 1, entry); return; }
+          const nm = _wshareDedupName(entry.name, cand =>
+            existing.some(c => c && String(c.name).toLowerCase() === cand.toLowerCase()));
+          existing.unshift(nm === entry.name ? entry : Object.assign({}, entry, { name: nm }));
         });
         ctPersist(existing);
       }
 
+      // Chartes perso : identité (nom, tensioKey) — même clé que ccSave et
+      // le partage (un nom seul peut désigner deux courbes sur deux tensios).
+      //   · identique   ⇒ la locale fait déjà foi, aucun effet ;
+      //   · homonyme divergent ⇒ copie « Nom(1) » (jamais d'écrasement : les
+      //     relevés locaux convertiraient contre la mauvaise courbe) +
+      //     réécriture de tmSpokeKey dans les roues du FICHIER ci-dessous,
+      //     qui doivent suivre leur courbe d'origine sous son nouveau nom.
+      // Clés héritées wf_old/wf_new normalisées à l'entrée : la migration de
+      // boot (ccMigrateWF) ne repasse pas après un import.
+      const _bkpRen = {}; // 'tensioKey\u0000ancienNom' → nouveauNom
       if (Array.isArray(data.customCharts)) {
         const existing = ccLoadAll();
         data.customCharts.forEach(entry => {
-          if (!entry || typeof entry.name !== 'string') return;
-          const idx = existing.findIndex(c => c.name === entry.name);
-          if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
+          if (!entry || typeof entry.name !== 'string' ||
+              typeof entry.tensioKey !== 'string' || !Array.isArray(entry.points)) return;
+          if (entry.tensioKey === 'wf_old' || entry.tensioKey === 'wf_new') entry.tensioKey = 'wf';
+          const local = _wshareFindCC(entry.name, entry.tensioKey, existing);
+          if (local) {
+            if (_wsharePointsEq(local.points, entry.points)) return; // identique
+            const nm = _wshareDedupName(entry.name, cand => !!_wshareFindCC(cand, entry.tensioKey, existing));
+            _bkpRen[entry.tensioKey + '\u0000' + entry.name] = nm;
+            existing.unshift({ name: nm, tensioKey: entry.tensioKey, points: entry.points });
+            return;
+          }
+          existing.unshift(entry);
         });
         ccPersist(existing);
       }
@@ -6367,6 +6396,7 @@ function importConfigs(event) {
         const existing = loadConfigs();
         data.configs.forEach(entry => {
           if (!entry || typeof entry.name !== 'string' || !entry.state || typeof entry.state !== 'object') return;
+          _wshareApplyRen(entry, _bkpRen); // roues du fichier → chartes renommées
           const idx = existing.findIndex(c => c.name === entry.name && (c.state.wtype || 'avant') === (entry.state.wtype || 'avant'));
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
@@ -6434,10 +6464,7 @@ function importConfigs(event) {
       });
 
       // ── 2. Tout rafraîchir en une seule passe ──
-      ctInjectAll();
-      ccInjectAll();
-      ctPopulateTensioSelect();
-      ctPopulateCCTensioSelect();
+      ctRefreshAll(); // tables ct+cc (ctInjectAll→ccInjectAll) + dropdowns tensio
       tmPopulateSpokeSelect();
       if (typeof ctRenderList === 'function') ctRenderList();
       if (typeof ccRenderExisting === 'function') ccRenderExisting();
@@ -6716,6 +6743,21 @@ function _wshareDedupName(base, exists) {
   return nm;
 }
 
+// Réécrit tmSpokeKey selon la map de renommage 'tensioKey\u0000ancienNom' →
+// nouveauNom — state ET snapshots, chacun porte sa propre copie. Mutualisé
+// entre l'import de roue (_wshareResolveDeps) et l'import de backup.
+function _wshareApplyRen(entry, ren) {
+  if (!Object.keys(ren).length) return;
+  var apply = function(src) {
+    if (!src || !src.tmSpokeKey || src.tmSpokeKey.indexOf(CC_PREFIX) !== 0) return;
+    var k = _wshareStoreKey(src.tmType, src.tmDTSub);
+    var nn = ren[k + '\u0000' + src.tmSpokeKey.slice(CC_PREFIX.length)];
+    if (nn) src.tmSpokeKey = CC_PREFIX + nn;
+  };
+  apply(entry.state);
+  (entry.snapshots || []).forEach(apply);
+}
+
 function _wshareResolveDeps(deps, entry) {
   var allow = { cts: {}, ccs: {} };
   if (!deps || typeof deps !== 'object') return allow;
@@ -6750,16 +6792,8 @@ function _wshareResolveDeps(deps, entry) {
   });
   if (tCt) ctPersist(cts);
   if (tCc) ccPersist(ccs);
-  if (tCt || tCc) { ctRefreshAll(); ccInjectAll(); }
-  if (!Object.keys(ren).length) return allow;
-  var apply = function(src) {
-    if (!src || !src.tmSpokeKey || src.tmSpokeKey.indexOf(CC_PREFIX) !== 0) return;
-    var k = _wshareStoreKey(src.tmType, src.tmDTSub);
-    var nn = ren[k + '\u0000' + src.tmSpokeKey.slice(CC_PREFIX.length)];
-    if (nn) src.tmSpokeKey = CC_PREFIX + nn;
-  };
-  apply(entry.state);
-  (entry.snapshots || []).forEach(apply);
+  if (tCt || tCc) ctRefreshAll(); // ccInjectAll inclus (via ctInjectAll)
+  _wshareApplyRen(entry, ren);
   return allow;
 }
 
@@ -6952,9 +6986,7 @@ function cshareImport(event) {
           });
           cts.push({ id: ctId, name: nmCt });
           ctPersist(cts);
-          ctInjectAll();
-          ctPopulateTensioSelect();
-          ctPopulateCCTensioSelect();
+          ctRefreshAll();
         }
       }
       // ── Charte : identique ⇒ réutilisée (aucun doublon, aucun suffixe) ;
