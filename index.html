@@ -1470,8 +1470,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cc-item-del:hover { color:#f08080 }
 
 /* ── Tensiomètre personnalisé ─────────────────────────────────────────────── */
-.ct-add-btn  { padding:.22rem .52rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Mono',monospace; font-size:.7rem; font-weight:500; cursor:pointer; transition:background .22s, border-color .22s, color .22s, opacity .22s, transform .22s, box-shadow .22s; flex-shrink:0; line-height:1; display:flex; align-items:center; gap:.3rem }
-.ct-add-btn:hover { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06) }
 .ct-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9992; opacity:0; transition:opacity .22s; display:none }
 .ct-overlay.show { display:block; opacity:1 }
 .ct-modal   { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9993; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:400px; max-height:88vh; max-height:88dvh; overflow-y:auto; display:none; flex-direction:column; gap:.9rem }
@@ -1861,6 +1859,32 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
       <span data-i18n="wshareConfirm">Confirmer</span>
     </button>
+  </div>
+</div>
+
+<!-- ── Modal Chart sharing : miroir du wheel sharing, charte comme objet
+     racine. Pas d'état confirmation : l'export d'une charte n'est jamais
+     partiel (la charte EST la donnée ; son tensio custom voyage en deps). ── -->
+<div class="savemgr-overlay" id="cshare-overlay" onclick="closeChartShareModal()"></div>
+<div class="savemgr-modal" id="cshare-modal">
+  <div class="savemgr-header">
+    <div class="savemgr-header-left">
+      <svg class="savemgr-title-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      <div class="savemgr-title" data-i18n="cshareTitle">Partage de Charte</div>
+    </div>
+    <button class="savemgr-close" onclick="closeChartShareModal()">&#x2715;</button>
+  </div>
+  <p class="savemgr-desc" data-i18n="cshareDesc">Vous pouvez recevoir ou archiver une charte personnalisée.</p>
+  <div class="savemgr-btns">
+    <button class="savemgr-action-btn savemgr-import" onclick="$id('cshare-file-input').click()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span data-i18n="importBtn">Importer</span>
+    </button>
+    <button class="savemgr-action-btn savemgr-export" id="cshare-export-btn" style="flex:1" onclick="cshareExport()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span data-i18n="exportBtn">Exporter</span>
+    </button>
+    <input type="file" id="cshare-file-input" accept=".json" style="display:none" onchange="cshareImport(event)">
   </div>
 </div>
 
@@ -2531,7 +2555,20 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         <line x1="12" y1="12" x2="9.2" y2="6.8" stroke="var(--warm)" stroke-width="1.6" stroke-linecap="round"/>
       </svg>
       <div class="clabel" data-i18n="tmTensioLabel">Tensiomètre</div>
-      <button class="ct-add-btn" id="ct-add-btn" onclick="ctOpen()">+</button>
+      <div style="display:flex;gap:.35rem;margin-left:auto">
+        <button class="card-icon-btn active" id="ct-add-btn" onclick="ctOpen()" title="Tensiomètre perso">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+        <button class="card-icon-btn active" id="cshare-btn" onclick="openChartShareModal()" title="Partage de charte">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- Sélecteur tensiomètre -->
@@ -3858,6 +3895,14 @@ const i18n = {
     wshareWarnPartial:'Tensions partiellement partagées : certaines chartes manquantes',
     wshareCancel:'Annuler',
     wshareConfirm:'Confirmer',
+    cshareTitle:'Partage de Charte',
+    cshareDesc:'Vous pouvez recevoir ou archiver une charte personnalisée.',
+    cshareBtnTitle:'Partage de charte',
+    cshareExportEmpty:'Sélectionnez une charte personnalisée à partager.',
+    cshareImportSuccess:'✓ Charte « {name} » importée.',
+    cshareImportExists:'Charte « {name} » déjà présente — réutilisée.',
+    cshareImportError:'Fichier invalide : ce n\'est pas une charte Spokeit.',
+    ctAddBtnTitle:'Tensiomètre perso',
     saveMgrTitle:'Gestion des sauvegardes',
     saveMgrDesc:'Le fichier JSON contient toutes vos données : configurations de roues, chartes de tension et tensiomètres personnalisés.',
     lastBackupNever:'Aucune sauvegarde effectuée.',
@@ -4069,6 +4114,14 @@ const i18n = {
     wshareWarnPartial:'Tensions partially shared: some charts are missing',
     wshareCancel:'Cancel',
     wshareConfirm:'Confirm',
+    cshareTitle:'Chart Sharing',
+    cshareDesc:'You can receive or archive a custom chart.',
+    cshareBtnTitle:'Chart sharing',
+    cshareExportEmpty:'Select a custom chart to share.',
+    cshareImportSuccess:'✓ Chart "{name}" imported.',
+    cshareImportExists:'Chart "{name}" already present — reused.',
+    cshareImportError:'Invalid file: not a Spokeit chart.',
+    ctAddBtnTitle:'Custom tensiometer',
     saveMgrTitle:'Backup manager',
     saveMgrDesc:'The JSON file contains all your data: wheel configurations, tension charts and custom tensiometers.',
     lastBackupNever:'No backup yet.',
@@ -4589,6 +4642,7 @@ function applyLang() {
     'wheel-save-btn':'wheelSaveBtnTitle',    'tm-wheel-save-btn':'wheelSaveBtnTitle',
     'wheel-info-btn':'wiInfoBtnTitle',       'tm-wheel-info-btn':'wiInfoBtnTitle',
     'wheel-share-btn':'wshareBtnTitle',      'tm-wheel-share-btn':'wshareBtnTitle',
+    'cshare-btn':'cshareBtnTitle',       'ct-add-btn':'ctAddBtnTitle',
     'hub-load-btn':'hubLoadBtnTitle',        'hub-save-btn':'hubSaveBtnTitle',
     'rim-load-btn':'rimLoadBtnTitle',        'rim-save-btn':'rimSaveBtnTitle',
     'hooke-btn':'hookeBtnTitle',
@@ -6775,6 +6829,161 @@ function wshareImport(event) {
   reader.readAsText(file);
 }
 
+// ═══ Partage de charte (Chart sharing) ═══════════════════════════════════════
+// Miroir du wheel sharing avec la charte perso comme objet racine : payload
+// kind:'chart' portant la charte {name, tensioKey, points}, plus deps.cts si
+// le tensioKey pointe un tensiomètre custom (sans sa définition, une référence
+// ct_* ne désigne rien chez le destinataire — même invariant que le v2 roue).
+// Import : mécanique d'identité de _wshareResolveDeps — points identiques ⇒
+// charte locale réutilisée telle quelle ; homonyme divergent ⇒ suffixe
+// incrémental via _wshareDedupName — puis sélection automatique dans la card
+// (miroir de la bascule avant/arrière du wheel import).
+
+function openChartShareModal() {
+  // Exporter grisé tant que le rayon sélectionné n'est pas une charte perso
+  // (CC_PREFIX) — l'équivalent du garde _wheelOk du wheel sharing. Importer
+  // reste toujours disponible : recevoir ne dépend pas de l'état de la card.
+  var exp = $id('cshare-export-btn');
+  if (exp) exp.disabled = !(tmSpokeKey && tmSpokeKey.indexOf(CC_PREFIX) === 0);
+  $id('cshare-overlay').classList.add('show');
+  $id('cshare-modal').classList.add('show');
+}
+
+function closeChartShareModal() {
+  $id('cshare-overlay').classList.remove('show');
+  $id('cshare-modal').classList.remove('show');
+  var fi = $id('cshare-file-input'); if (fi) fi.value = '';
+}
+
+function _cshareFileName(name) {
+  var base = (name || '').trim().replace(/[\\\/:*?"<>|]/g, '').trim() || 'Chart';
+  return base + _dateStamp() + '.json';
+}
+
+function cshareExport() {
+  if (!tmSpokeKey || tmSpokeKey.indexOf(CC_PREFIX) !== 0) {
+    showImportToast(t('cshareExportEmpty'), true);
+    return;
+  }
+  var nm  = tmSpokeKey.slice(CC_PREFIX.length);
+  var key = _wshareStoreKey(tmType, tmDTSub);
+  var cc  = _wshareFindCC(nm, key);
+  if (!cc) { showImportToast(t('cshareExportEmpty'), true); return; }
+  var payload = { spokeit: true, kind: 'chart', v: 1,
+                  cc: { name: cc.name, tensioKey: cc.tensioKey, points: cc.points } };
+  if (cc.tensioKey.indexOf('ct_') === 0) {
+    var id = cc.tensioKey.slice(3), cts = ctLoadAll(), ct = null;
+    for (var i = 0; i < cts.length; i++) { if (cts[i] && cts[i].id === id) { ct = cts[i]; break; } }
+    if (!ct) { showImportToast(t('cshareExportEmpty'), true); return; } // référence orpheline
+    payload.deps = { cts: [{ id: ct.id, name: ct.name }] };
+  }
+  var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url; a.download = _cshareFileName(cc.name); a.click();
+  URL.revokeObjectURL(url);
+  closeChartShareModal();
+}
+
+// Sélection automatique de la charte importée dans la card tensiomètre.
+// Respecte le verrou de config chargée : select rayon verrouillé ⇒ on ne
+// touche pas à la sélection (la charte reste disponible dans le dropdown).
+// Charte déjà sélectionnée ⇒ aucun re-select : tmOnSpokeChange purgerait les
+// relevés vifs pour rien (cas import d'une charte identique à celle en cours).
+function _cshareSelect(tensioKey, ccName) {
+  var sel = $id('tm-spoke-select');
+  if (sel && sel.disabled) return;
+  var isCt = tensioKey.indexOf('ct_') === 0;
+  var type = isCt ? tensioKey : (tensioKey.indexOf('dt_') === 0 ? 'dt' : tensioKey);
+  if (type === 'dt') {
+    var sub = tensioKey.slice(3); // 'standard' | 'aerolite2'
+    if (tmType !== 'dt') {
+      // tmDTSub AVANT setTM : setTM('dt') dérive sa table de tmDTSub.
+      tmDTSub = sub;
+      setTM('dt');
+      $id('tm-btn-dt-std').classList.toggle('active',  sub === 'standard');
+      $id('tm-btn-dt-ael2').classList.toggle('active', sub === 'aerolite2');
+      updateDTTip();
+    } else if (tmDTSub !== sub) {
+      setDTSub(sub);
+    }
+  } else if (tmType !== type) {
+    setTM(type);
+  }
+  tmPopulateSpokeSelect(); // charte fraîchement injectée : options à jour
+  var key = CC_PREFIX + ccName;
+  if (tmSpokeKey === key) return;
+  if (sel) {
+    sel.value = key;
+    if (sel.value === key) tmOnSpokeChange(); // option absente = pas de reset aveugle
+  }
+}
+
+function cshareImport(event) {
+  var file = event.target.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      // Validation stricte : kind:'chart' obligatoire — un fichier roue ou un
+      // backup complet est rejeté proprement, comme tout fichier étranger.
+      if (!data.spokeit || data.kind !== 'chart' || !data.cc || typeof data.cc !== 'object' ||
+          typeof data.cc.name !== 'string' || !data.cc.name.trim() ||
+          typeof data.cc.tensioKey !== 'string' ||
+          !Array.isArray(data.cc.points) || data.cc.points.length < 2 ||
+          !data.cc.points.every(function(p) { return Array.isArray(p) && p.length >= 2; })) throw new Error();
+      var cc = data.cc;
+      // ── Tensiomètre custom porteur : même mécanique que _wshareResolveDeps —
+      // id déjà présent ⇒ réutilisé ; absent ⇒ ajouté, nom dédoublonné en
+      // insensible à la casse (invariant ctSave, répliqué comme à l'import roue).
+      if (cc.tensioKey.indexOf('ct_') === 0) {
+        var ctId = cc.tensioKey.slice(3), depCt = null;
+        if (data.deps && Array.isArray(data.deps.cts)) {
+          for (var i = 0; i < data.deps.cts.length; i++) {
+            var d = data.deps.cts[i];
+            if (d && d.id === ctId && typeof d.name === 'string' && d.name.trim()) { depCt = d; break; }
+          }
+        }
+        var cts = ctLoadAll();
+        if (!cts.some(function(c) { return c && c.id === ctId; })) {
+          if (!depCt) throw new Error(); // charte ct_* sans son tensio = inexploitable
+          var nmCt = _wshareDedupName(depCt.name, function(cand) {
+            return cts.some(function(c) { return c && String(c.name).toLowerCase() === cand.toLowerCase(); });
+          });
+          cts.push({ id: ctId, name: nmCt });
+          ctPersist(cts);
+          ctInjectAll();
+          ctPopulateTensioSelect();
+          ctPopulateCCTensioSelect();
+        }
+      }
+      // ── Charte : identique ⇒ réutilisée (aucun doublon, aucun suffixe) ;
+      // homonyme divergent ⇒ nom(1), et nom(1) en collision ⇒ nom(2).
+      var ccs = ccLoadAll();
+      var local = _wshareFindCC(cc.name, cc.tensioKey, ccs);
+      var finalName = cc.name, reused = false;
+      if (local && _wsharePointsEq(local.points, cc.points)) {
+        reused = true;
+      } else {
+        if (local) {
+          finalName = _wshareDedupName(cc.name, function(cand) { return !!_wshareFindCC(cand, cc.tensioKey, ccs); });
+        }
+        ccs.push({ name: finalName, tensioKey: cc.tensioKey, points: cc.points });
+        ccPersist(ccs);
+        ccInjectAll();
+      }
+      _cshareSelect(cc.tensioKey, finalName);
+      closeChartShareModal();
+      // split/join : String.replace interpréterait $& / $' dans un nom de charte.
+      showImportToast(t(reused ? 'cshareImportExists' : 'cshareImportSuccess').split('{name}').join(finalName), false);
+    } catch(err) {
+      showImportToast(t('cshareImportError'), true);
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
 // ── Rappel de sauvegarde ──────────────────────────────────────────────────────
 // Bandeau informatif (en flux) + clignotement-guide qui suit l'utilisateur le long
 // du chemin disquette → « Backup manager » → « Exporter » → texte « dernière
@@ -8839,6 +9048,9 @@ document.addEventListener('keydown', function(e) {
   }
   if (e.key === 'Escape' && $id('wshare-modal') && $id('wshare-modal').classList.contains('show')) {
     closeWheelShareModal();
+  }
+  if (e.key === 'Escape' && $id('cshare-modal') && $id('cshare-modal').classList.contains('show')) {
+    closeChartShareModal();
   }
   if (e.key === 'Escape' && $id('picker-popup').classList.contains('show')) {
     closePicker();
