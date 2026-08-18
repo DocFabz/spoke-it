@@ -3396,7 +3396,10 @@ function ensureJsPDF() {
 function pdfSanitize(s) {
   if (!s) return '';
   var map = { '→':'->', 'Δ':'D', '±':'+/-', '★':'*' };
-  return String(s).replace(/[→Δ±★]/g, function(c) { return map[c] || c; });
+  return String(s)
+    .replace(/[→Δ±★]/g, function(c) { return map[c] || c; })
+    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '?') // paire surrogate (emoji) -> un seul '?'
+    .replace(/[^\x00-\xFF]/g, '?'); // garde-fou : tout hors WinAnsi -> '?' (evite la bascule UTF-16 de jsPDF : '&' + lettrage espace)
 }
 </script>
 <!-- jsPDF 2.5.1 (UMD min) embarqué — anciennement chargé depuis cdnjs ; zéro dépendance réseau -->
