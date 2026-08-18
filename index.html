@@ -9115,8 +9115,10 @@ function ccOpen() {
   if (sel) {
     // S'assurer que les options perso sont bien présentes
     ctPopulateCCTensioSelect();
-    const opts = Array.from(sel.options).map(o => o.value).filter(v => v);
-    sel.value = opts.includes(activeKey) ? activeKey : '';
+    // Affectation directe : un select refuse une valeur sans option
+    // correspondante et retombe sur '' (le placeholder) — inutile de
+    // pré-vérifier la liste.
+    sel.value = activeKey || '';
     sel.disabled = hasTensio;
     sel.style.opacity = hasTensio ? '.7' : '';
   }
