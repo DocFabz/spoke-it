@@ -7586,9 +7586,20 @@ function ctInjectAll() {
 // ── Peupler un select tensiomètre avec les perso ──────────────────────────────
 function ctPopulateSelect(sel) {
   if (!sel) return;
+  // Retirer l'option sélectionnée fait retomber le navigateur sur la première
+  // option sélectionnable (W. FANATYK, le placeholder étant disabled+hidden) :
+  // le select mentirait alors sur tmType, qui n'a pas bougé. On mémorise avant
+  // la purge et on restaure après le repeuplement.
+  const _prev = sel.value;
   Array.from(sel.options).forEach(o => { if (o.dataset.ctCustom || o.dataset.ctSep) o.remove(); });
+  const _restore = () => {
+    if (sel.value === _prev) return;
+    // Option disparue (tensio supprimé) → placeholder, jamais un repli muet
+    // sur un tensiomètre que l'utilisateur n'a pas choisi.
+    sel.value = Array.from(sel.options).some(o => o.value === _prev) ? _prev : '';
+  };
   const cts = ctLoadAll();
-  if (!cts.length) return;
+  if (!cts.length) { _restore(); return; }
   const sep = document.createElement('option');
   sep.disabled = true;
   sep.textContent = '── ' + t('ctMyTensios') + ' ──';
@@ -7603,6 +7614,7 @@ function ctPopulateSelect(sel) {
     if (isTmSelect) opt.className = 'tm-tensio-custom';
     sel.appendChild(opt);
   });
+  _restore();
 }
 
 function ctPopulateTensioSelect()   { ctPopulateSelect($id('tm-tensio-select')); }
