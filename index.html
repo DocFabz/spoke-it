@@ -6647,6 +6647,21 @@ function _wsharePointsEq(a, b) {
 // { cts: { id: 1 }, ccs: { 'tensioKey\u0000nomFinal': 1 } }. Les noms
 // retenus sont les noms APRÈS résolution de collision, puisque tmSpokeKey vient
 // d'être réécrit en conséquence.
+// ── Dédoublonnage de nom à l'import : suffixe incrémental intelligent ───────────
+// « roue » → « roue(1) », mais « roue(1) » → « roue(2) » (jamais « roue(1)(1) ») :
+// un suffixe (n) final est détecté sur le nom entrant et le compteur reprend à
+// n+1 sur le radical. exists(candidat) porte le test de collision propre à
+// chaque type (roues : (nom, wtype) — tensios : nom insensible à la casse —
+// chartes : (nom, tensioKey) via _wshareFindCC).
+function _wshareDedupName(base, exists) {
+  var m = /^(.*)\((\d+)\)$/.exec(base);
+  var stem = m ? m[1] : base;
+  var n = m ? parseInt(m[2], 10) + 1 : 1;
+  var nm = base;
+  while (exists(nm)) { nm = stem + '(' + n + ')'; n++; }
+  return nm;
+}
+
 function _wshareResolveDeps(deps, entry) {
   var allow = { cts: {}, ccs: {} };
   if (!deps || typeof deps !== 'object') return allow;
@@ -6655,12 +6670,11 @@ function _wshareResolveDeps(deps, entry) {
     if (!ct || typeof ct.id !== 'string' || typeof ct.name !== 'string') return;
     allow.cts[ct.id] = 1;
     if (cts.some(function(c) { return c && c.id === ct.id; })) return; // déjà présent
-    var base = ct.name, nm = base, n = 1;
     // ctSave refuse les doublons de nom en insensible à la casse : l'import
     // écrivant via ctPersist, l'invariant doit être répliqué ici.
-    while (cts.some(function(c) { return c && String(c.name).toLowerCase() === nm.toLowerCase(); })) {
-      nm = base + '(' + n + ')'; n++;
-    }
+    var nm = _wshareDedupName(ct.name, function(cand) {
+      return cts.some(function(c) { return c && String(c.name).toLowerCase() === cand.toLowerCase(); });
+    });
     cts.push({ id: ct.id, name: nm }); tCt = true;
   });
   var ren = {}; // 'tensioKey\u0000ancienNom' → nouveauNom
@@ -6673,8 +6687,7 @@ function _wshareResolveDeps(deps, entry) {
     }
     var nm = cc.name;
     if (local) {
-      var base = cc.name, n = 1;
-      while (_wshareFindCC(nm, cc.tensioKey, ccs)) { nm = base + '(' + n + ')'; n++; }
+      nm = _wshareDedupName(cc.name, function(cand) { return !!_wshareFindCC(cand, cc.tensioKey, ccs); });
       ren[cc.tensioKey + '\u0000' + cc.name] = nm;
     }
     ccs.push({ name: nm, tensioKey: cc.tensioKey, points: cc.points });
@@ -6734,10 +6747,9 @@ function wshareImport(event) {
       // saveConfig — → suffixe incrémental (1), (2)…
       var base = (typeof entry.name === 'string' && entry.name.trim()) ? entry.name.trim() : 'Wheel';
       var configs = loadConfigs();
-      var name = base, n = 1;
-      while (configs.some(function(c) { return c.name === name && (c.state.wtype || 'avant') === wh; })) {
-        name = base + '(' + n + ')'; n++;
-      }
+      var name = _wshareDedupName(base, function(cand) {
+        return configs.some(function(c) { return c.name === cand && (c.state.wtype || 'avant') === wh; });
+      });
       entry.name = name;
       entry.metaKey = wh === 'avant' ? 'frontLabel' : 'rearLabel';
       entry.ts = Date.now();
