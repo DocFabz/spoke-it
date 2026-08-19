@@ -4383,6 +4383,12 @@ function lsSet(key, val) {
   }
 }
 
+// Échec d'écriture pendant un import : lsSet a DÉJÀ prévenu l'utilisateur
+// (toast quota/stockage bloqué). On interrompt le flux avec un marqueur dédié
+// pour que le catch d'import n'affiche pas « fichier invalide » par-dessus —
+// le fichier était valide, c'est le stockage qui a refusé.
+function _lsWriteFail() { var e = new Error('lsWrite'); e._lsWrite = true; return e; }
+
 // ── Flash liseret sur la card type de roue (confirmation de chargement config) ──
 let _flashTimer = null;
 let _lastLoadTime = 0;
@@ -4791,9 +4797,19 @@ function readState() {
   };
 }
 
+// Le drapeau _applyingState neutralise markModified() et clearResults() pendant
+// la restauration. Sans try/finally, une exception dans le corps (state
+// malformé venu d'un fichier édité à la main) le laissait armé pour toute la
+// session : les deux fonctions devenaient des no-op silencieux. Le corps vit
+// dans _applyStateBody pour que le finally reste chirurgical.
 function applyState(s) {
   if (!s) return;
   _applyingState = true;
+  try { _applyStateBody(s); }
+  finally { _applyingState = false; }
+}
+
+function _applyStateBody(s) {
   $id('err').classList.remove('show'); currentErrKey = null; clearInvalids();
   $id('nb-rayons').value      = s.nbRayons;
   $id('diam-trou').value      = s.diamTrou;
@@ -5028,8 +5044,6 @@ function applyState(s) {
       hrClearLoadedRim();
     }
   }
-
-  _applyingState = false;
 }
 
 // ── Clear form ────────────────────────────────────────────────────────────────
@@ -6082,7 +6096,7 @@ function toggleSummaryCard() { toggleCard('sum-card-body',  'sum-card-chevron');
 // ── Configs (localStorage) ────────────────────────────────────────────────────
 const LS_KEY = 'spokeit_configs';
 function loadConfigs()        { try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch(e) { return []; } }
-function persistConfigs(cfg)  { lsSet(LS_KEY, JSON.stringify(cfg)); }
+function persistConfigs(cfg)  { return lsSet(LS_KEY, JSON.stringify(cfg)); }
 
 function saveConfig(nameOverride, riderIdOverride, skipConfirm) {
   const name = (nameOverride || '').trim();
@@ -6097,16 +6111,12 @@ function saveConfig(nameOverride, riderIdOverride, skipConfirm) {
     // Affectation rider : valeur explicite passée (string ou null) sinon on conserve l'existante
     if (typeof riderIdOverride !== 'undefined') entry.riderId = riderIdOverride || null;
     else if (ei2 >= 0 && configs2[ei2].riderId) entry.riderId = configs2[ei2].riderId;
+    // Historique existant : conservé tel quel — _snapRenum numérote toujours
+    // 1..n, un snapshot n°1 est donc garanti, il n'y a rien à compléter.
+    // Roue jamais snapshotée mais mesurée : snapshot n°1 créé à la volée.
     const existingSnapshots = ei2 >= 0 ? (configs2[ei2].snapshots || []) : [];
-    if (existingSnapshots.length > 0) {
-      if (!existingSnapshots.some(s => s.num === 1) && tmHasData()) {
-        existingSnapshots.unshift(_snapMakeEntry(1));
-        _snapRenum(existingSnapshots);
-      }
-      entry.snapshots = existingSnapshots;
-    } else if (tmHasData()) {
-      entry.snapshots = [_snapMakeEntry(1)];
-    }
+    if (existingSnapshots.length > 0) entry.snapshots = existingSnapshots;
+    else if (tmHasData()) entry.snapshots = [_snapMakeEntry(1)];
     if (ei2 >= 0) configs2.splice(ei2, 1, entry);
     else configs2.unshift(entry);
     persistConfigs(configs2);
@@ -6238,6 +6248,126 @@ function closePriv() {
   $id('priv-modal').classList.remove('show');
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// SOCLE COMMUN — partage & backup
+// ══════════════════════════════════════════════════════════════════════════════
+// Helpers utilisés par les TROIS portes d'entrée de données extérieures :
+// backup complet (importConfigs), partage de roue (wshareImport) et partage de
+// charte (cshareImport). Placés ici, avant leur premier consommateur, plutôt
+// que 200 à 470 lignes plus bas au milieu du partage de roue — où seul le
+// hoisting les rendait joignables et où le préfixe _wshare laissait croire à
+// un usage local.
+//
+// Ce qui reste propre au partage de roue (_wshareDepOf, _wshareHasVals,
+// _wshareFilterDeps) demeure dans sa section.
+
+// ── Identité d'une table de conversion ───────────────────────────────────────
+// tmType 'ct_*' et tmSpokeKey '★ *' sont des références LOCALES qui PORTENT la
+// donnée : sans leur table de conversion, les relevés bruts de tmDataFo/Fa (et
+// de snapshot.fo/fa) n'ont plus aucun sens — toKgf() renvoie null partout.
+// Contrairement aux noms hub/jante (simples libellés dont la géométrie voyage
+// dans le state), ces références doivent voyager avec la roue.
+
+// Miroir paramétré de tmStoreKey() — s'applique aussi aux snapshots, qui portent
+// chacun leur propre couple tmType/tmDTSub (cf. _snapMakeEntry).
+function _tmStoreKeyOf(tp, dtSub) {
+  if (!tp) return null;
+  if (tp.indexOf('ct_') === 0) return tp;
+  if (tp === 'dt') return 'dt_' + (dtSub || 'standard');
+  return tp;
+}
+
+// Recherche une charte perso par son identité (nom, tensioKey) — la même clé
+// que ccSave. Un nom seul ne suffit pas : il peut désigner deux courbes sur
+// deux tensiomètres différents. `pool` évite de re-parser localStorage dans
+// les boucles ; absent, la bibliothèque locale fait foi.
+function _ccFind(name, storeKey, pool) {
+  var arr = pool || ccLoadAll();
+  for (var i = 0; i < arr.length; i++) {
+    var c = arr[i];
+    if (!c || c.name !== name) continue;
+    if (c.tensioKey === storeKey) return c;
+  }
+  return null;
+}
+
+// ── Validation des chartes reçues de l'extérieur ─────────────────────────────
+// Trois portes d'entrée qui appliquaient trois niveaux de rigueur différents.
+// Source unique désormais.
+
+// Le tensioKey doit désigner une table RÉELLE. Sinon la charte n'est jamais
+// injectée (ccInjectAll sort sur `if (!tbl)`), n'apparaît dans aucun select —
+// donc indéboulonnable depuis la modale charte — et _cshareSelect appellerait
+// setTM() avec un type inconnu. Une charte inatteignable n'est pas une donnée,
+// c'est un déchet : refusée à l'entrée plutôt que laissée s'accumuler dans
+// tous les backups.
+function _ccTensioKnown(key, ctPool) {
+  if (typeof key !== 'string' || !key) return false;
+  // ct_* : l'existence se juge sur ctLoadAll, JAMAIS sur TM_TABLES —
+  // ctInjectAll/ccInjectAll y créent des entrées à la demande, un test sur la
+  // table validerait donc le fantôme qu'on cherche précisément à écarter.
+  if (key.indexOf('ct_') === 0) {
+    return (ctPool || ctLoadAll()).some(function(c) { return c && 'ct_' + c.id === key; });
+  }
+  return Object.prototype.hasOwnProperty.call(TM_TABLES, key);
+}
+
+// Validité structurelle : au moins deux points, chacun [reading, kgf]. La
+// validation était stricte côté cshareImport et quasi absente côté
+// wshare/backup, qui acceptaient points:[] ou points:[1,2,3].
+function _ccPointsValid(pts) {
+  return Array.isArray(pts) && pts.length >= 2 &&
+         pts.every(function(p) { return Array.isArray(p) && p.length >= 2; });
+}
+
+// ── Identité de contenu d'une charte ─────────────────────────────────────────
+// Points identiques ⇒ réutilisation de la charte locale (pas de doublon sur le
+// cas fréquent : deux monteurs ont la même charte). Points différents sous le
+// même nom ⇒ copie suffixée, jamais d'écrasement.
+function _ccPointsEq(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    var p = a[i], q = b[i];
+    if (!Array.isArray(p) || !Array.isArray(q) || p.length !== q.length) return false;
+    for (var j = 0; j < p.length; j++) {
+      var x = p[j], y = q[j];
+      if (x === null || y === null) { if (x !== y) return false; continue; }
+      if (parseFloat(x) !== parseFloat(y)) return false; // "58" ≡ 58.0
+    }
+  }
+  return true;
+}
+
+// ── Dédoublonnage de nom à l'import : suffixe incrémental intelligent ────────
+// « roue » → « roue(1) », mais « roue(1) » → « roue(2) » (jamais « roue(1)(1) ») :
+// un suffixe (n) final est détecté sur le nom entrant et le compteur reprend à
+// n+1 sur le radical. exists(candidat) porte le test de collision propre à
+// chaque type (roues : (nom, wtype) — tensios : nom insensible à la casse —
+// chartes : (nom, tensioKey) via _ccFind).
+function _importDedupName(base, exists) {
+  var m = /^(.*)\((\d+)\)$/.exec(base);
+  var stem = m ? m[1] : base;
+  var n = m ? parseInt(m[2], 10) + 1 : 1;
+  var nm = base;
+  while (exists(nm)) { nm = stem + '(' + n + ')'; n++; }
+  return nm;
+}
+
+// Réécrit tmSpokeKey selon la map de renommage 'tensioKey\u0000ancienNom' →
+// nouveauNom — state ET snapshots, chacun porte sa propre copie. Mutualisé
+// entre l'import de roue (_wshareResolveDeps) et l'import de backup.
+function _importApplyRen(entry, ren) {
+  if (!Object.keys(ren).length) return;
+  var apply = function(src) {
+    if (!src || !src.tmSpokeKey || src.tmSpokeKey.indexOf(CC_PREFIX) !== 0) return;
+    var k = _tmStoreKeyOf(src.tmType, src.tmDTSub);
+    var nn = ren[k + '\u0000' + src.tmSpokeKey.slice(CC_PREFIX.length)];
+    if (nn) src.tmSpokeKey = CC_PREFIX + nn;
+  };
+  apply(entry.state);
+  (entry.snapshots || []).forEach(apply);
+}
+
 // ── Export / Import JSON (toutes données) ─────────────────────────────────────
 // ── Préférence de nom de fichier d'export ────────────────────────────────────
 // Daté (défaut) : un fichier par jour, protège l'historique de sauvegardes.
@@ -6338,11 +6468,20 @@ function importConfigs(event) {
   const file = event.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
+    // ── Phase 1 : lecture, validation, écriture ──────────────────────────
+    // Tout échec ici se solde par un message d'erreur, jamais par « import
+    // réussi » : une écriture refusée (quota, stockage bloqué) ne doit plus
+    // pouvoir passer inaperçue derrière un toast vert.
     try {
       const data = JSON.parse(e.target.result);
-      if (!data.spokeit) throw new Error();
+      // Garde symétrique de celles de wshareImport / cshareImport : un fichier
+      // de partage porte spokeit:true mais un `kind`. Sans ce test il passait
+      // la validation, n'importait RIEN (aucune des collections attendues
+      // n'existe) et annonçait « ✓ importé » — un faux succès de la même
+      // famille que ceux corrigés ici. Rejeté proprement : ce n'est pas un
+      // backup, il faut passer par la modale de partage correspondante.
+      if (!data.spokeit || data.kind) throw new Error();
 
-      // ── 1. Tout persister d'abord ──
       // Tensios perso : l'id EST l'identité (chartes et roues référencent
       // ct_<id>), le nom n'est qu'une étiquette — match par id prioritaire.
       //   · id présent  ⇒ remplacement (restore exact, renommage compris) ;
@@ -6356,11 +6495,11 @@ function importConfigs(event) {
           if (!entry || typeof entry.name !== 'string' || !entry.id) return;
           const idx = existing.findIndex(c => c && c.id === entry.id);
           if (idx >= 0) { existing.splice(idx, 1, entry); return; }
-          const nm = _wshareDedupName(entry.name, cand =>
+          const nm = _importDedupName(entry.name, cand =>
             existing.some(c => c && String(c.name).toLowerCase() === cand.toLowerCase()));
           existing.unshift(nm === entry.name ? entry : Object.assign({}, entry, { name: nm }));
         });
-        ctPersist(existing);
+        if (!ctPersist(existing)) throw _lsWriteFail();
       }
 
       // Chartes perso : identité (nom, tensioKey) — même clé que ccSave et
@@ -6375,32 +6514,37 @@ function importConfigs(event) {
       const _bkpRen = {}; // 'tensioKey\u0000ancienNom' → nouveauNom
       if (Array.isArray(data.customCharts)) {
         const existing = ccLoadAll();
+        const _ctAfter = ctLoadAll(); // tensios perso du fichier inclus
         data.customCharts.forEach(entry => {
-          if (!entry || typeof entry.name !== 'string' ||
-              typeof entry.tensioKey !== 'string' || !Array.isArray(entry.points)) return;
+          if (!entry || typeof entry.name !== 'string' || !entry.name.trim() ||
+              typeof entry.tensioKey !== 'string' || !_ccPointsValid(entry.points)) return;
           if (entry.tensioKey === 'wf_old' || entry.tensioKey === 'wf_new') entry.tensioKey = 'wf';
-          const local = _wshareFindCC(entry.name, entry.tensioKey, existing);
+          // Les tensios perso du fichier sont déjà persistés (bloc précédent) :
+          // ctLoadAll() les voit. Une charte dont le tensiomètre n'existe ni
+          // dans le fichier ni en local ne serait joignable par aucun select.
+          if (!_ccTensioKnown(entry.tensioKey, _ctAfter)) return;
+          const local = _ccFind(entry.name, entry.tensioKey, existing);
           if (local) {
-            if (_wsharePointsEq(local.points, entry.points)) return; // identique
-            const nm = _wshareDedupName(entry.name, cand => !!_wshareFindCC(cand, entry.tensioKey, existing));
+            if (_ccPointsEq(local.points, entry.points)) return; // identique
+            const nm = _importDedupName(entry.name, cand => !!_ccFind(cand, entry.tensioKey, existing));
             _bkpRen[entry.tensioKey + '\u0000' + entry.name] = nm;
             existing.unshift({ name: nm, tensioKey: entry.tensioKey, points: entry.points });
             return;
           }
           existing.unshift(entry);
         });
-        ccPersist(existing);
+        if (!ccPersist(existing)) throw _lsWriteFail();
       }
 
       if (Array.isArray(data.configs)) {
         const existing = loadConfigs();
         data.configs.forEach(entry => {
           if (!entry || typeof entry.name !== 'string' || !entry.state || typeof entry.state !== 'object') return;
-          _wshareApplyRen(entry, _bkpRen); // roues du fichier → chartes renommées
+          _importApplyRen(entry, _bkpRen); // roues du fichier → chartes renommées
           const idx = existing.findIndex(c => c.name === entry.name && (c.state.wtype || 'avant') === (entry.state.wtype || 'avant'));
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
-        persistConfigs(existing);
+        if (!persistConfigs(existing)) throw _lsWriteFail();
       }
 
       if (Array.isArray(data.savedHubs)) {
@@ -6410,7 +6554,7 @@ function importConfigs(event) {
           const idx = existing.findIndex(h => h.name.toLowerCase() === entry.name.toLowerCase());
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
-        hrPersist('hub', existing);
+        if (!hrPersist('hub', existing)) throw _lsWriteFail();
       }
 
       if (Array.isArray(data.savedRims)) {
@@ -6420,7 +6564,7 @@ function importConfigs(event) {
           const idx = existing.findIndex(r => r.name.toLowerCase() === entry.name.toLowerCase());
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
-        hrPersist('rim', existing);
+        if (!hrPersist('rim', existing)) throw _lsWriteFail();
       }
 
       if (Array.isArray(data.riders) && typeof loadRiders === 'function') {
@@ -6430,7 +6574,7 @@ function importConfigs(event) {
           const idx = existing.findIndex(r => r.id === entry.id);
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
-        persistRiders(existing);
+        if (!persistRiders(existing)) throw _lsWriteFail();
       }
 
       // Atelier : singleton — la version importée écrase l'existante (même
@@ -6438,11 +6582,11 @@ function importConfigs(event) {
       // ne touche pas à l'atelier local. Champs connus uniquement.
       if (data.atelier && typeof data.atelier === 'object' &&
           (data.atelier.name || data.atelier.email || data.atelier.insta)) {
-        lsSet(LS_ATELIER, JSON.stringify({
+        if (!lsSet(LS_ATELIER, JSON.stringify({
           name:  String(data.atelier.name  || ''),
           email: String(data.atelier.email || ''),
           insta: String(data.atelier.insta || '')
-        }));
+        }))) throw _lsWriteFail();
       }
 
       // ── Filet deps : porteurs inconvertibles ──
@@ -6458,24 +6602,42 @@ function importConfigs(event) {
         if (p.tmType.indexOf('ct_') === 0 &&
             !_ctPool.some(function(c) { return c && 'ct_' + c.id === p.tmType; })) return true;
         if (p.tmSpokeKey && p.tmSpokeKey.indexOf(CC_PREFIX) === 0 &&
-            !_wshareFindCC(p.tmSpokeKey.slice(CC_PREFIX.length),
-                           _wshareStoreKey(p.tmType, p.tmDTSub), _ccPool)) return true;
+            !_ccFind(p.tmSpokeKey.slice(CC_PREFIX.length),
+                           _tmStoreKeyOf(p.tmType, p.tmDTSub), _ccPool)) return true;
         return false;
       });
 
-      // ── 2. Tout rafraîchir en une seule passe ──
+    } catch(err) {
+      // lsSet a déjà prévenu l'utilisateur en cas de refus du stockage : ne
+      // pas empiler « fichier invalide » par-dessus, le fichier était bon.
+      if (!(err && err._lsWrite)) showImportToast(t('importError'), true);
+      event.target.value = '';
+      return;
+    }
+
+    // ── Phase 2 : rafraîchir en une seule passe (best-effort) ────────────
+    // Les données SONT en base : plus aucun incident d'affichage ne doit se
+    // présenter comme un échec d'import.
+    try {
       ctRefreshAll(); // tables ct+cc (ctInjectAll→ccInjectAll) + dropdowns tensio
       tmPopulateSpokeSelect();
       if (typeof ctRenderList === 'function') ctRenderList();
       if (typeof ccRenderExisting === 'function') ccRenderExisting();
       renderConfigsList();
       hrUpdateButtons();
+    } catch(err) {}
 
-      closeSaveMgr();
-      showImportToast(t('importSuccess'), false);
-    } catch(err) {
-      showImportToast(t('importError'), true);
-    }
+    // Restauration = geste de mise en sécurité des données. Sans cela, le
+    // rappel se rearmait dans la seconde (lsSet vient d'horodater lastModif
+    // alors que lastBackup est resté ancien) : reprocher à l'utilisateur de
+    // ne rien sauvegarder à l'instant où il restaure une sauvegarde. On tait
+    // le rappel 24 h — même mécanique que « Pas maintenant », sans mentir sur
+    // la date du dernier export réel.
+    try { localStorage.setItem('spokeit_lastSnooze', String(Date.now())); } catch(e2) {}
+    if (typeof bkpSetPending === 'function') bkpSetPending(false);
+
+    closeSaveMgr();
+    showImportToast(t('importSuccess'), false);
     event.target.value = '';
   };
   reader.readAsText(file);
@@ -6513,32 +6675,10 @@ function _wshareFileName(name) {
   return base + _dateStamp() + '.json';
 }
 
-// ── Dépendances de mesure ────────────────────────────────────────────────────
-// tmType 'ct_*' et tmSpokeKey '★ *' sont des références LOCALES qui PORTENT la
-// donnée : sans leur table de conversion, les relevés bruts de tmDataFo/Fa (et
-// de snapshot.fo/fa) n'ont plus aucun sens — toKgf() renvoie null partout.
-// Contrairement aux noms hub/jante (simples libellés dont la géométrie voyage
-// dans le state), ces références doivent voyager avec la roue.
-// Invariant du fichier v2 : si des tensions sont présentes, leur table l'est aussi.
-
-// Miroir paramétré de tmStoreKey() — s'applique aussi aux snapshots, qui portent
-// chacun leur propre couple tmType/tmDTSub (cf. _snapMakeEntry).
-function _wshareStoreKey(tp, dtSub) {
-  if (!tp) return null;
-  if (tp.indexOf('ct_') === 0) return tp;
-  if (tp === 'dt') return 'dt_' + (dtSub || 'standard');
-  return tp;
-}
-
-function _wshareFindCC(name, storeKey, pool) {
-  var arr = pool || ccLoadAll();
-  for (var i = 0; i < arr.length; i++) {
-    var c = arr[i];
-    if (!c || c.name !== name) continue;
-    if (c.tensioKey === storeKey) return c;
-  }
-  return null;
-}
+// ── Dépendances de mesure (propre au partage de roue) ────────────────────────
+// Sur l'identité des tables et pourquoi elles doivent voyager avec la roue :
+// cf. SOCLE COMMUN plus haut. Invariant du fichier v2 : si des tensions sont
+// présentes, leur table de conversion l'est aussi.
 
 // Un « porteur » = le state vif OU un snapshot : { tmType, tmDTSub,
 // tmSpokeKey }. Renvoie { ok, ct, cc } ; ok=false → porteur inexploitable ailleurs.
@@ -6570,9 +6710,9 @@ function _wshareDepOf(src, ctPool, ccPool, allow) {
   }
   if (isCc) {
     var nm  = src.tmSpokeKey.slice(CC_PREFIX.length);
-    var key = _wshareStoreKey(src.tmType, src.tmDTSub);
+    var key = _tmStoreKeyOf(src.tmType, src.tmDTSub);
     if (allow && !allow.ccs[key + '\u0000' + nm]) { out.ok = false; return out; }
-    out.cc = _wshareFindCC(nm, key, ccPool);
+    out.cc = _ccFind(nm, key, ccPool);
     if (!out.cc) { out.ok = false; return out; }
   }
   return out;
@@ -6632,23 +6772,17 @@ function wshareExport() {
   state.loadedRimName = null;
   var name = (typeof _loadedConfigName !== 'undefined' && _loadedConfigName[wtype]) ? _loadedConfigName[wtype] : '';
   var entry = { name: name, metaKey: wtype === 'avant' ? 'frontLabel' : 'rearLabel', state: state, ts: Date.now() };
-  // Snapshots : même logique que saveConfig — ceux de la config chargée
-  // homonyme, complétés d'un snapshot n°1 depuis les données vives si absent ;
-  // roue jamais sauvegardée avec tensions vives → snapshot n°1 seul.
-  // loadConfigs() re-parse à chaque appel : la copie est déjà détachée du store.
+  // Snapshots : même logique que saveConfig — l'historique de la config
+  // chargée homonyme tel quel (numéroté 1..n par _snapRenum, donc complet) ;
+  // roue jamais snapshotée mais mesurée → snapshot n°1 depuis les données
+  // vives. loadConfigs() re-parse à chaque appel : la copie est déjà détachée
+  // du store.
   var snaps = [];
   if (name) {
     var cur = loadConfigs().find(function(c) { return c.name === name && (c.state.wtype || 'avant') === wtype; });
     if (cur && cur.snapshots) snaps = cur.snapshots;
   }
-  if (snaps.length > 0) {
-    if (!snaps.some(function(s) { return s.num === 1; }) && tmHasData()) {
-      snaps.unshift(_snapMakeEntry(1));
-      _snapRenum(snaps);
-    }
-  } else if (tmHasData()) {
-    snaps = [_snapMakeEntry(1)];
-  }
+  if (!snaps.length && tmHasData()) snaps = [_snapMakeEntry(1)];
   // `snaps` vient de loadConfigs(), qui re-parse à chaque appel : la copie est
   // détachée du store, filtrer et renuméroter ci-dessous ne touche donc PAS les
   // snapshots de l'expéditeur.
@@ -6702,62 +6836,18 @@ function wshareExportConfirm() {
   _wshareDownload(p);
 }
 
-// Insère les tables reçues sans JAMAIS écraser une entrée locale.
+// Insère les tables reçues sans JAMAIS écraser une entrée locale, et renvoie
+// la liste blanche des tables réellement apportées par le fichier :
+// { cts: { id: 1 }, ccs: { 'tensioKey\u0000nomFinal': 1 } } — noms APRÈS
+// résolution de collision, puisque tmSpokeKey vient d'être réécrit en
+// conséquence.
 //  ct : identifié par id (Date.now+random) — collision d'id impossible en
 //       pratique ; seul le nom peut entrer en conflit → suffixe (1), l'id reste,
 //       donc tmType n'a pas à être réécrit.
-//  cc : clé (nom, tensioKey) — points identiques ⇒ réutilisation (pas de doublon
-//       sur le cas fréquent : deux monteurs ont la même charte) ; points
-//       différents ⇒ copie « Nom(1) » + réécriture de tmSpokeKey dans le state
-//       ET dans chaque snapshot, qui en porte sa propre copie.
-function _wsharePointsEq(a, b) {
-  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
-  for (var i = 0; i < a.length; i++) {
-    var p = a[i], q = b[i];
-    if (!Array.isArray(p) || !Array.isArray(q) || p.length !== q.length) return false;
-    for (var j = 0; j < p.length; j++) {
-      var x = p[j], y = q[j];
-      if (x === null || y === null) { if (x !== y) return false; continue; }
-      if (parseFloat(x) !== parseFloat(y)) return false; // "58" ≡ 58.0
-    }
-  }
-  return true;
-}
-
-// Renvoie la liste blanche des tables réellement apportées par le fichier :
-// { cts: { id: 1 }, ccs: { 'tensioKey\u0000nomFinal': 1 } }. Les noms
-// retenus sont les noms APRÈS résolution de collision, puisque tmSpokeKey vient
-// d'être réécrit en conséquence.
-// ── Dédoublonnage de nom à l'import : suffixe incrémental intelligent ───────────
-// « roue » → « roue(1) », mais « roue(1) » → « roue(2) » (jamais « roue(1)(1) ») :
-// un suffixe (n) final est détecté sur le nom entrant et le compteur reprend à
-// n+1 sur le radical. exists(candidat) porte le test de collision propre à
-// chaque type (roues : (nom, wtype) — tensios : nom insensible à la casse —
-// chartes : (nom, tensioKey) via _wshareFindCC).
-function _wshareDedupName(base, exists) {
-  var m = /^(.*)\((\d+)\)$/.exec(base);
-  var stem = m ? m[1] : base;
-  var n = m ? parseInt(m[2], 10) + 1 : 1;
-  var nm = base;
-  while (exists(nm)) { nm = stem + '(' + n + ')'; n++; }
-  return nm;
-}
-
-// Réécrit tmSpokeKey selon la map de renommage 'tensioKey\u0000ancienNom' →
-// nouveauNom — state ET snapshots, chacun porte sa propre copie. Mutualisé
-// entre l'import de roue (_wshareResolveDeps) et l'import de backup.
-function _wshareApplyRen(entry, ren) {
-  if (!Object.keys(ren).length) return;
-  var apply = function(src) {
-    if (!src || !src.tmSpokeKey || src.tmSpokeKey.indexOf(CC_PREFIX) !== 0) return;
-    var k = _wshareStoreKey(src.tmType, src.tmDTSub);
-    var nn = ren[k + '\u0000' + src.tmSpokeKey.slice(CC_PREFIX.length)];
-    if (nn) src.tmSpokeKey = CC_PREFIX + nn;
-  };
-  apply(entry.state);
-  (entry.snapshots || []).forEach(apply);
-}
-
+//  cc : clé (nom, tensioKey) — points identiques ⇒ réutilisation (cf.
+//       _ccPointsEq) ; points différents ⇒ copie « Nom(1) » + réécriture de
+//       tmSpokeKey dans le state ET dans chaque snapshot, qui en porte sa
+//       propre copie (cf. _importApplyRen).
 function _wshareResolveDeps(deps, entry) {
   var allow = { cts: {}, ccs: {} };
   if (!deps || typeof deps !== 'object') return allow;
@@ -6768,32 +6858,36 @@ function _wshareResolveDeps(deps, entry) {
     if (cts.some(function(c) { return c && c.id === ct.id; })) return; // déjà présent
     // ctSave refuse les doublons de nom en insensible à la casse : l'import
     // écrivant via ctPersist, l'invariant doit être répliqué ici.
-    var nm = _wshareDedupName(ct.name, function(cand) {
+    var nm = _importDedupName(ct.name, function(cand) {
       return cts.some(function(c) { return c && String(c.name).toLowerCase() === cand.toLowerCase(); });
     });
     cts.push({ id: ct.id, name: nm }); tCt = true;
   });
   var ren = {}; // 'tensioKey\u0000ancienNom' → nouveauNom
   (Array.isArray(deps.ccs) ? deps.ccs : []).forEach(function(cc) {
-    if (!cc || typeof cc.name !== 'string' || !Array.isArray(cc.points)) return;
-    var local = _wshareFindCC(cc.name, cc.tensioKey, ccs);
-    if (local && _wsharePointsEq(local.points, cc.points)) {
+    if (!cc || typeof cc.name !== 'string' || !cc.name.trim() ||
+        typeof cc.tensioKey !== 'string' || !_ccPointsValid(cc.points)) return;
+    // `cts` porte déjà les tensiomètres perso arrivés dans deps.cts (boucle
+    // ci-dessus) : une charte ct_* sans son tensiomètre est donc écartée ici.
+    if (!_ccTensioKnown(cc.tensioKey, cts)) return;
+    var local = _ccFind(cc.name, cc.tensioKey, ccs);
+    if (local && _ccPointsEq(local.points, cc.points)) {
       allow.ccs[cc.tensioKey + '\u0000' + cc.name] = 1;
       return; // identique → réutilisée telle quelle
     }
     var nm = cc.name;
     if (local) {
-      nm = _wshareDedupName(cc.name, function(cand) { return !!_wshareFindCC(cand, cc.tensioKey, ccs); });
+      nm = _importDedupName(cc.name, function(cand) { return !!_ccFind(cand, cc.tensioKey, ccs); });
       ren[cc.tensioKey + '\u0000' + cc.name] = nm;
     }
     ccs.push({ name: nm, tensioKey: cc.tensioKey, points: cc.points });
     allow.ccs[cc.tensioKey + '\u0000' + nm] = 1;
     tCc = true;
   });
-  if (tCt) ctPersist(cts);
-  if (tCc) ccPersist(ccs);
+  if (tCt && !ctPersist(cts)) throw _lsWriteFail();
+  if (tCc && !ccPersist(ccs)) throw _lsWriteFail();
   if (tCt || tCc) ctRefreshAll(); // ccInjectAll inclus (via ctInjectAll)
-  _wshareApplyRen(entry, ren);
+  _importApplyRen(entry, ren);
   return allow;
 }
 
@@ -6801,6 +6895,9 @@ function wshareImport(event) {
   var file = event.target.files[0]; if (!file) return;
   var reader = new FileReader();
   reader.onload = function(e) {
+    // ── Phase 1 : lecture, validation, écriture ──────────────────────────
+    // `wh` et `name` sont déclarés en var : function-scoped, donc lisibles
+    // en phase 2 (et seulement si la phase 1 est allée jusqu'au bout).
     try {
       var data = JSON.parse(e.target.result);
       // Validation stricte : un backup complet a spokeit:true mais pas
@@ -6835,29 +6932,39 @@ function wshareImport(event) {
       // saveConfig — → suffixe incrémental (1), (2)…
       var base = (typeof entry.name === 'string' && entry.name.trim()) ? entry.name.trim() : 'Wheel';
       var configs = loadConfigs();
-      var name = _wshareDedupName(base, function(cand) {
+      var name = _importDedupName(base, function(cand) {
         return configs.some(function(c) { return c.name === cand && (c.state.wtype || 'avant') === wh; });
       });
       entry.name = name;
       entry.metaKey = wh === 'avant' ? 'frontLabel' : 'rearLabel';
       entry.ts = Date.now();
       configs.unshift(entry);
-      persistConfigs(configs);
-      // Chargement dans la card d'origine : bascule avant/arrière si nécessaire
-      // (loadConfig refuse un wtype différent). tmSetWheel si le module tension
-      // est affiché (il enchaîne setWheel + les syncs tension), setWheel sinon.
+      if (!persistConfigs(configs)) throw _lsWriteFail();
+    } catch(err) {
+      // lsSet a déjà prévenu en cas de refus du stockage : ne pas empiler
+      // « fichier invalide » par-dessus, le fichier était bon.
+      if (!(err && err._lsWrite)) showImportToast(t('wshareImportError'), true);
+      event.target.value = '';
+      return;
+    }
+
+    // ── Phase 2 : chargement dans la card (best-effort) ──────────────────
+    // La roue EST enregistrée : un incident de rendu ne doit plus ressortir
+    // en « fichier invalide » sur un import qui a réussi.
+    // Bascule avant/arrière si nécessaire (loadConfig refuse un wtype
+    // différent). tmSetWheel si le module tension est affiché (il enchaîne
+    // setWheel + les syncs tension), setWheel sinon.
+    try {
       if (wh !== wtype) {
         if ($id('tension-module').style.display !== 'none') tmSetWheel(wh);
         else setWheel(wh);
       }
       loadConfig(0);
       renderConfigsList();
-      closeWheelShareModal();
-      // split/join : String.replace interpréterait $& / $' dans un nom de roue.
-      showImportToast(t('wshareImportSuccess').split('{name}').join(name), false);
-    } catch(err) {
-      showImportToast(t('wshareImportError'), true);
-    }
+    } catch(err) {}
+    closeWheelShareModal();
+    // split/join : String.replace interpréterait $& / $' dans un nom de roue.
+    showImportToast(t('wshareImportSuccess').split('{name}').join(name), false);
     event.target.value = '';
   };
   reader.readAsText(file);
@@ -6870,7 +6977,7 @@ function wshareImport(event) {
 // ct_* ne désigne rien chez le destinataire — même invariant que le v2 roue).
 // Import : mécanique d'identité de _wshareResolveDeps — points identiques ⇒
 // charte locale réutilisée telle quelle ; homonyme divergent ⇒ suffixe
-// incrémental via _wshareDedupName — puis sélection automatique dans la card
+// incrémental via _importDedupName — puis sélection automatique dans la card
 // (miroir de la bascule avant/arrière du wheel import).
 
 function openChartShareModal() {
@@ -6900,8 +7007,8 @@ function cshareExport() {
     return;
   }
   var nm  = tmSpokeKey.slice(CC_PREFIX.length);
-  var key = _wshareStoreKey(tmType, tmDTSub);
-  var cc  = _wshareFindCC(nm, key);
+  var key = _tmStoreKeyOf(tmType, tmDTSub);
+  var cc  = _ccFind(nm, key);
   if (!cc) { showImportToast(t('cshareExportEmpty'), true); return; }
   var payload = { spokeit: true, kind: 'chart', v: 1,
                   cc: { name: cc.name, tensioKey: cc.tensioKey, points: cc.points } };
@@ -6957,6 +7064,9 @@ function cshareImport(event) {
   var file = event.target.files[0]; if (!file) return;
   var reader = new FileReader();
   reader.onload = function(e) {
+    // ── Phase 1 : lecture, validation, écriture ──────────────────────────
+    // `cc`, `finalName` et `reused` sont en var : function-scoped, donc
+    // lisibles en phase 2 si la phase 1 est allée jusqu'au bout.
     try {
       var data = JSON.parse(e.target.result);
       // Validation stricte : kind:'chart' obligatoire — un fichier roue ou un
@@ -6964,8 +7074,7 @@ function cshareImport(event) {
       if (!data.spokeit || data.kind !== 'chart' || !data.cc || typeof data.cc !== 'object' ||
           typeof data.cc.name !== 'string' || !data.cc.name.trim() ||
           typeof data.cc.tensioKey !== 'string' ||
-          !Array.isArray(data.cc.points) || data.cc.points.length < 2 ||
-          !data.cc.points.every(function(p) { return Array.isArray(p) && p.length >= 2; })) throw new Error();
+          !_ccPointsValid(data.cc.points)) throw new Error();
       var cc = data.cc;
       // ── Tensiomètre custom porteur : même mécanique que _wshareResolveDeps —
       // id déjà présent ⇒ réutilisé ; absent ⇒ ajouté, nom dédoublonné en
@@ -6981,36 +7090,48 @@ function cshareImport(event) {
         var cts = ctLoadAll();
         if (!cts.some(function(c) { return c && c.id === ctId; })) {
           if (!depCt) throw new Error(); // charte ct_* sans son tensio = inexploitable
-          var nmCt = _wshareDedupName(depCt.name, function(cand) {
+          var nmCt = _importDedupName(depCt.name, function(cand) {
             return cts.some(function(c) { return c && String(c.name).toLowerCase() === cand.toLowerCase(); });
           });
           cts.push({ id: ctId, name: nmCt });
-          ctPersist(cts);
+          if (!ctPersist(cts)) throw _lsWriteFail();
           ctRefreshAll();
         }
       }
+      // Tensiomètre fixe : la clé doit désigner une table réelle ('wf', 'pt',
+      // 'dt_standard'… ) — sinon la charte serait persistée sans jamais être
+      // injectée ni listée, et _cshareSelect appellerait setTM() dans le vide.
+      if (!_ccTensioKnown(cc.tensioKey)) throw new Error();
       // ── Charte : identique ⇒ réutilisée (aucun doublon, aucun suffixe) ;
       // homonyme divergent ⇒ nom(1), et nom(1) en collision ⇒ nom(2).
       var ccs = ccLoadAll();
-      var local = _wshareFindCC(cc.name, cc.tensioKey, ccs);
+      var local = _ccFind(cc.name, cc.tensioKey, ccs);
       var finalName = cc.name, reused = false;
-      if (local && _wsharePointsEq(local.points, cc.points)) {
+      if (local && _ccPointsEq(local.points, cc.points)) {
         reused = true;
       } else {
         if (local) {
-          finalName = _wshareDedupName(cc.name, function(cand) { return !!_wshareFindCC(cand, cc.tensioKey, ccs); });
+          finalName = _importDedupName(cc.name, function(cand) { return !!_ccFind(cand, cc.tensioKey, ccs); });
         }
         ccs.push({ name: finalName, tensioKey: cc.tensioKey, points: cc.points });
-        ccPersist(ccs);
+        if (!ccPersist(ccs)) throw _lsWriteFail();
         ccInjectAll();
       }
-      _cshareSelect(cc.tensioKey, finalName);
-      closeChartShareModal();
-      // split/join : String.replace interpréterait $& / $' dans un nom de charte.
-      showImportToast(t(reused ? 'cshareImportExists' : 'cshareImportSuccess').split('{name}').join(finalName), false);
     } catch(err) {
-      showImportToast(t('cshareImportError'), true);
+      // lsSet a déjà prévenu en cas de refus du stockage : ne pas empiler
+      // « fichier invalide » par-dessus, le fichier était bon.
+      if (!(err && err._lsWrite)) showImportToast(t('cshareImportError'), true);
+      event.target.value = '';
+      return;
     }
+
+    // ── Phase 2 : sélection dans la card (best-effort) ───────────────────
+    // La charte EST en base : un incident de sélection ne doit plus ressortir
+    // en « fichier invalide » sur un import qui a réussi.
+    try { _cshareSelect(cc.tensioKey, finalName); } catch(err) {}
+    closeChartShareModal();
+    // split/join : String.replace interpréterait $& / $' dans un nom de charte.
+    showImportToast(t(reused ? 'cshareImportExists' : 'cshareImportSuccess').split('{name}').join(finalName), false);
     event.target.value = '';
   };
   reader.readAsText(file);
@@ -7506,7 +7627,7 @@ const CC_PREFIX = '★ ';
 
 // ── localStorage ────────────────────────────────────────────────────────────
 function ccLoadAll()     { try { return JSON.parse(localStorage.getItem(CC_LS_KEY)) || []; } catch(e) { return []; } }
-function ccPersist(arr)  { lsSet(CC_LS_KEY, JSON.stringify(arr)); }
+function ccPersist(arr)  { return lsSet(CC_LS_KEY, JSON.stringify(arr)); }
 
 // ── Injecter les chartes custom dans TM_TABLES ──────────────────────────────
 function ccInjectAll() {
@@ -7558,7 +7679,13 @@ function ccInjectAll() {
       result.push(cc);
     }
   });
-  if (changed) ccPersist(result);
+  // `changed` ne couvre que la normalisation wf_old/wf_new. La déduplication
+  // par (nom, tensioKey) construite dans `result` était sinon jetée en
+  // silence : les doublons survivaient en base, repartaient dans les exports,
+  // et au réimport le second était vu comme « homonyme divergent » — un
+  // renommage parasite qui redirigeait vers la mauvaise courbe des roues
+  // pointant légitimement le premier.
+  if (changed || result.length !== customs.length) ccPersist(result);
 })();
 
 // ── Injecter les chartes personnalisées dès que toutes les tables sont prêtes ──
@@ -7571,7 +7698,7 @@ ccInjectAll();
 const CT_LS_KEY = 'spokeit_custom_tensios';
 
 function ctLoadAll()    { try { return JSON.parse(localStorage.getItem(CT_LS_KEY)) || []; } catch(e) { return []; } }
-function ctPersist(arr) { lsSet(CT_LS_KEY, JSON.stringify(arr)); }
+function ctPersist(arr) { return lsSet(CT_LS_KEY, JSON.stringify(arr)); }
 
 // Créer une table vide dans TM_TABLES pour chaque tensiomètre custom
 function ctInjectAll() {
@@ -7857,7 +7984,12 @@ function renderEraseMgr(openKeys) {
   acc.appendChild(makeAccSection('eraseMgrCustomTensios', tensioItems, openKeys));
 
   // Rayons perso
-  const fixedLabels = { wf:'W. FANATYK', pt:'PARK TOOL TM-1', dt:'DT SWISS', pk:'P&KLIE', un:'UNIOR 1752', pillar:'PILLAR 50mm' };
+  // Clés TELLES QU'ELLES SONT EN STORAGE : une charte ne porte jamais 'dt',
+  // mais 'dt_standard' ou 'dt_aerolite2' (cf. options de #cc-tensio). L'entrée
+  // 'dt' était morte et les chartes DT s'affichaient avec leur clé brute.
+  const fixedLabels = { wf:'W. FANATYK', pt:'PARK TOOL TM-1',
+    dt_standard:'DT SWISS (STANDARD)', dt_aerolite2:'DT SWISS (AEROLITE II)',
+    pk:'P&KLIE', un:'UNIOR 1752', pillar:'PILLAR 50mm' };
   function tensioLabel(key) {
     if (fixedLabels[key]) return fixedLabels[key];
     const ct = tensios.find(c => 'ct_' + c.id === key);
@@ -9096,6 +9228,14 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && $id('cshare-modal') && $id('cshare-modal').classList.contains('show')) {
     closeChartShareModal();
   }
+  // Placé APRÈS le garde bkp-export (qui sort en return) : Escape ferme
+  // d'abord la modale « Nom du fichier », pas le Backup manager qui la porte.
+  if (e.key === 'Escape' && $id('savemgr-modal') && $id('savemgr-modal').classList.contains('show')) {
+    closeSaveMgr();
+  }
+  if (e.key === 'Escape' && $id('snap-modal') && $id('snap-modal').classList.contains('show')) {
+    snapClose();
+  }
   if (e.key === 'Escape' && $id('picker-popup').classList.contains('show')) {
     closePicker();
   }
@@ -9551,12 +9691,12 @@ function ccDeleteDirect(idx, itemEl) {
     ccPersist(customs);
     ccInjectAll();
     // Clé d'identité de la charte supprimée : couple (tensioKey, nom)
-    // — même sémantique que le partage de roue (_wshareStoreKey).
+    // — même sémantique que les imports (cf. SOCLE COMMUN, _tmStoreKeyOf).
     const deadTensio = removed.tensioKey;
     const deadKey    = CC_PREFIX + removed.name;
     const refsDead   = function(tp, dtSub, spokeKey) {
       return spokeKey === deadKey &&
-             _wshareStoreKey(tp, dtSub) === deadTensio;
+             _tmStoreKeyOf(tp, dtSub) === deadTensio;
     };
     // Données vives : reset uniquement si le couple correspond (le nom seul
     // ne suffit pas — une charte homonyme peut exister sur un autre tensio).
@@ -14702,7 +14842,7 @@ function hrLoadAll(type) {
   try { return JSON.parse(localStorage.getItem(type === 'hub' ? LS_HUBS : LS_RIMS)) || []; } catch(e) { return []; }
 }
 function hrPersist(type, arr) {
-  lsSet(type === 'hub' ? LS_HUBS : LS_RIMS, JSON.stringify(arr));
+  return lsSet(type === 'hub' ? LS_HUBS : LS_RIMS, JSON.stringify(arr));
 }
 
 // ── Read hub data from form ───────────────────────────────────────────────────
@@ -17474,8 +17614,9 @@ document.addEventListener('keydown', function(e) {
     try { return JSON.parse(localStorage.getItem(LS_RIDERS)) || []; } catch(e) { return []; }
   };
   function persistRiders(arr) {
-    if (typeof lsSet === 'function') lsSet(LS_RIDERS, JSON.stringify(arr));
-    else localStorage.setItem(LS_RIDERS, JSON.stringify(arr));
+    if (typeof lsSet === 'function') return lsSet(LS_RIDERS, JSON.stringify(arr));
+    try { localStorage.setItem(LS_RIDERS, JSON.stringify(arr)); return true; }
+    catch(e) { return false; }
   }
   window.persistRiders = persistRiders;
   window.riderById = function(id) {
