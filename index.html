@@ -9235,13 +9235,16 @@ function updateDTTip() {
 }
 
 // ── Verrou du select rayon : DÉRIVÉ de l'état, jamais mémorisé ───────────────
-// Trois appelants de tmSyncLocks(), et trois seulement : tmUpdateBadges (donc
-// tout tmBuildTable, qui l'ouvre — chargement de roue, de snapshot, bascule de
-// tensiomètre, reset vocal), tmPopulateSpokeSelect (chemins qui repeuplent sans
-// reconstruire la table) et tmSyncResultAfterEdit (édition d'une cellule, ✕
-// d'en-tête, Clear, re-clic de nappe EF). Tout le reste y arrive par l'un des
-// trois : ajouter un appel « au cas où » ne protège de rien et rend le graphe
-// illisible.
+// La règle d'appel : tout chemin qui change ce qui RESTE de relevés repose les
+// verrous, et il le fait par tmSyncLocks() — jamais en touchant un sélecteur
+// lui-même. Quatre familles y mènent : tmUpdateBadges (donc tout tmBuildTable,
+// qui l'ouvre — chargement de roue, de snapshot, bascule de tensiomètre, reset
+// vocal), tmPopulateSpokeSelect (repeuplement sans reconstruction de table),
+// tmSyncResultAfterEdit (blur de cellule, ✕ d'en-tête, Clear, re-clic de nappe
+// EF) et les deux commits par valeur d'efCommitCurrent, qui ne passent par
+// aucune des trois. Un appel ajouté « au cas où » ailleurs ne protège de rien :
+// si un chemin manque, c'est qu'il ne rejoint aucune de ces familles, et c'est
+// ÇA qu'il faut corriger.
 // Un rayon fige la charte qui a converti les relevés AFFICHÉS : tant qu'il en
 // reste un dans SA colonne, en changer les rendrait faux sans prévenir. Rien
 // d'autre ne le fige — ni les relevés parqués d'un autre tensiomètre (convertis
@@ -11112,7 +11115,12 @@ function tmUpdateBadges() {
   };
   if (ndsSub) ndsSub.textContent = subOf(_ord.nds);
   if (dsSub)  dsSub.textContent  = subOf(_ord.ds);
-  // (Badge roue chargée : posé par tmSyncLocks() ci-dessus.)
+  // Badge roue chargée. tmSyncLocks() ci-dessus ne pose que les VERROUS : le
+  // nom, la capsule rider et les badges hub/rim sont l'autre moitié, et c'est
+  // ici qu'ils se rafraîchissent. Le double passage sur les verrous coûte six
+  // classList.toggle, le reparse localStorage ne se paie que sur ce chemin-ci
+  // — froid : reconstruction de table, jamais une valeur saisie.
+  _refreshLoadedBadges();
   // Badge unité : ready si tensio + rayon + nb rayons tous définis
   tmUpdateUnitBadge();
 }
