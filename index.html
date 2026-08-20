@@ -4636,39 +4636,27 @@ function markModified() {
   _refreshLoadedBadges();
 }
 
-// Deux rythmes, deux fonctions. Les VERROUS dépendent de ce qui reste de
-// relevés : ils changent à chaque valeur saisie ou effacée, et se reposent en
-// pur DOM. Les BADGES (nom de roue, capsule rider, hub/rim) dépendent de la
-// roue chargée : ils ne bougent qu'au chargement, à la sauvegarde ou à la
-// désaffectation — et leur rafraîchissement reparse localStorage
-// (_refreshLoadedRiderChip → loadConfigs). Les tenir dans une seule fonction
-// faisait payer ce parse à chaque rayon dicté, exactement ce que
-// snapRefreshBtnFast avait été écrit pour éviter deux lignes plus haut.
-function _refreshLoadedLocks() {
-  const name = _loadedConfigName[wtype];
-  // Verrouiller/déverrouiller les boutons hub type
-  const _lockHub = !!name && !_cfgFillMode[wtype];
-  $id('btn-hub-jbend').classList.toggle('locked', _lockHub && hubType !== 'jbend');
-  $id('btn-hub-sp').classList.toggle('locked', _lockHub && hubType !== 'straightpull');
-  // Roue incomplète : nb rayons figé si des relevés en dépendent — vifs,
-  // parqués sur un autre tensiomètre, ou déjà en snapshot.
-  $id('nb-rayons').classList.toggle('locked', !!name && _cfgFillMode[wtype] && tmAnyReadings());
-  // Le différentiel est figé dans les mêmes conditions, sur les deux toggles.
-  { const _dl = _spokeDiffLocked();
-    ['spoke-diff-row', 'tm-spoke-diff-toggle'].forEach(id => {
-      const el = $id(id);
-      const wrap = el && el.classList.contains('diff-toggle-wrap') ? el : (el && el.closest ? el.closest('.diff-toggle-wrap') : null);
-      if (wrap) wrap.classList.toggle('locked', _dl);
-    }); }
-}
-
-// Badges + verrous : tout chemin qui change la roue AFFICHÉE ou AFFECTÉE.
+// Deux rythmes, deux fonctions — mais UN SEUL jeu de verrous. Les VERROUS
+// (tmSyncLocks) dépendent de ce qui reste de relevés et de la roue affectée :
+// ils changent à chaque valeur saisie ou effacée, et se reposent en pur DOM.
+// Les BADGES (nom de roue, capsule rider, hub/rim) dépendent de la roue
+// chargée, ne bougent qu'au chargement / à la sauvegarde / à la désaffectation,
+// et leur rafraîchissement reparse localStorage (_refreshLoadedRiderChip →
+// loadConfigs) : les mêler aux verrous ferait payer ce parse à chaque rayon
+// dicté, ce que snapRefreshBtnFast a été écrit pour éviter.
+// La séparation porte donc sur le COÛT, jamais sur le périmètre : scinder les
+// verrous eux-mêmes en « côté calculateur » et « côté tension » laissait les
+// chemins qui n'appellent que _refreshLoadedBadges (flashWheelCard,
+// snapRegisterAndSave, markModified) n'en reposer que la moitié.
 function _refreshLoadedBadges() {
   const name = _loadedConfigName[wtype];
   _setBadge('cfg-loaded-name', 'cfg-loaded-text', name);
   _setBadge('tm-cfg-loaded-name', 'tm-cfg-loaded-text', name);
   _refreshLoadedRiderChip(name);
-  _refreshLoadedLocks();
+  // Verrous : flashWheelCard() pose _loadedConfigName APRÈS applyState — donc
+  // après que le module tension a déjà calculé ses verrous sur une roue encore
+  // non affectée. C'est ici, et seulement ici, qu'ils deviennent justes.
+  tmSyncLocks();
   // Badges hub et rim (per-wheel)
   if (typeof hrRefreshBadges === 'function') hrRefreshBadges();
 }
@@ -9235,17 +9223,27 @@ function updateDTTip() {
   tip.textContent = t(key);
 }
 
-// ── Verrou du select rayon : DÉRIVÉ de l'état, jamais mémorisé ───────────────
-// La règle d'appel : tout chemin qui change ce qui RESTE de relevés repose les
-// verrous, et il le fait par tmSyncLocks() — jamais en touchant un sélecteur
-// lui-même. Quatre familles y mènent : tmUpdateBadges (donc tout tmBuildTable,
-// qui l'ouvre — chargement de roue, de snapshot, bascule de tensiomètre, reset
-// vocal), tmPopulateSpokeSelect (repeuplement sans reconstruction de table),
-// tmSyncResultAfterEdit (blur de cellule, ✕ d'en-tête, Clear, re-clic de nappe
-// EF) et les deux commits par valeur d'efCommitCurrent, qui ne passent par
-// aucune des trois. Un appel ajouté « au cas où » ailleurs ne protège de rien :
-// si un chemin manque, c'est qu'il ne rejoint aucune de ces familles, et c'est
-// ÇA qu'il faut corriger.
+// ── Verrous du module tension : DÉRIVÉS de l'état, jamais mémorisés ──────────
+// Deux faits, et deux seulement, décident de tous les verrous : ce qui RESTE de
+// relevés, et la roue AFFECTÉE. Les deux bougent à des instants distincts — une
+// valeur saisie ne change pas la roue, un chargement ne change pas les relevés
+// déjà restaurés — d'où la règle : tout chemin qui touche à l'un OU à l'autre
+// repose les verrous, et le fait par tmSyncLocks(), jamais en écrivant sur un
+// sélecteur lui-même.
+// Cinq appelants, cinq familles :
+//   _refreshLoadedBadges   la roue affectée a changé (chargement, sauvegarde
+//                          sous un nom, désaffectation). C'est aussi par lui
+//                          que passe tmUpdateBadges, donc tout tmBuildTable —
+//                          snapshot chargé, bascule de tensiomètre, reset vocal.
+//   tmPopulateSpokeSelect  repeuplement des dropdowns sans reconstruction.
+//   tmSyncResultAfterEdit  blur de cellule, ✕ d'en-tête, Clear, nappe EF.
+//   efCommitCurrent  (×2)  commit par valeur, les deux branches — ne rejoignent
+//                          aucune des familles ci-dessus.
+//   listener nb-rayons     garde autoritaire : la valeur est annulée, le verrou
+//                          remis dans la foulée.
+// Un appel ajouté « au cas où » ailleurs ne protège de rien : si un chemin
+// manque, c'est qu'il ne rejoint aucune de ces familles, et c'est ÇA qu'il faut
+// corriger.
 // Un rayon fige la charte qui a converti les relevés AFFICHÉS : tant qu'il en
 // reste un dans SA colonne, en changer les rendrait faux sans prévenir. Rien
 // d'autre ne le fige — ni les relevés parqués d'un autre tensiomètre (convertis
@@ -9315,12 +9313,23 @@ function tmSyncLocks() {
       clear.style.pointerEvents = lock[side] ? 'none' : '';
     });
 
-  // Verrous côté calculateur (nb-rayons, boutons hub, toggle différentiel) :
-  // même fait, même instant. Les chemins de relevés n'ont plus à les appeler
-  // séparément — c'est cette dispersion qui créait l'asymétrie. La variante
-  // _locks, sans les badges, laisse cet appel gratuit en localStorage : il
-  // tourne à chaque valeur saisie.
-  _refreshLoadedLocks();
+  // Verrous côté calculateur — même fait, même instant, même fonction. Aucun
+  // accès au stockage ici : cet appel tourne à chaque valeur saisie.
+  const name = _loadedConfigName[wtype];
+  // Boutons hub type
+  const _lockHub = !!name && !_cfgFillMode[wtype];
+  $id('btn-hub-jbend').classList.toggle('locked', _lockHub && hubType !== 'jbend');
+  $id('btn-hub-sp').classList.toggle('locked', _lockHub && hubType !== 'straightpull');
+  // Roue incomplète : nb rayons figé si des relevés en dépendent — vifs,
+  // parqués sur un autre tensiomètre, ou déjà en snapshot.
+  $id('nb-rayons').classList.toggle('locked', !!name && _cfgFillMode[wtype] && tmAnyReadings());
+  // Le différentiel est figé dans les mêmes conditions, sur les deux toggles.
+  { const _dl = _spokeDiffLocked();
+    ['spoke-diff-row', 'tm-spoke-diff-toggle'].forEach(id => {
+      const el = $id(id);
+      const wrap = el && el.classList.contains('diff-toggle-wrap') ? el : (el && el.closest ? el.closest('.diff-toggle-wrap') : null);
+      if (wrap) wrap.classList.toggle('locked', _dl);
+    }); }
 }
 
 // ── onchange sur le dropdown de rayons ───────────────────────────────────────
@@ -11063,13 +11072,8 @@ function tmUpdateBadges() {
   // Nb rayons : lire depuis le calculateur
   const nb = parseInt($id('nb-rayons').value) || 0;
   const tmSel = $id('tm-nb-select');
-  if (tmSel) tmSel.value = nb > 0 ? String(nb) : ''; // le verrou, lui, est à tmSyncLocks()
-
-  // Verrous (nb + rayon) : source unique tmSyncLocks(). Point de passage de tous
-  // les chemins qui reconstruisent la table (tmBuildTable ouvre par
-  // tmUpdateBadges) : chargement de roue, de snapshot, bascule de tensiomètre,
-  // reset vocal.
-  tmSyncLocks();
+  // La VALEUR seulement : son verrou est posé plus bas, par _refreshLoadedBadges.
+  if (tmSel) tmSel.value = nb > 0 ? String(nb) : '';
 
   // Type de roue
   tmSyncWheelButtons();
@@ -11116,11 +11120,10 @@ function tmUpdateBadges() {
   };
   if (ndsSub) ndsSub.textContent = subOf(_ord.nds);
   if (dsSub)  dsSub.textContent  = subOf(_ord.ds);
-  // Badge roue chargée. tmSyncLocks() ci-dessus ne pose que les VERROUS : le
-  // nom, la capsule rider et les badges hub/rim sont l'autre moitié, et c'est
-  // ici qu'ils se rafraîchissent. Le double passage sur les verrous coûte six
-  // classList.toggle, le reparse localStorage ne se paie que sur ce chemin-ci
-  // — froid : reconstruction de table, jamais une valeur saisie.
+  // Badges roue chargée ET verrous : _refreshLoadedBadges() porte les deux.
+  // Le reparse localStorage ne se paie donc que sur ce chemin — froid :
+  // reconstruction de table, jamais une valeur saisie (celles-ci appellent
+  // tmSyncLocks() en direct).
   _refreshLoadedBadges();
   // Badge unité : ready si tensio + rayon + nb rayons tous définis
   tmUpdateUnitBadge();
