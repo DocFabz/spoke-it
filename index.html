@@ -235,8 +235,7 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
    restent lisibles — c'est un choix, pas une désactivation. */
 .cshare-pick-btn          { width:100%; justify-content:flex-start; opacity:.55 }
 .cshare-pick-btn.selected  { opacity:1; border-color:rgba(126,200,227,.7); background:rgba(126,200,227,.1) }
-.cshare-pick-side         { font-size:.55rem; font-weight:700; letter-spacing:.1em; flex-shrink:0; width:2.2rem }
-.cshare-pick-name         { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-transform:none; letter-spacing:.04em; color:var(--text) }
+.cshare-pick-name         { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-transform:none; letter-spacing:.04em; color:var(--text) }
 
 /* ── Modal suppression tensiomètre perso ── */
 .erasemgr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9982; opacity:0; transition:opacity .22s; display:none }
@@ -4745,6 +4744,9 @@ let tmSpokeFa = null;
 // Rayon effectif d'une rangée de saisie ('fo' | 'fa'). Point de résolution
 // unique : hors différentiel les deux rangées partagent tmSpokeFo.
 function tmSpokeOf(side) {
+  if (side !== 'fo' && side !== 'fa') {
+    console.warn('tmSpokeOf: rangée non spécifiée (' + side + ') — repli sur fo', new Error().stack);
+  }
   return (spokeDiff && side === 'fa') ? tmSpokeFa : tmSpokeFo;
 }
 // Sélection complète : en différentiel, une seule charte ne convertit rien.
@@ -4758,6 +4760,9 @@ function _cshareCandidates() {
   };
   add('fo', tmSpokeFo);
   if (spokeDiff) add('fa', tmSpokeFa);
+  // Même charte sur les deux rangées ⇒ un seul candidat : c'est le même objet
+  // en storage, le « choix » n'en serait pas un.
+  if (out.length === 2 && out[0].key === out[1].key) out.length = 1;
   return out;
 }
 
@@ -7695,21 +7700,18 @@ function _cshareRenderPick(cand) {
   if (cand.length < 2) { wrap.style.display = 'none'; return; }
   wrap.style.display = 'flex';
   cand.forEach(function(c) {
-    // Le libellé de côté suit la rangée, comme partout ailleurs : la rangée fo
-    // est le DS sur roue arrière et le NDS sur roue avant.
-    var sideTxt = diffSideLabel(c.side, wtype);
+    // Une charte n'appartient pas à une rangée : elle s'identifie par son nom,
+    // exactement comme dans le picker de rayons. La rangée reste la clé
+    // interne du choix (dataset.side), jamais un libellé affiché.
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'picker-btn cshare-pick-btn' + (c.side === _cshareChoice ? ' selected' : '');
     btn.dataset.side = c.side;
     btn.onclick = function() { _cshareSetChoice(c.side); };
-    var sp = document.createElement('span');
-    sp.className = 'cshare-pick-side ' + (c.side === 'fo' ? 'diff-side-fo' : 'diff-side-fa');
-    sp.textContent = sideTxt;
     var nm = document.createElement('span');
     nm.className = 'cshare-pick-name';
     nm.textContent = c.name;
-    btn.appendChild(sp); btn.appendChild(nm);
+    btn.appendChild(nm);
     list.appendChild(btn);
   });
 }
@@ -9589,7 +9591,7 @@ var _tmTcOorTimer = null;        // timer d'affichage de la plage OOR (annulable
 function tmTcOpen(side) {
   _tmTcSide = side || 'fo';
   if (!tmSpokeOf(_tmTcSide)) return;
-  const pts = tmGetPoints();
+  const pts = tmGetPoints(_tmTcSide);
   if (!pts || !pts.length) return;
   $id('tm-tc-spoke-label').innerHTML = `${t('tmSpokeLabel')}\u00a0: <strong style="color:var(--text)">${escHtml(tmSpokeOf(_tmTcSide).replace(/^__[A-Z ]+__/, ''))}</strong>`;
 
@@ -10150,7 +10152,7 @@ function ccOpen(side) {
 
   // ── Rayon standard sélectionné → pré-remplir avec les données de la table ─
   } else if (_ccKey) {
-    const pts = tmGetPoints(); // [[reading, kgf], ...]
+    const pts = tmGetPoints(_ccSide); // [[reading, kgf], ...]
     if (pts && pts.length) {
       $id('cc-name').value = CC_PREFIX + _ccKey.replace(/^__[A-Z ]+__/, '');
       $id('cc-name').readOnly = true;
@@ -13419,7 +13421,8 @@ function efPulseDot() {
 
   var step = efSteps[efCurrent];
   // Le côté est obligatoire : en différentiel, chaque colonne a sa charte, et
-  // toKgf() sans second argument retombe silencieusement sur celle de fo.
+  // toKgf() sans second argument retomberait sur celle de fo (cf. le garde de
+  // rangée dans tmSpokeOf, qui signale l'omission en console).
   var val  = step ? toKgf(step.side === 'fo' ? tmData.fo[step.idx] : tmData.fa[step.idx], step.side) : null;
   if (val === null && efCurrent > 0) {
     step = efSteps[efCurrent - 1];
