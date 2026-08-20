@@ -5216,11 +5216,10 @@ function _applyStateBody(s) {
     // loadConfig() sort en amont si cfg.state.wtype diffère. Les lignes de
     // réordonnancement plus bas ont toujours lu wtype : une seule source ici
     // évite que libellés et disposition puissent se contredire.
-    const isArriere = wtype === 'arriere';
-    const foKey = s.rtagFoKey || (isArriere ? 'rtagDriveSideRear'    : 'rtagNonDriveSideFront');
-    const faKey = s.rtagFaKey || (isArriere ? 'rtagNonDriveSideRear' : 'rtagDriveSideFront');
-    const arbFoKey = isArriere ? 'driveSide'    : 'nonDriveSide';
-    const arbFaKey = isArriere ? 'nonDriveSide' : 'driveSide';
+    const foKey = s.rtagFoKey || diffRtagKey('fo', wtype);
+    const faKey = s.rtagFaKey || diffRtagKey('fa', wtype);
+    const arbFoKey = diffSideKey('fo', wtype);
+    const arbFaKey = diffSideKey('fa', wtype);
     const rFo = $id('rtag-fo'); rFo.textContent = t(foKey); rFo.dataset.i18nKey = foKey;
     const rFa = $id('rtag-fa'); rFa.textContent = t(faKey); rFa.dataset.i18nKey = faKey;
     const rg = document.querySelector('.rg'), rcFo = document.querySelector('.rc.fo'), rcFa = document.querySelector('.rc.fa');
@@ -6100,6 +6099,17 @@ function diffSideKey(row, wh) {
   return diffSideLabel(row, wh) === 'DS' ? 'driveSide' : 'nonDriveSide';
 }
 
+// Clé i18n du bandeau des cards de longueur (« CÔTÉ DROIT (DS) »). Même règle
+// que diffSideKey, autre jeu de clés : celles-ci portent aussi le type de roue,
+// ce qui autorise un jour un libellé différent à l'avant sans toucher au reste.
+// Les quatre clés existent dans les deux langues ; les composer ici supprime
+// les trois recopies de la règle rangée→côté (applyState, calc, PDF).
+function diffRtagKey(row, wh) {
+  return 'rtag'
+       + (diffSideLabel(row, wh) === 'DS' ? 'DriveSide' : 'NonDriveSide')
+       + (wh === 'arriere' ? 'Rear' : 'Front');
+}
+
 // Libellé composé du module tension : « Côté Gauche (NDS) » / « Côté Droit
 // (DS) ». La main et l'abréviation ne sont pas deux informations mais une
 // seule — le NDS est toujours la colonne gauche — donc les deux se dérivent
@@ -6348,12 +6358,12 @@ function calc() {
   const LfoDisplay = isArriere ? Lfo  : Lfa,  LfaDisplay = isArriere ? Lfa  : Lfo;
   const eFoDisplay = isArriere ? eFo  : eFa,  eFaDisplay = isArriere ? eFa  : eFo;
   const tFoDisplay = isArriere ? tDS  : tNDS, tFaDisplay = isArriere ? tNDS : tDS;
-  // Roue arrière : fo=DS, fa=NDS — Roue avant : fo=NDS, fa=DS
-  const keyFo = isArriere ? 'rtagDriveSideRear'    : 'rtagNonDriveSideFront';
-  const keyFa = isArriere ? 'rtagNonDriveSideRear' : 'rtagDriveSideFront';
-  // Clés courtes pour l'arbitrage (labels compacts)
-  const arbKeyFo = isArriere ? 'driveSide'    : 'nonDriveSide';
-  const arbKeyFa = isArriere ? 'nonDriveSide' : 'driveSide';
+  // Bandeaux des cards de longueur et libellés courts de l'arbitrage : la règle
+  // rangée→côté est celle de toute l'app, elle n'est pas réécrite ici.
+  const keyFo = diffRtagKey('fo', wtype);
+  const keyFa = diffRtagKey('fa', wtype);
+  const arbKeyFo = diffSideKey('fo', wtype);
+  const arbKeyFa = diffSideKey('fa', wtype);
 
   $id('r-fo').textContent = LfoDisplay.toFixed(2); $id('r-fa').textContent = LfaDisplay.toFixed(2);
 
@@ -6389,6 +6399,13 @@ function calc() {
   const sl = spokeDiff
     ? diffPairStr(wtype, spokeSectionStr({ d: sdFo, a: saFo }), spokeSectionStr({ d: sdFa, a: saFa }))
     : spokeSectionStr({ d: sd, a: sa });
+  // ATTENTION — cet objet porte DEUX conventions sous des noms voisins :
+  //   convention RANGÉE (fo = orange, UI) : crossFo, crossFa, sl, lenFo, lenFa
+  //   convention CÔTÉ   (fo = DS, droite) : foOff, faOff, lFo, lFa
+  // Elles coïncident sur roue arrière et s'inversent sur roue avant. Un
+  // rapprochement des deux familles sans swap explicite est donc juste au test
+  // sur roue arrière et faux sur roue avant — cf. le swap de tmRenderDish(),
+  // seul endroit qui les croise aujourd'hui.
   // Conserver les longueurs saisies manuellement si elles existent
   summaryData = { erd: erd.toFixed(1), wtype, n, h, cross, crossFo, crossFa, diffMode, isSP, sl, asym, ratio, foOff, faOff, lFo: Lfo, lFa: Lfa, lenFo: null, lenFa: null };
   resetSumCardState();
@@ -11546,11 +11563,15 @@ async function tmExportPdfWithOpts(opts) {
 
   // Libellés dérivés des clés i18n (pas du DOM) : sans calcul de longueur de
   // rayons, rtag-fo/rtag-fa gardent leur texte FR par défaut (workflow tension
-  // seule) — on reconstruit donc selon wtype, comme en 4202-4203.
-  const _rtagKeyFo = (wtype === 'arriere') ? 'rtagDriveSideRear'    : 'rtagNonDriveSideFront';
-  const _rtagKeyFa = (wtype === 'arriere') ? 'rtagNonDriveSideRear' : 'rtagDriveSideFront';
-  const labelFo = t(_rtagKeyFo) || 'DS';
-  const labelFa = t(_rtagKeyFa) || 'NDS';
+  // seule) — on reconstruit donc selon wtype, avec les mêmes clés que le bloc
+  // keyFo/keyFa de calc().
+  const _rtagKeyFo = diffRtagKey('fo', wtype);
+  const _rtagKeyFa = diffRtagKey('fa', wtype);
+  // Repli sur le vocabulaire de côté, pas sur un littéral : un 'DS' figé
+  // mentirait sur roue avant, où la rangée orange est le NDS. Même raison et
+  // même forme que le repli de radarLegLabels().
+  const labelFo = t(_rtagKeyFo) || diffSideLabel('fo', wtype);
+  const labelFa = t(_rtagKeyFa) || diffSideLabel('fa', wtype);
   const calcFo  = sumD ? (document.getElementById('r-fo')?.textContent.trim() || '—') : '—';
   const calcFa  = sumD ? (document.getElementById('r-fa')?.textContent.trim() || '—') : '—';
   const retFo   = (sumD && sumD.lenFo) ? sumD.lenFo + ' mm' : '—';
