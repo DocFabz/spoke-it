@@ -8967,7 +8967,7 @@ function tmPopulateSpokeSelect() {
   ['', 'fo', 'fa'].forEach(row => _tmPopulateOneSpokeSelect(row));
   tmUpdateUnitBadge();
   tmUpdateConvBtn();
-  tmSyncSpokeLocks();
+  tmSyncLocks();
 }
 
 function _tmPopulateOneSpokeSelect(row) {
@@ -9222,13 +9222,13 @@ function updateDTTip() {
 }
 
 // ── Verrou du select rayon : DÉRIVÉ de l'état, jamais mémorisé ───────────────
-// Trois appelants de tmSyncSpokeLocks(), et trois seulement : tmUpdateBadges
-// (donc tout tmBuildTable, qui l'ouvre — chargement de roue, de snapshot,
-// bascule de tensiomètre, reset vocal), tmPopulateSpokeSelect (chemins qui
-// repeuplent sans reconstruire la table) et tmSyncResultAfterEdit (édition
-// d'une cellule, ✕ d'en-tête, Clear, re-clic de nappe EF). Tout le reste y
-// arrive par l'un des trois : ajouter un appel « au cas où » ne protège de
-// rien et rend le graphe illisible.
+// Trois appelants de tmSyncLocks(), et trois seulement : tmUpdateBadges (donc
+// tout tmBuildTable, qui l'ouvre — chargement de roue, de snapshot, bascule de
+// tensiomètre, reset vocal), tmPopulateSpokeSelect (chemins qui repeuplent sans
+// reconstruire la table) et tmSyncResultAfterEdit (édition d'une cellule, ✕
+// d'en-tête, Clear, re-clic de nappe EF). Tout le reste y arrive par l'un des
+// trois : ajouter un appel « au cas où » ne protège de rien et rend le graphe
+// illisible.
 // Un rayon fige la charte qui a converti les relevés AFFICHÉS : tant qu'il en
 // reste un dans SA colonne, en changer les rendrait faux sans prévenir. Rien
 // d'autre ne le fige — ni les relevés parqués d'un autre tensiomètre (convertis
@@ -9253,11 +9253,25 @@ function tmSpokeLocked(side) {
   if (!_loadedConfigName[wtype]) return false;
   return spokeDiff ? tmSideHasData(side) : tmHasData();
 }
-// Reflet pur de l'état vers les TROIS sélecteurs (mono + les deux rangées du
-// différentiel) et leurs ✕ : n'en figer qu'un laissait le verrou contournable
-// en différentiel. Idempotent, donc appelable depuis tout chemin qui touche
-// aux données, au rayon, au tensiomètre ou à la roue chargée.
-function tmSyncSpokeLocks() {
+// Reflet pur de l'état vers TOUS les verrous du module tension : le nb de
+// rayons (les deux sélecteurs) et le rayon (les trois — n'en figer qu'un
+// laissait le verrou contournable en différentiel), plus les ✕ associés.
+// Le nb vivait ailleurs (tmUpdateBadges pour tm-nb-select, _refreshLoadedBadges
+// pour nb-rayons) : trois fonctions rafraîchies par des chemins différents,
+// pour des verrous qui répondent au MÊME fait — ce qui reste de relevés. La ✕
+// d'une colonne reposait donc le verrou rayon sans toucher au nb, qui restait
+// grisé jusqu'à un aller-retour de tensiomètre. Un seul écrivain, un seul
+// instant : tout ce qui touche aux relevés passe ici.
+// Idempotent, donc appelable depuis tout chemin qui touche aux données, au
+// rayon, au tensiomètre ou à la roue chargée.
+function tmSyncLocks() {
+  // Nb de rayons, côté tension : miroir du verrou calculateur. En complétion a
+  // posteriori, éditable tant qu'aucun relevé n'en dépend — vif, parqué sur un
+  // autre tensiomètre, ou déjà en snapshot (tmAnyReadings).
+  const tmSel = $id('tm-nb-select');
+  if (tmSel) tmSel.classList.toggle('locked',
+    !!_loadedConfigName[wtype] && (!_cfgFillMode[wtype] || tmAnyReadings()));
+
   const lock = { fo: tmSpokeLocked('fo'), fa: tmSpokeLocked('fa') };
   [['tm-spoke-select', 'fo'], ['tm-spoke-select-fo', 'fo'], ['tm-spoke-select-fa', 'fa']]
     .forEach(([id, side]) => {
@@ -9283,6 +9297,11 @@ function tmSyncSpokeLocks() {
       clear.style.opacity       = lock[side] ? '.35' : '';
       clear.style.pointerEvents = lock[side] ? 'none' : '';
     });
+
+  // Verrous côté calculateur (nb-rayons, boutons hub, toggle différentiel) :
+  // même fait, même instant. Les chemins de relevés n'ont plus à les appeler
+  // séparément — c'est cette dispersion qui créait l'asymétrie.
+  _refreshLoadedBadges();
 }
 
 // ── onchange sur le dropdown de rayons ───────────────────────────────────────
@@ -11025,20 +11044,13 @@ function tmUpdateBadges() {
   // Nb rayons : lire depuis le calculateur
   const nb = parseInt($id('nb-rayons').value) || 0;
   const tmSel = $id('tm-nb-select');
-  if (tmSel) {
-    tmSel.value = nb > 0 ? String(nb) : '';
-    // Miroir du verrou calculateur : en complétion a posteriori, nb éditable
-    // tant qu'aucun relevé n'en dépend
-    tmSel.classList.toggle('locked', !!_loadedConfigName[wtype] && (!_cfgFillMode[wtype] || tmAnyReadings()));
-  }
+  if (tmSel) tmSel.value = nb > 0 ? String(nb) : ''; // le verrou, lui, est à tmSyncLocks()
 
-  // Rayon : verrou dérivé, par côté — source unique tmSyncSpokeLocks(). Point
-  // de passage de TOUS les chemins qui reconstruisent la table (tmBuildTable
-  // ouvre par tmUpdateBadges) : chargement de roue, de snapshot, bascule de
-  // tensiomètre, reset vocal. La ligne d'avant ne visait que le sélecteur mono,
-  // et sa classe .locked cohabitait avec les styles inline de l'ancien
-  // tmLockSpokeSelect : deux mécanismes sur le même élément, deux vérités.
-  tmSyncSpokeLocks();
+  // Verrous (nb + rayon) : source unique tmSyncLocks(). Point de passage de tous
+  // les chemins qui reconstruisent la table (tmBuildTable ouvre par
+  // tmUpdateBadges) : chargement de roue, de snapshot, bascule de tensiomètre,
+  // reset vocal.
+  tmSyncLocks();
 
   // Type de roue
   tmSyncWheelButtons();
@@ -11085,8 +11097,7 @@ function tmUpdateBadges() {
   };
   if (ndsSub) ndsSub.textContent = subOf(_ord.nds);
   if (dsSub)  dsSub.textContent  = subOf(_ord.ds);
-  // Badge roue chargée
-  _refreshLoadedBadges();
+  // (Badge roue chargée : posé par tmSyncLocks() ci-dessus.)
   // Badge unité : ready si tensio + rayon + nb rayons tous définis
   tmUpdateUnitBadge();
 }
@@ -11223,7 +11234,9 @@ function tmBuildTable() {
         _snapSetLabel(0);
         snapRefreshBtnFast(); // par-cellule : pas de reparse localStorage ; le label vient d'être remis par _snapSetLabel(0)
         tmUpdateInvertibleHeaders();
-        _refreshLoadedBadges(); // verrou nb-rayons suit tmAnyReadings()
+        // (Verrous : tmSyncResultAfterEdit() ci-dessus les repose tous. Ce
+        //  rappel séparé ne couvrait que nb-rayons, et sa présence ici — mais
+        //  pas dans tmResetSide — est ce qui rendait la ✕ incomplète.)
       });
 
       inp.addEventListener('keydown', function(e) {
@@ -11287,8 +11300,9 @@ function tmUpdateResultCardState() {
 function tmSyncResultAfterEdit() {
   if (!tmHasData()) tmHideResult();
   else tmUpdateResultCardState();
-  // Vider la dernière cellule d'une colonne a le même effet qu'une ✕.
-  tmSyncSpokeLocks();
+  // Vider la dernière cellule d'une colonne a le même effet qu'une ✕ : tous les
+  // verrous qui dépendaient de ces relevés retombent, ici et maintenant.
+  tmSyncLocks();
 }
 
 function tmHideResult() {
