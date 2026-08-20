@@ -231,6 +231,12 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .picker-overlay.show { display:block }
 .picker-btn { display:flex; align-items:center; gap:.6rem; padding:.45rem .85rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:background .25s, border-color .25s, color .25s, opacity .25s, transform .25s, box-shadow .25s; text-align:left; white-space:nowrap }
 .picker-btn:hover { border-color:rgba(126,200,227,.65); color:var(--accent2); background:rgba(126,200,227,.06) }
+/* Choix d'une charte à exporter : l'option retenue est soulignée, les autres
+   restent lisibles — c'est un choix, pas une désactivation. */
+.cshare-pick-btn          { width:100%; justify-content:flex-start; opacity:.55 }
+.cshare-pick-btn.selected  { opacity:1; border-color:rgba(126,200,227,.7); background:rgba(126,200,227,.1) }
+.cshare-pick-side         { font-size:.55rem; font-weight:700; letter-spacing:.1em; flex-shrink:0; width:2.2rem }
+.cshare-pick-name         { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-transform:none; letter-spacing:.04em; color:var(--text) }
 
 /* ── Modal suppression tensiomètre perso ── */
 .erasemgr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9982; opacity:0; transition:opacity .22s; display:none }
@@ -485,6 +491,9 @@ select option             { background:#161b27 }
 
 /* ── Differential cross toggle ─────────────────────────────────────────────── */
 .diff-toggle-wrap  { display:flex; align-items:center; gap:.45rem; flex-shrink:0 }
+/* Roue en complétion a posteriori avec relevés : le différentiel est figé, au
+   même titre que le nb de rayons — basculer purgerait les mesures. */
+.diff-toggle-wrap.locked { opacity:.45; pointer-events:none; cursor:not-allowed }
 .diff-toggle-label { font-size:.6rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--text3); transition:color .22s }
 .diff-toggle-wrap:has(.diff-toggle[aria-checked="true"]) .diff-toggle-label { color:var(--accent) }
 .diff-toggle       { position:relative; width:28px; height:16px; border-radius:8px; border:1px solid var(--border-s); background:var(--inp); cursor:pointer; touch-action:manipulation; transition:background .22s, border-color .22s; padding:0; flex-shrink:0 }
@@ -924,6 +933,11 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .radar-wrap      { width:100%; max-width:440px; margin:0 auto }
 .radar-canvas    { display:block; margin:0 auto }
 
+/* flex-wrap: seul conteneur à deux rangées qui peut s'empiler sans media
+   query. Il n'emporte PAS d'exception d'ordre : s'il wrappait, il s'empilerait
+   dans l'ordre côte-à-côte (bleu au-dessus sur roue arrière). Il tient sur une
+   ligne dès 320px dans les deux langues (~224px requis) et le gap est déjà
+   réduit en mobile pour ça — à revérifier si les libellés s'allongent. */
 .radar-legend    { display:flex; gap:1.2rem; justify-content:center; margin-top:.75rem; flex-wrap:wrap }
 .radar-leg-item  { display:flex; align-items:center; gap:.38rem; font-size:.68rem; color:var(--text2); font-family:'DM Sans',sans-serif }
 .radar-leg-dot   { width:10px; height:10px; border-radius:50%; flex-shrink:0 }
@@ -1652,8 +1666,13 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
 /* ── Mobile: radar + stats + outlier bar ─────────────────────────────────── */
 @media (max-width: 520px) {
   #tm-result-card, #tm-input-card { padding: 1.2rem .8rem; }
+  /* Bascule côte à côte -> empilé. Les DEUX lignes qui suivent forment la
+     bascule et doivent rester ensemble : la collapse en 1 colonne, et
+     l'exception d'ordre qu'elle impose (empilé => orange en haut, cf. la
+     règle au-dessus de diffRowOrder). Séparées, une rotation d'écran
+     laisserait l'empilement dans l'ordre côte-à-côte. */
   .tm-stats { grid-template-columns: 1fr; gap: .6rem; }
-  .tm-stat:has(.tm-stat-label.fo) { order: -1; }  /* nappe forte (fo) toujours en haut */
+  .tm-stat:has(.tm-stat-label.fo) { order: -1; }  /* nappe forte (fo) en haut */
   .tm-stat  { padding: .65rem .85rem; }
   .tm-stat-row      { font-size: .74rem; }
   .tm-stat-row strong { font-size: .77rem; }
@@ -1816,7 +1835,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <span data-i18n="importBtn">Importer</span>
     </button>
-    <button class="savemgr-action-btn savemgr-export" style="flex:1" onclick="bkpExportModal(true)">
+    <button class="savemgr-action-btn savemgr-export" id="bkp-export-btn" style="flex:1" onclick="bkpExportModal(true)">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       <span data-i18n="exportBtn">Exporter</span>
     </button>
@@ -1875,6 +1894,12 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
     <button class="savemgr-close" onclick="closeChartShareModal()">&#x2715;</button>
   </div>
   <p class="savemgr-desc" data-i18n="cshareDesc">Vous pouvez recevoir ou archiver une charte personnalisée.</p>
+  <!-- Choix de la charte à exporter : affiché uniquement quand les deux rangées
+       en portent une. Une seule charte ⇒ rien à choisir, le bloc reste masqué. -->
+  <div id="cshare-pick-wrap" style="display:none;flex-direction:column;gap:.4rem;width:100%">
+    <p class="savemgr-desc" data-i18n="cshareChoose" style="font-size:.68rem">Choisissez la charte à exporter :</p>
+    <div id="cshare-pick-list" style="display:flex;flex-direction:column;gap:.4rem"></div>
+  </div>
   <div class="savemgr-btns">
     <button class="savemgr-action-btn savemgr-import" onclick="$id('cshare-file-input').click()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 8 12 3 17 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -2143,6 +2168,12 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         <line x1="19" y1="1" x2="22" y2="1"/>  <line x1="19.5" y1="1.5" x2="22" y2="1.5"/>  <line x1="19" y1="2" x2="22" y2="2"/>
       </svg>
       <div class="clabel" data-i18n="spokeCard">Rayons</div>
+      <div class="diff-toggle-wrap" id="spoke-diff-row" style="margin-left:auto">
+        <span class="diff-toggle-label" id="spoke-diff-toggle-label" data-i18n="diffLabel">Différentiel</span>
+        <button class="diff-toggle" id="spoke-diff-toggle" onclick="toggleSpokeDiff()" role="switch" aria-checked="false" aria-labelledby="spoke-diff-toggle-label">
+          <span class="diff-toggle-thumb"></span>
+        </button>
+      </div>
     </div>
 
     <div style="display:flex;gap:1rem;align-items:flex-end">
@@ -2167,6 +2198,45 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         </select>
       </div>
       <div id="spoke-other-info" style="display:none;flex:0 0 calc(50% - .5rem);font-size:.67rem;font-style:italic;color:var(--text3);line-height:1.4;align-self:flex-end" data-i18n="spokeMaterialOtherInfo">L'estimation de l'élongation des rayons par la loi de Hooke n'est disponible que pour les rayons aciers.</div>
+    </div>
+
+    <!-- Mode différentiel : deux sections côte à côte. Ordonnancement et code
+         couleur identiques au différentiel de croisement — fo (orange) à
+         gauche, fa (bleu) à droite, libellés inversés selon avant/arrière. -->
+    <!-- Mode différentiel : deux sections côte à côte, chaque puce de rangée à
+         gauche de son champ comme dans le différentiel de croisement.
+         fo (orange) à gauche, fa (bleu) à droite ; libellés inversés selon
+         avant/arrière par updateDiffSideLabels(), écrivain unique. -->
+    <div id="spoke-section-diff" style="display:none;margin-top:.85rem">
+      <label class="tip-wrap" style="margin-bottom:.35rem"><span data-i18n="spokeSection">Section rayon (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="spokeSectionTip">Permet de calculer l'élongation</span></label>
+      <div id="spoke-sec-row" style="display:flex;gap:.7rem;align-items:center">
+        <div id="spoke-sec-col-fo" style="flex:1 1 0;min-width:0;display:flex;align-items:center;gap:.4rem">
+          <span class="diff-side-label diff-side-fo" id="spoke-diff-label-fo">DS</span>
+          <select id="spoke-select-fo" style="flex:1;min-width:0" aria-labelledby="spoke-diff-label-fo" onchange="setSpokeFromSelectSide(this,'fo')">
+            <option value="" selected>—</option>
+            <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
+            <option value="1.7|">1.7</option>  <option value="1.8|">1.8</option>
+            <option value="2.0|">2.0</option>
+            <option value="2.3|">2.3</option>
+            <option value="0.9|2.2">0.9×2.2</option>
+            <option value="0.9|2.3">0.9×2.3</option>
+            <option value="1.2|2.0">1.2×2.0</option>
+          </select>
+        </div>
+        <div id="spoke-sec-col-fa" style="flex:1 1 0;min-width:0;display:flex;align-items:center;gap:.4rem">
+          <span class="diff-side-label diff-side-fa" id="spoke-diff-label-fa">NDS</span>
+          <select id="spoke-select-fa" style="flex:1;min-width:0" aria-labelledby="spoke-diff-label-fa" onchange="setSpokeFromSelectSide(this,'fa')">
+            <option value="" selected>—</option>
+            <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
+            <option value="1.7|">1.7</option>  <option value="1.8|">1.8</option>
+            <option value="2.0|">2.0</option>
+            <option value="2.3|">2.3</option>
+            <option value="0.9|2.2">0.9×2.2</option>
+            <option value="0.9|2.3">0.9×2.3</option>
+            <option value="1.2|2.0">1.2×2.0</option>
+          </select>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2265,16 +2335,14 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
       </svg>
       <div class="clabel" data-i18n="cross">Croisement</div>
+      <div class="diff-toggle-wrap" style="margin-left:auto">
+        <span class="diff-toggle-label" id="diff-toggle-label" data-i18n="diffLabel">Différentiel</span>
+        <button class="diff-toggle" id="diff-toggle" onclick="toggleDiff()" role="switch" aria-checked="false" aria-labelledby="diff-toggle-label">
+          <span class="diff-toggle-thumb"></span>
+        </button>
+      </div>
     </div>
     <div class="f">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">
-        <div class="diff-toggle-wrap">
-          <span class="diff-toggle-label" id="diff-toggle-label" data-i18n="diffLabel">Différentiel</span>
-          <button class="diff-toggle" id="diff-toggle" onclick="toggleDiff()" role="switch" aria-checked="false" aria-labelledby="diff-toggle-label">
-            <span class="diff-toggle-thumb"></span>
-          </button>
-        </div>
-      </div>
       <!-- Mode normal : une seule rangée -->
       <div id="cross-row-single" class="crow">
         <button class="cp" data-cross="0" onclick="setCross(this)">Radial</button>
@@ -2599,40 +2667,125 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       </div>
     </div>
 
-    <!-- Sélecteur de rayon -->
-    <div class="f" style="margin-bottom:1rem">
-      <label data-i18n="tmSpokeLabel" for="tm-spoke-select">Rayon</label>
-      <div style="display:flex;gap:.4rem;align-items:center">
-        <select id="tm-spoke-select" class="tm-select" style="flex:1" onchange="tmOnSpokeChange()">
-          <option value="">—</option>
-        </select>
-        <button class="tm-clear-tensio inactive" id="tm-clear-spoke" onclick="tmClearSpoke()" title="Reset">✕</button>
+    <!-- Différentiel de rayon : toggle propre au module tension, indépendant
+         de celui de la carte Rayons (on peut mesurer deux chartes sans avoir
+         calculé de longueurs, et inversement). -->
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.35rem">
+      <label data-i18n="tmSpokeLabel" style="margin:0">Rayon</label>
+      <div class="diff-toggle-wrap">
+        <span class="diff-toggle-label" id="tm-spoke-diff-toggle-label" data-i18n="diffLabel">Différentiel</span>
+        <button class="diff-toggle" id="tm-spoke-diff-toggle" onclick="toggleTmSpokeDiff()" role="switch" aria-checked="false" aria-labelledby="tm-spoke-diff-toggle-label">
+          <span class="diff-toggle-thumb"></span>
+        </button>
       </div>
     </div>
 
-    <!-- Bouton chartes (picker) -->
+    <!-- Rayon unique -->
+    <div id="tm-spoke-single">
+      <div class="f" style="margin-bottom:1rem">
+        <div style="display:flex;gap:.4rem;align-items:center">
+          <select id="tm-spoke-select" class="tm-select" style="flex:1" onchange="tmOnSpokeChange()">
+            <option value="">—</option>
+          </select>
+          <button class="tm-clear-tensio inactive" id="tm-clear-spoke" onclick="tmClearSpoke()" title="Reset">✕</button>
+        </div>
+      </div>
     <div style="margin-bottom:1rem;margin-top:-.5rem;position:relative" id="tm-charts-picker-wrap">
-      <button class="tm-conv-btn" id="tm-charts-picker-btn" onclick="tmChartsPickerToggle()" style="border-radius:var(--rs);padding:.45rem .85rem;gap:.45rem;border:1px solid rgba(126,200,227,.3);color:var(--accent2);font-weight:600;letter-spacing:.12em;transition:background .25s, border-color .25s, color .25s, opacity .25s, transform .25s, box-shadow .25s;">
+      <button class="tm-conv-btn" id="tm-charts-picker-btn" onclick="tmChartsPickerToggle('fo')" style="border-radius:var(--rs);padding:.45rem .85rem;gap:.45rem;border:1px solid rgba(126,200,227,.3);color:var(--accent2);font-weight:600;letter-spacing:.12em;transition:background .25s, border-color .25s, color .25s, opacity .25s, transform .25s, box-shadow .25s;">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="2" width="13" height="12" rx="1.5"/><line x1="1.5" y1="5.5" x2="14.5" y2="5.5"/><line x1="1.5" y1="9" x2="14.5" y2="9"/><line x1="6" y1="5.5" x2="6" y2="14"/><line x1="11" y1="5.5" x2="11" y2="14"/></svg>
         <span data-i18n="tmChartsBtn">Chartes</span>
         <svg id="tm-charts-chevron" viewBox="0 0 10 7" fill="none" stroke="currentColor" stroke-width="1.4" style="width:8px;height:8px;transition:transform .2s;flex-shrink:0"><path d="M1 1l4 4 4-4"/></svg>
       </button>
       <div class="picker-popup" id="tm-charts-popup" style="left:0;transform:none;min-width:210px">
-        <button class="picker-btn locked" id="tm-conv-btn" onclick="tmChartsPickerClose();tmOpenConvTable()">
+        <button class="picker-btn locked" id="tm-conv-btn" onclick="tmChartsPickerClose('fo');tmOpenConvTable('fo')">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="width:13px;height:13px;flex-shrink:0"><rect x="1.5" y="2" width="13" height="12" rx="1.5"/><line x1="1.5" y1="5.5" x2="14.5" y2="5.5"/><line x1="1.5" y1="9" x2="14.5" y2="9"/><line x1="6" y1="5.5" x2="6" y2="14"/><line x1="11" y1="5.5" x2="11" y2="14"/></svg>
           <span data-i18n="tmConvBtn">Charte de conversion</span>
         </button>
-        <button class="picker-btn" id="cc-open-btn" onclick="tmChartsPickerClose();ccOpen()">
+        <button class="picker-btn" id="cc-open-btn" onclick="tmChartsPickerClose('fo');ccOpen('fo')">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:13px;height:13px;flex-shrink:0"><circle cx="8" cy="8" r="6.5"/><line x1="8" y1="5" x2="8" y2="11"/><line x1="5" y1="8" x2="11" y2="8"/></svg>
           <span data-i18n="ccCreateBtn">Charte Perso</span>
         </button>
-        <button class="picker-btn locked" id="tm-tc-btn" onclick="tmChartsPickerClose();tmTcOpen()">
+        <button class="picker-btn locked" id="tm-tc-btn" onclick="tmChartsPickerClose('fo');tmTcOpen('fo')">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:13px;height:13px;flex-shrink:0"><circle cx="8" cy="8" r="6.5"/><path d="M5.2 8.3l1.9 1.9 3.7-4.2"/></svg>
           <span data-i18n="tmTcBtn">Contrôle tensiomètre</span>
         </button>
       </div>
-      <div class="picker-overlay" id="tm-charts-overlay" onclick="tmChartsPickerClose()"></div>
+      <div class="picker-overlay" id="tm-charts-overlay" onclick="tmChartsPickerClose('fo')"></div>
     </div>
+    </div>
+
+    <!-- Deux rayons : chaque rangée porte SON sélecteur et SON accès aux
+         chartes. Ordonnancement et code couleur identiques au reste de l'app :
+         fo = orange, fa = bleu, labels inversés selon avant/arrière. -->
+    <!-- Deux rayons empilés : chaque rangée porte son sélecteur ET son accès
+         aux chartes. Empilement vertical ⇒ pas de gauche/droite à respecter,
+         donc l'ordre est celui du reste de l'app : fo (orange) au-dessus,
+         fa (bleu) en dessous, comme le croisement et le récapitulatif. -->
+    <div id="tm-spoke-diff" style="display:none">
+      <div class="f" style="margin-bottom:1rem">
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <span class="diff-side-label diff-side-fo" id="tm-spoke-diff-label-fo">DS</span>
+          <select id="tm-spoke-select-fo" class="tm-select" style="flex:1;min-width:0" aria-labelledby="tm-spoke-diff-label-fo" onchange="tmOnSpokeChangeSide('fo')">
+            <option value="">—</option>
+          </select>
+          <button class="tm-clear-tensio inactive" id="tm-clear-spoke-fo" onclick="tmClearSpokeSide('fo')" title="Reset">✕</button>
+        </div>
+      </div>
+      <div style="margin-bottom:1rem;margin-top:-.5rem;position:relative" id="tm-charts-picker-wrap-fo">
+        <button class="tm-conv-btn" id="tm-charts-picker-btn-fo" onclick="tmChartsPickerToggle('fo')" style="border-radius:var(--rs);padding:.45rem .85rem;gap:.45rem;border:1px solid rgba(126,200,227,.3);color:var(--accent2);font-weight:600;letter-spacing:.12em;transition:background .25s, border-color .25s, color .25s, opacity .25s, transform .25s, box-shadow .25s;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="2" width="13" height="12" rx="1.5"/><line x1="1.5" y1="5.5" x2="14.5" y2="5.5"/><line x1="1.5" y1="9" x2="14.5" y2="9"/><line x1="6" y1="5.5" x2="6" y2="14"/><line x1="11" y1="5.5" x2="11" y2="14"/></svg>
+          <span data-i18n="tmChartsBtn">Chartes</span>
+          <svg id="tm-charts-chevron-fo" viewBox="0 0 10 7" fill="none" stroke="currentColor" stroke-width="1.4" style="width:8px;height:8px;transition:transform .2s;flex-shrink:0"><path d="M1 1l4 4 4-4"/></svg>
+        </button>
+        <div class="picker-popup" id="tm-charts-popup-fo" style="left:0;transform:none;min-width:210px">
+          <button class="picker-btn locked" id="tm-conv-btn-fo" onclick="tmChartsPickerClose('fo');tmOpenConvTable('fo')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="width:13px;height:13px;flex-shrink:0"><rect x="1.5" y="2" width="13" height="12" rx="1.5"/><line x1="1.5" y1="5.5" x2="14.5" y2="5.5"/><line x1="1.5" y1="9" x2="14.5" y2="9"/><line x1="6" y1="5.5" x2="6" y2="14"/><line x1="11" y1="5.5" x2="11" y2="14"/></svg>
+            <span data-i18n="tmConvBtn">Charte de conversion</span>
+          </button>
+          <button class="picker-btn" id="cc-open-btn-fo" onclick="tmChartsPickerClose('fo');ccOpen('fo')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:13px;height:13px;flex-shrink:0"><circle cx="8" cy="8" r="6.5"/><line x1="8" y1="5" x2="8" y2="11"/><line x1="5" y1="8" x2="11" y2="8"/></svg>
+            <span data-i18n="ccCreateBtn">Charte Perso</span>
+          </button>
+          <button class="picker-btn locked" id="tm-tc-btn-fo" onclick="tmChartsPickerClose('fo');tmTcOpen('fo')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:13px;height:13px;flex-shrink:0"><circle cx="8" cy="8" r="6.5"/><path d="M5.2 8.3l1.9 1.9 3.7-4.2"/></svg>
+            <span data-i18n="tmTcBtn">Contrôle tensiomètre</span>
+          </button>
+        </div>
+        <div class="picker-overlay" id="tm-charts-overlay-fo" onclick="tmChartsPickerClose('fo')"></div>
+      </div>
+      <div class="f" style="margin-bottom:1rem">
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <span class="diff-side-label diff-side-fa" id="tm-spoke-diff-label-fa">NDS</span>
+          <select id="tm-spoke-select-fa" class="tm-select" style="flex:1;min-width:0" aria-labelledby="tm-spoke-diff-label-fa" onchange="tmOnSpokeChangeSide('fa')">
+            <option value="">—</option>
+          </select>
+          <button class="tm-clear-tensio inactive" id="tm-clear-spoke-fa" onclick="tmClearSpokeSide('fa')" title="Reset">✕</button>
+        </div>
+      </div>
+      <div style="margin-bottom:1rem;margin-top:-.5rem;position:relative" id="tm-charts-picker-wrap-fa">
+        <button class="tm-conv-btn" id="tm-charts-picker-btn-fa" onclick="tmChartsPickerToggle('fa')" style="border-radius:var(--rs);padding:.45rem .85rem;gap:.45rem;border:1px solid rgba(126,200,227,.3);color:var(--accent2);font-weight:600;letter-spacing:.12em;transition:background .25s, border-color .25s, color .25s, opacity .25s, transform .25s, box-shadow .25s;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="2" width="13" height="12" rx="1.5"/><line x1="1.5" y1="5.5" x2="14.5" y2="5.5"/><line x1="1.5" y1="9" x2="14.5" y2="9"/><line x1="6" y1="5.5" x2="6" y2="14"/><line x1="11" y1="5.5" x2="11" y2="14"/></svg>
+          <span data-i18n="tmChartsBtn">Chartes</span>
+          <svg id="tm-charts-chevron-fa" viewBox="0 0 10 7" fill="none" stroke="currentColor" stroke-width="1.4" style="width:8px;height:8px;transition:transform .2s;flex-shrink:0"><path d="M1 1l4 4 4-4"/></svg>
+        </button>
+        <div class="picker-popup" id="tm-charts-popup-fa" style="left:0;transform:none;min-width:210px">
+          <button class="picker-btn locked" id="tm-conv-btn-fa" onclick="tmChartsPickerClose('fa');tmOpenConvTable('fa')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="width:13px;height:13px;flex-shrink:0"><rect x="1.5" y="2" width="13" height="12" rx="1.5"/><line x1="1.5" y1="5.5" x2="14.5" y2="5.5"/><line x1="1.5" y1="9" x2="14.5" y2="9"/><line x1="6" y1="5.5" x2="6" y2="14"/><line x1="11" y1="5.5" x2="11" y2="14"/></svg>
+            <span data-i18n="tmConvBtn">Charte de conversion</span>
+          </button>
+          <button class="picker-btn" id="cc-open-btn-fa" onclick="tmChartsPickerClose('fa');ccOpen('fa')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:13px;height:13px;flex-shrink:0"><circle cx="8" cy="8" r="6.5"/><line x1="8" y1="5" x2="8" y2="11"/><line x1="5" y1="8" x2="11" y2="8"/></svg>
+            <span data-i18n="ccCreateBtn">Charte Perso</span>
+          </button>
+          <button class="picker-btn locked" id="tm-tc-btn-fa" onclick="tmChartsPickerClose('fa');tmTcOpen('fa')">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" style="width:13px;height:13px;flex-shrink:0"><circle cx="8" cy="8" r="6.5"/><path d="M5.2 8.3l1.9 1.9 3.7-4.2"/></svg>
+            <span data-i18n="tmTcBtn">Contrôle tensiomètre</span>
+          </button>
+        </div>
+        <div class="picker-overlay" id="tm-charts-overlay-fa" onclick="tmChartsPickerClose('fa')"></div>
+      </div>
+    </div>
+
 
     <!-- Nb rayons -->
     <div class="hub-top" style="margin-bottom:0;margin-top:.2rem">
@@ -2821,7 +2974,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       </div>
     </div>
 
-    <div class="radar-legend">
+    <div class="radar-legend" id="tm-radar-legend">
       <div class="radar-leg-item"><span class="radar-leg-dot" style="background:rgba(232,146,124,.9)"></span><span id="radar-leg-fo">Côté Gauche (NDS)</span></div>
       <div class="radar-leg-item"><span class="radar-leg-dot" style="background:rgba(126,200,227,.9)"></span><span id="radar-leg-fa">Côté Droit (DS)</span></div>
     </div>
@@ -3418,13 +3571,32 @@ function ensureJsPDF() {
 // ASCII. Source unique pour les quatre exports PDF (charte de conversion,
 // tension, diagnostic, comparaison de snapshots) — toute nouvelle
 // correspondance s'ajoute ici, jamais dans les délégués locaux `sanitize`.
+// WinAnsi n'est PAS Latin-1. Sa plage 0x80–0x9F porte un jeu typographique dont
+// tous les points de code Unicode sont AU-DESSUS de 0xFF : tirets cadratin et
+// demi-cadratin, points de suspension, apostrophes et guillemets courbes, œ, š,
+// €, •, ™… Un garde qui rejette [^\x00-\xFF] élimine donc exactement les
+// caractères que WinAnsi sait rendre. Vérifié contre jsPDF 2.5.1 : ces 27-là
+// sortent sur UN octet (— → 0x97, … → 0x85, ’ → 0x92, œ → 0x9C), alors que les
+// vrais hors-WinAnsi (∅ σ → ⚠ ✓) déclenchent sa bascule UTF-16 et produisent du
+// charabia. Le garde ne doit viser que ces derniers.
+// L'apostrophe courbe compte double ici : c'est celle que produisent les
+// claviers iOS et Android, donc celle qui arrive dans les noms de roue et les
+// observations du wheelbuilder.
+var PDF_WINANSI_EXTRA =
+  '\u20AC\u201A\u0192\u201E\u2026\u2020\u2021\u02C6\u2030\u0160\u2039\u0152\u017D' +
+  '\u2018\u2019\u201C\u201D\u2022\u2013\u2014\u02DC\u2122\u0161\u203A\u0153\u017E\u0178';
+var PDF_OUT_OF_WINANSI = new RegExp('[^\\x00-\\xFF' + PDF_WINANSI_EXTRA + ']', 'g');
+
 function pdfSanitize(s) {
   if (!s) return '';
-  var map = { '→':'->', 'Δ':'D', '±':'+/-', '★':'*' };
+  // ∅ → Ø : même sens (diamètre) et, lui, dans WinAnsi. Présent dans trois clés
+  // de charte titane/alu ; les clés ne bougent pas, ce sont des identifiants
+  // persistés — seule leur transcription PDF est corrigée.
+  var map = { '→':'->', 'Δ':'D', '±':'+/-', '★':'*', '∅':'Ø' };
   return String(s)
-    .replace(/[→Δ±★]/g, function(c) { return map[c] || c; })
+    .replace(/[→Δ±★∅]/g, function(c) { return map[c] || c; })
     .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '?') // paire surrogate (emoji) -> un seul '?'
-    .replace(/[^\x00-\xFF]/g, '?'); // garde-fou : tout hors WinAnsi -> '?' (evite la bascule UTF-16 de jsPDF : '&' + lettrage espace)
+    .replace(PDF_OUT_OF_WINANSI, '?');
 }
 </script>
 <!-- jsPDF 2.5.1 (UMD min) embarqué — anciennement chargé depuis cdnjs ; zéro dépendance réseau -->
@@ -3899,6 +4071,8 @@ const i18n = {
     cshareDesc:'Vous pouvez recevoir ou archiver une charte personnalisée.',
     cshareBtnTitle:'Partage de charte',
     cshareExportEmpty:'Sélectionnez une charte personnalisée à partager.',
+    cshareChoose:'Choisissez la charte à exporter :',
+    spokeDiffLocked:'Différentiel figé : des relevés de tension dépendent de cette roue.',
     cshareImportSuccess:'✓ Charte « {name} » importée.',
     cshareImportExists:'Charte « {name} » déjà présente — réutilisée.',
     cshareImportError:'Fichier invalide : ce n\'est pas une charte Spokeit.',
@@ -4118,6 +4292,8 @@ const i18n = {
     cshareDesc:'You can receive or archive a custom chart.',
     cshareBtnTitle:'Chart sharing',
     cshareExportEmpty:'Select a custom chart to share.',
+    cshareChoose:'Choose the chart to export:',
+    spokeDiffLocked:'Differential locked: tension readings depend on this wheel.',
     cshareImportSuccess:'✓ Chart "{name}" imported.',
     cshareImportExists:'Chart "{name}" already present — reused.',
     cshareImportError:'Invalid file: not a Spokeit chart.',
@@ -4455,6 +4631,13 @@ function _refreshLoadedBadges() {
   $id('btn-hub-sp').classList.toggle('locked', _lockHub && hubType !== 'straightpull');
   // Roue incomplète : nb rayons figé si des données tension en dépendent
   $id('nb-rayons').classList.toggle('locked', !!name && _cfgFillMode[wtype] && tmHasData());
+  // Le différentiel est figé dans les mêmes conditions, sur les deux toggles.
+  { const _dl = _spokeDiffLocked();
+    ['spoke-diff-row', 'tm-spoke-diff-toggle'].forEach(id => {
+      const el = $id(id);
+      const wrap = el && el.classList.contains('diff-toggle-wrap') ? el : (el && el.closest ? el.closest('.diff-toggle-wrap') : null);
+      if (wrap) wrap.classList.toggle('locked', _dl);
+    }); }
   // Badges hub et rim (per-wheel)
   if (typeof hrRefreshBadges === 'function') hrRefreshBadges();
 }
@@ -4511,6 +4694,14 @@ function _refreshLoadedRiderChip(name) {
 let wtype = 'avant', erdMode = 'direct', sd = null, sa = null, cross = null, hubType = 'jbend';
 let spokeMatType = 'steel'; // 'steel' | 'other'
 let diffMode = false, crossFo = null, crossFa = null;
+// Section rayon différentielle. sdFo/saFo décrivent la rangée ORANGE de l'UI,
+// sdFa/saFa la rangée BLEUE — exactement comme crossFo/crossFa. Une rangée ne
+// porte pas de côté en propre : l'orange est le DS sur roue arrière et le NDS
+// sur roue avant. spokeSection() est le SEUL point qui traduit rangée → côté
+// géométrique ; aucun autre appelant ne doit refaire cette inversion.
+// Toggle indépendant de diffMode : sections et croisements se dédoublent
+// séparément (rayons de jauges différentes à croisement identique est courant).
+let spokeDiff = false, sdFo = null, saFo = null, sdFa = null, saFa = null;
 const hubTypeByWheel = { avant: 'jbend', arriere: 'jbend' }; // hubType indépendant par roue
 let tmType = null;
 let tmData = { fo: [], fa: [] };
@@ -4521,9 +4712,62 @@ let tmPrevFo = [], tmPrevFa = [];
 const tmStore = {};       // { [storeKey]: { spokeKey, fo, fa, prevFo, prevFa } }
 let tmActiveKey = null;   // key of the tensiometer whose data is currently in tmData
 let tmDTSub = 'standard'; // 'standard' | 'aerolite2'
-let tmSpokeKey = null;    // clé rayon sélectionnée dans la table active
+// Rayon de la rangée fo (orange) — et rayon unique hors différentiel.
+let tmSpokeFo = null;
+// Rayon de la rangée fa (bleue). Vaut null hors différentiel : le nom ne
+// désigne jamais autre chose que « la seconde charte », et son absence est
+// exactement l'information « il n'y en a qu'une ».
+let tmSpokeFa = null;
+// Le différentiel n'a PAS de drapeau propre au module tension : « cette roue
+// a-t-elle deux rayons différents ? » est un fait unique de la roue. Deux
+// sections différentes impliquent deux chartes différentes, et réciproquement.
+// Deux toggles le pilotent, comme le nb de rayons a deux sélecteurs pour une
+// seule valeur — voir setSpokeDiff().
+
+// Rayon effectif d'une rangée de saisie ('fo' | 'fa'). Point de résolution
+// unique : hors différentiel les deux rangées partagent tmSpokeFo.
+function tmSpokeOf(side) {
+  return (spokeDiff && side === 'fa') ? tmSpokeFa : tmSpokeFo;
+}
+// Sélection complète : en différentiel, une seule charte ne convertit rien.
+// Chartes perso exportables, dans l'ordre des rangées. Une rangée n'apparaît
+// que si elle porte réellement une charte perso : la liste ne peut donc pas
+// proposer un nom qui n'existe pas.
+function _cshareCandidates() {
+  var out = [];
+  var add = function(side, key) {
+    if (key && key.indexOf(CC_PREFIX) === 0) out.push({ side: side, key: key, name: key.slice(CC_PREFIX.length) });
+  };
+  add('fo', tmSpokeFo);
+  if (spokeDiff) add('fa', tmSpokeFa);
+  return out;
+}
+
+// Clé retenue pour l'export. Un seul candidat ⇒ c'est lui, sans choix à faire.
+// Plusieurs ⇒ celui que l'utilisateur a désigné dans la modale ; _cshareChoice
+// est toujours réinitialisé à l'ouverture, jamais hérité d'une session passée.
+function _cshareSourceKey() {
+  var cand = _cshareCandidates();
+  if (!cand.length) return null;
+  if (cand.length === 1) return cand[0].key;
+  for (var i = 0; i < cand.length; i++) if (cand[i].side === _cshareChoice) return cand[i].key;
+  return null;
+}
+
+function tmSpokeReady() {
+  return spokeDiff ? (!!tmSpokeFo && !!tmSpokeFa) : !!tmSpokeFo;
+}
+// Rangée dont la charte est affichée par les modales Charte de conversion et
+// Contrôle tensiomètre — positionnée par le bouton Chartes qui les ouvre.
+let _tmConvSide = 'fo', _tmTcSide = 'fo';
+// Rangée pour laquelle la modale « Charte Perso » a été ouverte.
+let _ccSide = 'fo';
+// Rangée dont la charte est retenue pour l'export — n'a de sens que lorsque les
+// deux rangées en portent une, et repositionné à chaque ouverture de la modale.
+let _cshareChoice = null;
 let _tmLoadedType  = null; // tensio du couple chargé depuis config
-let _tmLoadedSpoke = null; // rayon du couple chargé depuis config
+let _tmLoadedSpoke   = null; // rayon (rangée fo) du couple chargé depuis config
+let _tmLoadedSpokeFa = null; // rayon (rangée fa) — null hors différentiel
 // ── État highlight ──────────────────────────────────────────────────────────
 let tmCVThreshold = 5;    // % — seuil écart-type coefficient de variation
 let tmHighlightOn = false;
@@ -4536,7 +4780,8 @@ function tmStoreKey() {
 }
 function tmSaveToStore() {
   tmStore[tmActiveKey] = {
-    spokeKey: tmSpokeKey,
+    spokeKey: tmSpokeFo,
+    spokeKeyFa: tmSpokeFa,
     fo: tmData.fo.slice(),
     fa: tmData.fa.slice(),
     prevFo: tmPrevFo.slice(),
@@ -4570,6 +4815,13 @@ function _cfgStateIncomplete(s) {
 }
 // Roue chargée ET en cours de complétion (condition composée factorisée)
 function _cfgFilling() { return !!(_loadedConfigName[wtype] && _cfgFillMode[wtype]); }
+
+// Différentiel figé : roue chargée incomplète dont des relevés de tension
+// dépendent déjà. Basculer purgerait ces relevés — même verrou que le nb de
+// rayons, et pour la même raison. Source unique : l'affichage grisé et le
+// refus effectif dans setSpokeDiff() lisent tous deux cette fonction, ils ne
+// peuvent donc pas diverger.
+function _spokeDiffLocked() { return _cfgFilling() && tmHasData(); }
 let _switchingHub = false;
 let _applyingState = false;
 let _toastTimer = null;
@@ -4630,7 +4882,7 @@ function applyLang() {
   // Titre "Déflections mesurées" / "Measured deflections" + suffixe roue
   var deflEl = $id('tm-defl-label');
   if (deflEl) {
-    var deflSide = (typeof wtype !== 'undefined' && wtype === 'arriere')
+    var deflSide = (wtype === 'arriere')
       ? (lang === 'fr' ? 'Roue arrière' : 'Rear wheel')
       : (lang === 'fr' ? 'Roue avant'   : 'Front wheel');
     deflEl.textContent = t('tmDeflLabel') + ' — ' + deflSide;
@@ -4770,6 +5022,9 @@ function readState() {
     erdNsdResult: $id('erd-nsd-result').value,
     asym: $id('asym').value, spokeSelect: $id('spoke-select').value,
     cross, crossFo, crossFa, diffMode, hubType, sd, sa, spokeMatType,
+    spokeDiff, sdFo, saFo, sdFa, saFa,
+    spokeSelectFo: $id('spoke-select-fo').value,
+    spokeSelectFa: $id('spoke-select-fa').value,
     soLeft: $id('sp-so-left').value, soRight: $id('sp-so-right').value,
     tensionForte: $id('tension-forte').value,
     hasResult: $id('results').classList.contains('show'),
@@ -4782,7 +5037,12 @@ function readState() {
     arbSelected: JSON.parse(JSON.stringify(arbSelected)),
     tmType,
     tmDTSub,
-    tmSpokeKey,
+    // 'tmSpokeKey' est le nom de champ HISTORIQUE du rayon de la rangée fo :
+    // conservé pour que les saves, roues partagées et snapshots antérieurs
+    // restent lisibles, et pour qu'une version plus ancienne de l'app relise
+    // au moins le rayon principal d'un fichier produit ici.
+    tmSpokeKey: tmSpokeFo,
+    tmSpokeFa,
     tmDataFo: tmData.fo.slice(),
     tmDataFa: tmData.fa.slice(),
     loadedHubName: _loadedHubName[wtype] || null,
@@ -4836,7 +5096,17 @@ function _applyStateBody(s) {
       ['wi-discipline','wi-size','wi-brake','wi-material'].forEach(id => syncSelectPlaceholder($id(id)));
   }
   sd = s.sd; sa = s.sa; cross = s.cross;
+  // Saves antérieures au différentiel de section : spokeDiff absent ⇒ false,
+  // les quatre valeurs restent nulles et spokeSection() retombe sur sd/sa.
+  spokeDiff = s.spokeDiff || false;
+  sdFo = s.sdFo ?? null; saFo = s.saFo ?? null;
+  sdFa = s.sdFa ?? null; saFa = s.saFa ?? null;
+  $id('spoke-select-fo').value = s.spokeSelectFo || '';
+  $id('spoke-select-fa').value = s.spokeSelectFa || '';
   if (s.spokeMatType) setSpokeMatType(s.spokeMatType);
+  syncSpokeDiffUI();
+  // Un seul état pour deux toggles : celui du module tension suit.
+  if (typeof syncTmSpokeDiffUI === 'function') syncTmSpokeDiffUI();
   diffMode = s.diffMode || false; crossFo = s.crossFo ?? null; crossFa = s.crossFa ?? null;
   if (s.hubType) { hubType = s.hubType; hubTypeByWheel[wtype] = s.hubType; setHubType(hubType, true); }
   $id('sp-so-left').value  = s.soLeft  || '';
@@ -4880,7 +5150,12 @@ function _applyStateBody(s) {
     // toggle — sinon il reste figé jusqu'au prochain changement de langue.
     document.querySelectorAll('#m-fo .rincluant, #m-fa .rincluant').forEach(el => { el.textContent = t('including'); });
     // Compatibilité : anciennes saves utilisent 'driveSide'/'nonDriveSide', nouvelles utilisent 'rtagDriveSide...'
-    const isArriere = (s.wtype || wtype) === 'arriere';
+    // wtype global et non s.wtype : les deux appelants garantissent l'égalité
+    // avant d'entrer ici — switchTo() affecte wtype = wh avant l'appel, et
+    // loadConfig() sort en amont si cfg.state.wtype diffère. Les lignes de
+    // réordonnancement plus bas ont toujours lu wtype : une seule source ici
+    // évite que libellés et disposition puissent se contredire.
+    const isArriere = wtype === 'arriere';
     const foKey = s.rtagFoKey || (isArriere ? 'rtagDriveSideRear'    : 'rtagNonDriveSideFront');
     const faKey = s.rtagFaKey || (isArriere ? 'rtagNonDriveSideRear' : 'rtagDriveSideFront');
     const arbFoKey = isArriere ? 'driveSide'    : 'nonDriveSide';
@@ -4888,7 +5163,7 @@ function _applyStateBody(s) {
     const rFo = $id('rtag-fo'); rFo.textContent = t(foKey); rFo.dataset.i18nKey = foKey;
     const rFa = $id('rtag-fa'); rFa.textContent = t(faKey); rFa.dataset.i18nKey = faKey;
     const rg = document.querySelector('.rg'), rcFo = document.querySelector('.rc.fo'), rcFa = document.querySelector('.rc.fa');
-    wtype === 'arriere' ? rg.appendChild(rcFo) : rg.insertBefore(rcFo, rcFa);
+    diffReorder(rg, rcFo, rcFa, wtype);
     $id('results').classList.add('show');
   const resCard = $id('results').querySelector('.card'); if (resCard) resCard.classList.add('card-done');
     // Bouton Hooke : uniquement si la save contient les sous-résultats d'élongation
@@ -4899,7 +5174,8 @@ function _applyStateBody(s) {
     if (s.mFo || s.mFa) { updateElongHint(true, true, true); }
     else {
       const _mat = s.spokeMatType || 'steel';
-      const _sec = _mat === 'steel' && s.sd !== null && s.sd !== undefined && !isNaN(s.sd);
+      // Globals de section déjà restaurés plus haut : source unique.
+      const _sec = spokeSectionReady();
       const _ten = !isNaN(parseFloat(s.tensionForte));
       updateElongHint(_mat === 'steel', _sec, _ten);
     }
@@ -4931,7 +5207,7 @@ function _applyStateBody(s) {
       const hFo = $id('arb-head-fo'); hFo.textContent = t(arbFoKey); hFo.dataset.i18nKey = arbFoKey;
       const hFa = $id('arb-head-fa'); hFa.textContent = t(arbFaKey); hFa.dataset.i18nKey = arbFaKey;
       const arbCols = $id('arb-cols'), arbColFo = $id('arb-col-fo'), arbColFa = $id('arb-col-fa');
-      wtype === 'arriere' ? arbCols.appendChild(arbColFo) : arbCols.insertBefore(arbColFo, arbColFa);
+      diffReorder(arbCols, arbColFo, arbColFa, wtype);
       $id('arb-wrap').classList.remove('show');
       $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
     } else { arbData = { fo: null, fa: null }; arbSelected.fo = null; arbSelected.fa = null; }
@@ -4976,16 +5252,23 @@ function _applyStateBody(s) {
     updateDTTip();
 
     // Dropdown rayon
-    tmSpokeKey = s.tmSpokeKey || null;
-    if (tmSpokeKey && tmSpokeKey.startsWith(CC_PREFIX)) ccInjectAll();
-    tmPopulateSpokeSelect();   // peuple selon tmType+tmDTSub, sélectionne tmSpokeKey si présent
+    tmSpokeFo   = s.tmSpokeKey || null;
+    tmSpokeFa = s.tmSpokeFa || null;
+    if ((tmSpokeFo && tmSpokeFo.startsWith(CC_PREFIX)) ||
+        (tmSpokeFa && tmSpokeFa.startsWith(CC_PREFIX))) ccInjectAll();
+    syncTmSpokeDiffUI();
+    tmPopulateSpokeSelect();   // peuple selon tmType+tmDTSub, sélectionne les clés restaurées
     // Clé invalidée par tmPopulateSpokeSelect ? La table de conversion a
     // disparu depuis la sauvegarde : les relevés du state sont inconvertibles,
     // ne pas les restaurer (« un nom ne doit jamais pouvoir mentir sur un
     // contenu »). Guérit les states persistés avant que snapPurgeOrphans ne
     // purge aussi le state, et laisse tmHasData() faux pour que loadConfig
     // repositionne sur l'historique survivant (_snapReposition).
-    const _tmCoupleDead = !!s.tmSpokeKey && !tmSpokeKey;
+    // Couple (tensiomètre, rayon) mort : la charte référencée n'existe plus.
+    // En différentiel, la perte d'UNE des deux suffit — les relevés de la
+    // colonne survivante ont été convertis contre une paire qui n'existe plus.
+    const _tmCoupleDead = (!!s.tmSpokeKey && !tmSpokeFo)
+                       || (!!s.tmSpokeFa  && !tmSpokeFa);
 
     // Badge unité
     tmUpdateUnitBadge();
@@ -5004,13 +5287,14 @@ function _applyStateBody(s) {
     tmBuildTable();
     tmShowDiagramIfData();
     // Mémoriser et verrouiller le couple tensio/rayon chargé
-    if (tmSpokeKey) {
+    if (tmSpokeFo) {
       _tmLoadedType  = tmType;
-      _tmLoadedSpoke = tmSpokeKey;
+      _tmLoadedSpoke   = tmSpokeFo;
+      _tmLoadedSpokeFa = tmSpokeFa;
       tmLockSpokeSelect(true);
     } else {
       _tmLoadedType  = null;
-      _tmLoadedSpoke = null;
+      _tmLoadedSpoke = null; _tmLoadedSpokeFa = null;
     }
   } else {
     // Pas de tensiomètre sauvegardé : remettre à zéro complètement
@@ -5055,8 +5339,8 @@ function resetFields() {
   hideDiamTrouWarn();
   $id('ecrou-type').value = ''; syncSelectPlaceholder($id('ecrou-type'));
   $id('sp-so-left').value = ''; $id('sp-so-right').value = '';
-  $id('spoke-select').value = ''; syncSelectPlaceholder($id('spoke-select'));
-  sd = null; sa = null; cross = null; crossFo = null; crossFa = null;
+  resetSpokeSectionValues();
+  cross = null; crossFo = null; crossFa = null;
   setSpokeMatType('steel');
   diffMode = false;
   const diffBtn = $id('diff-toggle');
@@ -5081,6 +5365,10 @@ function resetFields() {
 function clearFormSilent() {
   tmCloseConvTable();
   resetFields();
+  // Reset complet : le différentiel tombe ici, PAS dans resetFields — que
+  // setHubType() appelle au changement de type de moyeu, lequel doit le
+  // préserver.
+  resetSpokeDiffFields();
   // Infos roue : effacées uniquement au reset complet (bouton Reset, roue
   // vierge) — PAS dans resetFields, que setHubType appelle au toggle
   // J-Bend/Straightpull : changer le type de moyeu ne doit pas perdre
@@ -5163,7 +5451,7 @@ function reorderTensionFields(wh) {
   // Arrière : DS (fort) saisi à droite, NDS (faible) calculé à gauche
   // Avant   : NDS (fort) saisi à gauche, DS (faible) calculé à droite
   const g2 = $id('tension-g2'), fo = $id('tension-forte-field'), fa = $id('tension-faible-field');
-  wh === 'arriere' ? g2.appendChild(fo) : g2.insertBefore(fo, fa);
+  diffReorder(g2, fo, fa, wh);
   // Labels avec abréviation intégrée
   const fortSide   = wh === 'arriere' ? 'driveSide'    : 'nonDriveSide';
   const faibleSide = wh === 'arriere' ? 'nonDriveSide' : 'driveSide';
@@ -5174,7 +5462,10 @@ function reorderTensionFields(wh) {
   }
   setLabel('tension-forte-field',  fortSide);
   setLabel('tension-faible-field', faibleSide);
-  // Mettre à jour les labels différentiels selon le type de roue
+  // Carte Rayons : les deux sections sont côte à côte, leur ordre suit le type
+  // de roue. Module tension : empilé, donc rien à réordonner — seuls ses
+  // libellés changent, et updateDiffSideLabels() s'en charge.
+  if (typeof syncSpokeDiffUI === 'function') syncSpokeDiffUI();
   updateDiffSideLabels();
   // Mettre à jour les restrictions de croisement selon roue + moyeu
   updateCrossForHubType();
@@ -5298,19 +5589,138 @@ function setSpokeFromSelect(sel) {
   updateCalcBtn();
 }
 
+// Rangée fo (orange) ou fa (bleue) du différentiel de section.
+function setSpokeFromSelectSide(sel, row) {
+  const parts = sel.value ? sel.value.split('|') : null;
+  const d = parts ? parseFloat(parts[0]) : null;
+  const a = (parts && parts[1]) ? parseFloat(parts[1]) : null;
+  if (row === 'fo') { sdFo = d; saFo = a; } else { sdFa = d; saFa = a; }
+  markModified();
+  updateCalcBtn();
+}
+
+function toggleSpokeDiff() { setSpokeDiff(!spokeDiff); }
+
+// Sections seules — appelé par resetFields(), que setHubType() emprunte aussi
+// au basculement J-Bend / Straightpull. Ce changement invalide la géométrie,
+// donc les sections choisies, mais PAS le fait que la roue ait deux rayons
+// différents : ni le différentiel lui-même, ni le module tension n'y touchent.
+function resetSpokeSectionValues() {
+  sd = null; sa = null; sdFo = null; saFo = null; sdFa = null; saFa = null;
+  ['spoke-select', 'spoke-select-fo', 'spoke-select-fa'].forEach(id => {
+    const sel = $id(id);
+    if (!sel) return;
+    sel.value = '';
+    if (typeof syncSelectPlaceholder === 'function') syncSelectPlaceholder(sel);
+  });
+}
+
+// Remise à plat COMPLÈTE du différentiel — bouton Reset uniquement. Écrit
+// directement dans le DOM, comme le reset des croisements : un Reset ne doit
+// dépendre d'aucun garde. Il couvre les deux modules, l'état étant unique.
+function resetSpokeDiffFields() {
+  resetSpokeSectionValues();
+  spokeDiff = false;
+  tmSpokeFo = null; tmSpokeFa = null;
+
+  ['tm-spoke-select', 'tm-spoke-select-fo', 'tm-spoke-select-fa'].forEach(id => {
+    const sel = $id(id); if (sel) sel.value = '';
+  });
+
+  ['spoke-diff-toggle', 'tm-spoke-diff-toggle'].forEach(id => {
+    const btn = $id(id); if (btn) btn.setAttribute('aria-checked', 'false');
+  });
+
+  // Retour au champ unique dans les deux modules.
+  [['spoke-section-field', 'spoke-section-diff'],
+   ['tm-spoke-single',     'tm-spoke-diff']].forEach(([oneId, bothId]) => {
+    const one = $id(oneId), both = $id(bothId);
+    if (one)  one.style.display  = '';
+    if (both) both.style.display = 'none';
+  });
+}
+
+// Bascule du différentiel, quel que soit le toggle qui l'a déclenchée.
+// Les deux modules sont remis à plat ensemble : une section ou une charte
+// héritée de l'autre mode mentirait sur les champs visibles, et des relevés
+// convertis contre une charte qui n'est plus affichée sont pires que perdus.
+// Même contrat destructif que le nb de rayons, qui purge lui aussi les relevés.
+function setSpokeDiff(on) {
+  // Garde autoritaire : protège même si la classe .locked n'était pas à jour,
+  // exactement comme le handler de nb-rayons. Rien n'a encore été modifié à ce
+  // stade, donc il n'y a rien à restaurer — les toggles ne sont pas des
+  // contrôles natifs, leur état visuel vient de syncSpokeDiffUI().
+  if (_spokeDiffLocked()) {
+    showImportToast(t('spokeDiffLocked'), true);
+    return;
+  }
+  spokeDiff = !!on;
+
+  // ── Carte Rayons ──
+  sd = null; sa = null; sdFo = null; saFo = null; sdFa = null; saFa = null;
+  ['spoke-select', 'spoke-select-fo', 'spoke-select-fa'].forEach(id => {
+    const sel = $id(id); if (sel) sel.value = '';
+  });
+  syncSpokeDiffUI();
+
+  // ── Module tension ──
+  tmSpokeFo = null; tmSpokeFa = null;
+  // Les slots par tensiomètre portent chacun leur couple (chartes, relevés) :
+  // survivant à la bascule, ils réintroduiraient une seconde charte dans un
+  // module redevenu simple (ou l'inverse). Ils décrivent un mode qui n'existe
+  // plus — même geste que les autres purges destructives du store.
+  Object.keys(tmStore).forEach(k => delete tmStore[k]);
+  ['tm-spoke-select', 'tm-spoke-select-fo', 'tm-spoke-select-fa'].forEach(id => {
+    const sel = $id(id); if (sel) sel.value = '';
+  });
+  if (typeof syncTmSpokeDiffUI === 'function') {
+    syncTmSpokeDiffUI();
+    tmPopulateSpokeSelect();
+    tmAfterSpokeChange();
+    tmUpdateBadges();
+  }
+
+  markModified();
+  updateCalcBtn();
+}
+
+// Reflet pur de l'état vers l'UI (aucun effet sur les valeurs) — appelé par le
+// toggle, par applyState et par setSpokeMatType.
+function syncSpokeDiffUI() {
+  const isSteel = spokeMatType === 'steel';
+  const btn  = $id('spoke-diff-toggle');
+  const row  = $id('spoke-diff-row');
+  const one  = $id('spoke-section-field');
+  const both = $id('spoke-section-diff');
+  if (btn)  btn.setAttribute('aria-checked', spokeDiff ? 'true' : 'false');
+  // Matériau non-acier : pas d'élongation, donc pas de section — le toggle
+  // disparaît avec les champs qu'il commande.
+  if (row)  row.style.display  = isSteel ? 'flex' : 'none';
+  if (one)  one.style.display  = (isSteel && !spokeDiff) ? '' : 'none';
+  if (both) both.style.display = (isSteel &&  spokeDiff) ? '' : 'none';
+  ['spoke-select','spoke-select-fo','spoke-select-fa'].forEach(id => {
+    const sel = $id(id);
+    if (sel && typeof syncSelectPlaceholder === 'function') syncSelectPlaceholder(sel);
+  });
+  reorderSpokeSectionFields();
+  updateDiffSideLabels();
+}
+
 function setSpokeMatType(type) {
   spokeMatType = type;
   const matSel = document.getElementById('spoke-mat-select');
   if (matSel && matSel.value !== type) matSel.value = type;
-  const field = document.getElementById('spoke-section-field');
-  const info  = document.getElementById('spoke-other-info');
-  if (field) field.style.display = type === 'steel' ? '' : 'none';
-  if (info)  info.style.display = type === 'other' ? '' : 'none';
+  const info = document.getElementById('spoke-other-info');
+  if (info) info.style.display = type === 'other' ? '' : 'none';
   if (type === 'other') {
-    sd = null; sa = null;
-    const sel = document.getElementById('spoke-select');
-    if (sel) { sel.value = ''; if (typeof syncSelectPlaceholder === 'function') syncSelectPlaceholder(sel); }
+    sd = null; sa = null; sdFo = null; saFo = null; sdFa = null; saFa = null;
+    ['spoke-select','spoke-select-fo','spoke-select-fa'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (sel) sel.value = '';
+    });
   }
+  // L'affichage des champs de section (simple ou dédoublé) a une seule source.
+  syncSpokeDiffUI();
   markModified();
   updateCalcBtn();
 }
@@ -5363,13 +5773,28 @@ function toggleDiff() {
   updateRadialWarn();
 }
 
+// Les deux sections sont côte à côte : leur ordre à l'écran doit être l'ordre
+// PHYSIQUE de la roue, colonne gauche = côté gauche. L'invariant lui-même vit
+// dans diffReorder(). Ce qui est propre à cet endroit : le code couleur suit
+// la rangée et non la colonne, donc l'orange atterrit à droite sur une roue
+// arrière — c'est voulu, pas une inversion.
+function reorderSpokeSectionFields() {
+  const row = $id('spoke-sec-row');
+  const colFo = $id('spoke-sec-col-fo'), colFa = $id('spoke-sec-col-fa');
+  if (!row || !colFo || !colFa) return;
+  diffReorder(row, colFo, colFa, wtype);
+}
+
 function updateDiffSideLabels() {
   const isArriere = wtype === 'arriere';
   const foLabel = isArriere ? (lang === 'fr' ? 'DS<br>Droit' : 'DS<br>Right') : (lang === 'fr' ? 'NDS<br>Gauche' : 'NDS<br>Left');
   const faLabel = isArriere ? (lang === 'fr' ? 'NDS<br>Gauche' : 'NDS<br>Left') : (lang === 'fr' ? 'DS<br>Droit' : 'DS<br>Right');
-  const lFo = $id('diff-label-fo'), lFa = $id('diff-label-fa');
-  if (lFo) lFo.innerHTML = foLabel;
-  if (lFa) lFa.innerHTML = faLabel;
+  // Croisements ET sections partagent le même vocabulaire de rangées : un seul
+  // écrivain, elles ne peuvent donc pas diverger.
+  [['diff-label-fo', foLabel], ['diff-label-fa', faLabel],
+   ['spoke-diff-label-fo', foLabel], ['spoke-diff-label-fa', faLabel],
+   ['tm-spoke-diff-label-fo', foLabel], ['tm-spoke-diff-label-fa', faLabel]
+  ].forEach(([id, html]) => { const e = $id(id); if (e) e.innerHTML = html; });
 }
 
 function onTension() {
@@ -5516,7 +5941,7 @@ function updateCardStatus() {
   setCardDone('card-tension', tensionDone);
 
   // ── Rayon : steel + section choisie, ou autre matériau
-  const rayonDone = spokeMatType === 'other' || (spokeMatType === 'steel' && sd !== null && !isNaN(sd));
+  const rayonDone = spokeMatType === 'other' || spokeSectionReady();
   setCardDone('card-rayon', rayonDone);
 }
 
@@ -5549,13 +5974,145 @@ function slenSP(pcd, off, cr, n, erd, so) {
   const theta = cr === 0 ? 0 : (cr + 0.5) * (2 * Math.PI) / (n / 2);
   return Math.sqrt((R * Math.sin(theta)) ** 2 + (Rj - R * Math.cos(theta)) ** 2 + off * off) + so;
 }
-function area() {
-  const a = (sa !== null && !isNaN(sa)) ? sa : sd;
-  return Math.PI / 4 * sd * a;
+// Section du rayon pour un côté GÉOMÉTRIQUE ('ds' | 'nds'). Point de traduction
+// unique rangée UI → côté : hors différentiel, les deux côtés partagent sd/sa.
+function spokeSection(side) {
+  if (!spokeDiff) return { d: sd, a: sa };
+  const useFo = (side === 'ds') === (wtype === 'arriere');
+  return useFo ? { d: sdFo, a: saFo } : { d: sdFa, a: saFa };
 }
-function el(F, L) {
-  if (!sd || isNaN(sd)) return 0;
-  return (F * 9.81 * L) / (area() * 200000);
+
+// Section exploitable pour l'élongation : acier, et renseignée des DEUX côtés
+// quand le différentiel est actif (une seule des deux ne calcule rien).
+function spokeSectionReady() {
+  if (spokeMatType !== 'steel') return false;
+  if (!spokeDiff) return sd !== null && !isNaN(sd);
+  return sdFo !== null && !isNaN(sdFo) && sdFa !== null && !isNaN(sdFa);
+}
+
+// Rendu '2.0 mm' / '0.9×2.2 mm' — accepte n'importe quel {d,a}.
+function spokeSectionStr(s) {
+  if (!s || s.d === null || s.d === undefined || isNaN(s.d)) return '—';
+  return s.a ? `${s.d}×${s.a} mm` : `${s.d} mm`;
+}
+
+// ── Vocabulaire du différentiel (source unique) ──────────────────────────────
+// Libellé de côté d'une rangée. Une rangée ne porte pas de côté en propre :
+// l'orange (fo) est le DS sur roue arrière et le NDS sur roue avant. `wh` est
+// passé explicitement, jamais lu depuis la globale — les rendus d'export
+// lisent le wtype FIGÉ du calcul (summaryData.wtype), pas la roue courante.
+function diffSideLabel(row, wh) {
+  return (row === 'fo') === (wh === 'arriere') ? 'DS' : 'NDS';
+}
+
+// Rendu d'une paire différentielle : « NDS <gauche> / DS <droite> ». L'ordre
+// suit la ROUE, pas la rangée — colonne gauche d'abord, comme le tableau de
+// saisie, le radar et les cards de longueur. La rangée orange (fo) est donc
+// citée en premier sur roue avant et en second sur roue arrière, ce qui est
+// le comportement voulu : c'est le côté physique qui ordonne la lecture.
+// Quatre rendus en dépendent (croisement : card Résumé et PDF tension ;
+// section : calc() via summaryData.sl et modale Hooke) ; recopiés, deux
+// d'entre eux avaient déjà divergé sur le séparateur pour la même information.
+function diffPairStr(wh, valFo, valFa) {
+  const ord = diffRowOrder(wh);
+  const val = { fo: valFo, fa: valFa };
+  return diffSideLabel(ord.nds, wh) + ' ' + val[ord.nds] + ' / '
+       + diffSideLabel(ord.ds,  wh) + ' ' + val[ord.ds];
+}
+
+// Clé i18n du côté d'une rangée — même règle, vocabulaire traduit.
+function diffSideKey(row, wh) {
+  return diffSideLabel(row, wh) === 'DS' ? 'driveSide' : 'nonDriveSide';
+}
+
+// Libellé composé du module tension : « Côté Gauche (NDS) » / « Côté Droit
+// (DS) ». La main et l'abréviation ne sont pas deux informations mais une
+// seule — le NDS est toujours la colonne gauche — donc les deux se dérivent
+// de diffSideLabel(). Écrivain unique : les stats de tension et EF Vocal le
+// recopiaient chacun de son côté, deux sources pour un même vocabulaire.
+function tmSideLabel(row, wh) {
+  const abbr = diffSideLabel(row, wh);
+  return t(abbr === 'NDS' ? 'tmLeft' : 'tmRight') + ' (' + abbr + ')';
+}
+
+// ══ ORDRE DE LECTURE DES DEUX RANGÉES ═══════════════════════════════════════
+// Deux règles, et c'est l'ORIENTATION du rendu qui arbitre — la disposition,
+// pas la donnée :
+//
+//   CÔTE À CÔTE → gauche puis droite, donc NDS puis DS. diffRowOrder() dit
+//     quelle rangée occupe quelle colonne. Concerne : tableau de saisie,
+//     radar et sa légende, cards de longueur, colonnes d'arbitrage, stats de
+//     tension en 2 colonnes, légende Hooke, colonnes des PDF — et les chaînes
+//     « A / B » (diffPairStr, _snapSpokeLabel), qui sont horizontales elles
+//     aussi. Pour _snapSpokeLabel, non libellée, l'ordre EST la seule
+//     information de côté transportée.
+//
+//   EMPILÉ → orange (fo) en haut, bleu (fa) dessous. L'ordre suit la RANGÉE,
+//     pas le côté. Concerne : stats de tension en 1 colonne (CSS `order:-1`),
+//     blocs de stats des JPEG (tri sur isFo), et les deux lignes de longueur
+//     de la card Résumé.
+//
+// Une bascule d'orientation doit donc CHANGER l'ordre. C'est acquis pour les
+// stats de tension : la collapse en 1 colonne et le `order:-1` vivent dans le
+// même bloc @media (max-width: 520px), ils basculent ensemble à la rotation,
+// sans JS — le DOM porte l'ordre côte à côte, le CSS porte l'exception
+// empilée. Tout nouveau conteneur pouvant passer de 2 colonnes à 1 doit
+// embarquer les deux règles au même endroit, faute de quoi il s'empilera dans
+// l'ordre côte-à-côte : bleu au-dessus sur roue arrière.
+// ════════════════════════════════════════════════════════════════════════════
+
+// Ordre d'affichage des deux nappes pour la branche CÔTE À CÔTE. Le NDS est à
+// gauche, le DS à droite ; seule la rangée qui occupe chaque position change,
+// l'orange (fo) étant le NDS sur roue avant et le DS sur roue arrière.
+// Renvoie les noms de RANGÉE, à indexer dans les palettes { fo, fa } propres à
+// chaque rendu — la couleur, elle, ne bouge jamais : orange = fo, bleu = fa.
+function diffRowOrder(wh) {
+  const arr = wh === 'arriere';
+  return { nds: arr ? 'fa' : 'fo', ds: arr ? 'fo' : 'fa' };
+}
+
+// Pendant DOM de diffRowOrder. Même invariant, autre sortie : au lieu de dire
+// quelle rangée occupe quelle position, place physiquement les deux colonnes.
+// La rangée fo passe à droite sur roue arrière, à gauche sur roue avant.
+// Les quatre conteneurs routés ici (.rg, #arb-cols, #tension-g2,
+// #spoke-sec-row) n'ont que ces deux enfants et ne sont mutés nulle part
+// ailleurs : appendChild/insertBefore y sont donc exhaustifs.
+// Pas de garde ici : les huit éléments sont statiques dans le HTML, leur
+// absence serait un défaut de structure, pas un cas à absorber. parent ou
+// elFo manquant lève donc une TypeError immédiate. Attention en revanche :
+// elFa manquant ne lève PAS sur la branche 'avant' — insertBefore(node, null)
+// est défini par la spec comme équivalent à appendChild, et fait donc
+// silencieusement l'inverse du résultat attendu. Ce trou est celui des six
+// écritures d'origine, conservé tel quel. Un appelant qui a une raison de
+// tolérer l'absence pose sa garde avant l'appel — cf. reorderSpokeSectionFields.
+function diffReorder(parent, elFo, elFa, wh) {
+  wh === 'arriere' ? parent.appendChild(elFo) : parent.insertBefore(elFo, elFa);
+}
+
+// Libellés de la légende radar, lus depuis le DOM — c'est tmUpdateBadges() qui
+// les pose et applyLang() qui les retraduit, donc le DOM fait foi. Repli sur le
+// vocabulaire de côté quand l'élément est absent ou vide (export déclenché
+// avant tout rendu) : un 'DS' figé mentirait sur roue avant, où la rangée
+// orange est le NDS.
+function radarLegLabels(wh) {
+  const read = (id, row) => {
+    const el = document.getElementById(id);
+    const v = el ? el.textContent.trim() : '';
+    return v || diffSideLabel(row, wh);
+  };
+  return { fo: read('radar-leg-fo', 'fo'), fa: read('radar-leg-fa', 'fa') };
+}
+
+function area(side) {
+  const s = spokeSection(side);
+  if (s.d === null || isNaN(s.d)) return 0;
+  const a = (s.a !== null && !isNaN(s.a)) ? s.a : s.d;
+  return Math.PI / 4 * s.d * a;
+}
+function el(F, L, side) {
+  const A = area(side);
+  if (!A) return 0;
+  return (F * 9.81 * L) / (A * 200000);
 }
 
 // ── Hint élongation ───────────────────────────────────────────────────────────
@@ -5630,7 +6187,7 @@ function calc() {
       body.style.display = 'block'; chevron.style.transform = 'rotate(180deg)';
     }
     const _steel = spokeMatType === 'steel';
-    const _sec   = _steel && sd !== null && !isNaN(sd);
+    const _sec   = spokeSectionReady();
     const _ten   = !isNaN(parseFloat($id('tension-forte').value));
     const _hss   = _sec && _ten;
     const hb = document.getElementById('hooke-btn'); if (hb) hb.style.display = _hss ? 'flex' : 'none';
@@ -5708,8 +6265,8 @@ function calc() {
   // Roue avant   : tF = tension NDS (côté fort avant), tf = tension DS
   const tDS  = isArriere ? tF : tf;
   const tNDS = isArriere ? tf : tF;
-  const eFo   = hasTension ? el(tDS,  Lfo) : 0;   // élongation DS
-  const eFa   = hasTension ? el(tNDS, Lfa) : 0;   // élongation NDS
+  const eFo   = hasTension ? el(tDS,  Lfo, 'ds')  : 0;   // élongation DS
+  const eFa   = hasTension ? el(tNDS, Lfa, 'nds') : 0;   // élongation NDS
   const h     = n / 2;
 
   // Swap display : roue avant → card fo (orange/gauche) = NDS, card fa (bleu/droite) = DS
@@ -5726,7 +6283,7 @@ function calc() {
   $id('r-fo').textContent = LfoDisplay.toFixed(2); $id('r-fa').textContent = LfaDisplay.toFixed(2);
 
   // Sub-results (elongation + kgf) only shown if steel + section selected + target tension set
-  const hasSpokeSection = spokeMatType === 'steel' && sd !== null && !isNaN(sd);
+  const hasSpokeSection = spokeSectionReady();
   const hasElong = hasSpokeSection && hasTension;
   if (hasElong) {
     const stretchLabel = t('estStretch');
@@ -5752,7 +6309,11 @@ function calc() {
   document.querySelectorAll('.rc-tap').forEach(t => { t.style.display = hasElong ? '' : 'none'; });
   updateElongHint(spokeMatType === 'steel', hasSpokeSection, hasTension);
 
-  const sl = (sd !== null && !isNaN(sd)) ? (sa ? `${sd}×${sa} mm` : `${sd} mm`) : '—';
+  // Récapitulatif : même forme que la ligne Croisement en différentiel
+  // (« DS 2.0 mm / NDS 1.8 mm »), rangée orange d'abord.
+  const sl = spokeDiff
+    ? diffPairStr(wtype, spokeSectionStr({ d: sdFo, a: saFo }), spokeSectionStr({ d: sdFa, a: saFa }))
+    : spokeSectionStr({ d: sd, a: sa });
   // Conserver les longueurs saisies manuellement si elles existent
   summaryData = { erd: erd.toFixed(1), wtype, n, h, cross, crossFo, crossFa, diffMode, isSP, sl, asym, ratio, foOff, faOff, lFo: Lfo, lFa: Lfa, lenFo: null, lenFa: null };
   resetSumCardState();
@@ -5760,11 +6321,10 @@ function calc() {
   $id('summary-wrap').classList.add('show');
   renderSummary();
 
-  // Roue arrière : card fo (orange) à droite | Roue avant : card fo (orange) à gauche
   const rg = document.querySelector('.rg'), rcFo = document.querySelector('.rc.fo'), rcFa = document.querySelector('.rc.fa');
-  isArriere ? rg.appendChild(rcFo) : rg.insertBefore(rcFo, rcFa);
+  diffReorder(rg, rcFo, rcFa, wtype);
   const arbCols = $id('arb-cols'), arbColFo = $id('arb-col-fo'), arbColFa = $id('arb-col-fa');
-  isArriere ? arbCols.appendChild(arbColFo) : arbCols.insertBefore(arbColFo, arbColFa);
+  diffReorder(arbCols, arbColFo, arbColFa, wtype);
 
   const rtagFo = $id('rtag-fo'); rtagFo.textContent = t(keyFo); rtagFo.dataset.i18nKey = keyFo;
   const rtagFa = $id('rtag-fa'); rtagFa.textContent = t(keyFa); rtagFa.dataset.i18nKey = keyFa;
@@ -5803,15 +6363,9 @@ function renderSummary() {
   if (!summaryData) return;
   const d = summaryData;
   const crossStr = (c) => c === 0 ? t('radial') : c + '×';
-  let cl;
-  if (d.diffMode) {
-    const isArriere = d.wtype === 'arriere';
-    const foName = isArriere ? 'DS' : 'NDS';
-    const faName = isArriere ? 'NDS' : 'DS';
-    cl = `${foName} ${crossStr(d.crossFo)} / ${faName} ${crossStr(d.crossFa)}`;
-  } else {
-    cl = crossStr(d.cross);
-  }
+  const cl = d.diffMode
+    ? diffPairStr(d.wtype, crossStr(d.crossFo), crossStr(d.crossFa))
+    : crossStr(d.cross);
   const ratioColor = d.ratio >= 0.7 ? 'var(--success)' : d.ratio >= 0.6 ? '#e8a040' : '#e06060';
   function item(lbl, val, color) {
     return `<div class="sum-row"><span class="sum-lbl">${lbl}</span><span class="sum-val"${color ? ' style="color:'+color+'"' : ''}>${val}</span></div>`;
@@ -6277,6 +6831,38 @@ function _tmStoreKeyOf(tp, dtSub) {
   return tp;
 }
 
+// Clés de rayon portées par un PORTEUR persisté (state vif ou snapshot).
+// 'tmSpokeKey' est le nom de champ historique de la rangée fo ; 'tmSpokeFa' la
+// seconde, qui n'a de sens que si le porteur était en différentiel. Tout code
+// qui juge des références d'un porteur passe par ici : la version initiale n'en
+// lisait qu'une, et chaque lecteur oublié laisse une charte échapper aux
+// filets d'intégrité.
+// Vue indexée par RANGÉE des mêmes clés. Porte seule la règle « la seconde
+// clé n'a de sens qu'en différentiel » ; _srcSpokeKeys en dérive la liste
+// plate (identité, filets d'intégrité) et _snapSpokeLabel l'ordre
+// d'affichage. Deux vues, une règle.
+function _srcSpokeByRow(src) {
+  if (!src) return { fo: null, fa: null };
+  return {
+    fo: src.tmSpokeKey || null,
+    fa: (src.spokeDiff && src.tmSpokeFa) ? src.tmSpokeFa : null
+  };
+}
+
+function _srcSpokeKeys(src) {
+  var byRow = _srcSpokeByRow(src);
+  return [byRow.fo, byRow.fa].filter(Boolean);
+}
+
+// Purge du bloc tension d'un porteur : les DEUX clés tombent ensemble. En
+// laisser une debout recrée exactement l'orphelin que la purge élimine.
+function _srcClearTension(src) {
+  if (!src) return;
+  src.tmType = null;
+  src.tmSpokeKey = null;
+  src.tmSpokeFa = null;
+}
+
 // Recherche une charte perso par son identité (nom, tensioKey) — la même clé
 // que ccSave. Un nom seul ne suffit pas : il peut désigner deux courbes sur
 // deux tensiomètres différents. `pool` évite de re-parser localStorage dans
@@ -6353,16 +6939,22 @@ function _importDedupName(base, exists) {
   return nm;
 }
 
-// Réécrit tmSpokeKey selon la map de renommage 'tensioKey\u0000ancienNom' →
+// Réécrit les clés de rayon persistées selon la map de renommage 'tensioKey\u0000ancienNom' →
 // nouveauNom — state ET snapshots, chacun porte sa propre copie. Mutualisé
 // entre l'import de roue (_wshareResolveDeps) et l'import de backup.
 function _importApplyRen(entry, ren) {
   if (!Object.keys(ren).length) return;
   var apply = function(src) {
-    if (!src || !src.tmSpokeKey || src.tmSpokeKey.indexOf(CC_PREFIX) !== 0) return;
+    if (!src) return;
     var k = _tmStoreKeyOf(src.tmType, src.tmDTSub);
-    var nn = ren[k + '\u0000' + src.tmSpokeKey.slice(CC_PREFIX.length)];
-    if (nn) src.tmSpokeKey = CC_PREFIX + nn;
+    // Les deux rangées portent chacune leur clé : en réécrire une seule
+    // laisserait la seconde pointer un nom qui n'existe plus après collision.
+    ['tmSpokeKey', 'tmSpokeFa'].forEach(function(field) {
+      var v = src[field];
+      if (!v || v.indexOf(CC_PREFIX) !== 0) return;
+      var nn = ren[k + '\u0000' + v.slice(CC_PREFIX.length)];
+      if (nn) src[field] = CC_PREFIX + nn;
+    });
   };
   apply(entry.state);
   (entry.snapshots || []).forEach(apply);
@@ -6601,9 +7193,11 @@ function importConfigs(event) {
         if (!p || !p.tmType) return false;
         if (p.tmType.indexOf('ct_') === 0 &&
             !_ctPool.some(function(c) { return c && 'ct_' + c.id === p.tmType; })) return true;
-        if (p.tmSpokeKey && p.tmSpokeKey.indexOf(CC_PREFIX) === 0 &&
-            !_ccFind(p.tmSpokeKey.slice(CC_PREFIX.length),
-                           _tmStoreKeyOf(p.tmType, p.tmDTSub), _ccPool)) return true;
+        var _pk = _tmStoreKeyOf(p.tmType, p.tmDTSub);
+        if (_srcSpokeKeys(p).some(function(k) {
+              return k.indexOf(CC_PREFIX) === 0 &&
+                     !_ccFind(k.slice(CC_PREFIX.length), _pk, _ccPool);
+            })) return true;
         return false;
       });
 
@@ -6692,13 +7286,17 @@ function _wshareFileName(name) {
 // courbe, en silence — un nom ne doit jamais pouvoir mentir sur un contenu.
 // Couvre les fichiers v1 (aucun deps) comme un v2 tronqué ou édité à la main.
 // Export : `allow` absent ⇒ aucune restriction, la bibliothèque locale fait foi.
+// `ccs` est une LISTE : un porteur différentiel dépend de deux chartes, et
+// n'en embarquer qu'une livrerait une roue dont une colonne est inconvertible.
+// ok=false dès qu'UNE dépendance manque : le porteur est alors inexploitable
+// en entier, on ne conserve pas une demi-conversion.
 function _wshareDepOf(src, ctPool, ccPool, allow) {
-  var none = { ok: true, ct: null, cc: null };
+  var none = { ok: true, ct: null, ccs: [] };
   if (!src || !src.tmType) return none;
-  var isCt = src.tmType.indexOf('ct_') === 0;
-  var isCc = !!src.tmSpokeKey && src.tmSpokeKey.indexOf(CC_PREFIX) === 0;
-  if (!isCt && !isCc) return none;
-  var out = { ok: true, ct: null, cc: null };
+  var isCt   = src.tmType.indexOf('ct_') === 0;
+  var ccKeys = _srcSpokeKeys(src).filter(function(k) { return k.indexOf(CC_PREFIX) === 0; });
+  if (!isCt && !ccKeys.length) return none;
+  var out = { ok: true, ct: null, ccs: [] };
   if (isCt) {
     if (allow && !allow.cts[src.tmType.slice(3)]) { out.ok = false; return out; }
     var cts = ctPool || ctLoadAll();
@@ -6706,14 +7304,15 @@ function _wshareDepOf(src, ctPool, ccPool, allow) {
       if (cts[i] && 'ct_' + cts[i].id === src.tmType) { out.ct = cts[i]; break; }
     }
     if (!out.ct) { out.ok = false; return out; }
-    if (!isCc) { out.ok = false; return out; } // tensio perso sans charte = table vide
+    if (!ccKeys.length) { out.ok = false; return out; } // tensio perso sans charte = table vide
   }
-  if (isCc) {
-    var nm  = src.tmSpokeKey.slice(CC_PREFIX.length);
-    var key = _tmStoreKeyOf(src.tmType, src.tmDTSub);
+  var key = _tmStoreKeyOf(src.tmType, src.tmDTSub);
+  for (var j = 0; j < ccKeys.length; j++) {
+    var nm = ccKeys[j].slice(CC_PREFIX.length);
     if (allow && !allow.ccs[key + '\u0000' + nm]) { out.ok = false; return out; }
-    out.cc = _ccFind(nm, key, ccPool);
-    if (!out.cc) { out.ok = false; return out; }
+    var found = _ccFind(nm, key, ccPool);
+    if (!found) { out.ok = false; return out; }
+    out.ccs.push(found);
   }
   return out;
 }
@@ -6735,17 +7334,17 @@ function _wshareFilterDeps(state, snaps, ctPool, ccPool, allow) {
   var deps = { cts: [], ccs: [] }, seenCt = {}, seenCc = {};
   var take = function(d) {
     if (d.ct && !seenCt[d.ct.id]) { seenCt[d.ct.id] = 1; deps.cts.push(d.ct); }
-    if (d.cc) {
-      var tag = d.cc.tensioKey + '\u0000' + d.cc.name;
-      if (!seenCc[tag]) { seenCc[tag] = 1; deps.ccs.push(d.cc); }
-    }
+    (d.ccs || []).forEach(function(cc) {
+      var tag = cc.tensioKey + '\u0000' + cc.name;
+      if (!seenCc[tag]) { seenCc[tag] = 1; deps.ccs.push(cc); }
+    });
   };
   var dLive = _wshareDepOf(state, ctPool, ccPool, allow);
   var liveVals = _wshareHasVals(state.tmDataFo, state.tmDataFa);
   if (dLive.ok) { take(dLive); if (liveVals) kept = true; }
   else {
     if (liveVals) lost = true;
-    state.tmType = null; state.tmSpokeKey = null;
+    _srcClearTension(state);
     state.tmDataFo = []; state.tmDataFa = [];
   }
   var out = [];
@@ -6984,16 +7583,65 @@ function openChartShareModal() {
   // Exporter grisé tant que le rayon sélectionné n'est pas une charte perso
   // (CC_PREFIX) — l'équivalent du garde _wheelOk du wheel sharing. Importer
   // reste toujours disponible : recevoir ne dépend pas de l'état de la card.
+  var cand = _cshareCandidates();
+  // Deux chartes ⇒ l'utilisateur tranche ; une seule ⇒ elle est retenue
+  // d'office. Le choix repart de zéro à chaque ouverture.
+  _cshareChoice = cand.length ? cand[0].side : null;
+  _cshareRenderPick(cand);
   var exp = $id('cshare-export-btn');
-  if (exp) exp.disabled = !(tmSpokeKey && tmSpokeKey.indexOf(CC_PREFIX) === 0);
+  if (exp) exp.disabled = !_cshareSourceKey();
   $id('cshare-overlay').classList.add('show');
   $id('cshare-modal').classList.add('show');
+}
+
+// Liste des chartes exportables. Masquée sous deux candidats : proposer un
+// choix unique donnerait l'illusion qu'il y a une alternative.
+function _cshareRenderPick(cand) {
+  var wrap = $id('cshare-pick-wrap'), list = $id('cshare-pick-list');
+  if (!wrap || !list) return;
+  list.innerHTML = '';
+  if (cand.length < 2) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'flex';
+  cand.forEach(function(c) {
+    // Le libellé de côté suit la rangée, comme partout ailleurs : la rangée fo
+    // est le DS sur roue arrière et le NDS sur roue avant.
+    var sideTxt = diffSideLabel(c.side, wtype);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'picker-btn cshare-pick-btn' + (c.side === _cshareChoice ? ' selected' : '');
+    btn.dataset.side = c.side;
+    btn.onclick = function() { _cshareSetChoice(c.side); };
+    var sp = document.createElement('span');
+    sp.className = 'cshare-pick-side ' + (c.side === 'fo' ? 'diff-side-fo' : 'diff-side-fa');
+    sp.textContent = sideTxt;
+    var nm = document.createElement('span');
+    nm.className = 'cshare-pick-name';
+    nm.textContent = c.name;
+    btn.appendChild(sp); btn.appendChild(nm);
+    list.appendChild(btn);
+  });
+}
+
+function _cshareSetChoice(side) {
+  _cshareChoice = side;
+  var list = $id('cshare-pick-list');
+  if (list) Array.prototype.forEach.call(list.children, function(b) {
+    b.classList.toggle('selected', b.dataset.side === side);
+  });
+  var exp = $id('cshare-export-btn');
+  if (exp) exp.disabled = !_cshareSourceKey();
 }
 
 function closeChartShareModal() {
   $id('cshare-overlay').classList.remove('show');
   $id('cshare-modal').classList.remove('show');
   var fi = $id('cshare-file-input'); if (fi) fi.value = '';
+  // Le choix ne survit pas à la fermeture : à la réouverture, les rangées
+  // peuvent porter d'autres chartes — une sélection héritée mentirait.
+  _cshareChoice = null;
+  var wrap = $id('cshare-pick-wrap'), list = $id('cshare-pick-list');
+  if (wrap) wrap.style.display = 'none';
+  if (list) list.innerHTML = '';
 }
 
 function _cshareFileName(name) {
@@ -7002,11 +7650,12 @@ function _cshareFileName(name) {
 }
 
 function cshareExport() {
-  if (!tmSpokeKey || tmSpokeKey.indexOf(CC_PREFIX) !== 0) {
+  var _k = _cshareSourceKey();
+  if (!_k) {
     showImportToast(t('cshareExportEmpty'), true);
     return;
   }
-  var nm  = tmSpokeKey.slice(CC_PREFIX.length);
+  var nm  = _k.slice(CC_PREFIX.length);
   var key = _tmStoreKeyOf(tmType, tmDTSub);
   var cc  = _ccFind(nm, key);
   if (!cc) { showImportToast(t('cshareExportEmpty'), true); return; }
@@ -7034,6 +7683,16 @@ function cshareExport() {
 function _cshareSelect(tensioKey, ccName) {
   var sel = $id('tm-spoke-select');
   if (sel && sel.disabled) return;
+  // En différentiel, l'import ne désigne aucune rangée. On ne remplit qu'une
+  // rangée VIDE : écraser une charte déjà posée purgerait des relevés que
+  // l'utilisateur n'a pas demandé à perdre. Les deux rangées occupées ⇒ on ne
+  // touche à rien, la charte reste disponible dans les deux dropdowns.
+  var targetSide = null;
+  if (spokeDiff) {
+    if (!tmSpokeFo)      targetSide = 'fo';
+    else if (!tmSpokeFa) targetSide = 'fa';
+    else return;
+  }
   var isCt = tensioKey.indexOf('ct_') === 0;
   var type = isCt ? tensioKey : (tensioKey.indexOf('dt_') === 0 ? 'dt' : tensioKey);
   if (type === 'dt') {
@@ -7053,8 +7712,14 @@ function _cshareSelect(tensioKey, ccName) {
   }
   tmPopulateSpokeSelect(); // charte fraîchement injectée : options à jour
   var key = CC_PREFIX + ccName;
-  if (tmSpokeKey === key) return;
-  if (sel) {
+  if (tmSpokeFo === key || tmSpokeFa === key) return;
+  if (targetSide) {
+    var selSide = $id('tm-spoke-select-' + targetSide);
+    if (selSide) {
+      selSide.value = key;
+      if (selSide.value === key) tmOnSpokeChangeSide(targetSide);
+    }
+  } else if (sel) {
     sel.value = key;
     if (sel.value === key) tmOnSpokeChange(); // option absente = pas de reset aveugle
   }
@@ -7165,7 +7830,9 @@ function bkpSetPending(on) {
     var el = document.getElementById(id);
     if (el) el.classList.toggle('bkp-blink', on);
   });
-  var exp = document.querySelector('.savemgr-export');
+  // Par id : .savemgr-export est aussi portée par les boutons de partage
+  // roue et charte, que le rappel de sauvegarde ne doit pas faire clignoter.
+  var exp = document.getElementById('bkp-export-btn');
   if (exp) exp.classList.toggle('bkp-blink', on);
 }
 
@@ -8022,10 +8689,11 @@ function eraseMgrEraseAll() {
     while (ctLoadAll().length > 0) ctDelete(0);
     // Chartes de rayons custom restantes (attachées aux tensiomètres fixes)
     if (ccLoadAll().length > 0) {
-      const activeIsCustom = tmSpokeKey && tmSpokeKey.startsWith(CC_PREFIX);
+      const activeIsCustom = (tmSpokeFo && tmSpokeFo.startsWith(CC_PREFIX))
+                          || (tmSpokeFa && tmSpokeFa.startsWith(CC_PREFIX));
       ccPersist([]);
       ccInjectAll();
-      if (activeIsCustom) { tmSpokeKey = null; tmResetData(); tmHideResult(); }
+      if (activeIsCustom) { tmSpokeFo = null; tmSpokeFa = null; tmResetData(); tmHideResult(); }
       tmPopulateSpokeSelect();
       tmBuildTable();
       ccRenderExisting();
@@ -8062,11 +8730,12 @@ function tmGetActiveTable() {
 }
 
 // ── Obtenir les points [defl,kgf] pour le rayon courant ──────────────────────
-function tmGetPoints() {
-  if (!tmSpokeKey) return null;
+function tmGetPoints(side) {
+  const key = tmSpokeOf(side);
+  if (!key) return null;
   const tbl = tmGetActiveTable();
   if (!tbl) return null;
-  return tbl[tmSpokeKey] || null;
+  return tbl[key] || null;
 }
 
 // ── Interpolation linéaire sur tableau [[defl,kgf]] ──────────────────────────
@@ -8089,24 +8758,23 @@ function interpolateFromPoints(reading, pts) {
 }
 
 // ── toKgf — convertit une lecture brute en kgf ──────────────────────────────
-function toKgf(reading) {
+function toKgf(reading, side) {
   if (reading === null) return null;
-  const pts = tmGetPoints();
-  return interpolateFromPoints(reading, pts);
+  return interpolateFromPoints(reading, tmGetPoints(side));
 }
 
 // ── Plage valide pour le rayon courant ──────────────────────────────────────
-function tmGetRange() {
-  const pts = tmGetPoints();
+function tmGetRange(side) {
+  const pts = tmGetPoints(side);
   if (!pts || !pts.length) return null;
   const valid = pts.filter(p => p[1] !== null);
   if (!valid.length) return null;
   return { min: valid[0][0], max: valid[valid.length - 1][0] };
 }
 
-function tmInRange(reading) {
+function tmInRange(reading, side) {
   if (reading === null) return false;
-  const range = tmGetRange();
+  const range = tmGetRange(side);
   if (!range) return false;
   return reading >= range.min && reading <= range.max;
 }
@@ -8151,18 +8819,34 @@ function tmDisplayValue(val) {
 }
 
 // ── Peuplement du dropdown de rayons ─────────────────────────────────────────
+// Peuple les trois sélecteurs (unique + deux rangées) à partir de la table
+// active. Boucle sur les rangées : une seule construction d'options, donc
+// aucune divergence possible entre les listes.
 function tmPopulateSpokeSelect() {
-  const sel = $id('tm-spoke-select');
+  ['', 'fo', 'fa'].forEach(row => _tmPopulateOneSpokeSelect(row));
+  tmUpdateUnitBadge();
+  tmUpdateConvBtn();
+  tmSyncSpokeClearBtns();
+}
+
+function _tmPopulateOneSpokeSelect(row) {
+  const selId = row ? 'tm-spoke-select-' + row : 'tm-spoke-select';
+  const sel = $id(selId);
+  if (!sel) return;
+  // La rangée '' (sélecteur unique) et la rangée 'fo' portent la même clé.
+  const isFa = row === 'fa';
+  const setKey = (v) => { if (isFa) tmSpokeFa = v; else tmSpokeFo = v; };
+  const getKey = () => isFa ? tmSpokeFa : tmSpokeFo;
   const tbl = tmGetActiveTable();
-  if (!tbl) { sel.innerHTML = `<option value="">${t('tmSpokeSelectPlaceholder')}</option>`; tmSpokeKey = null; return; }
+  if (!tbl) { sel.innerHTML = `<option value="">${t('tmSpokeSelectPlaceholder')}</option>`; setKey(null); return; }
   const spokes = Object.keys(tbl);
   // La charte perso référencée a pu être supprimée depuis la sauvegarde (ou
   // ne jamais être arrivée, cas d'une roue reçue) : invalider la clé plutôt
   // que de laisser loadConfig verrouiller le select sur un rayon fantôme.
   // Couvre aussi le tensiomètre perso sans charte, dont la table est un objet
   // vide mais truthy — il ne tombe donc pas dans la branche `if (!tbl)`.
-  if (tmSpokeKey && !(tmSpokeKey in tbl)) tmSpokeKey = null;
-  const prev = tmSpokeKey;
+  if (getKey() && !(getKey() in tbl)) setKey(null);
+  const prev = getKey();
   sel.innerHTML = `<option value="">${t('tmSpokeSelectPlaceholder')}</option>`;
 
   const usesCategories = tmType === 'wf' || tmType === 'pillar';
@@ -8236,18 +8920,14 @@ function tmPopulateSpokeSelect() {
     }
   }
 
-  tmSpokeKey = spokes.includes(prev) ? prev : null;
-  if (!tmSpokeKey) sel.value = '';
-  tmUpdateUnitBadge();
-  tmUpdateConvBtn();
-  const clearSpoke = $id('tm-clear-spoke');
-  if (clearSpoke) clearSpoke.classList.toggle('inactive', !tmSpokeKey);
+  setKey(spokes.includes(prev) ? prev : null);
+  if (!getKey()) sel.value = '';
 }
 
 // ── Badge unité ───────────────────────────────────────────────────────────────
 function tmUpdateUnitBadge() {
   const nb = parseInt($id('nb-rayons').value) || 0;
-  const ready = !!tmType && !!tmSpokeKey && nb > 0;
+  const ready = !!tmType && tmSpokeReady() && nb > 0;
   const inputCard  = $id('tm-input-card');
   const resultCard = $id('tm-result-card');
   if (inputCard)  inputCard.style.display  = ready ? '' : 'none';
@@ -8306,17 +8986,21 @@ function tmSwitchActiveKey(newKey) {
   // Restore from store if data exists for this tensiometer
   const stored = tmStore[newKey];
   if (stored) {
-    tmSpokeKey = stored.spokeKey;
+    // Le différentiel appartient à la roue, pas au tensiomètre : changer de
+    // tensiomètre ne doit pas faire basculer le toggle.
+    tmSpokeFo = stored.spokeKey;
+    tmSpokeFa = stored.spokeKeyFa || null;
     tmData   = { fo: stored.fo.slice(), fa: stored.fa.slice() };
     tmPrevFo = stored.prevFo.slice();
     tmPrevFa = stored.prevFa.slice();
   } else {
-    tmSpokeKey = null;
+    tmSpokeFo = null; tmSpokeFa = null;
     tmResetData();
   }
+  syncTmSpokeDiffUI();
   tmPopulateSpokeSelect();
   tmBuildTable();
-  if (tmSpokeKey && tmHasData()) {
+  if (tmSpokeReady() && tmHasData()) {
     tmTryRenderRadar();
   } else {
     tmHideResult();
@@ -8329,7 +9013,8 @@ function setTM(type) {
   if (newKey === tmActiveKey) return;
   tmType = type;
   // Re-verrouiller si on revient au tensio chargé avec son rayon d'origine
-  const backToLoaded = !!_tmLoadedType && type === _tmLoadedType && tmSpokeKey === _tmLoadedSpoke;
+  const backToLoaded = !!_tmLoadedType && type === _tmLoadedType
+                       && tmSpokeFo === _tmLoadedSpoke && tmSpokeFa === _tmLoadedSpokeFa;
   tmLockSpokeSelect(backToLoaded);
   tmSwitchActiveKey(newKey);
   const tmTensioSel = $id('tm-tensio-select');
@@ -8353,9 +9038,10 @@ function tmClearTensio() {
   tmDTSub = 'standard';
   $id('tm-btn-dt-std').classList.add('active');
   $id('tm-btn-dt-ael2').classList.remove('active');
-  tmSpokeKey = null;
-  _tmLoadedType  = null;
-  _tmLoadedSpoke = null;
+  tmSpokeFo = null; tmSpokeFa = null;
+  _tmLoadedType    = null;
+  _tmLoadedSpoke   = null;
+  _tmLoadedSpokeFa = null;
   tmLockSpokeSelect(false);
   tmPopulateSpokeSelect();
   tmUpdateBadges();
@@ -8393,31 +9079,28 @@ function updateDTTip() {
 }
 
 // ── Verrouillage du select rayon quand config chargée ────────────────────────
+// Verrouille les TROIS sélecteurs : n'en figer qu'un laissait le verrou
+// « config chargée » totalement contournable en différentiel.
 function tmLockSpokeSelect(locked) {
-  const sel   = $id('tm-spoke-select');
-  const clear = $id('tm-clear-spoke');
-  if (sel) {
+  ['tm-spoke-select', 'tm-spoke-select-fo', 'tm-spoke-select-fa'].forEach(id => {
+    const sel = $id(id);
+    if (!sel) return;
     sel.disabled = locked;
-    sel.style.opacity      = locked ? '.5' : '';
-    sel.style.pointerEvents= locked ? 'none' : '';
-  }
-  if (clear) {
-    clear.style.opacity      = locked ? '.35' : '';
-    clear.style.pointerEvents= locked ? 'none' : '';
-  }
+    sel.style.opacity       = locked ? '.5' : '';
+    sel.style.pointerEvents = locked ? 'none' : '';
+  });
+  ['tm-clear-spoke', 'tm-clear-spoke-fo', 'tm-clear-spoke-fa'].forEach(id => {
+    const clear = $id(id);
+    if (!clear) return;
+    clear.style.opacity       = locked ? '.35' : '';
+    clear.style.pointerEvents = locked ? 'none' : '';
+  });
 }
 
 // ── onchange sur le dropdown de rayons ───────────────────────────────────────
 function tmOnSpokeChange() {
-  const sel = $id('tm-spoke-select');
-  const newKey = sel.value || null;
-  tmSpokeKey = newKey;
-  tmResetData();
-  tmBuildTable();
-  tmHideResult();
-  tmUpdateConvBtn();
-  const clearSpoke = $id('tm-clear-spoke');
-  if (clearSpoke) clearSpoke.classList.toggle('inactive', !tmSpokeKey);
+  tmSpokeFo = $id('tm-spoke-select').value || null;
+  tmAfterSpokeChange();
 }
 
 function tmClearSpoke() {
@@ -8426,11 +9109,59 @@ function tmClearSpoke() {
   tmOnSpokeChange();
 }
 
+// Sélection d'une rangée en mode différentiel.
+function tmOnSpokeChangeSide(side) {
+  const sel = $id('tm-spoke-select-' + side);
+  const key = sel ? (sel.value || null) : null;
+  if (side === 'fa') tmSpokeFa = key; else tmSpokeFo = key;
+  tmAfterSpokeChange();
+}
+
+function tmClearSpokeSide(side) {
+  const sel = $id('tm-spoke-select-' + side);
+  if (sel) sel.value = '';
+  tmOnSpokeChangeSide(side);
+}
+
+// Suite commune à tout changement de rayon : les relevés déjà saisis ont été
+// convertis avec l'ancienne charte, ils ne veulent plus rien dire.
+function tmAfterSpokeChange() {
+  tmResetData();
+  tmBuildTable();
+  tmHideResult();
+  tmUpdateConvBtn();
+  tmSyncSpokeClearBtns();
+}
+
+function tmSyncSpokeClearBtns() {
+  const map = { 'tm-clear-spoke': tmSpokeFo, 'tm-clear-spoke-fo': tmSpokeFo, 'tm-clear-spoke-fa': tmSpokeFa };
+  Object.keys(map).forEach(id => {
+    const b = $id(id);
+    if (b) b.classList.toggle('inactive', !map[id]);
+  });
+}
+
+// Le toggle du module tension écrit le même état que celui de la carte Rayons.
+function toggleTmSpokeDiff() { setSpokeDiff(!spokeDiff); }
+
+// Reflet pur de l'état vers l'UI.
+function syncTmSpokeDiffUI() {
+  const btn = $id('tm-spoke-diff-toggle');
+  if (btn) btn.setAttribute('aria-checked', spokeDiff ? 'true' : 'false');
+  const one  = $id('tm-spoke-single');
+  const both = $id('tm-spoke-diff');
+  if (one)  one.style.display  = spokeDiff ? 'none' : '';
+  if (both) both.style.display = spokeDiff ? '' : 'none';
+  updateDiffSideLabels();
+}
+
 // ── Picker chartes (toggle + fermeture) ─────────────────────────────────────
-function tmChartsPickerToggle() {
-  const popup   = $id('tm-charts-popup');
-  const overlay = $id('tm-charts-overlay');
-  const chevron = $id('tm-charts-chevron');
+function tmChartsPickerToggle(side) {
+  const sfx = _tmChartsSfx(side);
+  const popup   = $id('tm-charts-popup' + sfx);
+  const overlay = $id('tm-charts-overlay' + sfx);
+  const chevron = $id('tm-charts-chevron' + sfx);
+  if (!popup) return;
   const isOpen  = popup.classList.contains('show');
   if (isOpen) {
     popup.classList.remove('show');
@@ -8442,10 +9173,15 @@ function tmChartsPickerToggle() {
     if (chevron) chevron.style.transform = 'rotate(180deg)';
   }
 }
-function tmChartsPickerClose() {
-  const popup   = $id('tm-charts-popup');
-  const overlay = $id('tm-charts-overlay');
-  const chevron = $id('tm-charts-chevron');
+// side identifie la rangée ; le suffixe d'id en découle ('' pour le sélecteur
+// unique, dont le bouton porte la rangée fo).
+function _tmChartsSfx(side) { return spokeDiff ? '-' + (side || 'fo') : ''; }
+
+function tmChartsPickerClose(side) {
+  const sfx = _tmChartsSfx(side);
+  const popup   = $id('tm-charts-popup' + sfx);
+  const overlay = $id('tm-charts-overlay' + sfx);
+  const chevron = $id('tm-charts-chevron' + sfx);
   if (popup)   popup.classList.remove('show');
   if (overlay) overlay.classList.remove('show');
   if (chevron) chevron.style.transform = '';
@@ -8454,41 +9190,33 @@ function tmChartsPickerClose() {
 
 // ── Bouton charte de conversion : actif/désactivé ────────────────────────────
 function tmUpdateConvBtn() {
-  const hasSpoke = !!tmSpokeKey;
   const hasTensio = !!tmType;
+  // Chaque jeu de boutons s'allume selon SA rangée : en différentiel, la
+  // charte de conversion du fo peut être accessible pendant que celle du fa
+  // ne l'est pas encore.
+  [['', 'fo'], ['-fo', 'fo'], ['-fa', 'fa']].forEach(([sfx, side]) => {
+    const hasSpoke = !!tmSpokeOf(side);
 
-  // Item "Charte de conversion" dans le picker
-  const btn = $id('tm-conv-btn');
-  if (btn) {
-    btn.classList.toggle('locked', !hasSpoke);
-    btn.classList.toggle('lit', hasSpoke);
-  }
+    const btn = $id('tm-conv-btn' + sfx);
+    if (btn) { btn.classList.toggle('locked', !hasSpoke); btn.classList.toggle('lit', hasSpoke); }
 
-  // Item "Charte perso" dans le picker
-  const ccBtn = $id('cc-open-btn');
-  if (ccBtn) {
-    ccBtn.classList.remove('locked');
-    ccBtn.classList.toggle('lit', hasTensio);
-  }
+    const ccBtn = $id('cc-open-btn' + sfx);
+    if (ccBtn) { ccBtn.classList.remove('locked'); ccBtn.classList.toggle('lit', hasTensio); }
 
-  // Item "Contrôle tension" dans le picker : actif si un rayon est sélectionné
-  const tcBtn = $id('tm-tc-btn');
-  if (tcBtn) {
-    tcBtn.classList.toggle('locked', !hasSpoke);
-    tcBtn.classList.toggle('lit', hasSpoke);
-  }
+    const tcBtn = $id('tm-tc-btn' + sfx);
+    if (tcBtn) { tcBtn.classList.toggle('locked', !hasSpoke); tcBtn.classList.toggle('lit', hasSpoke); }
 
-  // Bouton déclencheur : allumé si au moins un item est actif
-  const triggerBtn = $id('tm-charts-picker-btn');
-  if (triggerBtn) {
-    triggerBtn.classList.toggle('lit', hasSpoke || hasTensio);
-  }
+    const triggerBtn = $id('tm-charts-picker-btn' + sfx);
+    if (triggerBtn) triggerBtn.classList.toggle('lit', hasSpoke || hasTensio);
+  });
 }
 
 // ── Ouvrir la modale charte de conversion ────────────────────────────────────
-function tmOpenConvTable() {
-  if (!tmSpokeKey) return;
-  const pts = tmGetPoints();
+function tmOpenConvTable(side) {
+  _tmConvSide = side || 'fo';
+  const spokeKey = tmSpokeOf(_tmConvSide);
+  if (!spokeKey) return;
+  const pts = tmGetPoints(_tmConvSide);
   if (!pts || !pts.length) return;
 
   // Label tensiomètre
@@ -8503,7 +9231,7 @@ function tmOpenConvTable() {
   }
 
   // Label rayon
-  $id('tm-conv-spoke-label').innerHTML = `${t('tmConvTensio')}\u00a0: <strong style="color:var(--accent)">${escHtml(tensioLabel)}</strong><br>${t('tmSpokeLabel')}\u00a0: <strong style="color:var(--text)">${escHtml(tmSpokeKey.replace(/^__[A-Z ]+__/, ''))}</strong>`;
+  $id('tm-conv-spoke-label').innerHTML = `${t('tmConvTensio')}\u00a0: <strong style="color:var(--accent)">${escHtml(tensioLabel)}</strong><br>${t('tmSpokeLabel')}\u00a0: <strong style="color:var(--text)">${escHtml(spokeKey.replace(/^__[A-Z ]+__/, ''))}</strong>`;
 
   // Header lecture
   $id('tm-conv-th-reading').textContent = t('tmConvReading');
@@ -8521,8 +9249,8 @@ function tmOpenConvTable() {
   // Stocker les points pour la courbe + reset état
   _tmConvPts = pts;
   _tmConvTensioLabel = tensioLabel;
-  _tmConvSpokeName = tmSpokeKey.replace(/^__[A-Z ]+__/, '');
-  _tmConvIsCustom = !!((tmType && tmType.startsWith('ct_')) || (tmSpokeKey && tmSpokeKey.startsWith(CC_PREFIX)));
+  _tmConvSpokeName = spokeKey.replace(/^__[A-Z ]+__/, '');
+  _tmConvIsCustom = !!((tmType && tmType.startsWith('ct_')) || spokeKey.startsWith(CC_PREFIX));
   _tmConvShowCurve = false;
 
   // Labels boutons
@@ -8733,11 +9461,12 @@ function tmTcExpectedReading(kgf, pts) {
 var _tmTcPendingReplace = false; // true = valeur présélectionnée, prochaine frappe remplace
 var _tmTcOorTimer = null;        // timer d'affichage de la plage OOR (annulable, cf. efOorTimer)
 
-function tmTcOpen() {
-  if (!tmSpokeKey) return;
+function tmTcOpen(side) {
+  _tmTcSide = side || 'fo';
+  if (!tmSpokeOf(_tmTcSide)) return;
   const pts = tmGetPoints();
   if (!pts || !pts.length) return;
-  $id('tm-tc-spoke-label').innerHTML = `${t('tmSpokeLabel')}\u00a0: <strong style="color:var(--text)">${escHtml(tmSpokeKey.replace(/^__[A-Z ]+__/, ''))}</strong>`;
+  $id('tm-tc-spoke-label').innerHTML = `${t('tmSpokeLabel')}\u00a0: <strong style="color:var(--text)">${escHtml(tmSpokeOf(_tmTcSide).replace(/^__[A-Z ]+__/, ''))}</strong>`;
 
   // Input : toujours readonly, aucun clavier virtuel dans aucun mode (cf. efShowNumpad)
   const inp = $id('tm-tc-input');
@@ -8869,13 +9598,13 @@ function tmTcCommit() {
   if (!raw || raw === '.') { out.textContent = '—'; out.classList.remove('oor'); return; }
   var kgf = parseFloat(raw);
   if (!isFinite(kgf)) { out.textContent = '—'; out.classList.remove('oor'); return; }
-  var r = tmTcExpectedReading(kgf, tmGetPoints());
+  var r = tmTcExpectedReading(kgf, tmGetPoints(_tmTcSide));
 
   if (r === null) {
     // Hors plage : beep + plage kgf de la charte + liseré shake, puis retour
     // au tiret après OOR_DISPLAY_MS (même mécanique que le commit manuel EF)
     efBeepError();
-    var valid = (tmGetPoints() || []).filter(function(p){ return p[1] !== null; });
+    var valid = (tmGetPoints(_tmTcSide) || []).filter(function(p){ return p[1] !== null; });
     if (valid.length) {
       var kgfs = valid.map(function(p){ return p[1]; });
       out.textContent = Math.min.apply(null, kgfs) + ' – ' + Math.max.apply(null, kgfs) + ' kgf';
@@ -9247,7 +9976,11 @@ document.addEventListener('keydown', function(e) {
 // ── État Charte personnalisée ────────────────────────────────────────────────────────
 
 // ── Ouvrir la modale ────────────────────────────────────────────────────────
-function ccOpen() {
+function ccOpen(side) {
+  // Rangée pour laquelle la charte est créée/éditée : détermine à la fois le
+  // pré-remplissage et la rangée qui sera sélectionnée après enregistrement.
+  _ccSide = side || 'fo';
+  const _ccKey = tmSpokeOf(_ccSide);
   // Pré-sélectionner le tensiomètre actif
   const sel = $id('cc-tensio');
   const activeKey = tmStoreKey();
@@ -9273,10 +10006,10 @@ function ccOpen() {
   ccUpdateReadingLabel();
 
   // ── Rayon custom déjà sélectionné → charger ses valeurs ──────────────────
-  if (tmSpokeKey && tmSpokeKey.startsWith(CC_PREFIX)) {
+  if (_ccKey && _ccKey.startsWith(CC_PREFIX)) {
     const customs = ccLoadAll();
     const match = customs.find(cc => {
-      if (CC_PREFIX + cc.name !== tmSpokeKey) return false;
+      if (CC_PREFIX + cc.name !== _ccKey) return false;
       return cc.tensioKey === activeKey;
     });
     if (match) {
@@ -9291,10 +10024,10 @@ function ccOpen() {
     }
 
   // ── Rayon standard sélectionné → pré-remplir avec les données de la table ─
-  } else if (tmSpokeKey) {
+  } else if (_ccKey) {
     const pts = tmGetPoints(); // [[reading, kgf], ...]
     if (pts && pts.length) {
-      $id('cc-name').value = CC_PREFIX + tmSpokeKey.replace(/^__[A-Z ]+__/, '');
+      $id('cc-name').value = CC_PREFIX + _ccKey.replace(/^__[A-Z ]+__/, '');
       $id('cc-name').readOnly = true;
       $id('cc-name').style.opacity = '.55';
       ccToggleNameClear();
@@ -9604,7 +10337,7 @@ function ccOnNbChange() {
 // chemin card/dropdown couvre déjà l'édition de la charte active.
 function ccRenderExisting() {
   const selTensio = $id('cc-tensio');
-  if (selTensio && selTensio.disabled && tmSpokeKey) {
+  if (selTensio && selTensio.disabled && tmSpokeOf(_ccSide)) {
     const lw = $id('cc-existing-list');
     if (lw) lw.innerHTML = '';
     return;
@@ -9700,15 +10433,15 @@ function ccDeleteDirect(idx, itemEl) {
     };
     // Données vives : reset uniquement si le couple correspond (le nom seul
     // ne suffit pas — une charte homonyme peut exister sur un autre tensio).
-    if (refsDead(tmType, tmDTSub, tmSpokeKey)) {
-      tmSpokeKey = null;
+    if (refsDead(tmType, tmDTSub, tmSpokeFo) || (spokeDiff && refsDead(tmType, tmDTSub, tmSpokeFa))) {
+      tmSpokeFo = null; tmSpokeFa = null;
       tmResetData();
       tmHideResult();
     }
     // Snapshots orphelins de TOUTES les roues : purgés et renumérotés —
     // même décision que l'export (_wshareFilterDeps), appliquée à la source.
     snapPurgeOrphans(function(sn) {
-      return refsDead(sn.tmType, sn.tmDTSub, sn.tmSpokeKey);
+      return _srcSpokeKeys(sn).some(function(k) { return refsDead(sn.tmType, sn.tmDTSub, k); });
     });
     // Le module ne doit pas rester sans rayon : repositionnement sur le
     // dernier snapshot survivant (snapLoad restaure tensio, rayon, relevés).
@@ -9780,9 +10513,12 @@ function ccSave() {
   const activeKey = tmStoreKey();
   const tensioMatch = activeKey === tensioKey;
   if (tensioMatch) {
-    tmSpokeKey = CC_PREFIX + name;
+    // La charte enregistrée devient le rayon de la rangée qui l'a ouverte.
+    if (_ccSide === 'fa') tmSpokeFa = CC_PREFIX + name; else tmSpokeFo = CC_PREFIX + name;
     const sel = $id('tm-spoke-select');
-    if (sel) sel.value = tmSpokeKey;
+    if (sel) sel.value = tmSpokeOf(_ccSide);
+    const selSide = $id('tm-spoke-select-' + _ccSide);
+    if (selSide) selSide.value = tmSpokeOf(_ccSide);
     tmResetData();
     tmBuildTable();
     tmHideResult();
@@ -10075,7 +10811,7 @@ function ecUpdateOrientation() {
 
 // Ouvre la card diagramme et la rend si données présentes, sinon cache le résultat
 function tmShowDiagramIfData() {
-  if (tmSpokeKey && tmHasData()) {
+  if (tmSpokeReady() && tmHasData()) {
     const rcBody = $id('tm-result-card-body');
     const rcChev = $id('tm-result-card-chevron');
     if (rcBody) rcBody.style.display = 'block';
@@ -10088,6 +10824,8 @@ function tmShowDiagramIfData() {
 
 function tmInit() {
   tmUpdateBadges();
+  // Avant de peupler : les sélecteurs à peupler dépendent du mode affiché.
+  syncTmSpokeDiffUI();
   tmPopulateSpokeSelect();
   const hasTbody = $id('tm-tbody').querySelectorAll('tr').length > 0;
   if (!hasTbody || tmHasData()) {
@@ -10120,45 +10858,48 @@ function tmUpdateBadges() {
   // Type de roue
   tmSyncWheelButtons();
 
-  // Labels DS/NDS selon roue (cohérent avec le reste de l'appli)
-  // Arrière : DS = côté fort (warm), NDS = côté faible (accent)
-  // Avant   : NDS = côté fort (warm), DS = côté faible (accent)
-  const isFront = wtype === 'avant';
-  // Roue avant : fo (warm) = NDS = Gauche, fa (accent) = DS = Droite
-  // Roue arrière : fo (warm) = DS = Droite, fa (accent) = NDS = Gauche
-  const foKey = isFront ? 'nonDriveSide' : 'driveSide';
-  const faKey = isFront ? 'driveSide'    : 'nonDriveSide';
+  // Libellés de côté : la rangée orange (fo) est le NDS sur roue avant, le DS
+  // sur roue arrière — diffSideKey() porte cette règle pour toute l'app.
+  const _ord  = diffRowOrder(wtype);
+  const foKey = diffSideKey('fo', wtype);
+  const faKey = diffSideKey('fa', wtype);
   const rlFo = $id('radar-leg-fo'); rlFo.textContent = t(foKey); rlFo.dataset.i18nKey = foKey;
   const rlFa = $id('radar-leg-fa'); rlFa.textContent = t(faKey); rlFa.dataset.i18nKey = faKey;
-  // Réordonner la légende : NDS toujours à gauche, DS à droite
-  const legend = document.querySelector('.radar-legend');
-  const legFo = $id('radar-leg-fo').closest('.radar-leg-item');
-  const legFa = $id('radar-leg-fa').closest('.radar-leg-item');
-  if (legend && legFo && legFa) {
-    isFront ? legend.insertBefore(legFo, legFa) : legend.insertBefore(legFa, legFo);
+  // Réordonner la légende : NDS toujours à gauche, DS à droite.
+  // Par id : la classe .radar-legend est aussi portée par #ef-radar-legend,
+  // et insertBefore() sur la mauvaise légende lèverait un NotFoundError.
+  const legend = $id('tm-radar-legend');
+  const _legItem = {
+    fo: $id('radar-leg-fo').closest('.radar-leg-item'),
+    fa: $id('radar-leg-fa').closest('.radar-leg-item'),
+  };
+  if (legend && _legItem.fo && _legItem.fa) {
+    legend.insertBefore(_legItem[_ord.nds], _legItem[_ord.ds]);
   }
 
-  // En-têtes colonnes
-  // col gauche (tm-th-nds) = NDS, col droite (tm-th-ds) = DS — labels et couleurs selon wtype
-  // Roue avant : NDS=Gauche (warm/fo), DS=Droite (accent/fa)
-  // Roue arrière : NDS=Gauche (accent/fa), DS=Droite (warm/fo)
+  // En-têtes colonnes — même ordre que la légende : gauche = NDS, droite = DS.
+  // La classe suit la RANGÉE (th-fo = orange, th-fa = bleu), jamais le côté :
+  // la couleur d'une rangée ne bouge pas avec le type de roue.
   const thNds = $id('tm-th-nds');
   const thDs  = $id('tm-th-ds');
   const ndsLabelEl = $id('tm-th-nds-label');
   const dsLabelEl  = $id('tm-th-ds-label');
   if (thNds && thDs) {
-    thNds.className = isFront ? 'th-fo' : 'th-fa';
-    thDs.className  = isFront ? 'th-fa' : 'th-fo';
+    thNds.className = 'th-' + _ord.nds;
+    thDs.className  = 'th-' + _ord.ds;
   }
   if (ndsLabelEl) ndsLabelEl.textContent = t('nonDriveSide');
   if (dsLabelEl)  dsLabelEl.textContent  = t('driveSide');
   const ndsSub = $id('tm-th-nds-sub'), dsSub = $id('tm-th-ds-sub');
-  const range = tmGetRange();
-  const subText = range
-    ? t('tmReadingKgf') + '  ·  ' + tmDisplayValue(range.min) + ' → ' + tmDisplayValue(range.max)
-    : t('tmReadingKgf');
-  if (ndsSub) ndsSub.textContent = subText;
-  if (dsSub)  dsSub.textContent  = subText;
+  // Chaque colonne affiche la plage de SA charte : en différentiel les deux
+  // rayons n'ont ni la même table ni les mêmes bornes de lecture.
+  const subOf = (side) => {
+    const r = tmGetRange(side);
+    return r ? t('tmReadingKgf') + '  ·  ' + tmDisplayValue(r.min) + ' → ' + tmDisplayValue(r.max)
+             : t('tmReadingKgf');
+  };
+  if (ndsSub) ndsSub.textContent = subOf(_ord.nds);
+  if (dsSub)  dsSub.textContent  = subOf(_ord.ds);
   // Badge roue chargée
   _refreshLoadedBadges();
   // Badge unité : ready si tensio + rayon + nb rayons tous définis
@@ -10191,7 +10932,7 @@ function tmBuildTable() {
     if (chev)  chev.style.transform = '';
   }
 
-  if (nb < 2 || !tmSpokeKey) { _closeCard(); return; }
+  if (nb < 2 || !tmSpokeReady()) { _closeCard(); return; }
 
   // Card déflexions toujours fermée — l'utilisateur l'ouvre manuellement ou via Easy Fill
   _closeCard();
@@ -10202,45 +10943,36 @@ function tmBuildTable() {
   while (tmPrevFo.length < perSide)  tmPrevFo.push(null);
   while (tmPrevFa.length < perSide)  tmPrevFa.push(null);
 
-  const isFront = wtype === 'avant';
+  // NDS à gauche, DS à droite : diffRowOrder() dit quelle rangée occupe
+  // chaque colonne. Invariant partagé avec le radar, la légende et les
+  // cards de longueur.
+  const ord = diffRowOrder(wtype);
 
   for (let i = 0; i < perSide; i++) {
     const tr = document.createElement('tr');
 
-    const foVal  = tmData.fo[i];
-    const faVal  = tmData.fa[i];
-    const foKgf  = toKgf(foVal);
-    const faKgf  = toKgf(faVal);
+    const ndsVal = tmData[ord.nds][i], dsVal = tmData[ord.ds][i];
+    const ndsKgf = toKgf(ndsVal, ord.nds), dsKgf = toKgf(dsVal, ord.ds);
 
-    // NDS toujours à gauche, DS toujours à droite
-    // NDS = fa (arrière) ou fo (avant)
-    const ndsVal  = isFront ? foVal : faVal;
-    const dsVal   = isFront ? faVal : foVal;
-    const ndsKgf  = isFront ? foKgf : faKgf;
-    const dsKgf   = isFront ? faKgf : foKgf;
-    const ndsSide = isFront ? 'fo' : 'fa';
-    const dsSide  = isFront ? 'fa' : 'fo';
-    // couleurs : côté fort = warm, côté faible = accent
-    // avant : fo=fort(NDS)=warm, fa=faible(DS)=accent
-    // arrière: fo=fort(DS)=warm, fa=faible(NDS)=accent
-    const ndsClass = isFront ? 'fo' : 'fa';
-    const dsClass  = isFront ? 'fa' : 'fo';
-
-    function cellHTML(val, kgf, side, cls) {
+    // `row` sert à la fois de nappe (data-side, id du résultat) et de classe
+    // de couleur : c'est le même concept. Le code couleur suit la rangée et
+    // non la colonne — orange = fo, bleu = fa — donc sur roue arrière
+    // l'orange atterrit dans la colonne de droite, et c'est voulu.
+    function cellHTML(val, kgf, row) {
       const dispVal = val !== null ? tmDisplayValue(val) : '';
       const hasVal  = val !== null ? ' has-val' : '';
       return `<td class="defl-td">
         <div class="defl-cell">
-          <input class="defl-inp ${cls}${hasVal}" data-idx="${i}" data-side="${side}" type="text" inputmode="decimal"
+          <input class="defl-inp ${row}${hasVal}" data-idx="${i}" data-side="${row}" type="text" inputmode="decimal"
             value="${dispVal}" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="—">
-          <div class="defl-result ${cls}" id="dr-${side}-${i}">${kgf !== null ? kgf + ' kgf' : ''}</div>
+          <div class="defl-result ${row}" id="dr-${row}-${i}">${kgf !== null ? kgf + ' kgf' : ''}</div>
         </div>
       </td>`;
     }
 
     tr.innerHTML = `<td class="td-r">${i + 1}</td>` +
-      cellHTML(ndsVal, ndsKgf, ndsSide, ndsClass) +
-      cellHTML(dsVal,  dsKgf,  dsSide,  dsClass);
+      cellHTML(ndsVal, ndsKgf, ord.nds) +
+      cellHTML(dsVal,  dsKgf,  ord.ds);
 
     tbody.appendChild(tr);
 
@@ -10268,8 +11000,8 @@ function tmBuildTable() {
         }
 
         // Hors plage de la table → rejeter comme invalide
-        if (parsed !== null && !tmInRange(parsed)) {
-          const range = tmGetRange();
+        if (parsed !== null && !tmInRange(parsed, side)) {
+          const range = tmGetRange(side);
           const resEl = $id(`dr-${side}-${idx}`);
           if (resEl && range) {
             resEl.textContent = tmDisplayValue(range.min) + ' – ' + tmDisplayValue(range.max);
@@ -10323,7 +11055,7 @@ function tmBuildTable() {
           const raw = this.value.trim();
           if (raw !== '') {
             const parsed = tmParseInput(raw);
-            if (parsed === null || !tmInRange(parsed)) {
+            if (parsed === null || !tmInRange(parsed, side)) {
               this.blur();
               return;
             }
@@ -10342,7 +11074,7 @@ function tmBuildTable() {
 
 function tmUpdateCell(idx, side) {
   const val = side === 'fo' ? tmData.fo[idx] : tmData.fa[idx];
-  const kgf = toKgf(val);
+  const kgf = toKgf(val, side);
   const el  = $id(`dr-${side}-${idx}`);
   if (el) el.textContent = kgf !== null ? kgf + ' kgf' : '';
 }
@@ -10388,12 +11120,9 @@ function tmHideResult() {
 }
 
 function tmResetSide(col) {
-  // col = 'nds' | 'ds'
-  // nds → arrière=fa, avant=fo  /  ds → arrière=fo, avant=fa
-  const isFront = wtype === 'avant';
-  const side = (col === 'nds')
-    ? (isFront ? 'fo' : 'fa')
-    : (isFront ? 'fa' : 'fo');
+  // col = 'nds' | 'ds' — exactement les clés de diffRowOrder(), qui dit
+  // quelle rangée occupe quelle colonne d'écran.
+  const side = diffRowOrder(wtype)[col];
 
   if (side === 'fo') { tmData.fo = tmData.fo.map(() => null); tmPrevFo = tmPrevFo.map(() => null); }
   else               { tmData.fa = tmData.fa.map(() => null); tmPrevFa = tmPrevFa.map(() => null); }
@@ -10472,8 +11201,8 @@ function tmComputeOutliers(kgfs, thresholdPct) {
 function tmUpdateOutlierCount() {
   const nb = parseInt($id('nb-rayons').value) || 0;
   const perSide = Math.floor(nb / 2);
-  const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v));
-  const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v));
+  const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v, 'fo'));
+  const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v, 'fa'));
   tmOutliers.fo = tmComputeOutliers(foKgfs, tmCVThreshold);
   tmOutliers.fa = tmComputeOutliers(faKgfs, tmCVThreshold);
 }
@@ -10507,8 +11236,8 @@ function tmClearHighlight() {
     const nb = parseInt($id('nb-rayons').value) || 0;
     const perSide = Math.floor(nb / 2);
     if (perSide >= 2) {
-      const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v));
-      const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v));
+      const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v, 'fo'));
+      const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v, 'fa'));
       tmDrawRadar(foKgfs, faKgfs, null);
     }
   }
@@ -10520,8 +11249,8 @@ function tmTryRenderRadar() {
   const perSide = Math.floor(nb / 2);
   if (perSide < 2) return;
 
-  const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v));
-  const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v));
+  const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v, 'fo'));
+  const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v, 'fa'));
 
   // Ne redessiner que si le body est déjà ouvert — jamais d'ouverture automatique
   const rcBody = $id('tm-result-card-body');
@@ -10730,7 +11459,10 @@ async function tmExportPdfWithOpts(opts) {
   const dateStr    = now.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', { day:'2-digit', month:'long', year:'numeric' });
   const wheelName  = (_loadedConfigName[wtype]) || '';
   const wheelLabel = wtype === 'arriere' ? t('rearLabel') : t('frontLabel');
-  const sd         = summaryData;
+  // `sumD` et non `sd` : la globale `sd` est le DIAMETRE du rayon. La masquer
+  // ici rendrait fausse toute lecture de section dans cette fonction — qui en
+  // fait desormais une (ligne Section rayon du bloc Configuration).
+  const sumD       = summaryData;
 
   // Libellés dérivés des clés i18n (pas du DOM) : sans calcul de longueur de
   // rayons, rtag-fo/rtag-fa gardent leur texte FR par défaut (workflow tension
@@ -10739,25 +11471,29 @@ async function tmExportPdfWithOpts(opts) {
   const _rtagKeyFa = (wtype === 'arriere') ? 'rtagNonDriveSideRear' : 'rtagDriveSideFront';
   const labelFo = t(_rtagKeyFo) || 'DS';
   const labelFa = t(_rtagKeyFa) || 'NDS';
-  const calcFo  = sd ? (document.getElementById('r-fo')?.textContent.trim() || '—') : '—';
-  const calcFa  = sd ? (document.getElementById('r-fa')?.textContent.trim() || '—') : '—';
-  const retFo   = (sd && sd.lenFo) ? sd.lenFo + ' mm' : '—';
-  const retFa   = (sd && sd.lenFa) ? sd.lenFa + ' mm' : '—';
-  const legFo   = document.getElementById('radar-leg-fo')?.textContent.trim() || 'DS';
-  const legFa   = document.getElementById('radar-leg-fa')?.textContent.trim() || 'NDS';
+  const calcFo  = sumD ? (document.getElementById('r-fo')?.textContent.trim() || '—') : '—';
+  const calcFa  = sumD ? (document.getElementById('r-fa')?.textContent.trim() || '—') : '—';
+  const retFo   = (sumD && sumD.lenFo) ? sumD.lenFo + ' mm' : '—';
+  const retFa   = (sumD && sumD.lenFa) ? sumD.lenFa + ' mm' : '—';
+  const leg     = radarLegLabels(wtype);
 
   const cfgRows = [];
-  if (sd) {
+  if (sumD) {
     const crossStr = (c) => c === 0 ? t('radial') : c + '×';
-    let cl;
-    if (sd.diffMode) {
-      const isArr = sd.wtype === 'arriere';
-      cl = (isArr?'DS':'NDS') + ' ' + crossStr(sd.crossFo) + ' / ' + (isArr?'NDS':'DS') + ' ' + crossStr(sd.crossFa);
-    } else { cl = crossStr(sd.cross); }
+    const cl = sumD.diffMode
+      ? diffPairStr(sumD.wtype, crossStr(sumD.crossFo), crossStr(sumD.crossFa))
+      : crossStr(sumD.cross);
     cfgRows.push([t('wheelLabel'), wheelLabel + (wheelName ? '  —  ' + sanitize(wheelName) : '')]);
-    cfgRows.push(['ERD',           sd.erd + ' mm']);
-    cfgRows.push([t('spokeCount'), sd.n + ' (' + sd.h + t('perSide') + ')']);
+    cfgRows.push(['ERD',           sumD.erd + ' mm']);
+    cfgRows.push([t('spokeCount'), sumD.n + ' (' + sumD.h + t('perSide') + ')']);
     cfgRows.push([t('crossLabel'), cl]);
+    // Section rayon : même chaîne que la card Résumé (« 2.0 mm », ou
+    // « DS 2.0 mm / NDS 1.8 mm » en différentiel), figée par calc() dans
+    // summaryData.sl. Omise si aucun côté n'est renseigné — spokeSectionStr()
+    // rend alors « — », et une ligne vide n'apprend rien. Le test porte sur la
+    // présence d'un chiffre : en différentiel, un seul côté saisi suffit à
+    // rendre la ligne informative.
+    if (sumD.sl && /\d/.test(sumD.sl)) cfgRows.push([t('spokeSection2'), sumD.sl]);
   }
 
   const statBlocks = [];
@@ -10785,8 +11521,8 @@ async function tmExportPdfWithOpts(opts) {
     return ev ? sanitize(ev.textContent.trim()) : null;
   }
 
-  const eloFo = sd ? getElongation('m-fo') : null;
-  const eloFa = sd ? getElongation('m-fa') : null;
+  const eloFo = sumD ? getElongation('m-fo') : null;
+  const eloFa = sumD ? getElongation('m-fa') : null;
 
   const PW = 210, PH = 297, ML = 14, MR = 14, MT = 14, CW = PW - ML - MR;
   let Y = MT;
@@ -10877,8 +11613,16 @@ async function tmExportPdfWithOpts(opts) {
   } else if (typeof _snapTensioLabel === 'function') {
     pdfTensioName = _snapTensioLabel(tmType, tmDTSub);
   }
+  // Charte(s) de conversion. _snapSpokeLabel() est la source unique du libellé
+  // (une charte, ou « A / B » en différentiel) : on lui présente l'état vif
+  // sous la forme d'un porteur, exactement comme il reçoit un snapshot. Les
+  // deux exports ne peuvent donc pas décrire la même roue différemment.
+  const pdfSpokeName = (typeof _snapSpokeLabel === 'function')
+    ? _snapSpokeLabel({ tmSpokeKey: tmSpokeFo, tmSpokeFa: tmSpokeFa, spokeDiff: spokeDiff }, wtype)
+    : null;
   const pdfTensioCaption = pdfTensioName
     ? (lang === 'fr' ? 'Tensiomètre\u00a0: ' : 'Tensiometer: ') + pdfTensioName
+        + (pdfSpokeName ? '  \u00b7  ' + pdfSpokeName : '')
     : null;
   // Rider de la roue chargée : nom de la config -> riderId -> riderById().name (jamais l'ID)
   let pdfRiderName = null;
@@ -10891,12 +11635,14 @@ async function tmExportPdfWithOpts(opts) {
   // n'apparaît pas dans le bloc Configuration : on compose alors la ligne
   // "Type - Nom de roue - Rider" exactement comme le PDF diagnostic. Avec
   // calcul, la roue figure déjà dans Configuration et seul le rider s'affiche.
-  const pdfWheelPart = (!sd && wheelName) ? (sanitize(wheelLabel) + ' - ' + sanitize(wheelName)) : '';
+  const pdfWheelPart = (!sumD && wheelName) ? (sanitize(wheelLabel) + ' - ' + sanitize(wheelName)) : '';
   const pdfRiderPart = pdfRiderName ? sanitize(pdfRiderName) : '';
   if (pdfWheelPart || pdfRiderPart || pdfTensioCaption) {
+    // _x suit la fin réelle du texte de gauche : il sert de borne au calcul
+    // de chevauchement avec la légende de droite.
+    let _x = ML;
     if (pdfWheelPart || pdfRiderPart) {
       doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
-      let _x = ML;
       if (pdfWheelPart) {
         doc.setTextColor(...C_TEXT2);
         doc.text(pdfWheelPart, _x, Y);
@@ -10906,11 +11652,17 @@ async function tmExportPdfWithOpts(opts) {
         if (pdfWheelPart) { doc.setTextColor(...C_TEXT2); doc.text(' - ', _x, Y); _x += doc.getTextWidth(' - '); }
         doc.setTextColor(...C_WARM);
         doc.text(pdfRiderPart, _x, Y);
+        _x += doc.getTextWidth(pdfRiderPart);
       }
     }
     if (pdfTensioCaption) {
       doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...C_TEXT3);
-      doc.text(sanitize(pdfTensioCaption), PW - MR, Y, { align: 'right' });
+      const _cap = sanitize(pdfTensioCaption);
+      // Deux noms de charte en différentiel peuvent dépasser la place restante :
+      // la légende descend d'une ligne plutôt que de s'écrire par-dessus la roue
+      // ou le rider. 3 mm de garde — un chevauchement n'est jamais acceptable.
+      if (_x > ML && _x + 3 > PW - MR - doc.getTextWidth(_cap)) Y += 4;
+      doc.text(_cap, PW - MR, Y, { align: 'right' });
     }
     Y += 5;
   }
@@ -10940,7 +11692,7 @@ async function tmExportPdfWithOpts(opts) {
   // Workflow tension seule (pas de calcul) : summaryData est null, les
   // longueurs n'existent pas — on omet toute la section plutôt que des « — ».
   const isAvantPdf = wtype === 'avant';
-  if (sd) {
+  if (sumD) {
   Y += 5;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
@@ -11001,7 +11753,7 @@ async function tmExportPdfWithOpts(opts) {
     drawLenCard(xRight, labelFo, calcFo, retFo, true,  eloFo);
   }
   Y += (eloFo || eloFa ? 30 : 24) + 4;
-  } // fin if (sd) — section longueurs
+  } // fin if (sumD) — section longueurs
 
   // ── Diagramme de tension ──────────────────────────────────────────────────
   if (opts.diagram) {
@@ -11015,19 +11767,24 @@ async function tmExportPdfWithOpts(opts) {
     const nb      = parseInt(document.getElementById('nb-rayons').value) || 0;
     const perSide = Math.floor(nb / 2);
 
-    const leftSide  = isAvantPdf ? 'fo' : 'fa';
-    const rightSide = isAvantPdf ? 'fa' : 'fo';
-    const C_NDS     = isAvantPdf ? C_WARM   : C_ACCENT;
-    const C_DS      = isAvantPdf ? C_ACCENT : C_WARM;
-    const C_NDS_BG  = isAvantPdf ? C_CARD_FO : C_CARD_FA;
-    const C_DS_BG   = isAvantPdf ? C_CARD_FA : C_CARD_FO;
+    // Gauche = NDS, droite = DS. Les palettes sont indexées par RANGÉE :
+    // l'orange reste sur fo et le bleu sur fa quel que soit le type de roue.
+    const ord       = diffRowOrder(wtype);
+    const PAL       = { fo: C_WARM,    fa: C_ACCENT };
+    const PAL_BG    = { fo: C_CARD_FO, fa: C_CARD_FA };
+    const leftSide  = ord.nds;
+    const rightSide = ord.ds;
+    const C_NDS     = PAL[ord.nds];
+    const C_DS      = PAL[ord.ds];
+    const C_NDS_BG  = PAL_BG[ord.nds];
+    const C_DS_BG   = PAL_BG[ord.ds];
     const C_NDS_VAL = C_NDS.map((v, i) => Math.min(255, Math.max(0, v + (i === 2 ? 10 : -20))));
     const C_DS_VAL  = C_DS.map((v, i)  => Math.min(255, Math.max(0, v + (i === 0 ? 10 : -10))));
-    const ndsLabel  = sanitize(isAvantPdf ? legFo : legFa);
-    const dsLabel   = sanitize(isAvantPdf ? legFa : legFo);
+    const ndsLabel  = sanitize(leg[ord.nds]);
+    const dsLabel   = sanitize(leg[ord.ds]);
 
-    const leftKgfs  = tmData[leftSide].slice(0, perSide).map(v => toKgf(v));
-    const rightKgfs = tmData[rightSide].slice(0, perSide).map(v => toKgf(v));
+    const leftKgfs  = tmData[leftSide].slice(0, perSide).map(v => toKgf(v, leftSide));
+    const rightKgfs = tmData[rightSide].slice(0, perSide).map(v => toKgf(v, rightSide));
 
     const STAT_ROW_H2 = 7;
     const STAT_PAD2   = 5;
@@ -11259,8 +12016,8 @@ function tmRenderRadarOffscreen(w, h, whiteBg) {
   const nb      = parseInt(document.getElementById('nb-rayons').value) || 0;
   const perSide = Math.floor(nb / 2);
   if (!perSide) return null;
-  const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v));
-  const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v));
+  const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v, 'fo'));
+  const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v, 'fa'));
 
   const dpr = Math.max(window.devicePixelRatio || 1, 2);
   const off  = document.createElement('canvas');
@@ -11428,13 +12185,14 @@ async function tmScreenshot(whiteBg) {
   // NDS toujours à gauche, DS toujours à droite
   const wheelName    = document.getElementById('tm-cfg-loaded-text')?.textContent.trim() || '';
   const wheelLabel   = wtype === 'arriere' ? t('rearWheel') : t('frontWheel');
-  const isFrontWheel = wtype !== 'arriere';
-  const legFo    = document.getElementById('radar-leg-fo')?.textContent.trim() || (isFrontWheel ? 'NDS' : 'DS');
-  const legFa    = document.getElementById('radar-leg-fa')?.textContent.trim() || (isFrontWheel ? 'DS'  : 'NDS');
-  const legLeft  = isFrontWheel ? legFo : legFa;
-  const legRight = isFrontWheel ? legFa : legFo;
-  const leftColor  = isFrontWheel ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
-  const rightColor = isFrontWheel ? 'rgba(126,200,227,1)' : 'rgba(232,146,124,1)';
+  // Gauche = NDS, droite = DS ; la couleur suit la rangée, pas le côté.
+  const _ord     = diffRowOrder(wtype);
+  const _leg     = radarLegLabels(wtype);
+  const _PAL     = { fo: 'rgba(232,146,124,1)', fa: 'rgba(126,200,227,1)' };
+  const legLeft  = _leg[_ord.nds];
+  const legRight = _leg[_ord.ds];
+  const leftColor  = _PAL[_ord.nds];
+  const rightColor = _PAL[_ord.ds];
 
   // Dimensions internes
   const cardW  = W;
@@ -11640,9 +12398,9 @@ function tmRenderStats(foKgfs, faKgfs) {
   const container = $id('tm-stats');
   container.innerHTML = '';
 
-  const isFront = wtype === 'avant';
-  const foLabel = isFront ? t('tmLeft') + ' (NDS)' : t('tmRight') + ' (DS)';
-  const faLabel = isFront ? t('tmRight') + ' (DS)'  : t('tmLeft') + ' (NDS)';
+  const ord     = diffRowOrder(wtype);
+  const foLabel = tmSideLabel('fo', wtype);
+  const faLabel = tmSideLabel('fa', wtype);
 
   function card(s, label, cls) {
     if (!s) return;
@@ -11660,17 +12418,13 @@ function tmRenderStats(foKgfs, faKgfs) {
     container.appendChild(div);
   }
   // Nappe forte (fo/orange) toujours en premier (en haut sur mobile, à gauche sur desktop)
-  // Desktop (2 col) : NDS à gauche, DS à droite
-  // Mobile (1 col)  : order CSS met la nappe forte (fo) en haut
-  // Avant  : fo=NDS → fo puis fa
-  // Arrière: fa=NDS → fa puis fo
-  if (isFront) {
-    card(fo, foLabel, 'fo');
-    card(fa, faLabel, 'fa');
-  } else {
-    card(fa, faLabel, 'fa');
-    card(fo, foLabel, 'fo');
-  }
+  // Desktop (2 col) : NDS à gauche, DS à droite — même ordre que le radar,
+  // la légende et le tableau de saisie.
+  // Mobile (1 col) : order CSS met la nappe forte (fo) en haut, quel que
+  // soit l'ordre d'insertion ici.
+  const _stat  = { fo: fo, fa: fa };
+  const _label = { fo: foLabel, fa: faLabel };
+  [ord.nds, ord.ds].forEach(function(row) { card(_stat[row], _label[row], row); });
 
   tmRenderDish(fo, fa, container);
 }
@@ -11685,19 +12439,21 @@ function tmRenderStats(foKgfs, faKgfs) {
 //      longueurs : masqué en workflow tension seule (summaryData null ou sans
 //      géométrie).
 function tmRenderDish(fo, fa, container) {
-  const sd = summaryData;
-  if (!sd || !fo || !fa) return;
-  if (sd.wtype !== wtype) return;
-  if (!(sd.foOff > 0 && sd.faOff > 0 && sd.lFo > 0 && sd.lFa > 0)) return;
+  // `sumD` et non `sd` : la globale `sd` est le DIAMETRE du rayon, et la
+  // masquer ici rendrait toute lecture de section silencieusement fausse.
+  const sumD = summaryData;
+  if (!sumD || !fo || !fa) return;
+  if (sumD.wtype !== wtype) return;
+  if (!(sumD.foOff > 0 && sumD.faOff > 0 && sumD.lFo > 0 && sumD.lFa > 0)) return;
   if (!(fo.avgNum > 0 && fa.avgNum > 0)) return;
 
   // Correspondance colonnes tension ↔ géométrie : la géométrie est en côtés
   // physiques (fo = droit/DS, fa = gauche/NDS) alors que les colonnes du
   // module tension suivent la nappe (fo = forte). Sur roue avant, la nappe
   // forte est la NDS (gauche) → géométrie fa : il faut swapper les paires.
-  const isFront = wtype !== 'arriere';
-  const foOff = isFront ? sd.faOff : sd.foOff, lFo = isFront ? sd.lFa : sd.lFo;
-  const faOff = isFront ? sd.foOff : sd.faOff, lFa = isFront ? sd.lFo : sd.lFa;
+  const isFront = wtype === 'avant';
+  const foOff = isFront ? sumD.faOff : sumD.foOff, lFo = isFront ? sumD.lFa : sumD.lFo;
+  const faOff = isFront ? sumD.foOff : sumD.faOff, lFa = isFront ? sumD.lFo : sumD.lFa;
 
   const k     = fa.avgNum / fo.avgNum;
   const k0    = (foOff * lFa) / (faOff * lFo);
@@ -11931,16 +12687,11 @@ var efSideMode   = 'both'; // 'fo' | 'fa' | 'both'
 var efBtMode     = false;  // true = clavier Bluetooth actif (mode desktop forcé)
 var efPendingReplace = false; // true = valeur présélectionnée, prochaine frappe remplace
 
-// Labels lisibles pour fo (fort) et fa (faible) selon wtype
+// Labels lisibles pour fo (nappe forte) et fa (nappe faible) selon wtype.
+// Même vocabulaire que les stats du module tension, donc même écrivain :
+// tmSideLabel(). Ne pas réintroduire de composition locale ici.
 function efGetLabels() {
-  var isFront = wtype === 'avant';
-  // fo = nappe forte
-  // Avant : fo = gauche (NDS), fa = droite (DS)
-  // Arrière : fo = droite (DS), fa = gauche (NDS)
-  return {
-    fo: (isFront ? (t('tmLeft')||'Left') + ' (NDS)' : (t('tmRight')||'Right') + ' (DS)'),
-    fa: (isFront ? (t('tmRight')||'Right') + ' (DS)' : (t('tmLeft')||'Left') + ' (NDS)')
-  };
+  return { fo: tmSideLabel('fo', wtype), fa: tmSideLabel('fa', wtype) };
 }
 
 function efBuildSteps() {
@@ -12022,12 +12773,8 @@ function efReorderSwitcher() {
   sw.appendChild($id('ef-sw-both'));                        // NDS+DS
 }
 
-// Label court : NDS ou DS selon le type de roue
-function efShortLabel(side) {
-  var isFront = wtype === 'avant';
-  if (side === 'fo') return isFront ? 'NDS' : 'DS';
-  return isFront ? 'DS' : 'NDS';
-}
+// Label court : NDS ou DS selon le type de roue — délégué à la source unique.
+function efShortLabel(side) { return diffSideLabel(side, wtype); }
 
 // ── Switcher de nappe dans l'écran de saisie ────────────────────────────────
 function efUpdateSwitcher() {
@@ -12113,7 +12860,7 @@ function efRenderStep() {
 
   var rangeEl = $id('ef-side-range');
   if (rangeEl) {
-    var efRg = tmGetRange();
+    var efRg = tmGetRange(step.side);
     rangeEl.textContent = efRg ? t('tmReadingKgf') + ' · ' + tmDisplayValue(efRg.min) + ' → ' + tmDisplayValue(efRg.max) : '';
     rangeEl.className   = 'ef-step-range ' + step.side;
   }
@@ -12140,6 +12887,13 @@ function efRenderStep() {
   if (efDiagMode) efPulseDot();
 }
 
+// Rangée du pas courant d'Easy Fill. Toute conversion faite pendant la dictée
+// porte sur la charte de CETTE rangée : en différentiel, passer de la dernière
+// NDS à la première DS change de table de conversion en cours de saisie.
+function efSide() {
+  return (efSteps && efSteps[efCurrent]) ? efSteps[efCurrent].side : 'fo';
+}
+
 function efUpdateKgf() {
   var raw  = $id('ef-inp').value.trim();
   var prev = $id('ef-kgf-preview');
@@ -12147,7 +12901,7 @@ function efUpdateKgf() {
   if (!raw) { prev.textContent = ''; prev.className = 'ef-kgf-preview'; return; }
   var parsed = tmParseInput(raw);
   if (parsed === null) { prev.textContent = '—'; prev.className = 'ef-kgf-preview'; return; }
-  var kgf = toKgf(parsed);
+  var kgf = toKgf(parsed, side);
   if (kgf !== null) { prev.textContent = kgf + ' kgf'; prev.className = 'ef-kgf-preview has-val ' + side; }
   else              { prev.textContent = ''; prev.className = 'ef-kgf-preview'; }
 }
@@ -12159,7 +12913,7 @@ function efUpdatePrevKgf() {
   var prevStep = efSteps[efCurrent - 1];
   var stored = prevStep.side === 'fo' ? tmData.fo[prevStep.idx] : tmData.fa[prevStep.idx];
   if (stored === null) { el.textContent = ''; el.className = 'ef-prev-kgf'; return; }
-  var kgf = toKgf(stored);
+  var kgf = toKgf(stored, prevStep.side);
   var label = efShortLabel(prevStep.side) + ' ' + t('efSpoke') + ' ' + (prevStep.idx + 1);
   el.textContent = kgf !== null ? label + ' — ' + kgf + ' kgf' : '';
   el.className = kgf !== null ? 'ef-prev-kgf has-val' : 'ef-prev-kgf';
@@ -12207,9 +12961,9 @@ function efCommitCurrent() {
   var parsed = tmParseInput(raw);
 
   // Valeur hors plage → feedback + restauration + blocage
-  if (parsed !== null && !tmInRange(parsed)) {
+  if (parsed !== null && !tmInRange(parsed, efSide())) {
     efBeepError();
-    var range = tmGetRange();
+    var range = tmGetRange(efSide());
     if (range) {
       // Clear-avant-set : deux commits OOR < OOR_DISPLAY_MS (double Entrée,
       // Entrée + nav vocale) orphelinaient le second timer hors du handle —
@@ -12480,23 +13234,24 @@ function efDiagramRender() {
   var perSide = Math.floor(nb / 2);
   if (perSide < 2) return;
 
-  // Légende : mêmes clés/couleurs que la card résultat, NDS toujours à gauche
-  var isFront = wtype === 'avant';
-  var foKey = isFront ? 'nonDriveSide' : 'driveSide';
-  var faKey = isFront ? 'driveSide'    : 'nonDriveSide';
+  // Légende : mêmes clés, mêmes couleurs et même ordre que la card résultat —
+  // les deux passent par diffSideKey()/diffRowOrder(), elles ne peuvent donc
+  // plus se contredire sur une roue avant.
+  var ord = diffRowOrder(wtype);
+  var foKey = diffSideKey('fo', wtype);
+  var faKey = diffSideKey('fa', wtype);
   var lFo = $id('ef-radar-leg-fo');
   var lFa = $id('ef-radar-leg-fa');
   if (lFo) { lFo.textContent = t(foKey); lFo.dataset.i18nKey = foKey; }
   if (lFa) { lFa.textContent = t(faKey); lFa.dataset.i18nKey = faKey; }
   var legend = $id('ef-radar-legend');
   if (legend && lFo && lFa) {
-    var itFo = lFo.closest('.radar-leg-item');
-    var itFa = lFa.closest('.radar-leg-item');
-    isFront ? legend.insertBefore(itFo, itFa) : legend.insertBefore(itFa, itFo);
+    var item = { fo: lFo.closest('.radar-leg-item'), fa: lFa.closest('.radar-leg-item') };
+    legend.insertBefore(item[ord.nds], item[ord.ds]);
   }
 
-  var foKgfs = tmData.fo.slice(0, perSide).map(function(v) { return toKgf(v); });
-  var faKgfs = tmData.fa.slice(0, perSide).map(function(v) { return toKgf(v); });
+  var foKgfs = tmData.fo.slice(0, perSide).map(function(v) { return toKgf(v, 'fo'); });
+  var faKgfs = tmData.fa.slice(0, perSide).map(function(v) { return toKgf(v, 'fa'); });
   tmDrawRadar(foKgfs, faKgfs, null, canvas);
 }
 
@@ -12534,15 +13289,17 @@ function efPulseDot() {
   if (perSide < 2) return;
 
   var step = efSteps[efCurrent];
-  var val  = step ? toKgf(step.side === 'fo' ? tmData.fo[step.idx] : tmData.fa[step.idx]) : null;
+  // Le côté est obligatoire : en différentiel, chaque colonne a sa charte, et
+  // toKgf() sans second argument retombe silencieusement sur celle de fo.
+  var val  = step ? toKgf(step.side === 'fo' ? tmData.fo[step.idx] : tmData.fa[step.idx], step.side) : null;
   if (val === null && efCurrent > 0) {
     step = efSteps[efCurrent - 1];
-    val  = toKgf(step.side === 'fo' ? tmData.fo[step.idx] : tmData.fa[step.idx]);
+    val  = toKgf(step.side === 'fo' ? tmData.fo[step.idx] : tmData.fa[step.idx], step.side);
   }
   if (val === null) return;
 
-  var foKgfs = tmData.fo.slice(0, perSide).map(function(v) { return toKgf(v); });
-  var faKgfs = tmData.fa.slice(0, perSide).map(function(v) { return toKgf(v); });
+  var foKgfs = tmData.fo.slice(0, perSide).map(function(v) { return toKgf(v, 'fo'); });
+  var faKgfs = tmData.fa.slice(0, perSide).map(function(v) { return toKgf(v, 'fa'); });
   var allVals = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
   if (!allVals.length) return;
   var scaleMax    = Math.ceil(Math.max.apply(null, allVals) / 20) * 20 || 20;
@@ -13330,12 +14087,12 @@ function efStartMic(forceLang) {
                             efDecPart === null && /^[1-9]$/.test(numInterim);
         var efStableDelay = (efDecProlong || efIntProlong || efUnitProlong) ? 850 : 500;
         if (parsedInterim !== null) {
-          var kgfInterim = toKgf(parsedInterim);
+          var kgfInterim = toKgf(parsedInterim, efSide());
           var efTooPrecise = efDecTooPrecise(numInterim);
           // Plage capturée UNE fois pour la condition ci-dessous (chemin chaud :
           // chaque interim). Le timer OOR refait son propre tmGetRange() à
           // l'expiration — inchangé, conservateur.
-          var efRangeNow = tmGetRange();
+          var efRangeNow = tmGetRange(efSide());
           if (kgfInterim !== null && !efTooPrecise) {
             // Valeur valide : auto-avance après stabilisation (500ms, ou 850ms si décimale prolongeable)
             efBeepTimer = setTimeout(function() {
@@ -13394,7 +14151,7 @@ function efStartMic(forceLang) {
               inp.classList.add('out-of-range');
               setTimeout(function() { inp.classList.remove('out-of-range'); }, 400);
               var prev = $id('ef-kgf-preview');
-              var range = tmGetRange();
+              var range = tmGetRange(efSide());
               // Valeur trop précise mais EN PLAGE (fusion moteur) : afficher
               // min–max serait trompeur — beep + liseré suffisent.
               if (range && !(efTooPrecise && kgfInterim !== null)) {
@@ -13441,7 +14198,7 @@ function efStartMic(forceLang) {
       efOorFired = false;
       var efOorRevisedNum = efVoiceToNumber(txt);
       var efOorRevised = efOorRevisedNum ? tmParseInput(efOorRevisedNum) : null;
-      if (efOorRevised === null || !tmInRange(efOorRevised) ||
+      if (efOorRevised === null || !tmInRange(efOorRevised, efSide()) ||
           efDecTooPrecise(efOorRevisedNum)) {
         efLastInterimNum = null;
         return;
@@ -13460,7 +14217,7 @@ function efStartMic(forceLang) {
         var prevParsed = tmParseInput(numFinal);
         // efDecTooPrecise : un final fusionné ("0,498") ne doit pas écraser la
         // valeur déjà commitée — 3+ décimales = impossible sur un cadran.
-        if (prevParsed !== null && tmInRange(prevParsed) && !efDecTooPrecise(numFinal)) {
+        if (prevParsed !== null && tmInRange(prevParsed, efSide()) && !efDecTooPrecise(numFinal)) {
           if (prevStep.side === 'fo') tmData.fo[prevStep.idx] = prevParsed;
           else                        tmData.fa[prevStep.idx] = prevParsed;
           efSyncTableCell(prevStep);
@@ -13701,7 +14458,7 @@ function efSpeechWord(key) {
 // Prononce le kgf correspondant à une lecture brute (ou beep si hors table)
 function efSpeakValue(raw) {
   var parsed = tmParseInput(String(raw).trim());
-  var kgf = parsed !== null ? toKgf(parsed) : null;
+  var kgf = parsed !== null ? toKgf(parsed, efSide()) : null;
   if (kgf !== null) efSpeak(kgf + ' ' + efSpeechWord('kilos'));
   else efBeep();
 }
@@ -13948,15 +14705,15 @@ function efStopMic() {
   // ── Modale choix du mode ────────────────────────────────────────────────────
   window.tmOpenPlayModal = function() {
     if (tmAnimRunning) { tmStopAnimation(); return; }
-    // Mettre à jour les labels selon la légende courante
-    var legFo = $id('radar-leg-fo');
-    var legFa = $id('radar-leg-fa');
+    // Libellés repris de la légende courante — via le point de lecture unique,
+    // qui garantit un repli correct si la légende n'a pas encore été rendue.
+    var leg = radarLegLabels(wtype);
     var lFo = $id('tm-play-fo-label');
     var lFa = $id('tm-play-fa-label');
     var lBoth = $id('tm-play-both-label');
-    if (lFo && legFo) lFo.textContent = legFo.textContent;
-    if (lFa && legFa) lFa.textContent = legFa.textContent;
-    if (lBoth && legFo && legFa) lBoth.textContent = legFo.textContent + ' + ' + legFa.textContent;
+    if (lFo)   lFo.textContent   = leg.fo;
+    if (lFa)   lFa.textContent   = leg.fa;
+    if (lBoth) lBoth.textContent = leg.fo + ' + ' + leg.fa;
     // Afficher overlay + modale
     var ov = $id('tm-play-overlay');
     var mo = $id('tm-play-modal');
@@ -14004,8 +14761,7 @@ function efStopMic() {
 
     var spokeLabel = (lang === 'fr') ? 'Rayon' : 'Spoke';
     var isFo = (subStep === 0);
-    var legEl = $id(isFo ? 'radar-leg-fo' : 'radar-leg-fa');
-    var label = legEl ? legEl.textContent : '';
+    var label = radarLegLabels(wtype)[isFo ? 'fo' : 'fa'];
     var kgfV  = isFo ? foKgfs[spokeIdx] : faKgfs[spokeIdx];
     var color = isFo ? 'rgba(232,146,124,.95)' : 'rgba(126,200,227,.95)';
     var colorDim = isFo ? 'rgba(232,146,124,.55)' : 'rgba(126,200,227,.55)';
@@ -14125,8 +14881,8 @@ function efStopMic() {
     var perSide = Math.floor(nb / 2);
     if (perSide < 1) return;
 
-    var foKgfs = tmData.fo.slice(0, perSide).map(function(v) { return toKgf(v); });
-    var faKgfs = tmData.fa.slice(0, perSide).map(function(v) { return toKgf(v); });
+    var foKgfs = tmData.fo.slice(0, perSide).map(function(v) { return toKgf(v, 'fo'); });
+    var faKgfs = tmData.fa.slice(0, perSide).map(function(v) { return toKgf(v, 'fa'); });
     var allVals = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
     if (!allVals.length) return;
 
@@ -14347,12 +15103,9 @@ async function diagGeneratePdf() {
   var now     = new Date();
   var dateStr = now.toLocaleDateString(L === 'fr' ? 'fr-FR' : 'en-GB', { day:'2-digit', month:'long', year:'numeric' });
 
-  var legFoEl = document.getElementById('radar-leg-fo');
-  var legFaEl = document.getElementById('radar-leg-fa');
-  var legFo   = legFoEl ? legFoEl.textContent.trim() : 'DS';
-  var legFa   = legFaEl ? legFaEl.textContent.trim() : 'NDS';
+  var leg = radarLegLabels(wtype);
 
-  var wheelLabel = (typeof wtype !== 'undefined' && wtype === 'arriere') ? t('rearLabel') : t('frontLabel');
+  var wheelLabel = (wtype === 'arriere') ? t('rearLabel') : t('frontLabel');
 
   // Collecte des stats
   var statBlocks = [];
@@ -14490,24 +15243,28 @@ async function diagGeneratePdf() {
   doc.text(L === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', ML, Y);
   Y += 4;
 
-  var isAvant = (typeof wtype === 'undefined') || wtype === 'avant';
-  var C_NDS  = isAvant ? C_WARM   : C_ACCENT;
-  var C_DS   = isAvant ? C_ACCENT : C_WARM;
-  var ndsLabel = sanitize(isAvant ? legFo : legFa);
-  var dsLabel  = sanitize(isAvant ? legFa : legFo);
+  // Gauche = NDS, droite = DS ; palettes PDF (triplets RGB jsPDF) indexées
+  // par rangée — orange = fo.
+  var ord    = diffRowOrder(wtype);
+  var PAL    = { fo: C_WARM,    fa: C_ACCENT };
+  var PAL_BG = { fo: C_CARD_FO, fa: C_CARD_FA };
+  var C_NDS  = PAL[ord.nds];
+  var C_DS   = PAL[ord.ds];
+  var ndsLabel = sanitize(leg[ord.nds]);
+  var dsLabel  = sanitize(leg[ord.ds]);
 
   // Card radar + valeurs
   var nb      = parseInt((document.getElementById('nb-rayons') || {}).value) || 0;
   var perSide = Math.floor(nb / 2);
-  var leftSide  = isAvant ? 'fo' : 'fa';
-  var rightSide = isAvant ? 'fa' : 'fo';
-  var C_NDS_BG = isAvant ? C_CARD_FO : C_CARD_FA;
-  var C_DS_BG  = isAvant ? C_CARD_FA : C_CARD_FO;
+  var leftSide  = ord.nds;
+  var rightSide = ord.ds;
+  var C_NDS_BG = PAL_BG[ord.nds];
+  var C_DS_BG  = PAL_BG[ord.ds];
   var C_NDS_VAL = C_NDS.map(function(v,i) { return Math.min(255,Math.max(0,v+(i===2?10:-20))); });
   var C_DS_VAL  = C_DS.map(function(v,i)  { return Math.min(255,Math.max(0,v+(i===0?10:-10))); });
 
-  var leftKgfs  = (typeof tmData !== 'undefined') ? tmData[leftSide].slice(0, perSide).map(function(v) { return (typeof toKgf === 'function') ? toKgf(v) : v; }) : [];
-  var rightKgfs = (typeof tmData !== 'undefined') ? tmData[rightSide].slice(0, perSide).map(function(v) { return (typeof toKgf === 'function') ? toKgf(v) : v; }) : [];
+  var leftKgfs  = (typeof tmData !== 'undefined') ? tmData[leftSide].slice(0, perSide).map(function(v) { return (typeof toKgf === 'function') ? toKgf(v, leftSide) : v; }) : [];
+  var rightKgfs = (typeof tmData !== 'undefined') ? tmData[rightSide].slice(0, perSide).map(function(v) { return (typeof toKgf === 'function') ? toKgf(v, rightSide) : v; }) : [];
 
   var spPadT = 8, spPadB = 4, spHeaderH = 7, spRowH = 5.2;
   var radarColW = Math.round(CW * 0.52);
@@ -14689,8 +15446,7 @@ function diagClearField(id) {
   if (!el) return;
   el.value = '';
   el.focus();
-  var wh = typeof wtype !== 'undefined' ? wtype : 'avant';
-  diagSaveWheel(wh);
+  diagSaveWheel(wtype);
 }
 
 function diagLimitLines(ta, maxLines) {
@@ -14705,8 +15461,7 @@ function diagClearData() {
   var wheel = document.getElementById('diag-wheel');
   if (obs)   { obs.value = ''; }
   if (wheel) { wheel.value = ''; }
-  var wh = typeof wtype !== 'undefined' ? wtype : 'avant';
-  diagStore[wh] = { wheel: '', obs: '' };
+  diagStore[wtype] = { wheel: '', obs: '' };
 }
 
 // ── Store diagnostic par roue ─────────────────────────────────────────────────
@@ -15433,6 +16188,20 @@ function _snapResolveTensio(snap) {
   return snap ? snap.tensioLabel : null;
 }
 
+// Nom(s) de rayon d'un snapshot, tel qu'affiché dans les listes et les exports.
+// Un snapshot différentiel en porte deux : n'en montrer qu'un ferait passer la
+// roue pour une roue à charte unique.
+// Ordre GAUCHE puis DROITE : la chaîne ne porte aucun libellé de côté, donc
+// l'ordre est la seule information de côté qu'elle transporte — il doit suivre
+// la roue. `wh` est passé explicitement, comme tout le vocabulaire diff*.
+function _snapSpokeLabel(snap, wh) {
+  var strip = function(k) { return k.replace(/^__[A-Z ]+__/, ''); };
+  var byRow = _srcSpokeByRow(snap);
+  var ord   = diffRowOrder(wh);
+  var keys  = [byRow[ord.nds], byRow[ord.ds]].filter(Boolean).map(strip);
+  return keys.length ? keys.join(' / ') : null;
+}
+
 function _snapTensioLabel(type, dtSub) {
   if (!type) return null;
   if (type.startsWith('ct_')) {
@@ -15453,7 +16222,8 @@ function _snapMakeEntry(num) {
   return {
     num, ts: Date.now(),
     fo: tmData.fo.slice(), fa: tmData.fa.slice(),
-    tmType: tmType || null, tmSpokeKey: tmSpokeKey || null,
+    tmType: tmType || null, tmSpokeKey: tmSpokeFo || null,
+    tmSpokeFa: tmSpokeFa || null, spokeDiff: spokeDiff || false,
     tmDTSub: tmDTSub || 'standard',
     tensioLabel: _snapTensioLabel(tmType, tmDTSub),
   };
@@ -15587,7 +16357,7 @@ function snapPurgeOrphans(match) {
     // et _snapReposition refuserait d'ouvrir sur l'historique survivant.
     var st = cfg.state;
     if (st && st.tmType && match(st)) {
-      st.tmType = null; st.tmSpokeKey = null;
+      _srcClearTension(st);
       st.tmDataFo = []; st.tmDataFa = [];
       touched = true;
     }
@@ -15671,8 +16441,17 @@ function snapLoad(snapIdx) {
       if (bAel2) bAel2.classList.toggle('active', sub === 'aerolite2');
       updateDTTip();
     }
-    tmSpokeKey = snap.tmSpokeKey || null;
-    if (tmSpokeKey && tmSpokeKey.startsWith(CC_PREFIX)) ccInjectAll();
+    tmSpokeFo   = snap.tmSpokeKey || null;
+    tmSpokeFa   = snap.tmSpokeFa || null;
+    spokeDiff   = !!snap.spokeDiff;
+    if ((tmSpokeFo && tmSpokeFo.startsWith(CC_PREFIX)) ||
+        (tmSpokeFa && tmSpokeFa.startsWith(CC_PREFIX))) ccInjectAll();
+    // spokeDiff est un fait de la ROUE, reflété par deux toggles : le restaurer
+    // sans rafraîchir la carte Rayons laisserait ses champs de section (et son
+    // toggle) décrire l'autre mode que celui que spokeSection() lit désormais.
+    // Même paire d'appels que applyState() et setSpokeDiff().
+    if (typeof syncSpokeDiffUI === 'function') syncSpokeDiffUI();
+    syncTmSpokeDiffUI();
     tmPopulateSpokeSelect();
     tmUpdateUnitBadge();
     tmActiveKey = tmStoreKey();
@@ -15720,7 +16499,7 @@ function snapRenderList() {
       + String(d.getMonth()+1).padStart(2,'0') + ' '
       + String(d.getHours()).padStart(2,'0') + ':'
       + String(d.getMinutes()).padStart(2,'0');
-    const infoStr = escHtml([_snapResolveTensio(snap), snap.tmSpokeKey ? snap.tmSpokeKey.replace(/^__[A-Z ]+__/, '') : null].filter(Boolean).join(' · '));
+    const infoStr = escHtml([_snapResolveTensio(snap), _snapSpokeLabel(snap, wtype)].filter(Boolean).join(' · '));
     return '<div class="snap-item" onclick="snapLoad(' + i + ')">'
       + '<div class="snap-item-info">'
       + '<span class="snap-item-label">SNAPSHOT ' + snap.num + '</span>'
@@ -15772,8 +16551,7 @@ function tmColumnAllFilled(col) {
   const nb = parseInt($id('nb-rayons').value) || 0;
   const perSide = Math.floor(nb / 2);
   if (perSide < 2) return false;
-  const isFront = wtype === 'avant';
-  const side = (col === 'nds') ? (isFront ? 'fo' : 'fa') : (isFront ? 'fa' : 'fo');
+  const side = diffRowOrder(wtype)[col];
   const arr = side === 'fo' ? tmData.fo : tmData.fa;
   for (let i = 0; i < perSide; i++) {
     if (arr[i] === null || arr[i] === undefined) return false;
@@ -15792,8 +16570,7 @@ function invColDirect(col) {
   const nb = parseInt($id('nb-rayons').value) || 0;
   const perSide = Math.floor(nb / 2);
   if (perSide < 2) return;
-  const isFront = wtype === 'avant';
-  const side = (col === 'nds') ? (isFront ? 'fo' : 'fa') : (isFront ? 'fa' : 'fo');
+  const side = diffRowOrder(wtype)[col];
   const arr = side === 'fo' ? tmData.fo : tmData.fa;
   for (let i = 0, j = perSide - 1; i < j; i++, j--) {
     const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
@@ -15871,7 +16648,7 @@ function _snapCompareRenderList(snaps) {
       + String(d.getMonth()+1).padStart(2,'0') + ' '
       + String(d.getHours()).padStart(2,'0') + ':'
       + String(d.getMinutes()).padStart(2,'0');
-    var infoStr = escHtml([_snapResolveTensio(snap), snap.tmSpokeKey ? snap.tmSpokeKey.replace(/^__[A-Z ]+__/, '') : null].filter(Boolean).join(' · '));
+    var infoStr = escHtml([_snapResolveTensio(snap), _snapSpokeLabel(snap, wtype)].filter(Boolean).join(' · '));
     return '<div class="snap-item" id="snapcmp-item-' + i + '" onclick="_snapCompareToggle(' + i + ')" style="cursor:pointer">'
       + '<div class="snap-item-info">'
       + '<span class="snap-item-label">SNAPSHOT ' + snap.num + '</span>'
@@ -15931,7 +16708,10 @@ function _snapRenderRadarCanvas(snap, size) {
   var perSide = Math.max(snap.fo.length, snap.fa.length);
 
   // Convertir raw → kgf en utilisant la table du snapshot
-  function snapToKgf(reading, snapData) {
+  // side ('fo' | 'fa') est OBLIGATOIRE : un snapshot différentiel porte deux
+  // chartes, et convertir la colonne fa contre celle de fo produit des kgf
+  // plausibles mais faux — l'erreur la plus dangereuse, parce qu'invisible.
+  function snapToKgf(reading, snapData, side) {
     if (reading === null) return null;
     var tableKey = snapData.tmType;
     if (!tableKey) return null;
@@ -15940,12 +16720,15 @@ function _snapRenderRadarCanvas(snap, size) {
     else if (tableKey === 'dt')     { fullKey = 'dt_' + (snapData.tmDTSub || 'standard'); }
     else                            { fullKey = tableKey; }
     var tbl = TM_TABLES[fullKey];
-    if (!tbl || !snapData.tmSpokeKey || !tbl[snapData.tmSpokeKey]) return null;
-    return interpolateFromPoints(reading, tbl[snapData.tmSpokeKey]);
+    // Snapshot non différentiel (ou antérieur au différentiel) : les deux
+    // colonnes partagent tmSpokeKey, comportement d'origine inchangé.
+    var spokeKey = (snapData.spokeDiff && side === 'fa') ? snapData.tmSpokeFa : snapData.tmSpokeKey;
+    if (!tbl || !spokeKey || !tbl[spokeKey]) return null;
+    return interpolateFromPoints(reading, tbl[spokeKey]);
   }
 
-  var foKgfs = snap.fo.slice(0, perSide).map(function(v) { return snapToKgf(v, snap); });
-  var faKgfs = snap.fa.slice(0, perSide).map(function(v) { return snapToKgf(v, snap); });
+  var foKgfs = snap.fo.slice(0, perSide).map(function(v) { return snapToKgf(v, snap, 'fo'); });
+  var faKgfs = snap.fa.slice(0, perSide).map(function(v) { return snapToKgf(v, snap, 'fa'); });
 
   var cx = size/2, cy = size/2, R = size*0.38;
   var N = perSide * 2;
@@ -16152,15 +16935,17 @@ async function snapComparePDF() {
   var C_ACCENT=[60,160,200], C_WARM=[210,110,85], C_BORDER=[220,228,235];
   var C_CARD=[248,250,252], C_CARD_FO=[255,248,245], C_CARD_FA=[245,250,255];
 
-  var isAvant = (typeof wtype==='undefined')||wtype==='avant';
-  var legFoEl = document.getElementById('radar-leg-fo');
-  var legFaEl = document.getElementById('radar-leg-fa');
-  var legFo = legFoEl ? legFoEl.textContent.trim() : 'DS';
-  var legFa = legFaEl ? legFaEl.textContent.trim() : 'NDS';
-  var C_NDS = isAvant ? C_WARM   : C_ACCENT;
-  var C_DS  = isAvant ? C_ACCENT : C_WARM;
-  var ndsLabel = sanitize(isAvant ? legFo : legFa);
-  var dsLabel  = sanitize(isAvant ? legFa : legFo);
+  // Gauche = NDS, droite = DS ; palette indexée par rangée (orange = fo).
+  var ord = diffRowOrder(wtype);
+  var leg = radarLegLabels(wtype);
+  var PAL    = { fo: C_WARM,    fa: C_ACCENT };
+  var PAL_BG = { fo: C_CARD_FO, fa: C_CARD_FA };
+  var C_NDS = PAL[ord.nds];
+  var C_DS  = PAL[ord.ds];
+  var C_NDS_BG = PAL_BG[ord.nds];
+  var C_DS_BG  = PAL_BG[ord.ds];
+  var ndsLabel = sanitize(leg[ord.nds]);
+  var dsLabel  = sanitize(leg[ord.ds]);
 
   // Rendu des deux radars
   var rendA = _snapRenderRadarCanvas(snapA, 400);
@@ -16251,8 +17036,8 @@ async function snapComparePDF() {
     doc.text('SNAPSHOT '+snap.num, cardX, Y-1);
     doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor.apply(doc,C_TEXT3);
     doc.text(dstr, cardX+colW, Y-1, {align:'right'});
-    if (_snapResolveTensio(snap) || snap.tmSpokeKey) {
-      var info = [_snapResolveTensio(snap), snap.tmSpokeKey ? snap.tmSpokeKey.replace(/^__[A-Z ]+__/, '') : null].filter(Boolean).join(' · ');
+    if (_snapResolveTensio(snap) || _snapSpokeLabel(snap, wtype)) {
+      var info = [_snapResolveTensio(snap), _snapSpokeLabel(snap, wtype)].filter(Boolean).join(' · ');
       doc.setFontSize(5); doc.setTextColor.apply(doc,C_TEXT3);
       doc.text(sanitize(info), cardX, Y+3.5);
     }
@@ -16316,13 +17101,12 @@ async function snapComparePDF() {
   // 4 blocs : [snap1-NDS, snap1-DS, snap2-NDS, snap2-DS]
   var blocks = [];
   [rendA, rendB].forEach(function(rend, si) {
-    var foKgfs = rend.foKgfs, faKgfs = rend.faKgfs;
-    var leftKgfs  = isAvant ? foKgfs : faKgfs;
-    var rightKgfs = isAvant ? faKgfs : foKgfs;
+    // Tableaux indexés par rangée, même `ord` que la légende plus haut.
+    var kgfs = { fo: rend.foKgfs, fa: rend.faKgfs };
     var snap = si===0 ? snapA : snapB;
     var snapLbl = 'S'+snap.num+' ';
-    blocks.push({label: snapLbl+ndsLabel, entries: snapStatsBlock(leftKgfs),  isFo: isAvant,  C_col: C_NDS, C_bg: isAvant?C_CARD_FO:C_CARD_FA});
-    blocks.push({label: snapLbl+dsLabel,  entries: snapStatsBlock(rightKgfs), isFo: !isAvant, C_col: C_DS,  C_bg: isAvant?C_CARD_FA:C_CARD_FO});
+    blocks.push({label: snapLbl+ndsLabel, entries: snapStatsBlock(kgfs[ord.nds]), C_col: C_NDS, C_bg: C_NDS_BG});
+    blocks.push({label: snapLbl+dsLabel,  entries: snapStatsBlock(kgfs[ord.ds]),  C_col: C_DS,  C_bg: C_DS_BG});
   });
 
   var nBlocks  = blocks.length; // 4
@@ -16360,10 +17144,10 @@ async function snapComparePDF() {
     var pair = _snapEvoPctPair(sA, sB, aA, aB);
     return pair === null ? '—' : pair;
   }
-  var ndsKgfA = isAvant ? rendA.foKgfs : rendA.faKgfs;
-  var ndsKgfB = isAvant ? rendB.foKgfs : rendB.faKgfs;
-  var dsKgfA  = isAvant ? rendA.faKgfs : rendA.foKgfs;
-  var dsKgfB  = isAvant ? rendB.faKgfs : rendB.foKgfs;
+  var kgfsA = { fo: rendA.foKgfs, fa: rendA.faKgfs };
+  var kgfsB = { fo: rendB.foKgfs, fa: rendB.faKgfs };
+  var ndsKgfA = kgfsA[ord.nds], ndsKgfB = kgfsB[ord.nds];
+  var dsKgfA  = kgfsA[ord.ds],  dsKgfB  = kgfsB[ord.ds];
   var avgNdsA=_snapEvoAvg(ndsKgfA), avgNdsB=_snapEvoAvg(ndsKgfB);
   var avgDsA =_snapEvoAvg(dsKgfA),  avgDsB =_snapEvoAvg(dsKgfB);
 
@@ -16373,10 +17157,10 @@ async function snapComparePDF() {
 
   var dAvgLabel = L==='fr' ? 'Δ Moyenne' : 'Δ Average';
   var evoBlocks = [
-    { label: ndsLabel, C_col: C_NDS, C_bg: isAvant?C_CARD_FO:C_CARD_FA,
+    { label: ndsLabel, C_col: C_NDS, C_bg: C_NDS_BG,
       diff: _snapEvoDiff(avgNdsA, avgNdsB),
       cv:   _cmpCvLine(_snapEvoStd(ndsKgfA), _snapEvoStd(ndsKgfB), avgNdsA, avgNdsB) },
-    { label: dsLabel,  C_col: C_DS,  C_bg: isAvant?C_CARD_FA:C_CARD_FO,
+    { label: dsLabel,  C_col: C_DS,  C_bg: C_DS_BG,
       diff: _snapEvoDiff(avgDsA, avgDsB),
       cv:   _cmpCvLine(_snapEvoStd(dsKgfA), _snapEvoStd(dsKgfB), avgDsA, avgDsB) }
   ];
@@ -16446,7 +17230,12 @@ async function snapCompareJPEG() {
     ? document.getElementById('tm-cfg-loaded-text').textContent.trim() : '';
   var atelierInfo   = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
   var workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
-  var isAvant = (typeof wtype !== 'undefined') ? wtype !== 'arriere' : true;
+  var isAvant = wtype === 'avant';
+  // Gauche = NDS, droite = DS ; palettes canvas indexées par rangée — orange
+  // = fo. PAL_W est la variante fond blanc, mêmes rangées.
+  var ord    = diffRowOrder(wtype);
+  var PAL    = { fo: 'rgba(232,146,124,1)', fa: 'rgba(126,200,227,1)' };
+  var PAL_W  = { fo: 'rgba(190,85,55,1)',   fa: 'rgba(40,140,185,1)' };
   var wheelLabel = isAvant ? (L === 'fr' ? 'Roue Avant' : 'Front Wheel') : (L === 'fr' ? 'Roue Arrière' : 'Rear Wheel');
 
   function computeStatBlocks(rendFo, rendFa) {
@@ -16461,7 +17250,7 @@ async function snapCompareJPEG() {
       var cv    = avg > 0 ? std / avg * 100 : 0;
       blocks.push({
         isFo: pair[1],
-        label: pair[1] ? (isAvant ? 'NDS' : 'DS') : (isAvant ? 'DS' : 'NDS'),
+        label: diffSideLabel(pair[1] ? 'fo' : 'fa', wtype),
         entries: [
           { key: L === 'fr' ? 'Moyenne' : 'Average',         val: avg.toFixed(1) + ' kgf' },
           { key: 'Min → Max',                                  val: mn.toFixed(1) + ' → ' + mx.toFixed(1) + ' kgf' },
@@ -16543,8 +17332,8 @@ async function snapCompareJPEG() {
     ctx.drawImage(radarOff || radar, rX, radarY, rW, rH);
 
     // Légende
-    var leftColor  = isAvant ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
-    var rightColor = isAvant ? 'rgba(126,200,227,1)' : 'rgba(232,146,124,1)';
+    var leftColor  = PAL[ord.nds];
+    var rightColor = PAL[ord.ds];
     var legY  = radarY + rH + legendH / 2;
     var DOT_R = 10;
     var legMid = W / 2;
@@ -16632,19 +17421,16 @@ async function snapCompareJPEG() {
 
   // ── Bandeau récap évolution — même contenu que la fin de l'animation ────
   (function drawEvoRecap() {
-    var ndsA = isAvant ? resA.foKgfs : resA.faKgfs;
-    var ndsB = isAvant ? resB.foKgfs : resB.faKgfs;
-    var dsA  = isAvant ? resA.faKgfs : resA.foKgfs;
-    var dsB  = isAvant ? resB.faKgfs : resB.foKgfs;
+    var kgfsA = { fo: resA.foKgfs, fa: resA.faKgfs };
+    var kgfsB = { fo: resB.foKgfs, fa: resB.faKgfs };
+    var ndsA = kgfsA[ord.nds], ndsB = kgfsB[ord.nds];
+    var dsA  = kgfsA[ord.ds],  dsB  = kgfsB[ord.ds];
     var avgNdsA = _snapEvoAvg(ndsA), avgNdsB = _snapEvoAvg(ndsB);
     var avgDsA  = _snapEvoAvg(dsA),  avgDsB  = _snapEvoAvg(dsB);
 
-    var colorNDS = isAvant
-      ? (whiteBg ? 'rgba(190,85,55,1)'  : 'rgba(232,146,124,1)')
-      : (whiteBg ? 'rgba(40,140,185,1)' : 'rgba(126,200,227,1)');
-    var colorDS = isAvant
-      ? (whiteBg ? 'rgba(40,140,185,1)' : 'rgba(126,200,227,1)')
-      : (whiteBg ? 'rgba(190,85,55,1)'  : 'rgba(232,146,124,1)');
+    var _pal     = whiteBg ? PAL_W : PAL;
+    var colorNDS = _pal[ord.nds];
+    var colorDS  = _pal[ord.ds];
     var C_val = whiteBg ? '#1e2837' : 'rgba(220,228,237,0.92)';
 
     fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -16866,18 +17652,19 @@ async function snapCompareAnim() {
   var avgFaA = _snapEvoAvg(faA), avgFaB = _snapEvoAvg(faB);
   var stdFoA = _snapEvoStd(foA), stdFoB = _snapEvoStd(foB);
   var stdFaA = _snapEvoStd(faA), stdFaB = _snapEvoStd(faB);
-  var isAvant = (typeof wtype !== 'undefined') ? wtype !== 'arriere' : true;
-  // fo=orange, fa=bleu — roue arrière : fo=DS / fa=NDS — roue avant : fo=NDS / fa=DS
-  var avgDS_A  = isAvant ? avgFaA : avgFoA;
-  var avgDS_B  = isAvant ? avgFaB : avgFoB;
-  var avgNDS_A = isAvant ? avgFoA : avgFaA;
-  var avgNDS_B = isAvant ? avgFoB : avgFaB;
-  var stdDS_A  = isAvant ? stdFaA : stdFoA;
-  var stdDS_B  = isAvant ? stdFaB : stdFoB;
-  var stdNDS_A = isAvant ? stdFoA : stdFaA;
-  var stdNDS_B = isAvant ? stdFoB : stdFaB;
-  var colorDS  = isAvant ? 'rgba(126,200,227,1)' : 'rgba(232,146,124,1)';
-  var colorNDS = isAvant ? 'rgba(232,146,124,1)' : 'rgba(126,200,227,1)';
+  // Gauche = NDS, droite = DS ; valeurs et palette indexées par rangée.
+  // La couleur suit la RANGÉE (orange = fo, bleu = fa) : sur roue arrière
+  // c'est donc le DS qui est orange, et c'est voulu.
+  var ord = diffRowOrder(wtype);
+  var avgA = { fo: avgFoA, fa: avgFaA }, avgB = { fo: avgFoB, fa: avgFaB };
+  var stdA = { fo: stdFoA, fa: stdFaA }, stdB = { fo: stdFoB, fa: stdFaB };
+  var PAL  = { fo: 'rgba(232,146,124,1)', fa: 'rgba(126,200,227,1)' };
+  var avgDS_A  = avgA[ord.ds],  avgDS_B  = avgB[ord.ds];
+  var avgNDS_A = avgA[ord.nds], avgNDS_B = avgB[ord.nds];
+  var stdDS_A  = stdA[ord.ds],  stdDS_B  = stdB[ord.ds];
+  var stdNDS_A = stdA[ord.nds], stdNDS_B = stdB[ord.nds];
+  var colorDS  = PAL[ord.ds];
+  var colorNDS = PAL[ord.nds];
 
   function drawRecap(alpha) {
     var w = VW, h = VH, radarH = w;
@@ -17181,15 +17968,20 @@ document.addEventListener('keydown', function(e) {
     var rEl = document.getElementById('r-' + side);
     var L = rEl ? parseFloat(rEl.textContent) : null;
     if (!L || isNaN(L) || !T || isNaN(T) || isNaN(eTot)) return null;
-    var sdVal = (typeof sd !== 'undefined' && sd) ? sd : 2;
-    var saVal = (typeof sa !== 'undefined' && sa) ? sa : sdVal;
+    // side vaut 'fo'/'fa' : ce sont les CARTES d'affichage, pas des côtés
+    // géométriques. La conversion rangée → côté est celle de diffSideLabel(),
+    // qui la porte pour tout le fichier ; spokeSection() attend 'ds'/'nds'.
+    var geomSide = diffSideLabel(side, wtype).toLowerCase();
+    var sec = (typeof spokeSection === 'function') ? spokeSection(geomSide) : { d: sd, a: sa };
+    var sdVal = (sec && sec.d) ? sec.d : 2;
+    var saVal = (sec && sec.a) ? sec.a : sdVal;
     var A = Math.PI / 4 * sdVal * saVal;
     var k = (A * 200000) / L;
     var label = document.getElementById('rtag-' + side);
     // fo = orange toujours, fa = bleu toujours
     var color = side === 'fo' ? '#e8927c' : '#7ec8e3';
     return { L:L, T:T, eTotal:eTot, k:k, color:color,
-             label: label ? label.textContent : (side==='fo'?'DS':'NDS') };
+             label: label ? label.textContent : diffSideLabel(side, wtype) };
   }
 
   window.openHookeModal = function() {
@@ -17205,19 +17997,24 @@ document.addEventListener('keydown', function(e) {
     // Sous-titre : section de rayon sélectionnée + module de Young
     var subEl = document.getElementById('hooke-modal-subtitle');
     if (subEl) {
-      var sdVal = (typeof sd !== 'undefined' && sd) ? sd : null;
-      var saVal = (typeof sa !== 'undefined' && sa) ? sa : null;
-      var sectionVal = sdVal ? (saVal ? sdVal + ' \xd7 ' + saVal + ' mm' : sdVal + ' mm') : '\u2014';
+      // Même chaîne que la card Résumé et que le PDF : un seul écrivain, ils
+      // ne peuvent plus décrire la même roue avec deux espacements.
+      var sectionVal = (typeof spokeDiff !== 'undefined' && spokeDiff)
+        ? diffPairStr(wtype, spokeSectionStr({ d: sdFo, a: saFo }), spokeSectionStr({ d: sdFa, a: saFa }))
+        : spokeSectionStr({ d: sd, a: sa });
       var youngLabel = (typeof lang !== 'undefined' && lang === 'en') ? 'Young\'s modulus' : 'Module de Young';
       subEl.innerHTML = t('hookeSectionLabel') + ' : ' + sectionVal + '<br>' + youngLabel + ' : 200 GPa';
     }
 
-    // Cards légende : avant→fo gauche fa droite, arrière→fa gauche fo droite
+    // Cards légende : deux cards côte à côte, donc NDS à gauche et DS à droite
+    // (cf. la règle d'ordre de lecture au-dessus de diffRowOrder). À ne pas
+    // confondre avec le [dFo, dFa] du tracé plus bas, qui est un ordre de
+    // dessin de courbes — un z-order, pas une disposition.
     var legEl = document.getElementById('hooke-legend');
     if (legEl) {
-      var isArr = (typeof wtype !== 'undefined') && wtype === 'arriere';
-      var ordered = isArr ? [dFa, dFo] : [dFo, dFa];
-      ordered = ordered.filter(Boolean);
+      var legOrd = diffRowOrder(wtype);
+      var legByRow = { fo: dFo, fa: dFa };
+      var ordered = [legByRow[legOrd.nds], legByRow[legOrd.ds]].filter(Boolean);
       legEl.innerHTML = '';
       ordered.forEach(function(d) {
         var card = document.createElement('div');
@@ -17242,6 +18039,21 @@ document.addEventListener('keydown', function(e) {
   };
 
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeHookeModal(); });
+
+  // Deux raideurs distinctes ⇒ deux courbes. La comparaison est RELATIVE :
+  // k vaut plusieurs milliers, un écart absolu ne dirait rien. Deux sections
+  // identiques choisies dans les deux rangées donnent le même k et ne doivent
+  // pas produire deux droites superposées.
+  function hookeNeedsTwoCurves(ks) {
+    if (!ks || ks.length < 2) return false;
+    var m = Math.max(ks[0], ks[1]);
+    if (!m || !isFinite(m)) return false;
+    return Math.abs(ks[0] - ks[1]) / m > 1e-6;
+  }
+
+  function hookeRgb(hex) {
+    return parseInt(hex.slice(1,3),16) + ',' + parseInt(hex.slice(3,5),16) + ',' + parseInt(hex.slice(5,7),16);
+  }
 
   function niceMax(val, n) {
     var step = val / n;
@@ -17312,22 +18124,39 @@ document.addEventListener('keydown', function(e) {
     ctx.save(); ctx.translate(11, pad.top+ph/2); ctx.rotate(-Math.PI/2);
     ctx.fillText('mm', 0, 0); ctx.restore();
 
-    // Courbe blanche unique (k du premier côté)
-    var kKgf = sides[0].k / 9.81;
+    // ── Courbes : UNE PAR RAIDEUR ────────────────────────────────────────
+    // k dépend de la section (k = A·E/L). Tant que les deux côtés partagent la
+    // même section, k est identique et une seule courbe suffit — elle passe
+    // alors par les deux points de travail. Sections différentes ⇒ deux
+    // raideurs, donc deux droites : en n'en traçant qu'une, le point du second
+    // côté flotterait à côté d'une courbe qui ne le décrit pas.
     var steps = 60;
+    var ks = sides.map(function(d) { return d.k / 9.81; });
 
-    var fg = ctx.createLinearGradient(0, pad.top, 0, pad.top+ph);
-    fg.addColorStop(0, 'rgba(255,255,255,.07)');
-    fg.addColorStop(1, 'rgba(255,255,255,.01)');
-    ctx.beginPath(); ctx.moveTo(xp(0), yp(0));
-    for (var i=1; i<=steps; i++) { var f=i/steps*maxF; ctx.lineTo(xp(f), yp(f/kKgf)); }
-    ctx.lineTo(xp(maxF), pad.top+ph); ctx.lineTo(pad.left, pad.top+ph); ctx.closePath();
-    ctx.fillStyle = fg; ctx.fill();
+    function drawCurve(kKgf, rgb, lineAlpha, fillAlpha) {
+      var fg = ctx.createLinearGradient(0, pad.top, 0, pad.top+ph);
+      fg.addColorStop(0, 'rgba(' + rgb + ',' + fillAlpha + ')');
+      fg.addColorStop(1, 'rgba(' + rgb + ',.01)');
+      ctx.beginPath(); ctx.moveTo(xp(0), yp(0));
+      for (var i=1; i<=steps; i++) { var f=i/steps*maxF; ctx.lineTo(xp(f), yp(f/kKgf)); }
+      ctx.lineTo(xp(maxF), pad.top+ph); ctx.lineTo(pad.left, pad.top+ph); ctx.closePath();
+      ctx.fillStyle = fg; ctx.fill();
 
-    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    for (var i=0; i<=steps; i++) { var f=i/steps*maxF; i===0?ctx.moveTo(xp(f),yp(f/kKgf)):ctx.lineTo(xp(f),yp(f/kKgf)); }
-    ctx.stroke();
+      ctx.strokeStyle = 'rgba(' + rgb + ',' + lineAlpha + ')'; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (var i=0; i<=steps; i++) { var f=i/steps*maxF; i===0?ctx.moveTo(xp(f),yp(f/kKgf)):ctx.lineTo(xp(f),yp(f/kKgf)); }
+      ctx.stroke();
+    }
+
+    if (hookeNeedsTwoCurves(ks)) {
+      // Chaque droite prend la couleur de son côté : le rattachement point ↔
+      // courbe doit se lire sans légende.
+      sides.forEach(function(d, i) { drawCurve(ks[i], hookeRgb(d.color), '.5', '.06'); });
+    } else {
+      // Raideur commune : courbe blanche, rendu inchangé par rapport à avant
+      // le différentiel.
+      drawCurve(ks[0], '255,255,255', '.55', '.07');
+    }
 
     // Points de travail
     sides.forEach(function(d) {
@@ -17768,7 +18597,9 @@ document.addEventListener('keydown', function(e) {
     var cfg = configs[idx]; if (!cfg) return;
     var wh = (cfg.state && cfg.state.wtype) || 'avant';
     closeRiderEdit();
-    if (typeof wtype !== 'undefined' && wh !== wtype && typeof setWheel === 'function') setWheel(wh);
+    // Le garde sur setWheel reste : il porte sur l'existence de la fonction
+    // (module tardif), pas sur wtype.
+    if (wh !== wtype && typeof setWheel === 'function') setWheel(wh);
     if (typeof loadConfig === 'function') loadConfig(idx);
   }
 
