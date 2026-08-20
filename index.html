@@ -8053,9 +8053,27 @@ const FIELD_GROUPS = {
   hub:     ['nb-rayons','diam-trou','pcd-left','pcd-right','offset-left','offset-right','sp-so-left','sp-so-right'],
   rim:     ['erd-direct','nsd-val','erd-nsd-result','ecrou-type'],
   tension: ['tension-forte','asym'],
-  rayon:   ['spoke-select'],
 };
 
+// Liste blanche : seuls ces groupes POSSEDENT une cible d'auto-scroll (cf.
+// checkHubComplete / checkRimComplete / checkTensionComplete). Opt-in delibere —
+// un groupe ajoute plus tard est non-scrollant tant qu'il n'est pas inscrit ici.
+// La carte Rayon n'est la destination d'aucun scroll : ses selects (section mono
+// 'spoke-select', sections differentielles 'spoke-select-fo' / '-fa', materiau
+// 'spoke-mat-select') n'ont donc pas de groupe. Sans ce filtre ils etaient
+// captures par le listener generique 'input[type=number], select' plus bas, et
+// checkAllScroll() s'executait avec les flags tels quels — rescrollant des qu'ils
+// etaient a false (config chargee, changement d'onglet, clearForm, clic sur le
+// message d'erreur). Meme cause pour tous les selects hors formulaire (module
+// tension, tensiometres, chartes).
+const SCROLL_GROUPS = ['hub', 'rim', 'tension'];
+
+function _scrollGroupOwns(id) {
+  return SCROLL_GROUPS.some(g => FIELD_GROUPS[g].includes(id));
+}
+
+// N'est appele que sur un id valide par _scrollGroupOwns() — les trois tests
+// couvrent donc exactement SCROLL_GROUPS.
 function resetScrollFlagFor(id) {
   if (FIELD_GROUPS.hub.includes(id))     _hubScrolled     = false;
   if (FIELD_GROUPS.rim.includes(id))     _rimScrolled     = false;
@@ -8069,9 +8087,11 @@ function checkAllScroll() {
 }
 
 document.querySelectorAll('input[type=number], select').forEach(el => {
-  // Modale infos roue : hors validation live et auto-scroll — ses selects
-  // déclenchaient checkAllScroll() et faisaient défiler la page principale
-  // derrière la modale.
+  // Modale infos roue : hors validation live. Ses champs ne participent pas a
+  // l'etat du formulaire principal — ni marquage .invalid, ni #err, ni
+  // hrUpdateButtons. Le volet auto-scroll de cette exclusion est desormais
+  // redondant (aucun id de la modale n'appartient a SCROLL_GROUPS), mais le
+  // garde reste : la validation live, elle, n'a toujours rien a y faire.
   if (el.closest('#wheel-info-modal')) return;
   el.addEventListener('input', function() {
     if (this.id !== 'asym') hideAsymWarn();
@@ -8083,7 +8103,7 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
   el.addEventListener('focus', function() { this._blurPrev = this.value; });
   el.addEventListener('blur', function() {
     if (_switchingHub) return;
-    if (!document.querySelector('.invalid')) {
+    if (!document.querySelector('.invalid') && _scrollGroupOwns(this.id)) {
       if (this.value !== this._blurPrev) resetScrollFlagFor(this.id);
       checkAllScroll();
     }
@@ -8097,14 +8117,22 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
     if (this.id === 'ecrou-type') $id('nsd-val').classList.remove('invalid');
     if (!document.querySelector('.invalid')) {
       $id('err').classList.remove('show');
-      resetScrollFlagFor(this.id);
-      checkAllScroll();
+      if (_scrollGroupOwns(this.id)) {
+        resetScrollFlagFor(this.id);
+        checkAllScroll();
+      }
     }
   });
 });
 
+// Sections rayon absentes volontairement : 'spoke-select' comme 'spoke-select-fo'
+// / '-fa' passent par leur onchange inline (setSpokeFromSelect /
+// setSpokeFromSelectSide), qui appellent deja markModified() + updateCalcBtn().
+// Les y inscrire doublait les appels — 'input' ET 'change' partent sur un select
+// — donc trois clearResults() par selection au lieu d'un. Un seul chemin pour
+// les trois selects, mono comme differentiel.
 ['nb-rayons','diam-trou','pcd-left','pcd-right','offset-left','offset-right',
- 'erd-direct','nsd-val','erd-nsd-result','tension-forte','asym','sp-so-left','sp-so-right','spoke-select'].forEach(id => {
+ 'erd-direct','nsd-val','erd-nsd-result','tension-forte','asym','sp-so-left','sp-so-right'].forEach(id => {
   const el = $id(id); if (!el) return;
   ['input','change'].forEach(ev => {
     // Late-bind : window.updateCalcBtn est patché plus bas (greffe hrUpdateButtons).
