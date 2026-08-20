@@ -4743,10 +4743,13 @@ let tmSpokeFa = null;
 
 // Rayon effectif d'une rangée de saisie ('fo' | 'fa'). Point de résolution
 // unique : hors différentiel les deux rangées partagent tmSpokeFo.
+function _sideOrFo(side, who) {
+  if (side === 'fo' || side === 'fa') return side;
+  console.warn((who || '?') + ': rangée non spécifiée (' + side + ') — repli sur fo', new Error().stack);
+  return 'fo';
+}
 function tmSpokeOf(side) {
-  if (side !== 'fo' && side !== 'fa') {
-    console.warn('tmSpokeOf: rangée non spécifiée (' + side + ') — repli sur fo', new Error().stack);
-  }
+  side = _sideOrFo(side, 'tmSpokeOf');
   return (spokeDiff && side === 'fa') ? tmSpokeFa : tmSpokeFo;
 }
 // Sélection complète : en différentiel, une seule charte ne convertit rien.
@@ -4782,9 +4785,9 @@ function tmSpokeReady() {
 }
 // Rangée dont la charte est affichée par les modales Charte de conversion et
 // Contrôle tensiomètre — positionnée par le bouton Chartes qui les ouvre.
-let _tmConvSide = 'fo', _tmTcSide = 'fo';
+let _tmConvSide = null, _tmTcSide = null;
 // Rangée pour laquelle la modale « Charte Perso » a été ouverte.
-let _ccSide = 'fo';
+let _ccSide = null;
 // Rangée dont la charte est retenue pour l'export — n'a de sens que lorsque les
 // deux rangées en portent une, et repositionné à chaque ouverture de la modale.
 let _cshareChoice = null;
@@ -6056,6 +6059,11 @@ function slenSP(pcd, off, cr, n, erd, so) {
 // Section du rayon pour un côté GÉOMÉTRIQUE ('ds' | 'nds'). Point de traduction
 // unique rangée UI → côté : hors différentiel, les deux côtés partagent sd/sa.
 function spokeSection(side) {
+  if (side !== 'ds' && side !== 'nds') {
+    console.warn('spokeSection: côté géométrique attendu (\'ds\'/\'nds\'), reçu ' + side +
+                 ' — une rangée UI se convertit par diffSideLabel(row, wtype).toLowerCase()',
+                 new Error().stack);
+  }
   if (!spokeDiff) return { d: sd, a: sa };
   const useFo = (side === 'ds') === (wtype === 'arriere');
   return useFo ? { d: sdFo, a: saFo } : { d: sdFa, a: saFa };
@@ -6924,8 +6932,20 @@ function closePriv() {
 function _tmStoreKeyOf(tp, dtSub) {
   if (!tp) return null;
   if (tp.indexOf('ct_') === 0) return tp;
-  if (tp === 'dt') return 'dt_' + (dtSub || 'standard');
+  if (tp === 'dt') return 'dt_' + _dtSubOrStd(dtSub);
   return tp;
+}
+
+// Sous-type DT normalisé. Absent ⇒ porteur antérieur au champ, où 'standard'
+// était le seul sous-type : repli légitime, muet. Présent mais hors des deux
+// valeurs connues ⇒ faute d'appel, signalée (le repli produirait sinon la
+// table standard sous un nom d'aerolite2, plausible et faux).
+function _dtSubOrStd(dtSub) {
+  if (dtSub === 'standard' || dtSub === 'aerolite2') return dtSub;
+  if (dtSub !== null && dtSub !== undefined && dtSub !== '') {
+    console.warn('_dtSubOrStd: sous-type DT inconnu (' + dtSub + ') — repli sur standard', new Error().stack);
+  }
+  return 'standard';
 }
 
 // Clés de rayon portées par un PORTEUR persisté (state vif ou snapshot).
@@ -9302,7 +9322,9 @@ function tmChartsPickerToggle(side) {
 }
 // side identifie la rangée ; le suffixe d'id en découle ('' pour le sélecteur
 // unique, dont le bouton porte la rangée fo).
-function _tmChartsSfx(side) { return spokeDiff ? '-' + (side || 'fo') : ''; }
+function _tmChartsSfx(side) {
+  return spokeDiff ? '-' + _sideOrFo(side, '_tmChartsSfx') : '';
+}
 
 function tmChartsPickerClose(side) {
   const sfx = _tmChartsSfx(side);
@@ -9340,7 +9362,7 @@ function tmUpdateConvBtn() {
 
 // ── Ouvrir la modale charte de conversion ────────────────────────────────────
 function tmOpenConvTable(side) {
-  _tmConvSide = side || 'fo';
+  _tmConvSide = _sideOrFo(side, 'tmOpenConvTable');
   const spokeKey = tmSpokeOf(_tmConvSide);
   if (!spokeKey) return;
   const pts = tmGetPoints(_tmConvSide);
@@ -9558,6 +9580,7 @@ function tmCloseConvTable() {
   $id('tm-conv-modal').classList.remove('show');
   document.body.style.overflow = '';
   if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+  _tmConvSide = null; // la rangée ne survit pas à la fermeture (cf. _cshareChoice)
 }
 
 // ── Contrôle tension : interpolation inverse kgf → lecture attendue ─────────
@@ -9589,7 +9612,7 @@ var _tmTcPendingReplace = false; // true = valeur présélectionnée, prochaine 
 var _tmTcOorTimer = null;        // timer d'affichage de la plage OOR (annulable, cf. efOorTimer)
 
 function tmTcOpen(side) {
-  _tmTcSide = side || 'fo';
+  _tmTcSide = _sideOrFo(side, 'tmTcOpen');
   if (!tmSpokeOf(_tmTcSide)) return;
   const pts = tmGetPoints(_tmTcSide);
   if (!pts || !pts.length) return;
@@ -9643,6 +9666,7 @@ function tmTcClose() {
   modal.classList.remove('show');
   document.body.style.overflow = '';
   if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+  _tmTcSide = null; // la rangée ne survit pas à la fermeture (cf. _cshareChoice)
 }
 
 // ── Frappe : règles identiques à efNumpadKey / efNumpadDel ───────────────
@@ -10106,7 +10130,7 @@ document.addEventListener('keydown', function(e) {
 function ccOpen(side) {
   // Rangée pour laquelle la charte est créée/éditée : détermine à la fois le
   // pré-remplissage et la rangée qui sera sélectionnée après enregistrement.
-  _ccSide = side || 'fo';
+  _ccSide = _sideOrFo(side, 'ccOpen');
   const _ccKey = tmSpokeOf(_ccSide);
   // Pré-sélectionner le tensiomètre actif
   const sel = $id('cc-tensio');
@@ -10193,6 +10217,7 @@ function ccClose() {
   // Déverrouiller le select tensiomètre
   const sel = $id('cc-tensio');
   if (sel) { sel.disabled = false; sel.style.opacity = ''; }
+  _ccSide = null; // la rangée ne survit pas à la fermeture (cf. _cshareChoice)
 }
 
 // ── Helpers du modal : boutons clear, tensiomètre, label lecture ─────────────
@@ -16359,7 +16384,7 @@ function _snapTensioLabel(type, dtSub) {
     dt_standard: 'DT SWISS STD', dt_aerolite2: 'DT SWISS AEL2',
     pk: 'P&KLIE', un: 'UNIOR 1752', pillar: 'PILLAR 50mm',
   };
-  const key = type === 'dt' ? 'dt_' + (dtSub || 'standard') : type;
+  const key = type === 'dt' ? 'dt_' + _dtSubOrStd(dtSub) : type;
   return map[key] || type.toUpperCase();
 }
 
@@ -16870,7 +16895,7 @@ function _snapRenderRadarCanvas(snap, size) {
     if (!tableKey) return null;
     var fullKey;
     if (tableKey.startsWith('ct_')) { fullKey = tableKey; }
-    else if (tableKey === 'dt')     { fullKey = 'dt_' + (snapData.tmDTSub || 'standard'); }
+    else if (tableKey === 'dt')     { fullKey = 'dt_' + _dtSubOrStd(snapData.tmDTSub); }
     else                            { fullKey = tableKey; }
     var tbl = TM_TABLES[fullKey];
     // Snapshot non différentiel (ou antérieur au différentiel) : les deux
