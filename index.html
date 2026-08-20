@@ -9212,8 +9212,9 @@ function tmClearTensio() {
   // Le bouton Easy Fill standalone est masqué par tmUpdateUnitBadge
   const clearBtn = $id('tm-clear-tensio');
   if (clearBtn) clearBtn.classList.add('inactive');
-  const clearSpoke = $id('tm-clear-spoke');
-  if (clearSpoke) clearSpoke.classList.add('inactive');
+  // Le ✕ du rayon n'est PAS repris ici : tmPopulateSpokeSelect() ci-dessus a
+  // déjà statué sur les trois (tmSpokeFo/Fa viennent d'être remis à null), et
+  // cette ligne ne couvrait que le sélecteur mono — second écrivain, partiel.
 }
 
 function setDTSub(sub) {
