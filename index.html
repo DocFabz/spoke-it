@@ -4791,9 +4791,8 @@ let _ccSide = null;
 // Rangée dont la charte est retenue pour l'export — n'a de sens que lorsque les
 // deux rangées en portent une, et repositionné à chaque ouverture de la modale.
 let _cshareChoice = null;
-let _tmLoadedType  = null; // tensio du couple chargé depuis config
-let _tmLoadedSpoke   = null; // rayon (rangée fo) du couple chargé depuis config
-let _tmLoadedSpokeFa = null; // rayon (rangée fa) — null hors différentiel
+// (Le couple tensio/rayon chargé n'est plus mémorisé : le verrou du rayon est
+//  dérivé de tmData par tmSpokeLocked().)
 // ── État highlight ──────────────────────────────────────────────────────────
 let tmCVThreshold = 5;    // % — seuil écart-type coefficient de variation
 let tmHighlightOn = false;
@@ -5351,19 +5350,11 @@ function _applyStateBody(s) {
     // Clear store on config load — session-only data, not persisted
     tmPurgeStore();
 
-    // Reconstruire la table — cards fermées, spoke verrouillé si config chargée
+    // Reconstruire la table — cards fermées. Le verrou rayon suit, dérivé des
+    // relevés restaurés : une roue sauvegardée avec un rayon mais sans relevé
+    // reste modifiable, rien ne dépend encore de sa charte.
     tmBuildTable();
     tmShowDiagramIfData();
-    // Mémoriser et verrouiller le couple tensio/rayon chargé
-    if (tmSpokeFo) {
-      _tmLoadedType  = tmType;
-      _tmLoadedSpoke   = tmSpokeFo;
-      _tmLoadedSpokeFa = tmSpokeFa;
-      tmLockSpokeSelect(true);
-    } else {
-      _tmLoadedType  = null;
-      _tmLoadedSpoke = null; _tmLoadedSpokeFa = null;
-    }
   } else {
     // Pas de tensiomètre sauvegardé : remettre à zéro complètement. Le store
     // est purgé comme dans la branche symétrique — il appartient à la roue
@@ -7790,13 +7781,12 @@ function cshareExport() {
 }
 
 // Sélection automatique de la charte importée dans la card tensiomètre.
-// Respecte le verrou de config chargée : select rayon verrouillé ⇒ on ne
-// touche pas à la sélection (la charte reste disponible dans le dropdown).
+// Respecte le verrou de rayon : rangée figée ⇒ on ne touche pas à la sélection
+// (la charte reste disponible dans le dropdown).
 // Charte déjà sélectionnée ⇒ aucun re-select : tmOnSpokeChange purgerait les
 // relevés vifs pour rien (cas import d'une charte identique à celle en cours).
 function _cshareSelect(tensioKey, ccName) {
   var sel = $id('tm-spoke-select');
-  if (sel && sel.disabled) return;
   // En différentiel, l'import ne désigne aucune rangée. On ne remplit qu'une
   // rangée VIDE : écraser une charte déjà posée purgerait des relevés que
   // l'utilisateur n'a pas demandé à perdre. Les deux rangées occupées ⇒ on ne
@@ -7807,6 +7797,12 @@ function _cshareSelect(tensioKey, ccName) {
     else if (!tmSpokeFa) targetSide = 'fa';
     else return;
   }
+  // Verrou de la rangée VISÉE, lu à la source — et non sur le .disabled du
+  // sélecteur mono. Les trois sélecteurs partageaient le même état tant que le
+  // verrou était posé en bloc ; par côté, lire celui du mono refusait l'import
+  // en différentiel dès que la rangée fo était figée, y compris quand la rangée
+  // à remplir était vide, libre, et justement celle qu'on visait.
+  if (tmSpokeLocked(targetSide || 'fo')) return;
   var isCt = tensioKey.indexOf('ct_') === 0;
   var type = isCt ? tensioKey : (tensioKey.indexOf('dt_') === 0 ? 'dt' : tensioKey);
   if (type === 'dt') {
@@ -8173,7 +8169,13 @@ ecrouEl.addEventListener('change', markModified);
 
 // ── Module tension : toute saisie efface le badge (sauf tolérance, nb rayons, rayon) ──
 document.querySelectorAll('#tension-module input, #tension-module select').forEach(el => {
-  if (el.id === 'tm-cv-select' || el.id === 'tm-spoke-select' || el.id === 'tm-nb-select' || el.id === 'tm-tensio-select') return;
+  // Les trois sélecteurs de rayon sont hors markModified : changer de rayon sur
+  // une roue chargée n'est plus une « nouvelle roue », c'est la reprise prévue
+  // après effacement des relevés (nouvelles chartes, même roue). Les rangées du
+  // différentiel manquaient à cette liste : elles désaffectaient la roue là où
+  // le sélecteur mono ne le faisait pas.
+  if (el.id === 'tm-cv-select' || el.id === 'tm-nb-select' || el.id === 'tm-tensio-select' ||
+      el.id === 'tm-spoke-select' || el.id === 'tm-spoke-select-fo' || el.id === 'tm-spoke-select-fa') return;
   el.addEventListener('input',  markModified);
   el.addEventListener('change', markModified);
 });
@@ -8965,7 +8967,7 @@ function tmPopulateSpokeSelect() {
   ['', 'fo', 'fa'].forEach(row => _tmPopulateOneSpokeSelect(row));
   tmUpdateUnitBadge();
   tmUpdateConvBtn();
-  tmSyncSpokeClearBtns();
+  tmSyncSpokeLocks();
 }
 
 function _tmPopulateOneSpokeSelect(row) {
@@ -9156,10 +9158,8 @@ function setTM(type) {
   const newKey = isCt ? type : (type === 'dt' ? 'dt_' + tmDTSub : type);
   if (newKey === tmActiveKey) return;
   tmType = type;
-  // Re-verrouiller si on revient au tensio chargé avec son rayon d'origine
-  const backToLoaded = !!_tmLoadedType && type === _tmLoadedType
-                       && tmSpokeFo === _tmLoadedSpoke && tmSpokeFa === _tmLoadedSpokeFa;
-  tmLockSpokeSelect(backToLoaded);
+  // Le verrou rayon suit les relevés que tmSwitchActiveKey rend (ou pas) :
+  // il est posé en fin de bascule, pas décidé ici sur un état pré-restauration.
   tmSwitchActiveKey(newKey);
   const tmTensioSel = $id('tm-tensio-select');
   if (tmTensioSel && tmTensioSel.value !== type) tmTensioSel.value = type;
@@ -9186,10 +9186,6 @@ function tmClearTensio() {
   $id('tm-btn-dt-std').classList.add('active');
   $id('tm-btn-dt-ael2').classList.remove('active');
   tmSpokeFo = null; tmSpokeFa = null;
-  _tmLoadedType    = null;
-  _tmLoadedSpoke   = null;
-  _tmLoadedSpokeFa = null;
-  tmLockSpokeSelect(false);
   tmPopulateSpokeSelect();
   tmUpdateBadges();
   _refreshLoadedBadges(); // verrou nb-rayons suit tmAnyReadings()
@@ -9225,23 +9221,68 @@ function updateDTTip() {
   tip.textContent = t(key);
 }
 
-// ── Verrouillage du select rayon quand config chargée ────────────────────────
-// Verrouille les TROIS sélecteurs : n'en figer qu'un laissait le verrou
-// « config chargée » totalement contournable en différentiel.
-function tmLockSpokeSelect(locked) {
-  ['tm-spoke-select', 'tm-spoke-select-fo', 'tm-spoke-select-fa'].forEach(id => {
-    const sel = $id(id);
-    if (!sel) return;
-    sel.disabled = locked;
-    sel.style.opacity       = locked ? '.5' : '';
-    sel.style.pointerEvents = locked ? 'none' : '';
-  });
-  ['tm-clear-spoke', 'tm-clear-spoke-fo', 'tm-clear-spoke-fa'].forEach(id => {
-    const clear = $id(id);
-    if (!clear) return;
-    clear.style.opacity       = locked ? '.35' : '';
-    clear.style.pointerEvents = locked ? 'none' : '';
-  });
+// ── Verrou du select rayon : DÉRIVÉ de l'état, jamais mémorisé ───────────────
+// Trois appelants de tmSyncSpokeLocks(), et trois seulement : tmUpdateBadges
+// (donc tout tmBuildTable, qui l'ouvre — chargement de roue, de snapshot,
+// bascule de tensiomètre, reset vocal), tmPopulateSpokeSelect (chemins qui
+// repeuplent sans reconstruire la table) et tmSyncResultAfterEdit (édition
+// d'une cellule, ✕ d'en-tête, Clear, re-clic de nappe EF). Tout le reste y
+// arrive par l'un des trois : ajouter un appel « au cas où » ne protège de
+// rien et rend le graphe illisible.
+// Un rayon fige la charte qui a converti les relevés AFFICHÉS : tant qu'il en
+// reste un dans SA colonne, en changer les rendrait faux sans prévenir. Rien
+// d'autre ne le fige — ni les relevés parqués d'un autre tensiomètre (convertis
+// par LEUR charte), ni les snapshots (chacun garde la sienne, figée à
+// l'instantané). D'où la règle : effacer une colonne rend son côté
+// re-sélectionnable, et c'est le passage obligé pour repartir sur de nouvelles
+// chartes — sans désaffecter la roue, contrairement au nb de rayons.
+// L'ancienne version mémorisait le couple (tensio, rayon) chargé et comparait
+// au retour : la comparaison lisait tmSpokeFo AVANT que tmSwitchActiveKey ne le
+// restaure, donc un aller-retour de tensiomètre déverrouillait le rayon alors
+// que ses relevés revenaient avec lui. Un état dérivé ne peut pas mentir.
+function tmSideHasData(side) {
+  const col = side === 'fa' ? tmData.fa : tmData.fo;
+  return !!col && col.some(v => v !== null);
+}
+// En mono, UN rayon convertit les deux colonnes : il reste figé tant qu'il
+// reste une valeur, d'un côté ou de l'autre. En différentiel, chaque rangée
+// répond pour elle — une ✕ ne rend sélectionnable que le côté qu'elle efface.
+// Hors roue chargée, rien n'est figé : la saisie est libre et un changement de
+// rayon repart de zéro (tmAfterSpokeChange).
+function tmSpokeLocked(side) {
+  if (!_loadedConfigName[wtype]) return false;
+  return spokeDiff ? tmSideHasData(side) : tmHasData();
+}
+// Reflet pur de l'état vers les TROIS sélecteurs (mono + les deux rangées du
+// différentiel) et leurs ✕ : n'en figer qu'un laissait le verrou contournable
+// en différentiel. Idempotent, donc appelable depuis tout chemin qui touche
+// aux données, au rayon, au tensiomètre ou à la roue chargée.
+function tmSyncSpokeLocks() {
+  const lock = { fo: tmSpokeLocked('fo'), fa: tmSpokeLocked('fa') };
+  [['tm-spoke-select', 'fo'], ['tm-spoke-select-fo', 'fo'], ['tm-spoke-select-fa', 'fa']]
+    .forEach(([id, side]) => {
+      const sel = $id(id);
+      if (!sel) return;
+      sel.disabled = lock[side];
+      // .locked porte le grisé (même règle CSS que #tm-nb-select) ; les styles
+      // inline de l'ancien verrou sont neutralisés pour ne pas survivre.
+      sel.classList.toggle('locked', lock[side]);
+      sel.style.opacity       = '';
+      sel.style.pointerEvents = '';
+    });
+  // Les ✕ répondent à DEUX questions — « y a-t-il un rayon à effacer ? »
+  // (.inactive) et « a-t-on le droit ? » (le verrou) — mais un seul écrivain
+  // par bouton. Séparées, l'opacité inline du verrou l'emportait sur la classe
+  // .inactive, qui n'avait alors plus aucun effet visible.
+  const key = { fo: () => tmSpokeFo, fa: () => tmSpokeFa };
+  [['tm-clear-spoke', 'fo'], ['tm-clear-spoke-fo', 'fo'], ['tm-clear-spoke-fa', 'fa']]
+    .forEach(([id, side]) => {
+      const clear = $id(id);
+      if (!clear) return;
+      clear.classList.toggle('inactive', !key[side]());
+      clear.style.opacity       = lock[side] ? '.35' : '';
+      clear.style.pointerEvents = lock[side] ? 'none' : '';
+    });
 }
 
 // ── onchange sur le dropdown de rayons ───────────────────────────────────────
@@ -9277,15 +9318,6 @@ function tmAfterSpokeChange() {
   tmBuildTable();
   tmHideResult();
   tmUpdateConvBtn();
-  tmSyncSpokeClearBtns();
-}
-
-function tmSyncSpokeClearBtns() {
-  const map = { 'tm-clear-spoke': tmSpokeFo, 'tm-clear-spoke-fo': tmSpokeFo, 'tm-clear-spoke-fa': tmSpokeFa };
-  Object.keys(map).forEach(id => {
-    const b = $id(id);
-    if (b) b.classList.toggle('inactive', !map[id]);
-  });
 }
 
 // Le toggle du module tension écrit le même état que celui de la carte Rayons.
@@ -11000,12 +11032,13 @@ function tmUpdateBadges() {
     tmSel.classList.toggle('locked', !!_loadedConfigName[wtype] && (!_cfgFillMode[wtype] || tmAnyReadings()));
   }
 
-  // Rayon : verrouiller si config chargée ET données tension présentes
-  // (si pas de données tension, on laisse l'utilisateur choisir le rayon)
-  const tmSpokeSel = $id('tm-spoke-select');
-  if (tmSpokeSel) {
-    tmSpokeSel.classList.toggle('locked', !!_loadedConfigName[wtype] && tmHasData());
-  }
+  // Rayon : verrou dérivé, par côté — source unique tmSyncSpokeLocks(). Point
+  // de passage de TOUS les chemins qui reconstruisent la table (tmBuildTable
+  // ouvre par tmUpdateBadges) : chargement de roue, de snapshot, bascule de
+  // tensiomètre, reset vocal. La ligne d'avant ne visait que le sélecteur mono,
+  // et sa classe .locked cohabitait avec les styles inline de l'ancien
+  // tmLockSpokeSelect : deux mécanismes sur le même élément, deux vérités.
+  tmSyncSpokeLocks();
 
   // Type de roue
   tmSyncWheelButtons();
@@ -11254,6 +11287,8 @@ function tmUpdateResultCardState() {
 function tmSyncResultAfterEdit() {
   if (!tmHasData()) tmHideResult();
   else tmUpdateResultCardState();
+  // Vider la dernière cellule d'une colonne a le même effet qu'une ✕.
+  tmSyncSpokeLocks();
 }
 
 function tmHideResult() {
@@ -11287,6 +11322,10 @@ function tmResetSide(col) {
   document.querySelectorAll(`[id^="dr-${side}-"]`).forEach(el => { el.textContent = ''; });
 
   tmTryRenderRadar();
+  // tmSyncResultAfterEdit() repose le verrou : la colonne est vide, plus rien
+  // n'y dépend de la charte, le côté redevient sélectionnable. Les ✕
+  // d'en-tête, le bouton Clear (tmClearAll) et le re-clic sur la nappe active
+  // dans EF passent tous par ici — la règle n'est écrite qu'une fois.
   tmSyncResultAfterEdit();
   _snapSetLabel(0);
 }
