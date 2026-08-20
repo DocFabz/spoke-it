@@ -503,8 +503,25 @@ select option             { background:#161b27 }
 
 /* ── Differential side labels ───────────────────────────────────────────────── */
 .diff-side-label { font-size:.5rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; width:2.8rem; flex-shrink:0; text-align:right; line-height:1.25 }
+/* Second mot de la puce (« Droit » / « Gauche »). Bloc par défaut : deux lignes,
+   le rendu de toujours. Le passer en ligne est une décision de mise en page et
+   non de contenu — updateDiffSideLabels() reste écrivain unique et ignore où sa
+   sortie atterrit. */
+.diff-side-label .dsl-w { display:block }
 .diff-side-fo    { color:var(--warm) }
 .diff-side-fa    { color:var(--accent) }
+/* Sections rayon en différentiel : seul endroit de l'app où les deux rangées
+   sont côte à côte et non empilées. La puce y passe donc SOUS son champ, sur
+   une ligne, centrée dans sa colonne. La gouttière fixe de 2.8rem, qui aligne
+   verticalement les champs dans les différentiels empilés (croisement, module
+   tension), n'a pas d'emploi ici : elle ne faisait qu'indenter la colonne de
+   gauche par rapport au titre « Section rayon » posé juste au-dessus. Chaque
+   champ occupe désormais toute sa colonne — les deux sont de largeur
+   rigoureusement égale, et celui de gauche démarre au bord du bloc, aligné
+   sous le titre. Règle portée par la rangée : diffReorder() permute les deux
+   colonnes selon avant/arrière, leur géométrie doit rester identique. */
+#spoke-sec-row .diff-side-label { width:auto; text-align:center }
+#spoke-sec-row .diff-side-label .dsl-w { display:inline; margin-left:.3em }
 
 /* ── Cross buttons: fo/fa variants ─────────────────────────────────────────── */
 #cross-row-diff        { flex-direction:column; gap:.45rem }
@@ -2200,32 +2217,31 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <div id="spoke-other-info" style="display:none;flex:0 0 calc(50% - .5rem);font-size:.67rem;font-style:italic;color:var(--text3);line-height:1.4;align-self:flex-end" data-i18n="spokeMaterialOtherInfo">L'estimation de l'élongation des rayons par la loi de Hooke n'est disponible que pour les rayons aciers.</div>
     </div>
 
-    <!-- Mode différentiel : deux sections côte à côte. Ordonnancement et code
-         couleur identiques au différentiel de croisement — fo (orange) à
-         gauche, fa (bleu) à droite, libellés inversés selon avant/arrière. -->
-    <!-- Mode différentiel : deux sections côte à côte, chaque puce de rangée à
-         gauche de son champ comme dans le différentiel de croisement.
-         fo (orange) à gauche, fa (bleu) à droite ; libellés inversés selon
-         avant/arrière par updateDiffSideLabels(), écrivain unique. -->
+    <!-- Mode différentiel : deux sections côte à côte — ordonnancement et code
+         couleur identiques au différentiel de croisement, fo (orange) à gauche,
+         fa (bleu) à droite, permutés par diffReorder() et libellés inversés
+         selon avant/arrière par updateDiffSideLabels(), écrivain unique.
+         Côte à côte et non empilées : chaque puce passe sous son champ plutôt
+         qu'à sa gauche, pour que les deux champs occupent toute leur colonne et
+         que celui de gauche s'aligne sous le titre. -->
     <div id="spoke-section-diff" style="display:none;margin-top:.85rem">
       <label class="tip-wrap" style="margin-bottom:.35rem"><span data-i18n="spokeSection">Section rayon (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="spokeSectionTip">Permet de calculer l'élongation</span></label>
-      <div id="spoke-sec-row" style="display:flex;gap:.7rem;align-items:center">
-        <div id="spoke-sec-col-fo" style="flex:1 1 0;min-width:0;display:flex;align-items:center;gap:.4rem">
+      <div id="spoke-sec-row" style="display:flex;gap:.7rem;align-items:flex-start">
+        <div id="spoke-sec-col-fo" style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:.3rem">
+          <select id="spoke-select-fo" aria-labelledby="spoke-diff-label-fo" onchange="setSpokeFromSelectSide(this,'fo')">
+            <option value="" selected>—</option>
+            <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
+            <option value="1.7|">1.7</option>  <option value="1.8|">1.8</option>
+            <option value="2.0|">2.0</option>
+            <option value="2.3|">2.3</option>
+            <option value="0.9|2.2">0.9×2.2</option>
+            <option value="0.9|2.3">0.9×2.3</option>
+            <option value="1.2|2.0">1.2×2.0</option>
+          </select>
           <span class="diff-side-label diff-side-fo" id="spoke-diff-label-fo">DS</span>
-          <select id="spoke-select-fo" style="flex:1;min-width:0" aria-labelledby="spoke-diff-label-fo" onchange="setSpokeFromSelectSide(this,'fo')">
-            <option value="" selected>—</option>
-            <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
-            <option value="1.7|">1.7</option>  <option value="1.8|">1.8</option>
-            <option value="2.0|">2.0</option>
-            <option value="2.3|">2.3</option>
-            <option value="0.9|2.2">0.9×2.2</option>
-            <option value="0.9|2.3">0.9×2.3</option>
-            <option value="1.2|2.0">1.2×2.0</option>
-          </select>
         </div>
-        <div id="spoke-sec-col-fa" style="flex:1 1 0;min-width:0;display:flex;align-items:center;gap:.4rem">
-          <span class="diff-side-label diff-side-fa" id="spoke-diff-label-fa">NDS</span>
-          <select id="spoke-select-fa" style="flex:1;min-width:0" aria-labelledby="spoke-diff-label-fa" onchange="setSpokeFromSelectSide(this,'fa')">
+        <div id="spoke-sec-col-fa" style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:.3rem">
+          <select id="spoke-select-fa" aria-labelledby="spoke-diff-label-fa" onchange="setSpokeFromSelectSide(this,'fa')">
             <option value="" selected>—</option>
             <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
             <option value="1.7|">1.7</option>  <option value="1.8|">1.8</option>
@@ -2235,6 +2251,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
             <option value="0.9|2.3">0.9×2.3</option>
             <option value="1.2|2.0">1.2×2.0</option>
           </select>
+          <span class="diff-side-label diff-side-fa" id="spoke-diff-label-fa">NDS</span>
         </div>
       </div>
     </div>
@@ -4605,7 +4622,7 @@ function markModified() {
   if (_loadedConfigName[wtype]) {
     // Première modification = nouvelle roue : reset complet du module tension
     tmClearTensio();
-    Object.keys(tmStore).forEach(k => delete tmStore[k]);
+    tmPurgeStore();
     // ... et les infos roue suivent le nom : elles appartenaient à la roue
     // chargée, qui vient d'être désaffectée. (Hors roue chargée, une saisie
     // manuelle des infos n'est jamais effacée ici.)
@@ -4629,8 +4646,9 @@ function _refreshLoadedBadges() {
   const _lockHub = !!name && !_cfgFillMode[wtype];
   $id('btn-hub-jbend').classList.toggle('locked', _lockHub && hubType !== 'jbend');
   $id('btn-hub-sp').classList.toggle('locked', _lockHub && hubType !== 'straightpull');
-  // Roue incomplète : nb rayons figé si des données tension en dépendent
-  $id('nb-rayons').classList.toggle('locked', !!name && _cfgFillMode[wtype] && tmHasData());
+  // Roue incomplète : nb rayons figé si des relevés en dépendent — vifs,
+  // parqués sur un autre tensiomètre, ou déjà en snapshot.
+  $id('nb-rayons').classList.toggle('locked', !!name && _cfgFillMode[wtype] && tmAnyReadings());
   // Le différentiel est figé dans les mêmes conditions, sur les deux toggles.
   { const _dl = _spokeDiffLocked();
     ['spoke-diff-row', 'tm-spoke-diff-toggle'].forEach(id => {
@@ -4789,7 +4807,50 @@ function tmSaveToStore() {
   };
 }
 function tmHasData() { return tmData.fo.some(v => v !== null) || tmData.fa.some(v => v !== null); }
-function tmResetData() { tmData = { fo: [], fa: [] }; tmPrevFo = []; tmPrevFa = []; }
+// Le nb de rayons dimensionne TOUS les relevés de la roue, où qu'ils dorment.
+// Trois gisements : les données vives, celles parquées dans tmStore au
+// changement de tensiomètre (tmSwitchActiveKey), et les snapshots enregistrés.
+// tmHasData() ne connaît que le premier : il répond juste à SA question, mais
+// ce n'est pas celle que pose un verrou — « reste-t-il quelque chose qui
+// dépend de ce nb ? ». Source unique des cinq sites qui figent le nb de rayons
+// et le différentiel, ils ne peuvent donc plus diverger.
+// typeof sur _snapHasHistory : ce cache est déclaré dans un bloc <script>
+// ultérieur, un appel pendant le boot le trouverait non défini.
+function tmAnyReadings() {
+  if (tmHasData()) return true;
+  for (const k in tmStore) {
+    const e = tmStore[k];
+    if (!e) continue;
+    if ((e.fo && e.fo.some(v => v !== null)) || (e.fa && e.fa.some(v => v !== null))) return true;
+  }
+  return typeof _snapHasHistory !== 'undefined' && !!_snapHasHistory;
+}
+// Effacer, c'est effacer partout. tmStore garde une copie des relevés du
+// tensiomètre quitté pour les rendre au retour ; ne vider que tmData laissait
+// cette copie survivre, et un aller-retour de tensiomètre ressuscitait des
+// relevés que l'utilisateur avait effacés. Point de passage unique de tout
+// effacement (reset vocal, changement de rayon, ✕ tensiomètre, charte perso
+// supprimée) : la règle posée ici couvre les dix chemins d'un coup.
+// Seule l'entrée du tensiomètre actif part — celles des autres tensiomètres
+// sont des relevés distincts, que rien n'efface ici.
+function tmResetData() {
+  tmData = { fo: [], fa: [] }; tmPrevFo = []; tmPrevFa = [];
+  if (tmActiveKey) delete tmStore[tmActiveKey];
+}
+// Le nb de rayons dimensionne les relevés : s'il change, TOUS les vestiaires
+// sont périmés, pas seulement celui du tensiomètre affiché. Écrivain unique de
+// la purge complète, appelé par les deux chemins qui écrivent nb-rayons.
+function tmPurgeStore() { Object.keys(tmStore).forEach(k => delete tmStore[k]); }
+// Invalidation complète sur changement du nb de rayons. Le champ a deux
+// écrivains — le listener du calculateur, et hrApplyHub() qui écrit sans
+// événement, donc hors de portée de tout listener. Les deux passent ici.
+function tmInvalidateOnNbChange() {
+  tmPurgeStore();
+  tmResetData();
+  tmBuildTable();
+  tmHideResult();
+  diagClearData();
+}
 const saved = { avant: null, arriere: null };
 let currentErrKey = null;
 let summaryData = null;
@@ -4821,7 +4882,7 @@ function _cfgFilling() { return !!(_loadedConfigName[wtype] && _cfgFillMode[wtyp
 // rayons, et pour la même raison. Source unique : l'affichage grisé et le
 // refus effectif dans setSpokeDiff() lisent tous deux cette fonction, ils ne
 // peuvent donc pas diverger.
-function _spokeDiffLocked() { return _cfgFilling() && tmHasData(); }
+function _spokeDiffLocked() { return _cfgFilling() && tmAnyReadings(); }
 let _switchingHub = false;
 let _applyingState = false;
 let _toastTimer = null;
@@ -5281,7 +5342,7 @@ function _applyStateBody(s) {
     // tmActiveKey calculé APRÈS tmType+tmDTSub restaurés — jamais depuis la sauvegarde
     tmActiveKey = tmStoreKey();
     // Clear store on config load — session-only data, not persisted
-    Object.keys(tmStore).forEach(k => delete tmStore[k]);
+    tmPurgeStore();
 
     // Reconstruire la table — cards fermées, spoke verrouillé si config chargée
     tmBuildTable();
@@ -5297,7 +5358,11 @@ function _applyStateBody(s) {
       _tmLoadedSpoke = null; _tmLoadedSpokeFa = null;
     }
   } else {
-    // Pas de tensiomètre sauvegardé : remettre à zéro complètement
+    // Pas de tensiomètre sauvegardé : remettre à zéro complètement. Le store
+    // est purgé comme dans la branche symétrique — il appartient à la roue
+    // affichée, et des relevés parqués par l'autre roue feraient mentir
+    // tmAnyReadings() sur celle-ci.
+    tmPurgeStore();
     tmClearTensio();
   }
 
@@ -5392,7 +5457,7 @@ function clearFormSilent() {
   reorderTensionFields(wtype);
   updateCalcBtn();
   // Reset tension module
-  Object.keys(tmStore).forEach(k => delete tmStore[k]);
+  tmPurgeStore();
   tmClearTensio();
   $id('tm-nb-select').value = '';
   diagClearData();
@@ -5434,6 +5499,10 @@ function setWheel(wh) {
   activeBtn.classList.add('sb-flash');
   activeBtn.addEventListener('animationend', () => activeBtn.classList.remove('sb-flash'), { once: true });
   if (isNew) {
+    // Ordre : l'historique de snapshots est propre à la roue, et le verrou du
+    // nb de rayons le lit — le cache doit être recalculé sur la NOUVELLE roue
+    // avant que les badges ne s'en servent.
+    snapRefreshBtn();
     _refreshLoadedBadges();
   }
   // Sync tension module badges if visible
@@ -5669,7 +5738,7 @@ function setSpokeDiff(on) {
   // survivant à la bascule, ils réintroduiraient une seconde charte dans un
   // module redevenu simple (ou l'inverse). Ils décrivent un mode qui n'existe
   // plus — même geste que les autres purges destructives du store.
-  Object.keys(tmStore).forEach(k => delete tmStore[k]);
+  tmPurgeStore();
   ['tm-spoke-select', 'tm-spoke-select-fo', 'tm-spoke-select-fa'].forEach(id => {
     const sel = $id(id); if (sel) sel.value = '';
   });
@@ -5787,8 +5856,14 @@ function reorderSpokeSectionFields() {
 
 function updateDiffSideLabels() {
   const isArriere = wtype === 'arriere';
-  const foLabel = isArriere ? (lang === 'fr' ? 'DS<br>Droit' : 'DS<br>Right') : (lang === 'fr' ? 'NDS<br>Gauche' : 'NDS<br>Left');
-  const faLabel = isArriere ? (lang === 'fr' ? 'NDS<br>Gauche' : 'NDS<br>Left') : (lang === 'fr' ? 'DS<br>Droit' : 'DS<br>Right');
+  // Le second mot est enveloppé, non séparé par un <br> : c'est la feuille de
+  // style qui décide s'il tombe à la ligne (différentiels empilés) ou reste sur
+  // la même ligne (sections rayon côte à côte). Une seule sortie, deux rendus.
+  const w  = m => `<span class="dsl-w">${m}</span>`;
+  const DS  = lang === 'fr' ? 'DS'  + w('Droit')  : 'DS'  + w('Right');
+  const NDS = lang === 'fr' ? 'NDS' + w('Gauche') : 'NDS' + w('Left');
+  const foLabel = isArriere ? DS  : NDS;
+  const faLabel = isArriere ? NDS : DS;
   // Croisements ET sections partagent le même vocabulaire de rangées : un seul
   // écrivain, elles ne peuvent donc pas diverger.
   [['diff-label-fo', foLabel], ['diff-label-fa', faLabel],
@@ -8044,17 +8119,14 @@ $id('nb-rayons').addEventListener('change', function() {
     // Complétion a posteriori avec données tension : le nb de rayons est
     // l'identité de la roue — changement annulé, verrou (re)posé. Garde
     // autoritaire : protège même si la classe .locked n'était pas à jour.
-    if (_cfgFilling() && tmHasData()) {
+    if (_cfgFilling() && tmAnyReadings()) {
       this.value = sel.value;
       _refreshLoadedBadges();
       window.updateCalcBtn();
       return;
     }
     sel.value = this.value;
-    tmResetData();
-    tmBuildTable();
-    tmHideResult();
-    diagClearData();
+    tmInvalidateOnNbChange();
   }
 });
 
@@ -8978,8 +9050,13 @@ function tmSetWheel(type) {
 
 // ── Shared: save snapshot, switch key, restore or reset, refresh UI ─────
 function tmSwitchActiveKey(newKey) {
-  // Always save current data to store (even if empty — so we remember the spoke selection)
-  if (tmHasData()) {
+  // Dépôt au vestiaire même sans relevés : le rayon choisi est mémorisé avec
+  // eux, et le retrouver au retour vaut aussi quand la table est vide. La
+  // garde porte sur ce qu'il faut vraiment vérifier — l'existence d'une clé où
+  // déposer — et non sur la présence de données. Elle était sur tmHasData(),
+  // ce qui contredisait ce commentaire et, surtout, laissait une entrée
+  // périmée en place après un effacement.
+  if (tmActiveKey) {
     tmSaveToStore();
   }
   tmActiveKey = newKey;
@@ -9029,6 +9106,9 @@ function tmOnTensioSelectChange(val) {
 }
 
 function tmClearTensio() {
+  // tmResetData() AVANT la remise à null : c'est lui qui purge le vestiaire du
+  // tensiomètre actif, et il a besoin de tmActiveKey pour savoir lequel.
+  // Inverser les deux lignes laisserait l'entrée en place.
   tmResetData();
   tmActiveKey = null;
   tmType = null;
@@ -9045,7 +9125,7 @@ function tmClearTensio() {
   tmLockSpokeSelect(false);
   tmPopulateSpokeSelect();
   tmUpdateBadges();
-  _refreshLoadedBadges(); // verrou nb-rayons suit tmHasData()
+  _refreshLoadedBadges(); // verrou nb-rayons suit tmAnyReadings()
   tmUpdateConvBtn();
   tmBuildTable();
   tmHideResult();
@@ -10844,8 +10924,8 @@ function tmUpdateBadges() {
   if (tmSel) {
     tmSel.value = nb > 0 ? String(nb) : '';
     // Miroir du verrou calculateur : en complétion a posteriori, nb éditable
-    // tant qu'aucune donnée tension n'en dépend
-    tmSel.classList.toggle('locked', !!_loadedConfigName[wtype] && (!_cfgFillMode[wtype] || tmHasData()));
+    // tant qu'aucun relevé n'en dépend
+    tmSel.classList.toggle('locked', !!_loadedConfigName[wtype] && (!_cfgFillMode[wtype] || tmAnyReadings()));
   }
 
   // Rayon : verrouiller si config chargée ET données tension présentes
@@ -11038,7 +11118,7 @@ function tmBuildTable() {
         _snapSetLabel(0);
         snapRefreshBtnFast(); // par-cellule : pas de reparse localStorage ; le label vient d'être remis par _snapSetLabel(0)
         tmUpdateInvertibleHeaders();
-        _refreshLoadedBadges(); // verrou nb-rayons suit tmHasData()
+        _refreshLoadedBadges(); // verrou nb-rayons suit tmAnyReadings()
       });
 
       inp.addEventListener('keydown', function(e) {
@@ -12953,7 +13033,7 @@ function efCommitCurrent() {
     tmUpdateCell(step.idx, step.side);
     tmTryRenderRadar();
     tmUpdateResultCardState();
-    _refreshLoadedBadges(); // verrou nb-rayons suit tmHasData()
+    _refreshLoadedBadges(); // verrou nb-rayons suit tmAnyReadings()
     efDiagramRender();
     return true;
   }
@@ -13010,7 +13090,7 @@ function efCommitCurrent() {
   tmUpdateCell(step.idx, step.side);
   snapRefreshBtnFast(); // par-rayon : pas de reparse localStorage (voir snapRefreshBtnFast)
   tmUpdateInvertibleHeaders();
-  _refreshLoadedBadges(); // verrou nb-rayons suit tmHasData()
+  _refreshLoadedBadges(); // verrou nb-rayons suit tmAnyReadings()
   efDiagramRender();
   return true;
 }
@@ -15941,20 +16021,28 @@ function hrRenderLoadList(type) {
       // de complétion : le hub/la jante viennent précisément la remplir.
       if (_loadedConfigName[wtype] && !_cfgFilling()) {
         tmClearTensio();
-        Object.keys(tmStore).forEach(function(k) { delete tmStore[k]; });
+        tmPurgeStore();
         _loadedConfigName[wtype] = null;
         _refreshLoadedBadges();
       }
       if (type === 'hub') {
-        // Complétion a posteriori avec données tension : le nb de rayons de
-        // la roue prime sur celui du moyeu chargé (hrApplyHub écrit nbRayons
-        // sans événement — aucun listener ne peut l'intercepter)
-        var _keepNb = (_cfgFilling() && tmHasData())
+        // hrApplyHub écrit nb-rayons sans événement : aucun listener ne peut
+        // l'intercepter, les deux règles du champ sont donc posées ici à la
+        // main. 1) Complétion a posteriori avec des relevés : le nb de la roue
+        // prime sur celui du moyeu, on le restaure. 2) Nb réellement changé :
+        // les relevés qu'il dimensionnait ne veulent plus rien dire, on les
+        // invalide. Les deux s'excluent — après restauration, le nb n'a pas
+        // bougé et l'invalidation ne se déclenche pas.
+        var _keepNb = (_cfgFilling() && tmAnyReadings())
           ? document.getElementById('nb-rayons').value : null;
+        var _nbBefore = document.getElementById('nb-rayons').value;
         hrApplyHub(entry.data);
         if (_keepNb !== null && document.getElementById('nb-rayons').value !== _keepNb) {
           document.getElementById('nb-rayons').value = _keepNb;
           window.updateCalcBtn();
+        }
+        if (document.getElementById('nb-rayons').value !== _nbBefore) {
+          tmInvalidateOnNbChange();
         }
         hrSetLoadedHub(entry.name);
       }
@@ -16175,6 +16263,11 @@ const SNAP_MAX = 10;
 // qui reparse les configs) : permet à snapRefreshBtnFast de garder le bouton
 // Snapshots actif quand un historique existe sans données vives, SANS reparse
 // localStorage — la contrainte de perf qui a motivé snapRefreshBtnFast.
+// Second lecteur depuis le verrou du nb de rayons, via tmAnyReadings() : des
+// snapshots suffisent à figer le nb, même sans relevé vif ni parqué. C'est
+// pourquoi snapRefreshBtn rafraîchit les badges quand ce cache bascule, et
+// pourquoi setWheel le recalcule avant eux — l'historique est propre à la roue
+// affichée, un cache périmé mentirait au verrou.
 var _snapHasHistory = false;
 
 function _snapResolveTensio(snap) {
@@ -16521,6 +16614,7 @@ function snapRefreshBtn() {
   // charte/tensio perso actif) — même sémantique que la branche de loadConfig
   // « Snapshots accessibles même si l'état sauvegardé ne contient pas de
   // données tension ».
+  const _prevHist = _snapHasHistory;
   _snapHasHistory = snaps.length > 0;
   if (btn) btn.disabled = !tmHasData() && !_snapHasHistory;
   if (!snaps.length) _snapSetLabel(0);
@@ -16530,6 +16624,13 @@ function snapRefreshBtn() {
     cmpBtn.style.opacity      = hasEnough ? '' : '0.3';
     cmpBtn.style.pointerEvents = hasEnough ? '' : 'none';
   }
+  // Ce cache est désormais une entrée du verrou nb de rayons : quand il
+  // bascule, les badges doivent suivre, sinon le verrou garde la valeur d'avant
+  // jusqu'au prochain rafraîchissement fortuit. tmUpdateBadges() couvre les
+  // deux sélecteurs — il appelle _refreshLoadedBadges() en fin de course — et
+  // ne rappelle jamais snapRefreshBtn : pas de boucle. snapRefreshBtnFast ne
+  // touche pas au cache, elle n'a donc rien à rafraîchir.
+  if (_snapHasHistory !== _prevHist) tmUpdateBadges();
 }
 
 // Variante allégée pour les chemins de COMMIT PAR VALEUR (efCommitCurrent à
