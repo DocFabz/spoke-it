@@ -427,7 +427,7 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 
 /* ── Fields ────────────────────────────────────────────────────────────────── */
 .f     { display:flex; flex-direction:column; gap:.35rem }
-label  { font-size:.67rem; font-weight:500; letter-spacing:.07em; color:var(--text3); text-transform:uppercase; word-break:break-word; hyphens:auto; line-height:1.3 }
+label, .fld-label  { font-size:.67rem; font-weight:500; letter-spacing:.07em; color:var(--text3); text-transform:uppercase; word-break:break-word; hyphens:auto; line-height:1.3 }
 input[type=number], select {
   background:var(--inp); border:1px solid var(--border); border-radius:var(--rs);
   color:var(--text); font-family:'DM Mono',monospace; font-size:.85rem; font-weight:300;
@@ -2220,7 +2220,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
             <option value="1.2|2.0">1.2×2.0</option>
             <option value="1.3|2.1">1.3×2.1</option>
             <option value="1.4|2.2">1.4×2.2</option>
-            <option value="1.5|2.3">1.5×2.3</option>
+            <option value="1.45|2.3">1.45×2.3</option>
           </optgroup>
         </select>
       </div>
@@ -2235,8 +2235,8 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
          qu'à sa gauche, pour que les deux champs occupent toute leur colonne et
          que celui de gauche s'aligne sous le titre. -->
     <div id="spoke-section-diff" style="display:none;margin-top:.85rem">
-      <label class="tip-wrap" style="margin-bottom:.35rem"><span data-i18n="spokeSection">Section rayon (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="spokeSectionTip">Permet de calculer l'élongation</span></label>
-      <div id="spoke-sec-row" style="display:flex;gap:.7rem;align-items:flex-start">
+      <div class="fld-label tip-wrap" style="margin-bottom:.35rem"><span id="spoke-section-diff-label" data-i18n="spokeSection">Section rayon (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="spokeSectionTip">Permet de calculer l'élongation</span></div>
+      <div id="spoke-sec-row" role="group" aria-labelledby="spoke-section-diff-label" style="display:flex;gap:.7rem;align-items:flex-start">
         <div id="spoke-sec-col-fo" style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:.3rem">
           <select id="spoke-select-fo" aria-labelledby="spoke-diff-label-fo" onchange="setSpokeFromSelectSide(this,'fo')">
             <option value="" selected>—</option>
@@ -2256,7 +2256,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
               <option value="1.2|2.0">1.2×2.0</option>
               <option value="1.3|2.1">1.3×2.1</option>
               <option value="1.4|2.2">1.4×2.2</option>
-              <option value="1.5|2.3">1.5×2.3</option>
+              <option value="1.45|2.3">1.45×2.3</option>
             </optgroup>
           </select>
           <span class="diff-side-label diff-side-fo" id="spoke-diff-label-fo">DS</span>
@@ -2280,7 +2280,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
               <option value="1.2|2.0">1.2×2.0</option>
               <option value="1.3|2.1">1.3×2.1</option>
               <option value="1.4|2.2">1.4×2.2</option>
-              <option value="1.5|2.3">1.5×2.3</option>
+              <option value="1.45|2.3">1.45×2.3</option>
             </optgroup>
           </select>
           <span class="diff-side-label diff-side-fa" id="spoke-diff-label-fa">NDS</span>
@@ -2720,7 +2720,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
          de celui de la carte Rayons (on peut mesurer deux chartes sans avoir
          calculé de longueurs, et inversement). -->
     <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.35rem">
-      <label data-i18n="tmSpokeLabel" style="margin:0">Rayon</label>
+      <div class="fld-label" id="tm-spoke-group-label" data-i18n="tmSpokeLabel" style="margin:0">Rayon</div>
       <div class="diff-toggle-wrap">
         <span class="diff-toggle-label" id="tm-spoke-diff-toggle-label" data-i18n="diffLabel">Différentiel</span>
         <button class="diff-toggle" id="tm-spoke-diff-toggle" onclick="toggleTmSpokeDiff()" role="switch" aria-checked="false" aria-labelledby="tm-spoke-diff-toggle-label">
@@ -2733,7 +2733,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <div id="tm-spoke-single">
       <div class="f" style="margin-bottom:1rem">
         <div style="display:flex;gap:.4rem;align-items:center">
-          <select id="tm-spoke-select" class="tm-select" style="flex:1" onchange="tmOnSpokeChange()">
+          <select id="tm-spoke-select" class="tm-select" style="flex:1" aria-labelledby="tm-spoke-group-label" onchange="tmOnSpokeChange()">
             <option value="">—</option>
           </select>
           <button class="tm-clear-tensio inactive" id="tm-clear-spoke" onclick="tmClearSpoke()" title="Reset">✕</button>
@@ -2770,7 +2770,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
          aux chartes. Empilement vertical ⇒ pas de gauche/droite à respecter,
          donc l'ordre est celui du reste de l'app : fo (orange) au-dessus,
          fa (bleu) en dessous, comme le croisement et le récapitulatif. -->
-    <div id="tm-spoke-diff" style="display:none">
+    <div id="tm-spoke-diff" role="group" aria-labelledby="tm-spoke-group-label" style="display:none">
       <div class="f" style="margin-bottom:1rem">
         <div style="display:flex;gap:.5rem;align-items:center">
           <span class="diff-side-label diff-side-fo" id="tm-spoke-diff-label-fo">DS</span>
