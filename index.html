@@ -539,8 +539,16 @@ select option             { background:#161b27 }
 
 /* ── Tooltip ───────────────────────────────────────────────────────────────── */
 .tip-wrap  { position:relative; display:inline-flex; align-items:center; gap:.3rem }
-.tip-icon  { width:13px; height:13px; border-radius:50%; border:1px solid var(--text3); color:var(--text3); font-size:.6rem; font-family:'DM Mono',monospace; display:inline-flex; align-items:center; justify-content:center; cursor:default; flex-shrink:0; line-height:1; user-select:none }
-.tip-icon:hover { border-color:var(--accent); color:var(--accent) }
+/* Pastille « ? ». Deux comportements, un seul dessin : .tip-icon déroule un
+   tip au survol, .info-icon ouvre une modale. Le dessin est ici, les écarts
+   juste en dessous — ne pas le recopier. */
+.tip-icon, .info-icon { width:13px; height:13px; border-radius:50%; border:1px solid var(--text3); color:var(--text3); font-size:.6rem; font-family:'DM Mono',monospace; display:inline-flex; align-items:center; justify-content:center; cursor:default; flex-shrink:0; line-height:1; user-select:none }
+.tip-icon:hover, .info-icon:hover, .info-icon:focus-visible { border-color:var(--accent); color:var(--accent) }
+/* Écart de .info-icon : cible cliquable et clavier, d'où le curseur, la
+   neutralisation des styles de bouton et l'anneau de focus rendu par la
+   bordure ci-dessus plutôt que par l'outline par défaut. */
+.info-icon { cursor:pointer; background:none; padding:0; -webkit-tap-highlight-color:transparent }
+.info-icon:focus-visible { outline:none }
 .tip-box   { position:fixed; background:#0e1420; border:1px solid var(--border-s); border-radius:6px; padding:.45rem .7rem; font-family:'DM Sans',sans-serif; font-size:.68rem; font-weight:400; color:var(--text2); white-space:normal; width:max-content; max-width:min(220px, calc(100vw - 24px)); text-align:center; pointer-events:none; opacity:0; transition:opacity .18s; z-index:9999; letter-spacing:0; text-transform:none }
 .tip-box::after { content:''; position:absolute; border:5px solid transparent }
 .tip-box[data-pos="top"]::after    { top:100%; left:var(--arrow-left, 50%); transform:translateX(-50%); border-top-color:#0e1420 }
@@ -1731,6 +1739,16 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
 .tou-body ul { margin:.2rem 0 .8rem 1.1rem; padding:0 }
 .tou-body ul li { font-size:.72rem; color:var(--text2); line-height:1.65; margin-bottom:.25rem }
 .tou-body strong { color:var(--text); font-weight:600 }
+
+/* Corps de la modale de section : une rangée par géométrie, schéma à gauche. */
+.sect-row { display:flex; align-items:center; gap:.85rem; margin-bottom:.95rem }
+.sect-row:last-child { margin-bottom:0 }
+.sect-shape { flex:0 0 46px; display:flex; align-items:center; justify-content:center }
+.sect-shape svg { width:46px; height:auto; display:block }
+.sect-name { font-size:.6rem; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); margin-bottom:.18rem }
+.sect-txt { font-size:.72rem; color:var(--text2); line-height:1.55; margin:0 }
+.sect-f { font-family:'DM Mono',monospace; font-size:.68rem; color:var(--text3); line-height:1.5; margin:.15rem 0 0; white-space:nowrap }
+.sect-model { text-transform:uppercase; letter-spacing:.06em }
 </style>
 </head>
 <body>
@@ -1982,6 +2000,16 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
   <button class="tou-accept-btn" onclick="closePriv()" data-i18n="privClose">FERMER</button>
 </div>
 
+<!-- ── Modal section rayon ── -->
+<div class="tou-overlay" id="sect-overlay" onclick="closeSpokeSect()"></div>
+<div class="tou-modal" id="sect-modal" role="dialog" aria-modal="true" aria-labelledby="sect-title">
+  <div class="tou-header">
+    <div class="tou-title" id="sect-title" data-i18n="sectTitle">Modélisation section de rayon</div>
+  </div>
+  <div class="tou-body" id="sect-body"></div>
+  <button class="tou-accept-btn" onclick="closeSpokeSect()" data-i18n="sectClose">FERMER</button>
+</div>
+
 <!-- ── Module nav ── -->
 <div style="max-width:880px;margin:0 auto;padding:0 1.2rem 1.2rem">
 <nav class="module-nav">
@@ -2201,7 +2229,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         </select>
       </div>
       <div class="f" id="spoke-section-field" style="flex:0 0 calc(50% - .5rem)">
-        <label class="tip-wrap" for="spoke-select"><span id="spoke-section-label" data-i18n="spokeSection">Section rayon (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="spokeSectionTip">Permet de calculer l'élongation</span></label>
+        <label class="tip-wrap" for="spoke-select"><span id="spoke-section-label" data-i18n="spokeSection">Section rayon (mm)</span><span class="info-icon" role="button" tabindex="0" aria-label="Modélisation section de rayon" data-i18n-aria="sectTitle" onclick="event.preventDefault();event.stopPropagation();openSpokeSect()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSpokeSect()}">?</span></label>
         <select id="spoke-select" aria-labelledby="spoke-section-label" onchange="setSpokeFromSelect(this)">
           <option value="" selected>—</option>
           <optgroup data-i18n-label="spokeGrpRound" label="ROND">
@@ -2241,7 +2269,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
          qu'à sa gauche, pour que les deux champs occupent toute leur colonne et
          que celui de gauche s'aligne sous le titre. -->
     <div id="spoke-section-diff" style="display:none;margin-top:.85rem">
-      <div class="fld-label tip-wrap" style="margin-bottom:.35rem"><span id="spoke-section-diff-label" data-i18n="spokeSection">Section rayon (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="spokeSectionTip">Permet de calculer l'élongation</span></div>
+      <div class="fld-label tip-wrap" style="margin-bottom:.35rem"><span id="spoke-section-diff-label" data-i18n="spokeSection">Section rayon (mm)</span><span class="info-icon" role="button" tabindex="0" aria-label="Modélisation section de rayon" data-i18n-aria="sectTitle" onclick="event.preventDefault();event.stopPropagation();openSpokeSect()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSpokeSect()}">?</span></div>
       <div id="spoke-sec-row" role="group" aria-labelledby="spoke-section-diff-label" style="display:flex;gap:.7rem;align-items:flex-start">
         <div id="spoke-sec-col-fo" style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:.3rem">
           <select id="spoke-select-fo" aria-labelledby="spoke-diff-label-fo" onchange="setSpokeFromSelectSide(this,'fo')">
@@ -4099,7 +4127,7 @@ const i18n = {
     pcdTipLeft:'Pitch Circle Diameter Gauche', pcdTipRight:'Pitch Circle Diameter Droit', offset:'Déport', offsetTipLeft:'Centre-Flasque Gauche', offsetTipRight:'Centre-Flasque Droite',
     soLeft:'SO G', soRight:'SO D',
     erdDirect:'ERD DIRECT', addonTip:"Dépend de l'ecrou utilisé",
-    erdCalc:'ERD calculé (mm)', rimAsym:'ASYM. JANTE (mm)', spokeSection:'Section rayon (mm)', spokeSectionTip:"Permet de calculer l'élongation", cross:'Croisement',
+    erdCalc:'ERD calculé (mm)', rimAsym:'ASYM. JANTE (mm)', spokeSection:'Section rayon (mm)', cross:'Croisement',
     spokeCard:'Rayons', spokeMaterialSteel:'ACIER', spokeMaterialOther:'AUTRE', spokeMaterial:'Matériau',
     spokeMaterialOtherInfo:"L'estimation de l'élongation des rayons par la loi de Hooke n'est disponible que pour les rayons aciers.",
     elongHintSection:"Sélectionner la section du rayon permet d'accéder à l'élongation pour arbitrage fin.",
@@ -4294,6 +4322,8 @@ const i18n = {
     target:'Cible', including:'Incluant',
     hookeSectionLabel:'Section rayon',
     spokeGrpRound:'ROND', spokeGrpBladed:'PLAT', spokeGrpProfiled:'WING',
+    sectTitle:'Modélisation section de rayon', sectClose:'Fermer',
+    sectBody:`<p class="sect-txt" style="margin-bottom:1.05rem">Sélectionner une section permet d'estimer l'élongation du rayon sous tension par la loi de Hooke. Disponible pour les rayons aciers uniquement.</p><div class="sect-row"><div class="sect-shape"><svg viewBox="0 0 34 28" fill="rgba(126,200,227,.12)" stroke="var(--accent)" stroke-width="1.1" aria-hidden="true"><circle cx="17" cy="14" r="13"/></svg></div><div><div class="sect-name">Rayon rond</div><p class="sect-txt sect-model">Modèle disque</p><p class="sect-f">A = π/4 · d²</p></div></div><div class="sect-row"><div class="sect-shape"><svg viewBox="0 0 34 28" fill="rgba(126,200,227,.12)" stroke="var(--accent)" stroke-width="1.1" aria-hidden="true"><rect x="2.7" y="8.15" width="28.6" height="11.7" rx="5.85"/></svg></div><div><div class="sect-name">Rayon plat</div><p class="sect-txt sect-model">Modèle stade</p><p class="sect-f">A = (a - d) · d + π/4 · d²</p></div></div><div class="sect-row"><div class="sect-shape"><svg viewBox="0 0 34 28" fill="rgba(126,200,227,.12)" stroke="var(--accent)" stroke-width="1.1" aria-hidden="true"><ellipse cx="17" cy="14" rx="14.95" ry="9.43"/></svg></div><div><div class="sect-name">Rayon wing</div><p class="sect-txt sect-model">Modèle ellipse</p><p class="sect-f">A = π/4 · d · a</p></div></div><p class="sect-f" style="margin-top:1rem">d = épaisseur, a = largeur</p>`,
     touLink:'Conds. d\'utilisation',
     touTitle:'Conditions d\'utilisation',
     touAccept:'J\'accepte',
@@ -4315,7 +4345,7 @@ const i18n = {
     pcdTipLeft:'Left Pitch Circle Diameter', pcdTipRight:'Right Pitch Circle Diameter', offset:'Offset', offsetTipLeft:'Left Flange to Center', offsetTipRight:'Right Flange to Center',
     soLeft:'SO L', soRight:'SO R',
     erdDirect:'ERD DIRECT', addonTip:'Depends on the nipple used',
-    erdCalc:'Calculated ERD (mm)', rimAsym:'RIM ASYM. (mm)', spokeSection:'Spoke section (mm)', spokeSectionTip:'Used to calculate elongation', cross:'Lacing',
+    erdCalc:'Calculated ERD (mm)', rimAsym:'RIM ASYM. (mm)', spokeSection:'Spoke section (mm)', cross:'Lacing',
     spokeCard:'Spokes', spokeMaterialSteel:'STEEL', spokeMaterialOther:'OTHER', spokeMaterial:'Material',
     spokeMaterialOtherInfo:'Spoke elongation estimation using Hooke\'s law is only available for steel spokes.',
     elongHintSection:'Selecting the spoke section gives access to elongation for fine-tuning the suggested rounding.',
@@ -4516,6 +4546,8 @@ const i18n = {
     target:'Target', including:'Including',
     hookeSectionLabel:'Spoke section',
     spokeGrpRound:'ROUND', spokeGrpBladed:'BLADED', spokeGrpProfiled:'WING',
+    sectTitle:'Spoke section modelling', sectClose:'Close',
+    sectBody:`<p class="sect-txt" style="margin-bottom:1.05rem">Selecting a section makes it possible to estimate spoke elongation under tension using Hooke's law. Available for steel spokes only.</p><div class="sect-row"><div class="sect-shape"><svg viewBox="0 0 34 28" fill="rgba(126,200,227,.12)" stroke="var(--accent)" stroke-width="1.1" aria-hidden="true"><circle cx="17" cy="14" r="13"/></svg></div><div><div class="sect-name">Round spoke</div><p class="sect-txt sect-model">Disc model</p><p class="sect-f">A = π/4 · d²</p></div></div><div class="sect-row"><div class="sect-shape"><svg viewBox="0 0 34 28" fill="rgba(126,200,227,.12)" stroke="var(--accent)" stroke-width="1.1" aria-hidden="true"><rect x="2.7" y="8.15" width="28.6" height="11.7" rx="5.85"/></svg></div><div><div class="sect-name">Bladed spoke</div><p class="sect-txt sect-model">Stadium model</p><p class="sect-f">A = (a - d) · d + π/4 · d²</p></div></div><div class="sect-row"><div class="sect-shape"><svg viewBox="0 0 34 28" fill="rgba(126,200,227,.12)" stroke="var(--accent)" stroke-width="1.1" aria-hidden="true"><ellipse cx="17" cy="14" rx="14.95" ry="9.43"/></svg></div><div><div class="sect-name">Wing spoke</div><p class="sect-txt sect-model">Ellipse model</p><p class="sect-f">A = π/4 · d · a</p></div></div><p class="sect-f" style="margin-top:1rem">d = thickness, a = width</p>`,
     touLink:'Terms of use',
     touTitle:'Terms of use',
     touAccept:'I accept',
@@ -5008,6 +5040,13 @@ function applyLang() {
   // futur.
   document.querySelectorAll('[data-i18n-label]').forEach(el => {
     el.label = t(el.dataset.i18nLabel);
+  });
+  // aria-label : porté par un attribut, donc hors d'atteinte de la boucle
+  // [data-i18n] comme le libellé des optgroup. Concerne les cibles dont le
+  // contenu visible ne suffit pas au lecteur d'écran — un « ? » seul, par
+  // exemple. Générique : tout élément futur n'a qu'à poser data-i18n-aria.
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    el.setAttribute('aria-label', t(el.dataset.i18nAria));
   });
   // Titre "Déflections mesurées" / "Measured deflections" + suffixe roue
   var deflEl = $id('tm-defl-label');
@@ -7050,6 +7089,21 @@ function closeInstall() {
   $id('install-modal').classList.remove('show');
 }
 
+// ── Section rayon ─────────────────────────────────────────────────────────────
+// Remplace le tip « Permet de calculer l'élongation » : trois géométries à
+// expliquer, c'est plus qu'un tip ne peut porter. Corps rempli à l'ouverture
+// comme les autres modales d'information, donc toujours dans la langue
+// courante sans retraduction du DOM.
+function openSpokeSect() {
+  $id('sect-body').innerHTML = t('sectBody');
+  $id('sect-overlay').classList.add('show');
+  $id('sect-modal').classList.add('show');
+}
+function closeSpokeSect() {
+  $id('sect-overlay').classList.remove('show');
+  $id('sect-modal').classList.remove('show');
+}
+
 // ── Confidentialité ───────────────────────────────────────────────────────────
 function openPriv() {
   $id('priv-body').innerHTML = t('privBody');
@@ -8464,13 +8518,26 @@ window.addEventListener('resize', function() {
   // touchstart { passive:false } sur document obligeait le navigateur à
   // attendre JS avant chaque début de scroll tactile, sur toute la page,
   // alors que le preventDefault ne sert qu'aux tips (bloquer l'activation
-  // du <label> parent + l'émulation click/hover iOS). Les 13 .tip-icon
+  // du <label> parent + l'émulation click/hover iOS). Les 11 .tip-icon
   // sont toutes dans le HTML statique (aucune générée en JS) : convention
   // à maintenir, sinon attacher ce listener à la création de l'icône.
   document.querySelectorAll('.tip-icon').forEach(function(icon) {
     icon.addEventListener('touchstart', function(e) {
       e.preventDefault();
       showTip(icon);
+    }, { passive: false });
+  });
+
+  // Icônes qui ouvrent une modale (.info-icon) : même contrainte iOS que les
+  // .tip-icon ci-dessus — sans preventDefault sur touchstart, le <label>
+  // parent active le <select>, qui se déroule derrière la modale. Le
+  // preventDefault supprime aussi le click synthétique, donc l'onclick ne
+  // double pas l'ouverture.
+  document.querySelectorAll('.info-icon').forEach(function(icon) {
+    icon.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      closeAll();
+      openSpokeSect();
     }, { passive: false });
   });
 
