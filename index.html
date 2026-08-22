@@ -2211,10 +2211,16 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
             <option value="2.3|">2.3</option>
           </optgroup>
           <optgroup data-i18n-label="spokeGrpBladed" label="PLAT">
+            <option value="0.9|1.8">0.9×1.8</option>
+            <option value="0.9|2.0">0.9×2.0</option>
             <option value="0.9|2.2">0.9×2.2</option>
             <option value="0.9|2.3">0.9×2.3</option>
+            <option value="0.95|2.2">0.95×2.2</option>
+            <option value="1.0|2.2">1.0×2.2</option>
+            <option value="1.1|2.3">1.1×2.3</option>
             <option value="1.2|2.3">1.2×2.3</option>
             <option value="1.25|2.25">1.25×2.25</option>
+            <option value="1.4|2.3">1.4×2.3</option>
           </optgroup>
           <optgroup data-i18n-label="spokeGrpProfiled" label="WING">
             <option value="1.2|2.0">1.2×2.0</option>
@@ -2247,10 +2253,16 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
               <option value="2.3|">2.3</option>
             </optgroup>
             <optgroup data-i18n-label="spokeGrpBladed" label="PLAT">
+              <option value="0.9|1.8">0.9×1.8</option>
+              <option value="0.9|2.0">0.9×2.0</option>
               <option value="0.9|2.2">0.9×2.2</option>
               <option value="0.9|2.3">0.9×2.3</option>
+              <option value="0.95|2.2">0.95×2.2</option>
+              <option value="1.0|2.2">1.0×2.2</option>
+              <option value="1.1|2.3">1.1×2.3</option>
               <option value="1.2|2.3">1.2×2.3</option>
               <option value="1.25|2.25">1.25×2.25</option>
+              <option value="1.4|2.3">1.4×2.3</option>
             </optgroup>
             <optgroup data-i18n-label="spokeGrpProfiled" label="WING">
               <option value="1.2|2.0">1.2×2.0</option>
@@ -2271,10 +2283,16 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
               <option value="2.3|">2.3</option>
             </optgroup>
             <optgroup data-i18n-label="spokeGrpBladed" label="PLAT">
+              <option value="0.9|1.8">0.9×1.8</option>
+              <option value="0.9|2.0">0.9×2.0</option>
               <option value="0.9|2.2">0.9×2.2</option>
               <option value="0.9|2.3">0.9×2.3</option>
+              <option value="0.95|2.2">0.95×2.2</option>
+              <option value="1.0|2.2">1.0×2.2</option>
+              <option value="1.1|2.3">1.1×2.3</option>
               <option value="1.2|2.3">1.2×2.3</option>
               <option value="1.25|2.25">1.25×2.25</option>
+              <option value="1.4|2.3">1.4×2.3</option>
             </optgroup>
             <optgroup data-i18n-label="spokeGrpProfiled" label="WING">
               <option value="1.2|2.0">1.2×2.0</option>
@@ -6115,7 +6133,10 @@ function spokeSectionReady() {
 // Rendu '2.0 mm' / '0.9×2.2 mm' — accepte n'importe quel {d,a}.
 function spokeSectionStr(s) {
   if (!s || s.d === null || s.d === undefined || isNaN(s.d)) return '—';
-  return s.a ? `${s.d}×${s.a} mm` : `${s.d} mm`;
+  // parseFloat('1.0') vaut 1 : sans ce formatage, la lame 1.0×2.2
+  // s'afficherait « 1×2.2 mm » et le rond 2.0 « 2 mm ».
+  const f = v => Number.isInteger(v) ? v.toFixed(1) : String(v);
+  return s.a ? `${f(s.d)}×${f(s.a)} mm` : `${f(s.d)} mm`;
 }
 
 // ── Vocabulaire du différentiel (source unique) ──────────────────────────────
@@ -6260,19 +6281,70 @@ function radarLegLabels(wh) {
 //
 // La forme n'est PAS encodée dans la valeur du <select> (format 'd|a', figé par
 // les saves et les roues partagées) : elle se déduit des cotes via SPOKE_WING.
-// Les quatre cotes Wing sont uniques dans le menu, aucune collision possible
-// avec les lames Sapim/DT. AVANT D'AJOUTER UNE SECTION : vérifier qu'elle ne
-// duplique pas une cote de SPOKE_WING : la mauvaise formule s'appliquerait.
+// Une cote du menu qui ne correspond pas à la bonne entrée de la table bascule
+// donc SILENCIEUSEMENT de formule — pas d'erreur, pas de rendu anormal, juste
+// une aire fausse de ~10 %. C'est arrivé au Wing 23. spokeGeomAudit() compare
+// désormais les deux au chargement et alerte en console ; ce contrôle remplace
+// la vérification manuelle qui était demandée ici avant toute nouvelle cote.
 // Écrivain unique : area() et la modale Hooke lisent ici, jamais leur propre
 // formule.
 
 // Cotes des lames profilées — gamme Pillar PSR Wing 20 à 23, relevées sur la
-// fiche constructeur (W = largeur, ØD2 = épaisseur). Clé normalisée par
-// _wingKey : parseFloat('2.0') vaut 2, donc une clé littérale '1.2×2.0' ne
-// serait jamais trouvée et le Wing 20 retomberait en silence sur le stade.
+// fiche constructeur (W = largeur, ØD2 = épaisseur) :
+//   Wing 20 → 2.0 × 1.20   Wing 22 → 2.2 × 1.40
+//   Wing 21 → 2.1 × 1.30   Wing 23 → 2.3 × 1.45
+// Le Wing 23 est bien à 1.45 et NON à 1.50 : la progression régulière
+// 1.20 / 1.30 / 1.40 s'arrête là. La table a porté '1.50×2.30' un temps,
+// cote absente du menu, donc jamais trouvée : le Wing 23 tombait sur le
+// stade (2.884 mm² au lieu de 2.619, élongation sous-estimée d'environ 9 %).
+// Ne pas « rétablir » le 1.50 — spokeGeomAudit() ci-dessous alerte si le
+// menu et la table redivergent.
+// Clé normalisée par _wingKey : parseFloat('2.0') vaut 2, donc une clé
+// littérale '1.2×2.0' ne serait jamais trouvée et le Wing 20 retomberait
+// en silence sur le stade.
 const SPOKE_WING = { '1.20×2.00':1, '1.30×2.10':1,
-                     '1.40×2.20':1, '1.50×2.30':1 };
+                     '1.40×2.20':1, '1.45×2.30':1 };
 function _wingKey(d, a) { return d.toFixed(2) + '×' + a.toFixed(2); }
+
+// Contrôle d'intégrité menu <-> SPOKE_WING, au chargement. Le menu est la
+// source de vérité des cotes proposées, SPOKE_WING celle de la géométrie ;
+// rien ne les relie à l'écriture, et une divergence est SILENCIEUSE — la
+// mauvaise formule s'applique sans erreur ni rendu anormal. Deux défauts
+// possibles, symétriques :
+//   cote WING absente de la table  → lame profilée calculée en stade (aire
+//     surestimée, élongation sous-estimée) ;
+//   cote PLAT présente dans la table → lame roulée à plat calculée en ellipse
+//     (l'inverse), cas que le commentaire de spokeArea met en garde.
+// Alerte seulement en console, comme le contrôle LS_REGISTRY : c'est un
+// garde-fou de développement, pas une erreur utilisateur.
+function spokeGeomAudit() {
+  const sel = $id('spoke-select');
+  if (!sel) return;
+  const cotes = grp => [...sel.querySelectorAll('optgroup[data-i18n-label="' + grp + '"] option')]
+    .map(o => o.value.split('|'))
+    .filter(p => p[1])
+    .map(p => _wingKey(parseFloat(p[0]), parseFloat(p[1])));
+  const wing = cotes('spokeGrpProfiled'), plat = cotes('spokeGrpBladed');
+
+  wing.forEach(k => {
+    if (!SPOKE_WING[k]) console.warn('[Spokeit] Cote WING ' + k
+      + ' absente de SPOKE_WING : calculée en stade au lieu d\'ellipse.');
+  });
+  plat.forEach(k => {
+    if (SPOKE_WING[k]) console.warn('[Spokeit] Cote PLAT ' + k
+      + ' présente dans SPOKE_WING : calculée en ellipse au lieu de stade.');
+  });
+  // Clé sans <option> WING. Le cas « clé qui capte une cote PLAT » vient
+  // d'être signalé plus précisément ci-dessus : ne pas le redire ici, sans
+  // quoi un seul défaut produirait deux messages dont un faux (la clé n'est
+  // pas morte, elle applique la mauvaise formule à une lame plate).
+  Object.keys(SPOKE_WING).forEach(k => {
+    if (wing.indexOf(k) === -1 && plat.indexOf(k) === -1)
+      console.warn('[Spokeit] Clé SPOKE_WING ' + k
+        + ' sans <option> correspondante : entrée morte.');
+  });
+}
+document.addEventListener('DOMContentLoaded', spokeGeomAudit);
 
 function spokeArea(d, a) {
   if (d === null || d === undefined || isNaN(d)) return 0;
