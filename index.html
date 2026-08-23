@@ -6308,9 +6308,9 @@ function radarLegLabels(wh) {
 // pour le stade. Le milieu vaut donc (4 − π)/8 = 0.10730, forme fermée.
 // Sa justification est le MINIMAX : deux bornes, aucune information sur ce
 // qu'il y a entre elles, le point qui minimise l'erreur maximale est le
-// milieu. L'écart bout à bout va de 12 % (lames épaisses) à 17 % (lames
-// fines) ; s'y placer au centre borne l'erreur à ±5.6 % / ±7.7 % au lieu de
-// l'encaisser en entier en pariant sur un extrême.
+// milieu. Sur les dix cotes plates du menu, l'écart bout à bout va de 10.7 %
+// (0.9×1.8) à 16.6 % (0.9×2.3) ; s'y placer au centre borne l'erreur entre
+// ±5.1 % et ±7.7 % au lieu de l'encaisser en entier sur un extrême.
 // Écrit comme la demi-somme des deux aires plutôt qu'avec la constante
 // 0.10730 : les deux modèles bornants apparaissent littéralement, la ligne se
 // lit sans commentaire, et il n'y a aucun nombre magique à justifier.
@@ -6327,8 +6327,8 @@ function radarLegLabels(wh) {
 // Sans modèle de procédé démontré, le milieu est le seul choix défendable.
 //
 // ÉQUIVALENCE GÉOMÉTRIQUE : pour chaque profil il existe une super-ellipse
-// |2x/a|ⁿ + |2y/d|ⁿ = 1 de même remplissage, n allant de 2.37 à 2.56 sur la
-// gamme. Le modèle EST donc une super-ellipse, mais dont l'exposant est déduit
+// |2x/a|ⁿ + |2y/d|ⁿ = 1 de même remplissage, n allant de 2.32 à 2.56 sur les
+// cotes du menu. Le modèle EST donc une super-ellipse, mais dont l'exposant est déduit
 // de la règle du milieu et non ajusté sur une mesure.
 //
 // Les lames PROFILÉES (Pillar Wing) ne sont pas des ronds aplatis : le fil est
@@ -6336,7 +6336,7 @@ function radarLegLabels(wh) {
 // stade les surestimait lourdement — il exigeait une partie lamée sur 99,8 %
 // de la longueur, ce que contredit le plan constructeur (fûts 2.2 au coude et
 // 2.0 au filet) ; le modèle intermédiaire qui l'a remplacé pour les lames
-// roulées est moins brutal (+4,9 % sur un Wing 23) mais reste non justifié
+// roulées est moins brutal (+5,0 % sur un Wing 23) mais reste non justifié
 // ici, faute de section profilée mesurée. Trois contrôles convergent vers
 // l'ellipse : les poids catalogue (Wing 23 prédit à +1,2 % contre −2,7 % en
 // lentille, −13 % en losange), le rapport aire/(W·t) relevé sur le dessin de
@@ -6421,7 +6421,7 @@ function spokeGeomAudit() {
   // formule, le remplissage borne ce qui en SORT, et ni l'un ni l'autre ne
   // suffit seul — un '0.9|22' (virgule oubliée) donne un remplissage de 0.886,
   // parfaitement légal, alors que le rapport 0.04 est absurde.
-  // Rapport : les lames du marché vont de 0.39 (0.9×2.3) à 0.63 (1.45×2.3).
+  // Rapport : les cotes plates du menu vont de 0.39 (0.9×2.3) à 0.61 (1.4×2.3).
   // La bande [0.25 ; 0.85] est volontairement large — elle ne juge pas du
   // réalisme d'un profil, elle attrape un ordre de grandeur faux.
   // Remplissage : l'aire doit tomber STRICTEMENT entre l'ellipse (π/4·d·a) et
