@@ -2471,6 +2471,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       </div>
       <!-- Warning Radial -->
       <p class="radial-disc-warn" id="radial-disc-warn" data-i18n="radialDiscWarn">⚠ Incompatible roue à disque</p>
+      <p class="radial-disc-warn" id="cross-geom-warn"></p>
     </div>
   </div>
 
@@ -4285,6 +4286,7 @@ const i18n = {
     eraseMgrAllConfirm:'Voulez-vous supprimer l\u2019ensemble de vos enregistrements ?',
     diffLabel:'Différentiel',
     radialDiscWarn:'⚠ Incompatible roue à disque',
+    crossGeomWarn:'⚠ Croisement impossible : {a}° au moyeu, rayon tangent à la bride',
     diamTrouWarn:'⚠ Valeur incohérente',
     offsetCoherenceWarn:'⚠ Vérifier cohérence des déports',
     efLabel:'Easy Fill',
@@ -4509,6 +4511,7 @@ const i18n = {
     eraseMgrAllConfirm:'Do you want to delete all your records?',
     diffLabel:'Differential',
     radialDiscWarn:'⚠ Disc brake incompatible',
+    crossGeomWarn:'⚠ Impossible lacing: {a}° at the hub, spoke tangent to the flange',
     diamTrouWarn:'⚠ Inconsistent value',
     offsetCoherenceWarn:'⚠ Check offset consistency',
     efLabel:'Easy Fill',
@@ -5057,6 +5060,7 @@ function applyLang() {
     deflEl.textContent = t('tmDeflLabel') + ' — ' + deflSide;
   }
   document.querySelectorAll('.rincluant').forEach(el => { el.textContent = t('including'); });
+  updateCrossGeomWarn();
   reorderTensionFields(wtype); // réapplique les bons labels DS/NDS après la retraduction
   onTension();                 // met à jour tension-help-text en dernier
   $id('lang-btn').textContent = lang === 'fr' ? 'EN' : 'FR';
@@ -5684,6 +5688,24 @@ function updateRadialWarn() {
 
   const w = $id('radial-disc-warn');
   if (w) w.style.display = hasRadial ? 'block' : 'none';
+  updateCrossGeomWarn();
+}
+
+function updateCrossGeomWarn() {
+  const w = $id('cross-geom-warn');
+  if (!w) return;
+  const n = parseInt($id('nb-rayons').value);
+  let worst = null;
+  if (n && hubType === 'jbend') {
+    const m = crossMax(n);
+    const rows = diffMode ? [crossFo, crossFa] : [cross];
+    rows.forEach(cr => {
+      if (cr !== null && cr > m && (worst === null || cr > worst)) worst = cr;
+    });
+  }
+  if (worst === null) { w.style.display = 'none'; return; }
+  w.textContent = t('crossGeomWarn').replace('{a}', (worst * 720 / n).toFixed(1));
+  w.style.display = 'block';
 }
 
 function updateCrossForHubType() {
@@ -6138,6 +6160,9 @@ function updateCalcBtn() {
 }
 
 // ── Physics ───────────────────────────────────────────────────────────────────
+function crossMax(n) {
+  return Math.max(0, Math.ceil(n / 8) - 1);
+}
 function slen(pcd, off, cr, n, erd, trou) {
   const R = pcd / 2, Rj = erd / 2;
   const a = cr * (2 * Math.PI) / (n / 2);
@@ -8450,6 +8475,7 @@ $id('nb-rayons').addEventListener('change', function() {
     sel.value = this.value;
     tmInvalidateOnNbChange();
   }
+  updateCrossGeomWarn();
 });
 
 // ── iOS focus: select field content ──────────────────────────────────────────
