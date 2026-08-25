@@ -455,13 +455,6 @@ select option             { background:#161b27 }
 .wi-notes:focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
 @supports (-webkit-touch-callout: none) { .wi-notes { font-size:16px } }
 
-/* ── Asym warning ──────────────────────────────────────────────────────────── */
-.asym-warn {
-  display:none; font-size:.66rem; font-style:italic; line-height:1.4; margin-top:.22rem;
-  color:#e8927c;
-  animation: fu .25s cubic-bezier(.22,1,.36,1);
-}
-
 /* ── Hub layout ────────────────────────────────────────────────────────────── */
 .hub-top      { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.2rem }
 .hub-sides    { display:grid; grid-template-columns:1fr 1px 1fr; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); overflow:hidden }
@@ -528,11 +521,8 @@ select option             { background:#161b27 }
 .cp-fa.active { border-color:rgba(126,200,227,.4); color:var(--accent2); background:var(--inp) }
 .cp.sp-disabled { opacity:.25; pointer-events:none; cursor:not-allowed }
 
-/* ── Radial disc warning ────────────────────────────────────────────────────── */
-.radial-disc-warn { display:none; font-size:.66rem; font-style:italic; color:#e8927c; margin-top:.4rem; line-height:1.4; animation:fu .25s cubic-bezier(.22,1,.36,1) }
-
-/* ── Offset coherence warning ───────────────────────────────────────────────── */
-.offset-coherence-warn { display:none; font-size:.66rem; font-style:italic; color:#e8927c; margin-top:.4rem; line-height:1.4; animation:fu .25s cubic-bezier(.22,1,.36,1) }
+/* ── Inline warnings ───────────────────────────────────────────────────────── */
+.inline-warn { display:none; font-size:.66rem; font-style:italic; color:#fff; margin-top:.4rem; line-height:1.4; animation:fu .25s cubic-bezier(.22,1,.36,1) }
 
 /* ── Misc ──────────────────────────────────────────────────────────────────── */
 .help { font-size:.66rem; color:var(--text3); margin-top:.22rem; font-style:italic; line-height:1.4 }
@@ -2161,7 +2151,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <div class="f" id="field-diam-trou">
         <label data-i18n="holeDiam" for="diam-trou">Ø trous de bride (mm)</label>
         <input type="number" id="diam-trou" value="2.55" step="0.05" min="2" max="2.7" inputmode="decimal" oninput="checkDiamTrou()" onblur="resetDiamTrouIfInvalid()">
-        <p class="radial-disc-warn" id="diam-trou-warn" data-i18n="diamTrouWarn">⚠ Valeur incohérente</p>
+        <p class="inline-warn" id="diam-trou-warn" data-i18n="diamTrouWarn">⚠ Valeur incohérente</p>
       </div>
     </div>
 
@@ -2198,7 +2188,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         </div>
       </div>
     </div>
-    <p class="offset-coherence-warn" id="offset-coherence-warn" data-i18n="offsetCoherenceWarn">⚠ Vérifier cohérence des déports</p>
+    <p class="inline-warn" id="offset-coherence-warn" data-i18n="offsetCoherenceWarn">⚠ Vérifier cohérence des déports</p>
 
   </div>
 
@@ -2414,7 +2404,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         <div class="f">
           <label class="tip-wrap" for="asym"><span id="asym-label" data-i18n="rimAsym">ASYM. JANTE (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="asymTip">Offset Spoke Bed for Asymmetric Rim</span></label>
           <input type="number" id="asym" aria-labelledby="asym-label" value="0" step="0.5" min="0" inputmode="decimal" onkeydown="if(event.key==='-')event.preventDefault()">
-          <p class="asym-warn" id="asym-warn" data-i18n="asymWarn">Moyeu symétrique : Jante asymétrique déconseillée.</p>
+          <p class="inline-warn" id="asym-warn" data-i18n="asymWarn">⚠ Moyeu symétrique : jante asymétrique déconseillée</p>
         </div>
       </div>
 
@@ -2470,8 +2460,8 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         </div>
       </div>
       <!-- Warning Radial -->
-      <p class="radial-disc-warn" id="radial-disc-warn" data-i18n="radialDiscWarn">⚠ Incompatible roue à disque</p>
-      <p class="radial-disc-warn" id="cross-geom-warn"></p>
+      <p class="inline-warn" id="radial-disc-warn" data-i18n="radialDiscWarn">⚠ Incompatible roue à disque</p>
+      <p class="inline-warn" id="cross-geom-warn"></p>
     </div>
   </div>
 
@@ -4187,7 +4177,7 @@ const i18n = {
     lsWriteError:'Stockage local plein ou bloqué — sauvegarde impossible. Exportez vos données (JSON).',
     backupReminderMsg:'Sauvegardez vos données.',
     backupSnoozeTitle:'Reporter (rappel dans 24 h)',
-    asymWarn:'Moyeu symétrique : Jante asymétrique déconseillée.',
+    asymWarn:'⚠ Moyeu symétrique : jante asymétrique déconseillée',
     asymTip:'Décalage des trous de rayons des jantes asymétriques',
     tmTitle:'Module Tension', tmCalc:'Calculateur',
     tmTensioLabel:'Tensiomètre', tmDeflLabel:'Déflections mesurées',
@@ -4412,7 +4402,7 @@ const i18n = {
     lsWriteError:'Local storage full or blocked — saving failed. Export your data (JSON).',
     backupReminderMsg:'Back up your data.',
     backupSnoozeTitle:'Snooze (remind in 24 h)',
-    asymWarn:'Symmetric hub: Asymmetric rim not recommended.',
+    asymWarn:'⚠ Symmetric hub: asymmetric rim not recommended',
     asymTip:'Offset Spoke Bed for Asymmetric Rim',
     tmTitle:'Tension Module', tmCalc:'Calculator',
     tmTensioLabel:'Tensiometer', tmDeflLabel:'Measured deflections',
