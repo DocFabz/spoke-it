@@ -1460,6 +1460,17 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .cc-save-btn:hover { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06); transform:translateY(-1px) }
 .cc-save-btn:active { transform:translateY(0) }
 .cc-save-btn:disabled { opacity:.35; pointer-events:none }
+.cc-smooth-btn { margin-bottom:.5rem }
+#cc-curve-btn:disabled { opacity:.35; pointer-events:none }
+/* Aperçu ouvert depuis la charte perso : même z-index que .cc-modal (9991)
+   et déclarée AVANT elle dans le DOM — sans ce cran, l'aperçu s'afficherait
+   derrière. L'overlay monte aussi pour assombrir la charte. */
+.tm-conv-modal.over-cc   { z-index:9995 }
+.tm-conv-overlay.over-cc { z-index:9994 }
+.tm-conv-actions { display:flex; justify-content:flex-end; gap:.4rem; margin-bottom:.6rem }
+.tm-conv-modal.curve-only .tm-conv-actions { display:none }
+.cc-smooth-btn.undo { color:var(--warm); border-color:rgba(232,146,124,.3) }
+.cc-smooth-btn.undo:hover { border-color:rgba(232,146,124,.65); background:rgba(232,146,124,.06) }
 .cc-feedback { font-size:.66rem; color:#f08080; min-height:.9rem; font-style:italic; line-height:1.3; margin-top:.4rem }
 
 /* ── Charte personnalisée: grid table (même pattern que tm-table) ────────────────── */
@@ -3083,7 +3094,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <button class="tm-conv-close" onclick="tmCloseConvTable()">✕</button>
     </div>
     <div class="tm-conv-spoke" id="tm-conv-spoke-label"></div>
-    <div style="display:flex;justify-content:flex-end;gap:.4rem;margin-bottom:.6rem">
+    <div class="tm-conv-actions">
       <button id="tm-conv-pdf-btn" onclick="tmConvExportPdf()" title="Export PDF" style="background:transparent;border:1px solid rgba(126,200,227,.45);border-radius:7px;color:var(--accent);padding:.22rem .55rem;cursor:pointer;transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s;outline:none;display:inline-flex;align-items:center;justify-content:center;line-height:1">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -3156,6 +3167,11 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <button class="cc-close" onclick="ccClose()">✕</button>
     </div>
 
+    <!-- Aperçu courbe : même bouton que #tm-conv-view-btn de la modale conversion -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:.9rem">
+      <button id="cc-curve-btn" onclick="ccPreviewCurve()" data-i18n="tmConvCurve" disabled style="background:transparent;border:1px solid rgba(126,200,227,.45);border-radius:7px;color:var(--accent);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;padding:.22rem .75rem;cursor:pointer;transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s;outline:none">Courbe</button>
+    </div>
+
     <!-- Étape 1 : Tensiomètre -->
     <div class="cc-step">
       <div class="cc-step-label" data-i18n="ccStepTensio">Tensiomètre</div>
@@ -3221,6 +3237,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <div class="cc-feedback" id="cc-feedback"></div>
     </div>
 
+    <button class="cc-save-btn cc-smooth-btn" id="cc-smooth-btn" onclick="ccSmooth()" data-i18n="ccSmoothBtn" style="flex-shrink:0" disabled>≈ Lissage</button>
     <button class="cc-save-btn" id="cc-save-btn" onclick="ccSave()" data-i18n="ccSaveBtn" style="flex-shrink:0">✓ Enregistrer la charte</button>
   </div>
 
@@ -4228,6 +4245,15 @@ const i18n = {
     ccStepNbPoints:'Points',
     ccReadingPlaceholder:'Lecture',
     ccSaveBtn:'✓ Enregistrer la charte',
+    ccSmoothBtn:'≈ Lissage',
+    ccErrCurvePoints:'Au moins 2 points sont nécessaires pour tracer la courbe.',
+    ccSmoothUndoBtn:'✕ Annuler le lissage',
+    ccSmoothOk:'Lissage appliqué — Δ max {d} kgf par rapport aux mesures.',
+    ccSmoothNoop:'Charte déjà lisse — aucune modification.',
+    ccErrSmoothPoints:'Au moins 3 points sont nécessaires pour le lissage.',
+    ccErrSmoothFit:'Lissage impossible : l\'ajustement n\'est pas calculable sur ces points.',
+    ccErrSmoothRange:'Lissage impossible : la courbe ajustée passe par des kgf nuls ou négatifs.',
+    ccErrSmoothMono:'Lissage impossible : après arrondi, les kgf ne sont pas strictement monotones. Réduisez le nombre de points ou vérifiez les mesures.',
     ccErrName:'Veuillez saisir un nom pour la charte.',
     ccErrValues:'Remplissez toutes les lignes (kgf et lecture).',
     ccErrIncomplete:'{n}/{max} points saisis. Complétez avant d\'enregistrer.',
@@ -4453,6 +4479,15 @@ const i18n = {
     ccStepNbPoints:'Points',
     ccReadingPlaceholder:'Reading',
     ccSaveBtn:'✓ Save chart',
+    ccSmoothBtn:'≈ Smoothing',
+    ccErrCurvePoints:'At least 2 points are required to draw the curve.',
+    ccSmoothUndoBtn:'✕ Undo smoothing',
+    ccSmoothOk:'Smoothing applied — Δ max {d} kgf vs. measurements.',
+    ccSmoothNoop:'Chart already smooth — no change.',
+    ccErrSmoothPoints:'At least 3 points are required for smoothing.',
+    ccErrSmoothFit:'Smoothing failed: the fit cannot be computed on these points.',
+    ccErrSmoothRange:'Smoothing failed: the fitted curve reaches zero or negative kgf.',
+    ccErrSmoothMono:'Smoothing failed: after rounding, kgf values are not strictly monotonic. Reduce the number of points or check the measurements.',
     ccErrName:'Please enter a name for the chart.',
     ccErrValues:'Fill in all rows (kgf and reading).',
     ccErrIncomplete:'{n}/{max} points entered. Complete before saving.',
@@ -8704,7 +8739,7 @@ const DT_TABLES_DATA = {
 TM_TABLES.dt_standard  = DT_TABLES_DATA.standard;
 TM_TABLES.dt_aerolite2 = DT_TABLES_DATA.aerolite2;
 
-TM_TABLES.pk = {"DT Champ 1.8":[[1.65,40],[1.86,50],[2.03,60],[2.19,70],[2.34,80],[2.47,90],[2.59,100],[2.71,110],[2.82,120],[2.92,130],[3.01,140],[3.1,150],[3.19,160],[3.27,170],[3.35,180],[3.93,190],[3.99,200]],"DT Champ 2.0":[[2.28,40],[2.57,50],[2.62,60],[2.77,70],[2.91,80],[3.04,90],[3.16,100],[3.27,110],[3.37,120],[3.47,130],[3.56,140],[3.64,150],[3.72,160],[3.79,170],[3.86,180],[4.9,190],[4.96,200]],"DT Champ 2.34":[[3.46,40],[3.62,50],[3.77,60],[3.9,70],[4.03,80],[4.14,90],[4.24,100],[4.34,110],[4.42,120],[4.5,130],[4.58,140],[4.65,150],[4.72,160],[4.78,170],[4.84,180],[4.9,190],[4.96,200]],"DT Comp 1.8/1.6/1.8":[[1.27,40],[1.45,50],[1.63,60],[1.79,70],[1.94,80],[2.08,90],[2.2,100],[2.32,110],[2.43,120],[2.53,130],[2.62,140],[2.71,150],[2.8,160],[2.88,170],[2.95,180]],"DT Comp 2.0/1.8/2.0":[[1.83,40],[2.01,50],[2.18,60],[2.33,70],[2.47,80],[2.6,90],[2.71,100],[2.82,110],[2.92,120],[3.02,130],[3.11,140],[3.19,150],[3.27,160],[3.35,170],[3.42,180]],"DT Comp race":[[1.31,40],[1.49,50],[1.6,60],[1.82,70],[1.96,80],[2.1,90],[2.22,100],[2.34,110],[2.45,120],[2.55,130],[2.64,140],[2.73,150],[2.81,160],[2.89,170],[2.96,180],[3.03,190],[3.09,200]],"DT Super comp":[[1.49,40],[1.67,50],[1.84,60],[2.0,70],[2.14,80],[2.27,90],[2.4,100],[2.51,110],[2.62,120],[2.72,130],[2.81,140],[2.89,150],[2.97,160],[3.05,170],[3.13,180]],"DT Rev 1.5":[[1.12,40],[1.27,50],[1.41,60],[1.55,70],[1.69,80],[1.82,90],[1.94,100],[2.06,110],[2.17,120],[2.28,130],[2.37,140],[2.46,150],[2.54,160],[2.61,170],[2.67,180]],"DT Rev 2.0":[[1.07,40],[1.26,50],[1.44,60],[1.62,70],[1.75,80],[1.89,90],[2.02,100],[2.13,110],[2.24,120],[2.34,130],[2.43,140],[2.51,150],[2.59,160],[2.67,170],[2.74,180]],"Sapim CX-Super":[[0.35,40],[0.5,50],[0.65,60],[0.78,70],[0.9,80],[1.01,90],[1.12,100],[1.21,110],[1.3,120],[1.38,130],[1.45,140],[1.52,150],[1.58,160],[1.64,170],[1.69,180],[1.74,190],[1.79,200]],"Sapim CX-Sprint":[[0.86,40],[1.03,50],[1.18,60],[1.33,70],[1.46,80],[1.58,90],[1.69,100],[1.79,110],[1.89,120],[1.97,130],[2.05,140],[2.13,150],[2.2,160],[2.26,170],[2.32,180],[2.38,190],[2.44,200]],"Sapim CX-RAY":[[0.46,40],[0.62,50],[0.77,60],[0.91,70],[1.03,80],[1.14,90],[1.25,100],[1.34,110],[1.43,120],[1.51,130],[1.59,140],[1.65,150],[1.72,160],[1.78,170],[1.84,180],[1.89,190],[1.95,200]],"Sapim Strong":[[2.45,40],[2.62,50],[2.77,60],[2.92,70],[3.05,80],[3.17,90],[3.29,100],[3.4,110],[3.5,120],[3.59,130],[3.68,140],[3.76,150],[3.84,160],[3.91,170],[3.98,180],[4.05,190],[4.11,200]],"Sapim Force":[[1.83,40],[2.01,50],[2.18,60],[2.34,70],[2.48,80],[2.61,90],[2.73,100],[2.85,110],[2.95,120],[3.05,130],[3.14,140],[3.22,150],[3.3,160],[3.38,170],[3.45,180],[3.52,190],[3.59,200]],"Sapim Race":[[1.85,40],[2.04,50],[2.21,60],[2.37,70],[2.52,80],[2.66,90],[2.78,100],[2.9,110],[3.0,120],[3.1,130],[3.19,140],[3.27,150],[3.35,160],[3.42,170],[3.49,180],[3.55,190],[3.61,200]],"Sapim D-light":[[1.47,40],[1.66,50],[1.83,60],[1.99,70],[2.14,80],[2.27,90],[2.4,100],[2.51,110],[2.62,120],[2.72,130],[2.81,140],[2.9,150],[2.98,160],[3.06,170],[3.13,180],[3.2,190],[3.27,200]],"Sapim Laser":[[1.09,40],[1.28,50],[1.46,60],[1.62,70],[1.77,80],[1.91,90],[2.04,100],[2.16,110],[2.27,120],[2.37,130],[2.46,140],[2.54,150],[2.62,160],[2.7,170],[2.77,180],[2.84,190],[2.9,200]],"Sapim Super spoke":[[0.9,40],[1.09,50],[1.27,60],[1.43,70],[1.58,80],[1.72,90],[1.85,100],[1.96,110],[2.07,120],[2.17,130],[2.26,140],[2.34,150],[2.42,160],[2.49,170],[2.56,180],[2.62,190],[2.68,200]],"Sapim Leader 2":[[2.28,40],[2.46,50],[2.63,60],[2.79,70],[2.93,80],[3.06,90],[3.17,100],[3.28,110],[3.38,120],[3.48,130],[3.57,140],[3.65,150],[3.73,160],[3.81,170],[3.88,180],[3.95,190],[4.02,200]],"Sapim Leader 2.3":[[3.32,40],[3.48,50],[3.63,60],[3.77,70],[3.9,80],[4.02,90],[4.13,100],[4.23,110],[4.32,120],[4.41,130],[4.49,140],[4.57,150],[4.64,160],[4.71,170],[4.78,180],[4.84,190],[4.9,200]],"Sapim E-Strong":[[3.35,40],[3.5,50],[3.64,60],[3.78,70],[3.9,80],[4.02,90],[4.13,100],[4.23,110],[4.33,120],[4.42,130],[4.5,140],[4.58,150],[4.65,160],[4.72,170],[4.79,180],[4.86,190],[4.92,200]]};
+TM_TABLES.pk = {"DT Champ 1.8":[[1.65,40],[1.86,50],[2.03,60],[2.19,70],[2.34,80],[2.47,90],[2.59,100],[2.71,110],[2.82,120],[2.92,130],[3.01,140],[3.1,150],[3.19,160],[3.27,170],[3.35,180]],"DT Champ 2.0":[[2.28,40],[2.62,60],[2.77,70],[2.91,80],[3.04,90],[3.16,100],[3.27,110],[3.37,120],[3.47,130],[3.56,140],[3.64,150],[3.72,160],[3.79,170],[3.86,180],[3.93,190],[3.99,200]],"DT Champ 2.34":[[3.46,40],[3.62,50],[3.77,60],[3.9,70],[4.03,80],[4.14,90],[4.24,100],[4.34,110],[4.42,120],[4.5,130],[4.58,140],[4.65,150],[4.72,160],[4.78,170],[4.84,180],[4.9,190],[4.96,200]],"DT Comp 1.8/1.6/1.8":[[1.27,40],[1.45,50],[1.63,60],[1.79,70],[1.94,80],[2.08,90],[2.2,100],[2.32,110],[2.43,120],[2.53,130],[2.62,140],[2.71,150],[2.8,160],[2.88,170],[2.95,180]],"DT Comp 2.0/1.8/2.0":[[1.83,40],[2.01,50],[2.18,60],[2.33,70],[2.47,80],[2.6,90],[2.71,100],[2.82,110],[2.92,120],[3.02,130],[3.11,140],[3.19,150],[3.27,160],[3.35,170],[3.42,180]],"DT Comp race":[[1.31,40],[1.49,50],[1.6,60],[1.82,70],[1.96,80],[2.1,90],[2.22,100],[2.34,110],[2.45,120],[2.55,130],[2.64,140],[2.73,150],[2.81,160],[2.89,170],[2.96,180],[3.03,190],[3.09,200]],"DT Super comp":[[1.49,40],[1.67,50],[1.84,60],[2.0,70],[2.14,80],[2.27,90],[2.4,100],[2.51,110],[2.62,120],[2.72,130],[2.81,140],[2.89,150],[2.97,160],[3.05,170],[3.13,180]],"DT Rev 1.5":[[1.12,40],[1.27,50],[1.41,60],[1.55,70],[1.69,80],[1.82,90],[1.94,100],[2.06,110],[2.17,120],[2.28,130],[2.37,140],[2.46,150],[2.54,160],[2.61,170],[2.67,180]],"DT Rev 2.0":[[1.07,40],[1.26,50],[1.44,60],[1.62,70],[1.75,80],[1.89,90],[2.02,100],[2.13,110],[2.24,120],[2.34,130],[2.43,140],[2.51,150],[2.59,160],[2.67,170],[2.74,180]],"Sapim CX-Super":[[0.35,40],[0.5,50],[0.65,60],[0.78,70],[0.9,80],[1.01,90],[1.12,100],[1.21,110],[1.3,120],[1.38,130],[1.45,140],[1.52,150],[1.58,160],[1.64,170],[1.69,180],[1.74,190],[1.79,200]],"Sapim CX-Sprint":[[0.86,40],[1.03,50],[1.18,60],[1.33,70],[1.46,80],[1.58,90],[1.69,100],[1.79,110],[1.89,120],[1.97,130],[2.05,140],[2.13,150],[2.2,160],[2.26,170],[2.32,180],[2.38,190],[2.44,200]],"Sapim CX-RAY":[[0.46,40],[0.62,50],[0.77,60],[0.91,70],[1.03,80],[1.14,90],[1.25,100],[1.34,110],[1.43,120],[1.51,130],[1.59,140],[1.65,150],[1.72,160],[1.78,170],[1.84,180],[1.89,190],[1.95,200]],"Sapim Strong":[[2.45,40],[2.62,50],[2.77,60],[2.92,70],[3.05,80],[3.17,90],[3.29,100],[3.4,110],[3.5,120],[3.59,130],[3.68,140],[3.76,150],[3.84,160],[3.91,170],[3.98,180],[4.05,190],[4.11,200]],"Sapim Force":[[1.83,40],[2.01,50],[2.18,60],[2.34,70],[2.48,80],[2.61,90],[2.73,100],[2.85,110],[2.95,120],[3.05,130],[3.14,140],[3.22,150],[3.3,160],[3.38,170],[3.45,180],[3.52,190],[3.59,200]],"Sapim Race":[[1.85,40],[2.04,50],[2.21,60],[2.37,70],[2.52,80],[2.66,90],[2.78,100],[2.9,110],[3.0,120],[3.1,130],[3.19,140],[3.27,150],[3.35,160],[3.42,170],[3.49,180],[3.55,190],[3.61,200]],"Sapim D-light":[[1.47,40],[1.66,50],[1.83,60],[1.99,70],[2.14,80],[2.27,90],[2.4,100],[2.51,110],[2.62,120],[2.72,130],[2.81,140],[2.9,150],[2.98,160],[3.06,170],[3.13,180],[3.2,190],[3.27,200]],"Sapim Laser":[[1.09,40],[1.28,50],[1.46,60],[1.62,70],[1.77,80],[1.91,90],[2.04,100],[2.16,110],[2.27,120],[2.37,130],[2.46,140],[2.54,150],[2.62,160],[2.7,170],[2.77,180],[2.84,190],[2.9,200]],"Sapim Super spoke":[[0.9,40],[1.09,50],[1.27,60],[1.43,70],[1.58,80],[1.72,90],[1.85,100],[1.96,110],[2.07,120],[2.17,130],[2.26,140],[2.34,150],[2.42,160],[2.49,170],[2.56,180],[2.62,190],[2.68,200]],"Sapim Leader 2":[[2.28,40],[2.46,50],[2.63,60],[2.79,70],[2.93,80],[3.06,90],[3.17,100],[3.28,110],[3.38,120],[3.48,130],[3.57,140],[3.65,150],[3.73,160],[3.81,170],[3.88,180],[3.95,190],[4.02,200]],"Sapim Leader 2.3":[[3.32,40],[3.48,50],[3.63,60],[3.77,70],[3.9,80],[4.02,90],[4.13,100],[4.23,110],[4.32,120],[4.41,130],[4.49,140],[4.57,150],[4.64,160],[4.71,170],[4.78,180],[4.84,190],[4.9,200]],"Sapim E-Strong":[[3.35,40],[3.5,50],[3.64,60],[3.78,70],[3.9,80],[4.02,90],[4.13,100],[4.23,110],[4.33,120],[4.42,130],[4.5,140],[4.58,150],[4.65,160],[4.72,170],[4.79,180],[4.86,190],[4.92,200]]};
 
 TM_TABLES.un = {"Round 1.8/1.4/1.8":[[33,50],[34,55],[35,60],[36,65],[37,70],[38,75],[39,80],[40,90],[41,95],[42,100],[43,110],[44,115],[45,120],[46,130],[47,140],[48,150],[49,165],[50,185],[51,200]],"Round 2.0/1.5/2.0":[[36,50],[37,55],[38,60],[39,65],[40,70],[41,75],[42,80],[43,90],[44,95],[45,100],[46,110],[47,120],[48,130],[49,140],[50,150],[51,165],[52,185],[53,200]],"Round 2.0/1.65/2.0":[[40,50],[41,55],[42,60],[43,65],[44,70],[45,75],[46,80],[47,90],[48,95],[49,100],[50,110],[51,120],[52,130],[53,140],[54,155],[55,175],[56,195]],"Round 2.0/1.7/2.0":[[42,50],[43,55],[44,60],[45,65],[46,70],[47,80],[48,90],[49,95],[50,100],[51,110],[52,120],[53,130],[54,140],[55,155],[56,175],[57,195]],"Round 2.2/1.8/2.0":[[44,50],[45,55],[46,60],[47,65],[48,70],[49,75],[50,85],[51,100],[52,110],[53,120],[54,130],[55,145],[56,160],[57,170],[58,190],[59,195]],"Round 2.0/1.8/2.0":[[43,50],[44,55],[45,60],[46,65],[47,70],[48,75],[49,80],[50,85],[51,90],[52,100],[53,110],[54,120],[55,135],[56,155],[57,170],[58,180]],"Round 2.0/2.0/2.0":[[50,50],[51,55],[52,60],[53,70],[54,80],[55,90],[56,100],[57,110],[58,120],[59,130],[60,145],[61,165],[62,190]],"Round 2.3/2.0/2.0":[[51,50],[52,55],[53,60],[54,70],[55,80],[56,90],[57,100],[58,110],[59,120],[60,130],[61,145],[62,165],[63,185],[64,200]],"Round 2.3/2.3/2.3":[[57,50],[58,60],[59,70],[60,80],[61,90],[62,100],[63,110],[64,120],[65,130],[66,145],[67,170],[68,195]],"Blade 0.9\u00d71.8":[[24,50],[25,55],[26,60],[27,65],[28,70],[29,80],[30,90],[31,100],[32,110],[33,120],[34,135],[35,155],[36,175],[37,195]],"Blade 0.9\u00d72.2":[[25,50],[26,55],[27,60],[28,65],[29,70],[30,75],[31,80],[32,85],[33,90],[34,100],[35,105],[36,110],[37,120],[38,130],[39,140],[40,155],[41,175],[42,195]],"Blade 0.9\u00d73.5":[[27,50],[28,55],[29,60],[30,65],[31,70],[32,75],[33,80],[34,85],[35,90],[36,100],[37,110],[38,120],[39,130],[40,140],[41,150],[42,160],[43,175],[44,195]],"Blade 1.2\u00d72.6":[[30,50],[31,55],[32,60],[33,65],[34,70],[35,75],[36,80],[37,85],[38,90],[39,100],[40,110],[41,120],[42,130],[43,140],[44,150],[45,165],[46,180],[47,195]],"Blade 1.2\u00d72.2":[[31,50],[32,55],[33,60],[34,65],[35,70],[36,75],[37,80],[38,90],[39,95],[40,100],[41,110],[42,120],[43,130],[44,140],[45,155],[46,175],[47,190],[48,200]],"Blade 1.3\u00d72.3":[[35,50],[36,55],[37,60],[38,65],[39,70],[40,80],[41,90],[42,95],[43,100],[44,110],[45,120],[46,130],[47,140],[48,150],[49,160],[50,175],[51,195]],"Blade 1.3\u00d72.8":[[35,50],[36,55],[37,60],[38,65],[39,70],[40,80],[41,85],[42,90],[43,100],[44,110],[45,120],[46,130],[47,145],[48,165],[49,180],[50,195]]};
 
@@ -9937,7 +9972,11 @@ function tmDrawConvCurve(pts) {
 function tmCloseConvTable() {
   $id('tm-conv-overlay').classList.remove('show');
   $id('tm-conv-modal').classList.remove('show');
-  document.body.style.overflow = '';
+  // Mode aperçu (ouvert depuis la charte perso) : on rend la modale à son
+  // état normal, et le scroll reste verrouillé tant que la charte est là.
+  $id('tm-conv-modal').classList.remove('curve-only', 'over-cc');
+  $id('tm-conv-overlay').classList.remove('over-cc');
+  if (!$id('cc-modal').classList.contains('show')) document.body.style.overflow = '';
   if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
   _tmConvSide = null; // la rangée ne survit pas à la fermeture (cf. _cshareChoice)
 }
@@ -10440,6 +10479,7 @@ async function tmConvExportPdf() {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape' && $id('tm-conv-modal').classList.contains('show')) {
     tmCloseConvTable();
+    return; // ne pas fermer aussi la charte perso derrière (cf. ec-modal)
   }
   if (e.key === 'Escape' && $id('tm-charts-popup') && $id('tm-charts-popup').classList.contains('show')) {
     tmChartsPickerClose();
@@ -10513,6 +10553,7 @@ function ccOpen(side) {
   ccToggleTensioClear();
   $id('cc-feedback').textContent = '';
   ccPoints = [];
+  _ccSmoothPrev = null;   // l'annulation du lissage ne survit pas à l'ouverture
   ccUpdateReadingLabel();
 
   // ── Rayon custom déjà sélectionné → charger ses valeurs ──────────────────
@@ -10576,6 +10617,7 @@ function ccClose() {
   // Déverrouiller le select tensiomètre
   const sel = $id('cc-tensio');
   if (sel) { sel.disabled = false; sel.style.opacity = ''; }
+  _ccSmoothPrev = null; // idem : pas d'annulation de lissage d'une session à l'autre
   _ccSide = null; // la rangée ne survit pas à la fermeture (cf. _cshareChoice)
 }
 
@@ -10619,6 +10661,7 @@ function ccClearRow(tr) {
     inp.classList.remove('has-val', 'cc-err');
   });
   $id('cc-feedback').textContent = '';
+  _ccSmoothInvalidate();
   ccSyncPoints();
 }
 
@@ -10629,12 +10672,30 @@ function ccClearAllValues() {
     inp.classList.remove('has-val', 'cc-err');
   });
   $id('cc-feedback').textContent = '';
+  _ccSmoothInvalidate();
   ccSyncPoints();
+}
+
+// ── Formatage de la colonne lecture ────────────────────────────────
+// Toutes les lectures d'une même charte sont affichées avec le nombre de
+// décimales de la plus précise : sans ça, JS écrit « 1.3 » (le zéro final
+// n'existe pas dans un Number) au milieu de 1.43 / 1.55. Purement visuel :
+// ccSyncPoints reparse en nombre et la charte enregistrée est inchangée.
+// La colonne kgf n'est pas touchée — ses valeurs sont entières par nature.
+function ccReadDec() {
+  var dec = 0;
+  for (var i = 0; i < ccPoints.length; i++) dec = Math.max(dec, _ccDecOf(ccPoints[i].reading));
+  return dec;
+}
+function ccFmtRead(v, dec) {
+  var n = Number(v);
+  return (dec > 0 && isFinite(n)) ? n.toFixed(dec) : v;
 }
 
 // ── Construire la grille de N lignes ─────────────────────────────────────────
 function ccBuildGrid() {
   const max = parseInt($id('cc-nb-points').value) || 10;
+  const readDec = ccReadDec(); // précision commune de la colonne lecture
   const tbody = $id('cc-grid-tbody');
   let ccReturning = false;
   tbody.innerHTML = '';
@@ -10644,7 +10705,7 @@ function ccBuildGrid() {
     const tr = document.createElement('tr');
     const existing = ccPoints[i] || null;
     const kgfVal  = existing ? existing.kgf : '';
-    const readVal = existing ? existing.reading : '';
+    const readVal = existing ? ccFmtRead(existing.reading, readDec) : '';
     const kgfHas  = existing ? ' has-val' : '';
     const readHas = existing ? ' has-val' : '';
 
@@ -10695,6 +10756,7 @@ function ccBuildGrid() {
       inp.addEventListener('input', function() {
         $id('cc-feedback').textContent = '';
         this.classList.remove('cc-err');
+        _ccSmoothInvalidate(); // saisie manuelle : la table lisse n'est plus celle affichée
         if (this.value.trim() !== '') {
           const other = this.closest('tr').querySelector(isKgf ? '.cc-read' : '.cc-kgf');
           if (other && other.value.trim() === '') {
@@ -10829,6 +10891,8 @@ function ccUpdateCounter() {
   counter.textContent = cur + '/' + max;
   counter.style.color = cur >= max ? 'var(--accent)' : 'var(--text3)';
   $id('cc-save-btn').disabled = cur < max;
+  ccSmoothRefreshBtn(); // le lissage suit le remplissage de la grille
+  ccCurveRefreshBtn();  // l'aperçu courbe aussi
 }
 
 // ── Reconstruire la grille ──────────────────────────────────────────────────
@@ -10839,6 +10903,7 @@ function ccOnNbChange() {
   if (isNaN(val) || val < 5)  val = 5;
   if (val > 30) val = 30;
   inp.value = String(val);
+  _ccSmoothInvalidate();
   ccBuildGrid();
 }
 
@@ -10912,6 +10977,7 @@ function ccLoadChart(idx) {
   const nbPoints = Math.max(cc.points.length, 5);
   $id('cc-nb-points').value = String(nbPoints);
   ccPoints = cc.points.map(p => ({ kgf: p[1], reading: p[0] })).sort((a, b) => a.kgf - b.kgf);
+  _ccSmoothPrev = null;
   ccRefreshUI();
   ccRenderExisting();
   $id('cc-feedback').textContent = '';
@@ -10980,6 +11046,355 @@ function ccDeleteDirect(idx, itemEl) {
   } else {
     run();
   }
+}
+
+// ── Aperçu courbe depuis la charte perso ─────────────────────────────
+// La modale de conversion ne lit que quatre globales (_tmConvPts,
+// _tmConvTensioLabel, _tmConvSpokeName, _tmConvIsCustom) : on les remplit
+// depuis la grille en cours de saisie et on réutilise tmDrawConvCurve tel
+// quel. Aucun rendu dupliqué, et la charte n'a pas besoin d'être enregistrée.
+//
+// Mode courbe seule : la barre d'actions (PDF + bascule Charte/Courbe) est
+// masquée par .curve-only — le tableau, il est déjà sous les yeux dans la grille.
+
+// Libellé lisible du tensiomètre sélectionné dans la modale charte. Les
+// valeurs du select ('dt_standard', 'dt_aerolite2') ne sont pas celles de
+// tmType ('dt' + tmDTSub) : correspondance dédiée, pour que l'aperçu affiche
+// exactement le même libellé que la modale de conversion normale.
+function ccTensioLabel() {
+  var key = ($id('cc-tensio') && $id('cc-tensio').value) || '';
+  if (key.indexOf('ct_') === 0) {
+    var ct = ctLoadAll().find(function (c) { return 'ct_' + c.id === key; });
+    return CC_PREFIX + (ct ? ct.name : key);
+  }
+  var names = {
+    wf:'Wheel Fanatyk', pt:'Park Tool TM-1',
+    dt_standard:'DT Swiss', dt_aerolite2:'DT Swiss (Tensio Aerolite II)',
+    pk:'P&KLie', un:'UNIOR 1752', pillar:'Pillar 50mm'
+  };
+  return names[key] || key;
+}
+
+// État du bouton : la courbe demande au moins deux points valides.
+function ccCurveRefreshBtn() {
+  var btn = $id('cc-curve-btn');
+  if (btn) btn.disabled = ccPoints.length < 2;
+}
+
+function ccPreviewCurve() {
+  ccSyncPoints();
+  var fb = $id('cc-feedback');
+  if (ccPoints.length < 2) {
+    fb.style.color = '#f08080';
+    fb.textContent = t('ccErrCurvePoints');
+    return;
+  }
+  // Grille incohérente : même refus que Save et Lissage, même focus sur la
+  // cellule fautive — tracer une courbe fausse induirait en erreur.
+  if (!ccValidateGrid(true)) return;
+
+  // tmDrawConvCurve attend [[lecture, kgf]] dans l'ordre des lectures.
+  var pts = _ccPairs(ccPoints);
+  var name = $id('cc-name').value.trim().replace(new RegExp('^' + CC_PREFIX.trim() + '\\s*'), '');
+
+  _tmConvPts         = pts;
+  _tmConvTensioLabel = ccTensioLabel();
+  _tmConvSpokeName   = name;
+  _tmConvIsCustom    = true;
+  _tmConvShowCurve   = true;
+
+  $id('tm-conv-spoke-label').innerHTML =
+    t('tmConvTensio') + '\u00a0: <strong style="color:var(--accent)">' + escHtml(_tmConvTensioLabel || '\u2014') + '</strong><br>' +
+    t('tmSpokeLabel') + '\u00a0: <strong style="color:var(--text)">' + escHtml(name || '\u2014') + '</strong>';
+
+  var modal = $id('tm-conv-modal'), ov = $id('tm-conv-overlay');
+  modal.classList.add('curve-only', 'over-cc');
+  ov.classList.add('over-cc');
+  $id('tm-conv-table-wrap').style.display = 'none';
+  $id('tm-conv-curve-wrap').style.display = 'block';
+  ov.classList.add('show');
+  modal.classList.add('show');
+  // Tracé après affichage : tmDrawConvCurve mesure la largeur du conteneur.
+  tmDrawConvCurve(pts);
+}
+
+// ── Lissage ─ régression polynomiale par moindres carrés ────────────────
+// Principe : on ajuste un polynôme sur les points saisis (x = lecture, ou
+// 1/lecture pour les tensiomètres hyperboliques — cf. _ccSmoothTable)
+// en minimisant la somme des écarts au carré, puis on ré-évalue la formule sur
+// N lectures RÉGULIÈREMENT espacées entre le min et le max des lectures
+// d'origine, kgf arrondi à l'entier. N = nombre de points saisis : la table
+// finale a exactement la taille de la table mesurée, mais sans les bosses dues
+// aux écarts de mesure et aux pas irréguliers.
+//
+// Deux choix sont faits automatiquement, sans seuil ni tensiomètre reconnu :
+//   • le DEGRÉ — 3 dès 8 points, 2 en dessous (_ccBestDegree). Sur les
+//     tensiomètres à déflexion la parabole rate systématiquement la forme :
+//     les résidus s'y groupent en blocs de même signe au lieu d'alterner.
+//   • la VARIABLE — lecture, ou 1/lecture pour les tensiomètres qui mesurent
+//     la flèche d'une corde tendue (WF), où la tension varie en 1/flèche.
+//     Les deux sont ajustées, celle qui colle le mieux aux mesures gagne.
+//
+// L'ajustement se fait en variable centrée (u = x - moyenne) : les équations
+// normales d'un cubique font intervenir des sommes en u⁶, et le centrage
+// évite la perte de précision qui va avec.
+//
+// Le lissage est REFUSÉ (message, grille intacte) si la table produite ne
+// passerait pas ccValidateGrid : kgf ≤ 0, doublon ou non-monotonie après
+// arrondi. Mieux vaut ne rien écrire qu'écrire une charte invalide.
+// Il S'ABSTIENT si le modèle retombe exactement sur la table saisie.
+var _ccSmoothPrev = null; // {points, nb} d'avant lissage — permet l'annulation
+
+// Résolution d'un système carré (pivot partiel). null si singulier.
+function _ccSolveN(A, b) {
+  var n = b.length, M = [], i, j, k;
+  for (i = 0; i < n; i++) M.push(A[i].slice().concat([b[i]]));
+  for (i = 0; i < n; i++) {
+    var p = i;
+    for (j = i + 1; j < n; j++) if (Math.abs(M[j][i]) > Math.abs(M[p][i])) p = j;
+    if (!(Math.abs(M[p][i]) > 0)) return null;
+    var sw = M[i]; M[i] = M[p]; M[p] = sw;
+    for (j = i + 1; j < n; j++) {
+      var f = M[j][i] / M[i][i];
+      for (k = i; k <= n; k++) M[j][k] -= f * M[i][k];
+    }
+  }
+  var x = new Array(n);
+  for (i = n - 1; i >= 0; i--) {
+    var s = M[i][n];
+    for (j = i + 1; j < n; j++) s -= M[i][j] * x[j];
+    x[i] = s / M[i][i];
+    if (!isFinite(x[i])) return null;
+  }
+  return x;
+}
+
+// Valeur de l'ajustement en x (coefficients centrés sur xm, degré = c.length-1)
+function _ccPolyAt(c, xm, x) {
+  var u = x - xm, r = 0, uk = 1;
+  for (var k = 0; k < c.length; k++) { r += c[k] * uk; uk *= u; }
+  return r;
+}
+
+// Ajustement polynomial de degré `deg` par moindres carrés.
+// Retourne {c:[c0..cdeg], xm} ou null si le système est singulier.
+function _ccPolyFit(pts, deg) {
+  var n = pts.length, i, k, xm = 0;
+  for (i = 0; i < n; i++) xm += pts[i].reading;
+  xm /= n;
+  var S = new Array(2 * deg + 1), T = new Array(deg + 1);
+  for (k = 0; k <= 2 * deg; k++) S[k] = 0;
+  for (k = 0; k <= deg; k++)     T[k] = 0;
+  for (i = 0; i < n; i++) {
+    var u = pts[i].reading - xm, y = pts[i].kgf, uk = 1;
+    for (k = 0; k <= 2 * deg; k++) { S[k] += uk; uk *= u; }
+    var vk = 1;
+    for (k = 0; k <= deg; k++) { T[k] += y * vk; vk *= u; }
+  }
+  var A = [];
+  for (i = 0; i <= deg; i++) {
+    var row = [];
+    for (k = 0; k <= deg; k++) row.push(S[i + k]);
+    A.push(row);
+  }
+  var c = _ccSolveN(A, T);
+  return c ? { c: c, xm: xm } : null;
+}
+
+// Degré le plus élevé que la grille soutient. Un cubique demande au moins
+// deux fois ses coefficients, soit 8 points ; en dessous il épouserait le
+// bruit au lieu de la courbe.
+function _ccBestDegree(n) { return n >= 8 ? 3 : 2; }
+
+// Construit la table lisse pour un degré et une variable donnés.
+// inv = true : on ajuste en 1/lecture (famille hyperbolique, cf. WF).
+// L'échantillonnage régulier reste dans la lecture — c'est elle qu'on lit
+// sur l'instrument, la variable d'ajustement n'est qu'un intermédiaire.
+// Retourne {out, fitRes} — fitRes = écart max du modèle aux mesures —
+// ou une chaîne = clé i18n du motif de refus.
+function _ccBuildSmoothed(pts, deg, inv) {
+  var tr = inv ? function (x) { return 1 / x; } : function (x) { return x; };
+  var i;
+  if (inv) {
+    // 1/lecture exige des lectures strictement positives.
+    for (i = 0; i < pts.length; i++) {
+      if (!(pts[i].reading > 0)) return 'ccErrSmoothFit';
+    }
+  }
+  var fit = _ccPolyFit(pts.map(function (p) {
+    return { reading: tr(p.reading), kgf: p.kgf };
+  }), deg);
+  if (!fit) return 'ccErrSmoothFit';
+  var at = function (x) { return _ccPolyAt(fit.c, fit.xm, tr(x)); };
+  var xs = pts.map(function (p) { return p.reading; });
+  var xMin = Math.min.apply(null, xs), xMax = Math.max.apply(null, xs);
+  var n = pts.length, dec = _ccReadDecimals(xs, xMin, xMax, n), out = [];
+  for (i = 0; i < n; i++) {
+    var x = parseFloat((xMin + (xMax - xMin) * i / (n - 1)).toFixed(dec));
+    out.push({ reading: x, kgf: Math.round(at(x)) });
+  }
+  // Écart max du modèle aux mesures : c'est lui qui départage les variables.
+  var fitRes = 0;
+  for (i = 0; i < n; i++) fitRes = Math.max(fitRes, Math.abs(pts[i].kgf - at(pts[i].reading)));
+  // La table produite doit être une charte valide : kgf > 0 et strictement
+  // monotone. Un cubique peut faire un coude en bout de plage là où une
+  // parabole ne peut pas — c'est ici qu'on l'attrape, avant d'écrire.
+  var dir = out[n - 1].kgf > out[0].kgf ? 1 : -1;
+  for (i = 0; i < n; i++) {
+    if (!(out[i].kgf > 0)) return 'ccErrSmoothRange';
+    if (i && (out[i].kgf - out[i - 1].kgf) * dir <= 0) return 'ccErrSmoothMono';
+  }
+  return { out: out, fitRes: fitRes };
+}
+
+// Meilleure table lisse : on essaie les deux variables au degré le plus élevé
+// que la grille soutient, on garde celle qui colle le mieux aux mesures parmi
+// les tables valides ; à défaut on redescend d'un degré. Retourne la table ou
+// une chaîne = clé i18n du motif de refus (celui du dernier essai).
+function _ccSmoothTable(pts) {
+  var degs = [_ccBestDegree(pts.length)], vars = [false, true];
+  var last = 'ccErrSmoothFit', d, v;
+  if (degs[0] > 2) degs.push(2);
+  for (d = 0; d < degs.length; d++) {
+    var best = null;
+    for (v = 0; v < vars.length; v++) {
+      var r = _ccBuildSmoothed(pts, degs[d], vars[v]);
+      if (typeof r === 'string') { last = r; continue; }
+      if (!best || r.fitRes < best.fitRes) best = r;
+    }
+    if (best) return best;
+  }
+  return last;
+}
+
+// Nombre de décimales d'une valeur saisie (0.44 → 2, 65 → 0)
+function _ccDecOf(v) {
+  var s = String(v), i = s.indexOf('.');
+  return i < 0 ? 0 : Math.min(s.length - i - 1, 4);
+}
+
+// Précision des lectures générées : au moins celle des mesures d'origine, et
+// assez fine pour que les N lectures régulières restent toutes distinctes
+// (sinon doublon de lecture → charte refusée par ccValidateGrid).
+function _ccReadDecimals(xs, xMin, xMax, n) {
+  var dec = 0, i;
+  for (i = 0; i < xs.length; i++) dec = Math.max(dec, _ccDecOf(xs[i]));
+  for (; dec < 4; dec++) {
+    var seen = {}, ok = true;
+    for (i = 0; i < n; i++) {
+      var v = (xMin + (xMax - xMin) * i / (n - 1)).toFixed(dec);
+      if (seen[v]) { ok = false; break; }
+      seen[v] = 1;
+    }
+    if (ok) break;
+  }
+  return dec;
+}
+
+// Tension renvoyée par une table [[lecture, kgf]] pour une lecture donnée,
+// par interpolation linéaire — c'est ainsi qu'une charte s'utilise.
+function _ccInterpAt(tab, x) {
+  for (var i = 0; i < tab.length - 1; i++) {
+    var x0 = tab[i][0], y0 = tab[i][1], x1 = tab[i + 1][0], y1 = tab[i + 1][1];
+    if (x >= x0 && x <= x1) return x1 === x0 ? y0 : y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+  }
+  return null;
+}
+
+// Plus grand écart, en kgf, entre ce que l'ancienne table renvoyait et ce que
+// renvoie la nouvelle. Deux fonctions affines par morceaux : leur écart est
+// affine entre deux points de rupture, donc maximal à un point de rupture de
+// l'une ou de l'autre — évaluer sur l'union des lectures suffit, exactement.
+function _ccTableDelta(a, b) {
+  var xs = a.map(function (p) { return p[0]; }).concat(b.map(function (p) { return p[0]; }));
+  var d = 0;
+  for (var i = 0; i < xs.length; i++) {
+    var ya = _ccInterpAt(a, xs[i]), yb = _ccInterpAt(b, xs[i]);
+    if (ya !== null && yb !== null) d = Math.max(d, Math.abs(yb - ya));
+  }
+  return d;
+}
+
+// [{reading, kgf}] → [[lecture, kgf]] trié par lecture croissante, forme
+// attendue par _ccInterpAt et _ccTableDelta. Ne mute pas l'entrée.
+function _ccPairs(pts) {
+  return pts.map(function (p) { return [p.reading, p.kgf]; })
+            .sort(function (a, b) { return a[0] - b[0]; });
+}
+
+// Égalité stricte de deux tables [{reading, kgf}], comparées dans l'ordre des
+// lectures. Sert à détecter qu'un lissage n'apporterait rien.
+function _ccSameTable(a, b) {
+  if (a.length !== b.length) return false;
+  var byRead = function (x, y) { return x.reading - y.reading; };
+  var A = a.slice().sort(byRead), B = b.slice().sort(byRead), i;
+  for (i = 0; i < A.length; i++) {
+    if (A[i].reading !== B[i].reading || A[i].kgf !== B[i].kgf) return false;
+  }
+  return true;
+}
+
+// Libellé + état du bouton. La clé i18n vit dans dataset.i18n : applyLang
+// retraduit donc l'état courant (Lissage / Annuler) sans traitement dédié.
+function ccSmoothRefreshBtn() {
+  var btn = $id('cc-smooth-btn');
+  if (!btn) return;
+  var undo = !!_ccSmoothPrev;
+  btn.dataset.i18n = undo ? 'ccSmoothUndoBtn' : 'ccSmoothBtn';
+  btn.textContent = t(btn.dataset.i18n);
+  btn.classList.toggle('undo', undo);
+  btn.disabled = !undo && ccPoints.length < 3;
+}
+
+// Édition manuelle après lissage : la sauvegarde ne correspond plus à ce qui
+// est affiché, l'annulation n'a plus de sens — on repasse en mode « Lissage ».
+function _ccSmoothInvalidate() {
+  if (!_ccSmoothPrev) return;
+  _ccSmoothPrev = null;
+  ccSmoothRefreshBtn();
+}
+
+function ccSmoothUndo() {
+  if (!_ccSmoothPrev) return;
+  ccPoints = _ccSmoothPrev.points;
+  $id('cc-nb-points').value = _ccSmoothPrev.nb;
+  _ccSmoothPrev = null;
+  ccBuildGrid();      // → ccSyncPoints → ccUpdateCounter → ccSmoothRefreshBtn
+}
+
+function ccSmooth() {
+  if (_ccSmoothPrev) { ccSmoothUndo(); return; }
+  ccSyncPoints();
+  var fb = $id('cc-feedback');
+  fb.style.color = '#f08080';
+  if (ccPoints.length < 3) { fb.textContent = t('ccErrSmoothPoints'); return; }
+  // Grille incohérente (doublon, non-monotonie) : même refus que Save, même
+  // focus sur la cellule fautive — lisser des mesures fausses n'aide personne.
+  if (!ccValidateGrid(true)) return;
+
+  var pts = ccPoints.slice(), n = pts.length;
+  var tbl = _ccSmoothTable(pts);
+  if (typeof tbl === 'string') { fb.textContent = t(tbl); return; }
+  var out = tbl.out;
+
+  // Charte déjà lisse : le modèle retombe exactement sur la table saisie.
+  // On laisse la grille intacte plutôt que de la réécrire à l'identique et
+  // d'armer une annulation qui n'annulerait rien.
+  if (_ccSameTable(pts, out)) {
+    fb.style.color = 'var(--text3)';
+    fb.textContent = t('ccSmoothNoop');
+    return;
+  }
+
+  // Delta mesuré avant toute mutation : la ligne suivante trie `out` en place.
+  var delta = _ccTableDelta(_ccPairs(pts), _ccPairs(out));
+
+  _ccSmoothPrev = { points: pts, nb: $id('cc-nb-points').value };
+  ccPoints = out.sort(function (a, b) { return a.kgf - b.kgf; }); // ordre d'affichage
+  $id('cc-nb-points').value = String(n);
+  ccBuildGrid();      // → ccSyncPoints (efface le feedback) → ccSmoothRefreshBtn
+  fb.style.color = 'var(--accent)';
+  fb.textContent = t('ccSmoothOk').replace('{d}', delta.toFixed(1));
 }
 
 // ── Sauvegarder la charte ───────────────────────────────────────────────────
