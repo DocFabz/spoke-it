@@ -4271,6 +4271,7 @@ const i18n = {
     ctPlaceholder:'Ex : Mon Tensiomètre',
     ctSave:'✓ Créer',
     ctErrName:'Veuillez saisir un nom.',
+    errNameRequired:'Veuillez saisir un nom.',
     ctErrDup:'Ce nom existe déjà.',
     ctMyTensios:'★ MES TENSIOS',
     pickerBackup:'Backup manager',
@@ -4505,6 +4506,7 @@ const i18n = {
     ctPlaceholder:'E.g.: My Tensiometer',
     ctSave:'✓ Create',
     ctErrName:'Please enter a name.',
+    errNameRequired:'Please enter a name.',
     ctErrDup:'This name already exists.',
     ctMyTensios:'★ MY TENSIOS',
     pickerBackup:'Backup manager',
@@ -16770,7 +16772,7 @@ function confirmHrSave() {
   var fb   = document.getElementById('hr-save-feedback');
   var name = (document.getElementById('hr-save-inp').value || '').trim();
   if (!name) {
-    fb.textContent = lang === 'fr' ? 'Veuillez saisir un nom.' : 'Please enter a name.';
+    fb.textContent = t('errNameRequired');
     return;
   }
   var type = _hrModalType;
@@ -19278,7 +19280,7 @@ document.addEventListener('keydown', function(e) {
     var fb       = document.getElementById('wheel-save-feedback');
     var name     = (modalInp ? modalInp.value : '').trim();
     if (!name) {
-      if (fb) { fb.textContent = lang === 'fr' ? 'Veuillez saisir un nom.' : 'Please enter a name.'; }
+      if (fb) { fb.textContent = t('errNameRequired'); }
       return;
     }
     // Choix explicite (rider ou « Aucun ») ou affectation reprise et affichée
