@@ -1436,9 +1436,9 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 /* ── Bouton déclencheur chartes ───────────────────────────────────────────────────── */
 .tm-conv-btn { display:inline-flex; align-items:center; gap:.3rem; padding:.18rem .65rem; border:1px solid var(--border-s); border-radius:7px; background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.65rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:border-color .2s, color .2s, background .2s }
 .tm-conv-btn.lit { border-color:rgba(126,200,227,.5); color:var(--accent); background:rgba(126,200,227,.07) }
-#tm-charts-picker-btn:hover { border-color:rgba(126,200,227,.65) !important; background:rgba(126,200,227,.06) !important; color:var(--accent2) !important }
-#tm-charts-popup .picker-btn.locked { opacity:.38; pointer-events:none; cursor:not-allowed }
-#tm-charts-popup .picker-btn.lit { border-color:rgba(126,200,227,.4); color:var(--accent2); background:rgba(126,200,227,.05) }
+[id^="tm-charts-picker-btn"]:hover { border-color:rgba(126,200,227,.65) !important; background:rgba(126,200,227,.06) !important; color:var(--accent2) !important }
+[id^="tm-charts-popup"] .picker-btn.locked { opacity:.38; pointer-events:none; cursor:not-allowed }
+[id^="tm-charts-popup"] .picker-btn.lit { border-color:rgba(126,200,227,.4); color:var(--accent2); background:rgba(126,200,227,.05) }
 
 /* ── Charte personnalisée modal ──────────────────────────────────────────────────── */
 .cc-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
@@ -10483,8 +10483,16 @@ document.addEventListener('keydown', function(e) {
     tmCloseConvTable();
     return; // ne pas fermer aussi la charte perso derrière (cf. ec-modal)
   }
-  if (e.key === 'Escape' && $id('tm-charts-popup') && $id('tm-charts-popup').classList.contains('show')) {
-    tmChartsPickerClose();
+  // Le popup ouvert peut être celui du mode simple ou l'une des deux rangées du
+  // différentiel : on cherche lequel porte .show plutôt que de coder l'id mono
+  // en dur. tmChartsPickerClose(side) recalcule seul son suffixe, donc on lui
+  // passe la rangée, jamais le suffixe — et jamais rien (repli fo bruyant).
+  if (e.key === 'Escape') {
+    const _chartSfx = ['', '-fo', '-fa'].find(sfx => {
+      const p = $id('tm-charts-popup' + sfx);
+      return p && p.classList.contains('show');
+    });
+    if (_chartSfx !== undefined) tmChartsPickerClose(_chartSfx === '-fa' ? 'fa' : 'fo');
   }
   if (e.key === 'Escape' && $id('ec-modal') && $id('ec-modal').classList.contains('show')) {
     ecClose();
