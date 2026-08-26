@@ -4250,10 +4250,10 @@ const i18n = {
     ccSmoothUndoBtn:'✕ Annuler le lissage',
     ccSmoothOk:'Lissage appliqué — Δ max {d} kgf par rapport aux mesures.',
     ccSmoothNoop:'Charte déjà lisse — aucune modification.',
-    ccErrSmoothPoints:'Au moins 3 points sont nécessaires pour le lissage.',
+    ccErrSmoothPoints:'Au moins 10 points sont nécessaires pour le lissage.',
     ccErrSmoothFit:'Lissage impossible : l\'ajustement n\'est pas calculable sur ces points.',
     ccErrSmoothRange:'Lissage impossible : la courbe ajustée passe par des kgf nuls ou négatifs.',
-    ccErrSmoothMono:'Lissage impossible : après arrondi, les kgf ne sont pas strictement monotones. Réduisez le nombre de points ou vérifiez les mesures.',
+    ccErrSmoothMono:'Lissage impossible : après arrondi, les kgf ne sont pas strictement monotones. Vérifiez vos mesures.',
     ccErrName:'Veuillez saisir un nom pour la charte.',
     ccErrValues:'Remplissez toutes les lignes (kgf et lecture).',
     ccErrIncomplete:'{n}/{max} points saisis. Complétez avant d\'enregistrer.',
@@ -4484,10 +4484,10 @@ const i18n = {
     ccSmoothUndoBtn:'✕ Undo smoothing',
     ccSmoothOk:'Smoothing applied — Δ max {d} kgf vs. measurements.',
     ccSmoothNoop:'Chart already smooth — no change.',
-    ccErrSmoothPoints:'At least 3 points are required for smoothing.',
+    ccErrSmoothPoints:'At least 10 points are required for smoothing.',
     ccErrSmoothFit:'Smoothing failed: the fit cannot be computed on these points.',
     ccErrSmoothRange:'Smoothing failed: the fitted curve reaches zero or negative kgf.',
-    ccErrSmoothMono:'Smoothing failed: after rounding, kgf values are not strictly monotonic. Reduce the number of points or check the measurements.',
+    ccErrSmoothMono:'Smoothing failed: after rounding, kgf values are not strictly monotonic. Check your measurements.',
     ccErrName:'Please enter a name for the chart.',
     ccErrValues:'Fill in all rows (kgf and reading).',
     ccErrIncomplete:'{n}/{max} points entered. Complete before saving.',
@@ -11143,6 +11143,15 @@ function ccPreviewCurve() {
 // passerait pas ccValidateGrid : kgf ≤ 0, doublon ou non-monotonie après
 // arrondi. Mieux vaut ne rien écrire qu'écrire une charte invalide.
 // Il S'ABSTIENT si le modèle retombe exactement sur la table saisie.
+//
+// SEUIL D'ENTRÉE — 10 points (ccSmoothRefreshBtn grise le bouton en dessous,
+// ccSmooth refait le test en ceinture). Mesuré sur les 136 chartes de
+// référence de TM_TABLES avec 2 % de bruit de mesure : sous 9 points saisis,
+// le lissage n'améliore la fidélité à la charte constructeur que dans 44 à 58 %
+// des cas, pour un gain médian nul — un tirage à pile ou face. À partir de 9 le
+// taux passe à 72 % et le gain médian à 1 kgf. 10 plutôt que 9 pour coller au
+// défaut de cc-nb-points : « le lissage marche dès le réglage par défaut ».
+// Ne pas redescendre sans refaire la mesure.
 var _ccSmoothPrev = null; // {points, nb} d'avant lissage — permet l'annulation
 
 // Résolution d'un système carré (pivot partiel). null si singulier.
@@ -11343,7 +11352,7 @@ function ccSmoothRefreshBtn() {
   btn.dataset.i18n = undo ? 'ccSmoothUndoBtn' : 'ccSmoothBtn';
   btn.textContent = t(btn.dataset.i18n);
   btn.classList.toggle('undo', undo);
-  btn.disabled = !undo && ccPoints.length < 3;
+  btn.disabled = !undo && ccPoints.length < 10;
 }
 
 // Édition manuelle après lissage : la sauvegarde ne correspond plus à ce qui
@@ -11367,7 +11376,7 @@ function ccSmooth() {
   ccSyncPoints();
   var fb = $id('cc-feedback');
   fb.style.color = '#f08080';
-  if (ccPoints.length < 3) { fb.textContent = t('ccErrSmoothPoints'); return; }
+  if (ccPoints.length < 10) { fb.textContent = t('ccErrSmoothPoints'); return; }
   // Grille incohérente (doublon, non-monotonie) : même refus que Save, même
   // focus sur la cellule fautive — lisser des mesures fausses n'aide personne.
   if (!ccValidateGrid(true)) return;
