@@ -15940,8 +15940,12 @@ function efStopMic() {
   window.tmRecCanvasFinish = function(onReady) {
     if (!recCv) return;
     onReadyCb = onReady || null;
+    // Référence CAPTURÉE, pas relue : un tmRecCanvasStart dans les 150 ms
+    // remplace recCv (via tmRecCanvasAbort), et le timeout stopperait alors
+    // le nouveau recorder au lieu de l'ancien.
+    var rec = recCv;
     setTimeout(function() {
-      if (recCv && recCv.state !== 'inactive') { try { recCv.stop(); } catch (e) {} }
+      if (rec && rec.state !== 'inactive') { try { rec.stop(); } catch (e) {} }
     }, 150);
   };
 
