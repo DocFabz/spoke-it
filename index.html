@@ -9391,10 +9391,13 @@ function tmUpdateUnitBadge() {
   const inputCard  = $id('tm-input-card');
   const resultCard = $id('tm-result-card');
   if (inputCard)  inputCard.style.display  = ready ? '' : 'none';
-  if (resultCard) {
-    resultCard.style.display = ready ? '' : 'none';
-    if (ready) tmUpdateResultCardState();
-  }
+  if (resultCard) resultCard.style.display = ready ? '' : 'none';
+  // Écrivain unique et INCONDITIONNEL de l'état du bouton Clear. Il était
+  // enfermé dans `if (ready)`, à l'intérieur du bloc resultCard : l'état d'un
+  // bouton de #ef-btn-row se décidait dans la card diagramme, et tout chemin
+  // touchant tmData devait y penser. Sans effet quand !ready — card et rangée
+  // sont alors en display:none.
+  tmUpdateResultCardState();
   const efBtnRow = $id('ef-btn-row');
   if (efBtnRow) efBtnRow.style.display = ready ? '' : 'none';
 }
@@ -13963,6 +13966,11 @@ function efCommitCurrent() {
   tmUpdateCell(step.idx, step.side);
   snapRefreshBtnFast(); // par-rayon : pas de reparse localStorage (voir snapRefreshBtnFast)
   tmUpdateInvertibleHeaders();
+  // La branche EFFACEMENT ci-dessus le fait déjà : écrire une valeur fait
+  // basculer tmHasData() tout autant qu'en effacer une, et le bouton Clear
+  // doit suivre les deux. Son absence ici laissait le bouton grisé pendant
+  // toute la session Easy Fill, jusqu'au rattrapage par efClose().
+  tmUpdateResultCardState();
   tmSyncLocks(); // idem : verrous seuls, aucun reparse localStorage
   efDiagramRender();
   return true;
