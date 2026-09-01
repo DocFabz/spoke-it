@@ -15088,7 +15088,8 @@ function efStartMic(forceLang) {
             }, efStableDelay);
           } else if (efRangeNow !== null &&
                      (numInterim.indexOf('.') !== -1 ||
-                      (/^\d+$/.test(numInterim) && parsedInterim > efRangeNow.max))) {
+                      (/^\d+$/.test(numInterim) && parsedInterim > efRangeNow.max &&
+                       !(tmType === 'wf' && Number(numInterim) < 10)))) {
             // Parseable mais hors plage : beep + feedback visuel après stabilisation 500ms
             // Exception : valeur PARSÉE encore entière SOUS le max (ex: "1" ou "un" avant
             // "… virgule 23", ou "1 virgule" en attente de sa décimale) → ne pas déclencher
@@ -15103,6 +15104,13 @@ function efStartMic(forceLang) {
             // sous le min reste INTERDIT ("0" peut devenir "0.9" valide). Sans ce cas,
             // un entier hors table attendait le isFinal (endpointing moteur, ~1-1.5s)
             // au lieu des 500/850ms de stabilisation — asymétrie perçue par l'utilisateur.
+            // EXCEPTION WF (chiffre seul) : le raccourci tmParseInput ne divise par
+            // 100 qu'à partir de 10, donc "3" vaut 3 (> max) alors que sa suite "30"
+            // vaut 0.30 (en plage) — la monotonie est cassée. Chrome émet souvent
+            // l'interim "3" sur « trente » (même attaque que « trois ») → faux bip
+            // grave + liseré avant le final valide. On laisse le chiffre seul
+            // passer sans timer (pas de kgf → rien n'est armé) ; un vrai "3" final
+            // reste rejeté par efCommitCurrent.
             // efOorFired posé ICI (avant le timer) pour bloquer tout isFinal rapide
             // arrivant pendant les 500ms — évite le double beep + double liseré rouge.
             efOorFired = true;
