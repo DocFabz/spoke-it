@@ -13961,6 +13961,13 @@ function efCommitCurrent() {
 
   if (step.side === 'fo') tmData.fo[step.idx] = parsed;
   else                     tmData.fa[step.idx] = parsed;
+  // Deux commits identiques consécutifs → recyclage de la session SR (voir
+  // efCycleSR). Déclenché sur le COMMIT et non sur le final : le moteur cloud
+  // ne finalise pas de façon fiable un même mot répété (banc d'essai : quatre
+  // interims « 16 », zéro final en 20s). Différé de 250ms pour laisser passer
+  // la transition efPendingNext et un éventuel final rapide.
+  efCommitPrev2 = efCommitPrev1; efCommitPrev1 = parsed;
+  if (efMicActive && efCommitPrev1 === efCommitPrev2) setTimeout(efCycleSR, 250);
   inp.value = tmDisplayValue(parsed);
   efSyncTableCell(step);
   tmUpdateCell(step.idx, step.side);
@@ -14901,6 +14908,60 @@ function efWarmSR() {
   } catch(e) {}
 }
 
+// ── Recyclage de session SR (Chrome desktop) ─────────────────────────────────
+// Mesuré (traces Spokeit + banc d'essai autonome) : en session continue, le
+// moteur cloud de Chrome n'émet PLUS RIEN — ni interim, ni final, ni onend, ni
+// onerror — au 3e énoncé identique consécutif (« 30 30 30 », « 24 24 24 »,
+// « 16 16 16 »), session vivante. Un mot différent débloque. Cas courant en
+// atelier : on égalise à une valeur cible et on la répète. Remède : repartir
+// d'un contexte vierge dès que deux commits identiques se suivent — abandon de
+// l'instance courante, relance d'une instance PRÉCHAUFFÉE (efWarmSR) après son
+// onend. Trou d'écoute mesuré ≈ 300ms (start → audiostart), pendant la lecture
+// du cadran. Démarrer la nouvelle instance AVANT onend(old) casse la reco :
+// on attend onend, filet 400ms. Desktop strict : iOS recrée déjà une instance
+// à chaque onend ; sur Android la reco passe par le service système et n'a pas
+// montré ce gel. En file:// Chrome redemande la permission micro à chaque
+// start() (permissions non persistées) : tester en http(s).
+var efCommitPrev1 = null, efCommitPrev2 = null;
+var efCycling = false;
+function efIsDesktop() {
+  return !efIsIOS() && !/Android|Mobile/i.test(navigator.userAgent);
+}
+function efCycleSR() {
+  if (!efIsDesktop() || !efMicActive || !efMicRecog || efCycling) return;
+  if (efPendingNext) { setTimeout(efCycleSR, 100); return; } // transition en cours : réessayer
+  var old = efMicRecog;
+  efCycling = true;
+  efMicRecog = null;         // onend(old) → r !== efMicRecog → aucune relance auto
+  efCommitPrev1 = efCommitPrev2 = null; // contexte vierge : l'historique repart
+  // Le final de l'ancienne session ne viendra jamais : solder l'auto-avance en
+  // cours, sinon le prochain interim armerait une garde « final tardif » sur
+  // une valeur déjà écrite, et le final de la NOUVELLE session (même valeur,
+  // cas nominal ici) serait pris pour ce final tardif et jeté.
+  efAutoAdvanced   = false;
+  efAutoStep       = null;
+  efLastInterimNum = null;
+  efStaleFinalGuard = null;
+  efWarmSR();                // si l'instance de rechange manque
+  var done = false;
+  var relaunch = function() {
+    if (done) return;
+    done = true;
+    efCycling = false;
+    if (!efMicActive) return;
+    try { efStartMic(); }
+    catch(err) {
+      efMicRecog = null;
+      setTimeout(function() { if (efMicActive && !efMicRecog) { try { efStartMic(); } catch(e2) {} } }, 150);
+    }
+  };
+  old.onresult = function() {};
+  old.onerror  = function() {};
+  old.onend    = relaunch;
+  setTimeout(relaunch, 400);
+  try { old.abort(); } catch(e) { relaunch(); }
+}
+
 function efStartMic(forceLang) {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
@@ -15341,6 +15402,9 @@ function efStartMic(forceLang) {
     r.start();
     efSetMicActive(true);
     efRequestWakeLock();
+    // Desktop : re-préchauffer aussitôt une instance de rechange pour que le
+    // prochain recyclage (efCycleSR) n'ait pas à payer new SR() à chaud.
+    if (!efIsIOS()) setTimeout(efWarmSR, 0);
   };
   if (efAudioCtx.state === 'suspended') {
     efAudioCtx.resume().then(_startNow).catch(_startNow);
@@ -15599,6 +15663,8 @@ function efStopMic() {
   efLastInterimNum = null;
   efStaleFinalGuard = null;
   efNavExecuted    = null;
+  efCycling        = false;
+  efCommitPrev1 = efCommitPrev2 = null;
   if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
   if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
   // Couper toute synthèse en cours et refermer la fenêtre sourde
