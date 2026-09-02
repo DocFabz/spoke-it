@@ -13962,8 +13962,9 @@ function efCommitCurrent() {
   if (step.side === 'fo') tmData.fo[step.idx] = parsed;
   else                     tmData.fa[step.idx] = parsed;
   // Deux commits identiques consécutifs → recyclage de la session SR (efCycleSR).
-  // Sur le COMMIT et non sur le final : le moteur ne finalise pas de façon
-  // fiable un mot répété. 250ms : laisser passer la transition efPendingNext.
+  // Chemin principal : dès la décision d'auto-avance (timer interim), plus tôt.
+  // Ici : repli pour un commit issu d'un final sans auto-avance. efCycling
+  // rend le double appel inoffensif.
   efCommitPrev2 = efCommitPrev1; efCommitPrev1 = parsed;
   if (efMicActive && efCommitPrev1 === efCommitPrev2) setTimeout(efCycleSR, 250);
   inp.value = tmDisplayValue(parsed);
@@ -14931,7 +14932,6 @@ function efWarmSR() {
 // — tester en http(s).
 function efCycleSR() {
   if (!efIsChromeDesktop() || !efMicActive || !efMicRecog || efCycling) return;
-  if (efPendingNext) { setTimeout(efCycleSR, 100); return; } // transition en cours
   var old = efMicRecog;
   efCycling  = true;
   efMicRecog = null; // onend(old) → r !== efMicRecog → pas de relance auto
@@ -15078,8 +15078,8 @@ function efStartMic(forceLang) {
         // que la valeur déjà auto-avancée ET confiance haute. Une répétition
         // volontaire arrive toujours d'abord en partielle à 0.01 → jamais
         // avalée. Périmètre Chrome desktop (efIsChromeDesktop) : ailleurs inchangé.
-        if (efIsChromeDesktop() && !efBeepTimer && efAutoAdvanced && numInterim === efLastInterimNum &&
-            (result[0].confidence || 0) >= 0.5) return;
+        if (efIsChromeDesktop() && !efBeepTimer && efAutoAdvanced &&
+            numInterim === efLastInterimNum && (result[0].confidence || 0) >= 0.5) return;
         // Un nouvel énoncé démarre. Si une auto-avance est encore "en attente de final"
         // (efAutoAdvanced true), son final tardif arriverait après la fermeture de la
         // fenêtre de correction ci-dessous et écraserait le rayon courant : on mémorise
@@ -15136,6 +15136,12 @@ function efStartMic(forceLang) {
               efBeepTimer = null;
               efAutoAdvanced = true;
               efAutoStep = efSteps[efCurrent]; // step qui va être commité par efNext()
+              // Valeur identique au dernier commit → recycler la session SR ICI,
+              // dès la décision, et non après le commit (+200ms transition +250ms) :
+              // sur une dizaine ronde (délai 850ms) le trou d'écoute s'ouvrait à
+              // ~1300ms après l'interim, précisément quand arrive le 3e énoncé.
+              // Ici il s'ouvre à 500/850ms et se referme ~300ms plus tard.
+              if (efCommitPrev1 !== null && efCommitPrev1 === parsedInterim) efCycleSR();
               var inp = $id('ef-inp');
               inp.value = numInterim;
               efUpdateKgf();
