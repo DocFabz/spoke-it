@@ -4628,7 +4628,6 @@ const LS_REGISTRY = [
   { key:'spokeit_appTag',         kind:'meta',      erase:false, exportField:null,            owner:'toast nouvelle version (ETag)' },
   { key:'spoke-it-lang',          kind:'pref',      erase:false, exportField:null,            owner:'i18n' },
   { key:'ef_restore',             kind:'transient', erase:true,  exportField:null,            owner:'EF Vocal (reprise crash iOS)' },
-  { key:'ef_debug',               kind:'pref',      erase:false, exportField:null,            owner:'EF Vocal (trace diagnostic console, opt-in manuel)' },
 ];
 // Clés « données » précalculées pour le test à chaud dans lsSet.
 const LS_DATA_KEYS = (function() {
@@ -13919,7 +13918,6 @@ function efCommitCurrent() {
 
   // Valeur hors plage → feedback + restauration + blocage
   if (parsed !== null && !tmInRange(parsed, efSide())) {
-    efTrace('commit-oor', { side: step.side, idx: step.idx, raw: raw, parsed: parsed });
     efBeepError();
     var range = tmGetRange(efSide());
     if (range) {
@@ -13946,7 +13944,7 @@ function efCommitCurrent() {
   }
 
   // Valeur invalide (non parseable) → ignorer, ne pas avancer
-  if (parsed === null) { efTrace('commit-invalid', { raw: raw }); return false; }
+  if (parsed === null) return false;
 
   // Valeur EN PLAGE mais à 3+ décimales significatives → fusion moteur
   // (voir efDecTooPrecise). Beep + liseré SANS le texte min–max : afficher
@@ -13963,8 +13961,6 @@ function efCommitCurrent() {
 
   if (step.side === 'fo') tmData.fo[step.idx] = parsed;
   else                     tmData.fa[step.idx] = parsed;
-  efTrace('COMMIT', { side: step.side, idx: step.idx, spoke: step.idx + 1, value: parsed, raw: raw });
-  efCommitPrev2 = efCommitPrev1; efCommitPrev1 = parsed; // historique pour efCycleNeeded
   inp.value = tmDisplayValue(parsed);
   efSyncTableCell(step);
   tmUpdateCell(step.idx, step.side);
@@ -14503,16 +14499,6 @@ var efLangFallbackTried = false; // repli en-US déjà tenté après language-no
 var efAutoStep       = null;  // step réellement commité par l'auto-avance. La correction du final ne peut
                               // PAS se fier à efSteps[efCurrent-1] : si l'auto-avance a franchi une bascule
                               // de nappe, efBuildSteps() + efFirstUnfilled() ont invalidé les index.
-var EF_MAX_ALTS      = 5;     // hypothèses demandées au moteur (finals) pour le repêchage isFinal
-// Trace de diagnostic vocal : localStorage.ef_debug = '1' puis F12 → console.
-// Journalise chaque onresult brut (toutes les hypothèses + confiance, flags de la
-// machine à états) et les décisions notables (repêchage). Inerte si non armé.
-var efDebug = false;
-try { efDebug = localStorage.getItem('ef_debug') === '1'; } catch(e) {}
-function efTrace(tag, data) {
-  if (!efDebug) return;
-  try { console.log('[EF ' + (performance.now() | 0) + 'ms] ' + tag, data); } catch(e) {}
-}
 var efStaleFinalGuard = null; // valeur (string) d'un final TARDIF à ignorer. Après une auto-avance, le final
                               // de la valeur commitée peut arriver APRÈS qu'un nouvel intermédiaire a fermé la
                               // fenêtre de correction (efAutoAdvanced remis à false) ; sans garde ce final
@@ -14911,71 +14897,8 @@ function efWarmSR() {
     r.lang           = efGetRecogLang();
     r.continuous     = true;
     r.interimResults = true;
-    r.maxAlternatives = EF_MAX_ALTS;
     efWarmInstance   = r;
   } catch(e) {}
-}
-
-// ── Recyclage de session SR après chaque final (desktop) ─────────────────────
-// Trace Chrome desktop : après un final « 30 | 30 30 » (deux 30 consécutifs
-// fusionnés), un « trente » de plus ne produit AUCUN onresult — ni interim,
-// ni final, ni onend, ni onerror — pendant 15-20s, alors que la session est
-// vivante (aucun événement de cycle de vie). Un mot DIFFÉRENT (« 29 »)
-// débloque instantanément. Le moteur est donc sourd à la répétition d'un
-// même jeton court dans un même segment de session : son contexte est pollué
-// par ce qu'il vient de finaliser. Remède : repartir d'un contexte vierge à
-// chaque final — on abandonne l'instance courante et on démarre une instance
-// préchauffée (efWarmSR, déjà utilisée pour le 1er démarrage). Coût : un trou
-// d'écoute onend → audiostart de quelques centaines de ms juste APRÈS le final,
-// c'est-à-dire pendant le temps mort où l'utilisateur relit le cadran. Le trou
-// est mesuré dans la trace (« SR cycle: restarted {gap} », puis « SR audiostart »).
-// iOS : non concerné (Safari recrée déjà une instance à chaque onend).
-var efCycling      = false;
-var efNoFinalTimer = null;
-var EF_NO_FINAL_MS = 3000;
-// Recycler à CHAQUE final coûtait un trou d'écoute par valeur — perçu comme un
-// ralentissement général. Or la surdité n'apparaît qu'à la 3e occurrence
-// consécutive d'un même jeton (« 29, 30, 30 » passe ; le 30 suivant ne sort
-// plus). On ne recycle donc que lorsque les deux derniers commits sont égaux :
-// c'est exactement l'état où le prochain énoncé identique serait perdu. Toute
-// autre suite garde la session — zéro trou.
-var efCommitPrev1 = null, efCommitPrev2 = null;
-function efCycleNeeded() {
-  return efCommitPrev1 !== null && efCommitPrev1 === efCommitPrev2;
-}
-function efCycleSR() {
-  if (efIsIOS() || !efMicActive || !efMicRecog || efCycling) return;
-  var old = efMicRecog;
-  efCycling = true;
-  efMicRecog = null;         // onend(old) → r !== efMicRecog → aucune relance auto
-  var t0 = performance.now();
-  var done = false;
-  var relaunch = function(how) {
-    if (done) return;
-    done = true;
-    efCycling = false;
-    if (!efMicActive) return;
-    try {
-      efStartMic();
-      efTrace('SR cycle: restarted', { how: how, gap: (performance.now() - t0) | 0 });
-    } catch(err) {
-      efTrace('SR cycle: start failed', { how: how, err: String(err) });
-      efMicRecog = null;
-      done = false; efCycling = true; // laisser onend(old) ou le filet relancer
-    }
-  };
-  old.onresult = function() {};
-  old.onerror  = function() {};
-  old.onend    = function() { efTrace('SR cycle: old ended', { gap: (performance.now() - t0) | 0 }); relaunch('onend'); };
-  efCommitPrev1 = efCommitPrev2 = null; // contexte vierge : l'historique repart
-  efTrace('SR cycle: abort old');
-  try { old.abort(); } catch(e) {}
-  // Démarrage IMMÉDIAT de l'instance préchauffée, sans attendre onend(old) :
-  // Chrome libère la session à l'abort() de façon synchrone côté renderer.
-  // Si start() est refusé (ancienne session pas encore libérée), relaunch se
-  // ré-arme et onend(old) — ou le filet 400ms — relance.
-  relaunch('immediate');
-  setTimeout(function() { relaunch('filet'); }, 400);
 }
 
 function efStartMic(forceLang) {
@@ -15003,39 +14926,11 @@ function efStartMic(forceLang) {
   // recogLang : utilisée plus bas (efUnitProlong, inversion germanique).
   var recogLang = (effLang || efGetRecogLang() || '').toLowerCase().split(/[-_]/)[0];
   r.interimResults = true;
-  // Alternatives : servies par Chrome sur les finals uniquement, exploitées
-  // par le repêchage en bloc isFinal (dizaines monosyllabiques mal entendues).
-  r.maxAlternatives = EF_MAX_ALTS;
   // La capture audio démarre = la permission a été accordée pour cette session.
-  r.onaudiostart = function() { efSessionGranted = true; efTrace('SR audiostart'); };
-  // Cycle de vie SR tracé : Chrome desktop clôt une session continuous après
-  // un silence (onend sans erreur, ou 'no-speech'), et la parole émise
-  // pendant le trou onend → start() → audiostart est PERDUE sans aucun
-  // onresult — invisible pour l'utilisateur, qui voit une saisie « figée ».
-  r.onstart       = function() { efTrace('SR start'); };
-  r.onspeechstart = function() { efTrace('SR speechstart'); };
-  r.onspeechend   = function() { efTrace('SR speechend'); };
-  r.onaudioend    = function() { efTrace('SR audioend'); };
+  r.onaudiostart = function() { efSessionGranted = true; };
   r.onresult = function(e) {
     efSessionGranted = true;
     efRestartCount = 0; // un résultat reçu = micro opérationnel
-    // Trace brute AVANT toute gate : c'est la seule vue fidèle de ce que le
-    // moteur émet réellement (hypothèses, confiance, interim/final).
-    if (efDebug) {
-      var efTr = e.results[e.results.length - 1];
-      var efAlts = [];
-      for (var efTi = 0; efTi < efTr.length; efTi++) {
-        efAlts.push(efTr[efTi].transcript + ' (' + (efTr[efTi].confidence || 0).toFixed(2) + ')');
-      }
-      efTrace((efTr.isFinal ? 'FINAL   ' : 'interim ') + JSON.stringify(efAlts.join(' | ')),
-        'tts=' + efTtsSpeaking + ' pending=' + efPendingNext + ' timer=' + !!efBeepTimer +
-        ' auto=' + efAutoAdvanced + ' oor=' + efOorFired + ' last=' + efLastInterimNum +
-        ' stale=' + efStaleFinalGuard);
-    }
-    if (efNoFinalTimer) { clearTimeout(efNoFinalTimer); efNoFinalTimer = null; }
-    // Recyclage de session après chaque final (desktop, voir efCycleSR) —
-    // différé : le final est d'abord traité normalement ci-dessous.
-    if (e.results[e.results.length - 1].isFinal) setTimeout(function() { if (efCycleNeeded()) efCycleSR(); }, 0);
 
     // Fenêtre sourde TTS : la reco entend la synthèse → tout ignorer.
     // Gate en TOUTE première position : pas d'extraction/normalisation du
@@ -15053,10 +14948,10 @@ function efStartMic(forceLang) {
       if (ne && efTtsLastSpoken &&
           (ne === efTtsLastSpoken ||
            efTtsLastSpoken.indexOf(ne) !== -1 ||
-           ne.indexOf(efTtsLastSpoken) !== -1)) { efTrace('drop-echo-phrase', { txt: txt }); return; }
+           ne.indexOf(efTtsLastSpoken) !== -1)) return;
       if (efTtsSpokenNum) {
         var inNum = efVoiceToNumber(txt);
-        if (inNum && parseFloat(inNum) === parseFloat(efTtsSpokenNum)) { efTrace('drop-echo-num', { txt: txt }); return; }
+        if (inNum && parseFloat(inNum) === parseFloat(efTtsSpokenNum)) return;
       }
     }
 
@@ -15065,13 +14960,6 @@ function efStartMic(forceLang) {
       if (result.isFinal) {
         var numQueued = efVoiceToNumber(txt);
         if (numQueued) efPendingQueue = numQueued;
-        // Ce final clôt l'énoncé en cours (Chrome continuous fusionne « 30 30 »
-        // en UN final) : la garde « final tardif » armée sur la valeur précédente
-        // est obsolète. Sans cette remise à zéro elle survivait jusqu'au final
-        // suivant et avalait silencieusement tout final direct (sans interim)
-        // portant la MÊME valeur — précisément le cas d'une tension répétée.
-        efStaleFinalGuard = null;
-        efTrace('final-queued', { num: numQueued });
       }
       return;
     }
@@ -15117,28 +15005,6 @@ function efStartMic(forceLang) {
         // aussi le timer OOR (efOorFired reste posé — cohérent : même
         // valeur, même verdict).
         if (efBeepTimer && numInterim === efLastInterimNum) return;
-        // DEDUP moteur, 2e forme — RÉ-ÉMISSION STABILISÉE APRÈS le timer.
-        // Chrome desktop émet chaque énoncé en deux temps : une hypothèse
-        // partielle (confidence ≈ 0.01, ne contient que le segment en cours,
-        // ex. " 30") puis, ~0.9-1.2s plus tard et sans nouvelle parole, la
-        // version STABILISÉE de toute la séquence non finalisée (confidence
-        // ≈ 0.90, ex. " 29 30"). En dictée continue, sans pause, le moteur ne
-        // finalise pas et n'émet QUE ces stabilisations. Elles arrivent après
-        // l'expiration des 500/850ms : efBeepTimer est déjà null, la 1re forme
-        // du dedup ne s'applique plus, et la ré-émission était traitée comme un
-        // NOUVEL énoncé → 2e auto-avance, valeur écrite sur DEUX rayons ("29 29",
-        // "30 30"), décalage de toute la suite. Trace Chrome : « 29, 30, 30 »
-        // dictés → 5 commits. Signature de la ré-émission : même dernier nombre
-        // que la valeur déjà auto-avancée ET confiance haute — la parole neuve
-        // arrive TOUJOURS d'abord en partielle basse confiance (0.01), même pour
-        // une valeur répétée (" 30" puis " 30"), donc une répétition volontaire
-        // n'est jamais avalée ici. Moteurs sans confiance interim (iOS, Android
-        // selon versions) : seuil non atteint → comportement inchangé.
-        if (!efBeepTimer && efAutoAdvanced && numInterim === efLastInterimNum &&
-            (result[0].confidence || 0) >= 0.5) {
-          efTrace('drop-reemit', { txt: txt, conf: result[0].confidence });
-          return;
-        }
         // Un nouvel énoncé démarre. Si une auto-avance est encore "en attente de final"
         // (efAutoAdvanced true), son final tardif arriverait après la fermeture de la
         // fenêtre de correction ci-dessous et écraserait le rayon courant : on mémorise
@@ -15150,22 +15016,6 @@ function efStartMic(forceLang) {
         efAutoAdvanced = false;
         efAutoStep     = null; // nouvel énoncé : la fenêtre de correction du précédent est close
         efOorFired = false;
-        // Séparateur en attente de sa décimale : Chrome (formateur numérique)
-        // émet « zéro virgule » comme "0," — le séparateur est ACCOLÉ au chiffre,
-        // efVoiceToNumber rend donc "0." et non "0". Or la branche OOR ci-dessous
-        // se déclenche sur tout numInterim contenant '.' : "0." (= 0, sous le
-        // min) armait le bip grave + liseré au bout de 500ms, en contradiction
-        // avec la règle « sous le min interdit ». Le cas est aggravé sur une
-        // dizaine isolée (« trente ») : le moteur retient l'interim tant que la
-        // suite (« -deux », « -cinq »…) peut encore arriver → "0," survit
-        // largement aux 500ms → faux OOR, puis "0,30" arrive et est commité :
-        // bip d'erreur suivi d'un commit. On n'arme RIEN sur un séparateur
-        // pendant ; les timers de la valeur précédente sont déjà annulés
-        // ci-dessus, la suite ("0,30") repassera par le chemin normal.
-        if (/\.$/.test(numInterim)) {
-          efTrace('sep-pending', { num: numInterim });
-          return;
-        }
         var parsedInterim = tmParseInput(numInterim);
         // Sécurité décimales "prolongeables" : un intermédiaire comme "1.4"
         // (un virgule quatre) peut encore grandir en "1.81" (quatre-vingt-un),
@@ -15209,16 +15059,7 @@ function efStartMic(forceLang) {
             // Valeur valide : auto-avance après stabilisation (500ms, ou 850ms si décimale prolongeable)
             efBeepTimer = setTimeout(function() {
               efBeepTimer = null;
-              efTrace('auto-advance', { num: numInterim, delay: efStableDelay });
               efAutoAdvanced = true;
-              // Final absent (Chrome peut ne jamais finaliser un énoncé court :
-              // trace à 11s sans final) → recycler la session quand même, si
-              // aucune parole n'est en cours (aucun onresult depuis, pas de timer).
-              if (efNoFinalTimer) clearTimeout(efNoFinalTimer);
-              efNoFinalTimer = setTimeout(function() {
-                efNoFinalTimer = null;
-                if (efAutoAdvanced && !efBeepTimer && efCycleNeeded()) { efTrace('SR cycle: no final'); efCycleSR(); }
-              }, EF_NO_FINAL_MS);
               efAutoStep = efSteps[efCurrent]; // step qui va être commité par efNext()
               var inp = $id('ef-inp');
               inp.value = numInterim;
@@ -15228,7 +15069,7 @@ function efStartMic(forceLang) {
               efPendingNext = true;
               setTimeout(function() {
                 efPendingNext = false;
-                if (!efMicActive) { efTrace('auto-advance-abort', { reason: 'mic off' }); efPendingQueue = null; return; }
+                if (!efMicActive) { efPendingQueue = null; return; }
                 // Final arrivé PENDANT la transition : c'est le transcript final de
                 // cette valeur, plus fiable que l'intermédiaire → commit avec lui.
                 // Consommé ici, sinon il fuirait vers un rayon ultérieur (la branche
@@ -15240,7 +15081,6 @@ function efStartMic(forceLang) {
                   efAutoAdvanced   = false; // le final est déjà consommé : pas de re-correction
                   efAutoStep       = null;
                   efLastInterimNum = null;
-                  efStaleFinalGuard = null;
                 }
                 var ok = efNext();
                 if (ok && !efTtsMode) { efBeepNext(); }
@@ -15248,8 +15088,7 @@ function efStartMic(forceLang) {
             }, efStableDelay);
           } else if (efRangeNow !== null &&
                      (numInterim.indexOf('.') !== -1 ||
-                      (/^\d+$/.test(numInterim) && parsedInterim > efRangeNow.max &&
-                       !(tmType === 'wf' && Number(numInterim) < 10)))) {
+                      (/^\d+$/.test(numInterim) && parsedInterim > efRangeNow.max))) {
             // Parseable mais hors plage : beep + feedback visuel après stabilisation 500ms
             // Exception : valeur PARSÉE encore entière SOUS le max (ex: "1" ou "un" avant
             // "… virgule 23", ou "1 virgule" en attente de sa décimale) → ne pas déclencher
@@ -15264,19 +15103,11 @@ function efStartMic(forceLang) {
             // sous le min reste INTERDIT ("0" peut devenir "0.9" valide). Sans ce cas,
             // un entier hors table attendait le isFinal (endpointing moteur, ~1-1.5s)
             // au lieu des 500/850ms de stabilisation — asymétrie perçue par l'utilisateur.
-            // EXCEPTION WF (chiffre seul) : le raccourci tmParseInput ne divise par
-            // 100 qu'à partir de 10, donc "3" vaut 3 (> max) alors que sa suite "30"
-            // vaut 0.30 (en plage) — la monotonie est cassée. Chrome émet souvent
-            // l'interim "3" sur « trente » (même attaque que « trois ») → faux bip
-            // grave + liseré avant le final valide. On laisse le chiffre seul
-            // passer sans timer (pas de kgf → rien n'est armé) ; un vrai "3" final
-            // reste rejeté par efCommitCurrent.
             // efOorFired posé ICI (avant le timer) pour bloquer tout isFinal rapide
             // arrivant pendant les 500ms — évite le double beep + double liseré rouge.
             efOorFired = true;
             efBeepTimer = setTimeout(function() {
               efBeepTimer = null;
-              efTrace('oor-interim', { num: numInterim, parsed: parsedInterim });
               efFeedbackError();
               var inp = $id('ef-inp');
               inp.classList.add('out-of-range');
@@ -15307,19 +15138,7 @@ function efStartMic(forceLang) {
     // AVANT tout clearTimeout, pour ne PAS tuer le timer de stabilisation du rayon
     // courant (sinon la valeur en cours, ex "0.42", serait perdue). Cas : "0.41" → "0.42".
     if (efStaleFinalGuard !== null) {
-      if (efVoiceToNumber(txt) === efStaleFinalGuard) {
-        efTrace('final-drop-stale', { txt: txt });
-        efStaleFinalGuard = null;
-        // Ce final clôt aussi l'auto-avance en cours (en dictée continue il
-        // couvre TOUTE la séquence : "29 30 30"). Sans cette remise à zéro,
-        // efAutoAdvanced restait true après le return et la partielle suivante
-        // ré-armait une garde sur une valeur déjà soldée — garde qui aurait
-        // avalé un final direct (sans interim) de même valeur.
-        efAutoAdvanced = false;
-        efAutoStep = null;
-        efLastInterimNum = null;
-        return;
-      }
+      if (efVoiceToNumber(txt) === efStaleFinalGuard) { efStaleFinalGuard = null; return; }
       efStaleFinalGuard = null;
     }
     if (efBeepTimer)   { clearTimeout(efBeepTimer);   efBeepTimer = null; }
@@ -15328,33 +15147,6 @@ function efStartMic(forceLang) {
     if (['retour','précéd','back'].some(function(w){return txt.includes(w);}))     { if (efNavExecuted !== 'back')  efBack(); efNavExecuted = null; return; }
     if (['reset','réinitialiser'].some(function(w){return txt.includes(w);})) { if (efNavExecuted !== 'reset') efReset(); efNavExecuted = null; return; }
     if (['fermer','close'].some(function(w){return txt.includes(w);}))    { if (efNavExecuted !== 'close') efClose(); efNavExecuted = null; return; }
-    // ── Repêchage par les alternatives (finals uniquement : Chrome n'en fournit
-    // pas sur les interims). Les dizaines MONOSYLLABIQUES isolées (« trente »,
-    // « vingt ») sont fragiles pour le moteur : « trente » ressort en « trois »
-    // / "3", parfois « rentre », « tente ». Sur WF, "3" vaut 3 → hors plage, la
-    // lecture est rejetée alors que la bonne hypothèse ("30") figure souvent en
-    // 2e/3e alternative. Règle : si l'hypothèse n°1 ne donne PAS une valeur en
-    // plage (nulle, OOR ou trop précise), on prend la première alternative qui
-    // en donne une. Une n°1 déjà valide n'est jamais remplacée (pas de
-    // réinterprétation d'une lecture plausible), et les commandes nav ont déjà
-    // été testées sur la n°1 ci-dessus. txt est réassigné : tout le traitement
-    // aval (OOR révisé, correction post-auto-avance, commit) voit le repêchage.
-    if (result.length > 1) {
-      var efTopNum = efVoiceToNumber(txt);
-      var efTopVal = efTopNum ? tmParseInput(efTopNum) : null;
-      if (efTopVal === null || !tmInRange(efTopVal, efSide()) || efDecTooPrecise(efTopNum)) {
-        for (var efAi = 1; efAi < result.length; efAi++) {
-          var efAltTxt = (result[efAi].transcript || '').trim().toLowerCase();
-          var efAltNum = efVoiceToNumber(efAltTxt);
-          var efAltVal = efAltNum ? tmParseInput(efAltNum) : null;
-          if (efAltVal !== null && tmInRange(efAltVal, efSide()) && !efDecTooPrecise(efAltNum)) {
-            efTrace('alt-rescue', { top: txt, alt: efAltTxt, rank: efAi });
-            txt = efAltTxt;
-            break;
-          }
-        }
-      }
-    }
     // Si le feedback hors plage a déjà été rendu en intermédiaire :
     // - final lui aussi hors plage ou non parseable (cas normal) → ignorer, le
     //   feedback est déjà fait ;
@@ -15403,11 +15195,10 @@ function efStartMic(forceLang) {
     // intermédiaire valide (plus fiable que le contenu du champ).
     if (!num) {
       if (efLastInterimNum) num = efLastInterimNum;
-      else { efTrace('final-drop-unparsed', { txt: txt }); return; }
+      else return;
     }
     efLastInterimNum = null;
     efNavExecuted = null;
-    efTrace('final-commit', { num: num, txt: txt });
     var inp = $id('ef-inp');
     inp.value = num;
     efUpdateKgf();
@@ -15435,7 +15226,6 @@ function efStartMic(forceLang) {
     }, 0);
   };
   r.onerror = function(e) {
-    efTrace('SR error', { error: e.error, message: e.message });
     // Erreurs non récupérables : permission refusée, services de reconnaissance
     // absents/désactivés (fréquent sur vieilles tablettes Android), micro
     // indisponible, ou langue non installée APRÈS échec du repli en-US ci-dessous.
@@ -15470,7 +15260,6 @@ function efStartMic(forceLang) {
     }
   };
   r.onend = function() {
-    efTrace('SR end', { current: r === efMicRecog, micActive: efMicActive, restarts: efRestartCount });
     // si cette instance n'est plus la courante, ne pas relancer
     if (r !== efMicRecog) return;
     if (!efMicActive) return;
@@ -15512,10 +15301,8 @@ function efStartMic(forceLang) {
       if (r !== efMicRecog || !efMicActive) return;
       try {
         efMicRecog.start();
-        efTrace('SR restart()', { delay: delay });
         efRestartCount = 0; // succès → réinitialiser le compteur
       } catch(err) {
-        efTrace('SR restart failed', { err: String(err) });
         // start() a échoué : onend se redéclenchera, le compteur continuera
       }
     }, delay);
@@ -15535,9 +15322,6 @@ function efStartMic(forceLang) {
     r.start();
     efSetMicActive(true);
     efRequestWakeLock();
-    // Desktop : re-préchauffer aussitôt une instance de rechange pour que le
-    // prochain recyclage (efCycleSR) n'ait pas à payer new SR() à chaud.
-    if (!efIsIOS()) setTimeout(efWarmSR, 0);
   };
   if (efAudioCtx.state === 'suspended') {
     efAudioCtx.resume().then(_startNow).catch(_startNow);
@@ -15798,9 +15582,6 @@ function efStopMic() {
   efNavExecuted    = null;
   if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
   if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
-  if (efNoFinalTimer) { clearTimeout(efNoFinalTimer); efNoFinalTimer = null; }
-  efCycling = false;
-  efCommitPrev1 = efCommitPrev2 = null;
   // Couper toute synthèse en cours et refermer la fenêtre sourde
   try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch(e) {}
   if (efTtsTail)  { clearTimeout(efTtsTail);  efTtsTail  = null; }
