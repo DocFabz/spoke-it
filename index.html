@@ -14576,9 +14576,12 @@ function efIsIPad() {
      !/iPhone|iPod/.test(navigator.userAgent));
 }
 
-// Desktop strict (ni iOS ni Android) : périmètre du recyclage de session (efCycleSR).
-function efIsDesktop() {
-  return !efIsIOS() && !/Android|Mobile/i.test(navigator.userAgent);
+// Chrome desktop strict (Chromium hors Edge, ni iOS ni Android) : périmètre des
+// contournements du moteur cloud Google (efCycleSR, dedup ré-émission). Safari,
+// Edge (Azure), Firefox, Android : aucun de ces chemins ne s'exécute.
+function efIsChromeDesktop() {
+  var ua = navigator.userAgent;
+  return !efIsIOS() && !/Android|Mobile/i.test(ua) && /Chrome\//.test(ua) && !/Edg\//.test(ua);
 }
 
 async function efRequestWakeLock() {
@@ -14918,16 +14921,16 @@ function efWarmSR() {
 // Mesuré (traces Spokeit + banc d'essai autonome) : en session continue, le
 // moteur cloud Chrome n'émet plus rien — ni interim, ni final, ni onend, ni
 // onerror — au 3e énoncé identique consécutif (« 30 30 30 », « 24 24 24 »),
-// session vivante ; un mot différent débloque. Cas courant : on égalise à une
-// valeur cible et on la répète. Remède : contexte vierge dès que deux commits
-// identiques se suivent — abort de l'instance courante, relance de l'instance
-// préchauffée (efWarmSR) après son onend, filet 400ms. Trou mesuré ≈ 300ms
-// (start → audiostart), pendant la lecture du cadran. Démarrer la nouvelle
-// instance AVANT onend(old) casse la reco. Desktop strict : iOS recrée déjà
-// une instance à chaque onend, Android n'a pas montré ce gel. NB : en file://
-// Chrome redemande la permission micro à chaque start() — tester en http(s).
+// session vivante ; un mot différent débloque. Périmètre : efIsChromeDesktop.
+// Cas courant : on égalise à une valeur cible et on la répète. Remède :
+// contexte vierge dès que deux commits identiques se suivent — abort de
+// l'instance courante, relance de l'instance préchauffée (efWarmSR) après son
+// onend, filet 400ms. Trou mesuré ≈ 300ms (start → audiostart), pendant la
+// lecture du cadran. Démarrer la nouvelle instance AVANT onend(old) casse la
+// reco. NB : en file:// Chrome redemande la permission micro à chaque start()
+// — tester en http(s).
 function efCycleSR() {
-  if (!efIsDesktop() || !efMicActive || !efMicRecog || efCycling) return;
+  if (!efIsChromeDesktop() || !efMicActive || !efMicRecog || efCycling) return;
   if (efPendingNext) { setTimeout(efCycleSR, 100); return; } // transition en cours
   var old = efMicRecog;
   efCycling  = true;
@@ -15074,8 +15077,8 @@ function efStartMic(forceLang) {
         // (« 29, 30, 30 » dictés → 5 commits). Signature : même dernier nombre
         // que la valeur déjà auto-avancée ET confiance haute. Une répétition
         // volontaire arrive toujours d'abord en partielle à 0.01 → jamais
-        // avalée. Moteur sans confiance interim (iOS/Android) : inchangé.
-        if (!efBeepTimer && efAutoAdvanced && numInterim === efLastInterimNum &&
+        // avalée. Périmètre Chrome desktop (efIsChromeDesktop) : ailleurs inchangé.
+        if (efIsChromeDesktop() && !efBeepTimer && efAutoAdvanced && numInterim === efLastInterimNum &&
             (result[0].confidence || 0) >= 0.5) return;
         // Un nouvel énoncé démarre. Si une auto-avance est encore "en attente de final"
         // (efAutoAdvanced true), son final tardif arriverait après la fermeture de la
@@ -15394,7 +15397,7 @@ function efStartMic(forceLang) {
     r.start();
     efSetMicActive(true);
     efRequestWakeLock();
-    if (!efIsIOS()) setTimeout(efWarmSR, 0); // instance de rechange prête pour efCycleSR
+    if (efIsChromeDesktop()) setTimeout(efWarmSR, 0); // instance de rechange prête pour efCycleSR
   };
   if (efAudioCtx.state === 'suspended') {
     efAudioCtx.resume().then(_startNow).catch(_startNow);
