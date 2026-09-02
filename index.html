@@ -15137,7 +15137,11 @@ function efStartMic(forceLang) {
         var efUnitProlong = (recogLang === 'de' || recogLang === 'nl' || recogLang === 'da' ||
                              recogLang === 'sl' || recogLang === 'cs') &&
                             efDecPart === null && /^[1-9]$/.test(numInterim);
-        var efStableDelay = (efDecProlong || efIntProlong || efUnitProlong) ? 850 : 500;
+        // Rallonge 850ms calibrée sur les moteurs lents (iOS émet ses interims par
+        // paquets). Chrome desktop révise ses partielles en 100-300ms (mesuré :
+        // "2"→"29" 76-167ms, "0,3"→"0,30" 308ms) → 650ms suffisent, avec marge x2.
+        var efStableDelay = (efDecProlong || efIntProlong || efUnitProlong)
+                          ? (efIsChromeDesktop() ? 650 : 850) : 500;
         if (parsedInterim !== null) {
           var kgfInterim = toKgf(parsedInterim, efSide());
           var efTooPrecise = efDecTooPrecise(numInterim);
@@ -15153,9 +15157,9 @@ function efStartMic(forceLang) {
               efAutoStep = efSteps[efCurrent]; // step qui va être commité par efNext()
               // Valeur identique au dernier commit → recycler la session SR ICI,
               // dès la décision, et non après le commit (+200ms transition +250ms) :
-              // sur une dizaine ronde (délai 850ms) le trou d'écoute s'ouvrait à
+              // sur une dizaine ronde (délai long) le trou d'écoute s'ouvrait à
               // ~1300ms après l'interim, précisément quand arrive le 3e énoncé.
-              // Ici il s'ouvre à 500/850ms et se referme ~300ms plus tard.
+              // Ici il s'ouvre à efStableDelay (500/650ms) et se referme ~300ms après.
               if (efCommitPrev1 !== null && efCommitPrev1 === parsedInterim) efCycleSR();
               // Session en recyclage : différer les bips à l'audiostart de la
               // nouvelle session (efStartMic), sinon l'utilisateur parle dans le
