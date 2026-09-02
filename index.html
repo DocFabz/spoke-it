@@ -15005,6 +15005,25 @@ function efStartMic(forceLang) {
         // aussi le timer OOR (efOorFired reste posé — cohérent : même
         // valeur, même verdict).
         if (efBeepTimer && numInterim === efLastInterimNum) return;
+        // DEDUP moteur, 2e forme — RÉ-ÉMISSION STABILISÉE APRÈS le timer.
+        // Chrome desktop émet chaque énoncé en deux temps : une hypothèse
+        // partielle (confidence ≈ 0.01, ne contient que le segment en cours,
+        // ex. " 30") puis, ~0.9-1.2s plus tard et sans nouvelle parole, la
+        // version STABILISÉE de toute la séquence non finalisée (confidence
+        // ≈ 0.90, ex. " 29 30"). En dictée continue, sans pause, le moteur ne
+        // finalise pas et n'émet QUE ces stabilisations. Elles arrivent après
+        // l'expiration des 500/850ms : efBeepTimer est déjà null, la 1re forme
+        // du dedup ne s'applique plus, et la ré-émission était traitée comme un
+        // NOUVEL énoncé → 2e auto-avance, valeur écrite sur DEUX rayons ("29 29",
+        // "30 30"), décalage de toute la suite. Trace Chrome : « 29, 30, 30 »
+        // dictés → 5 commits. Signature de la ré-émission : même dernier nombre
+        // que la valeur déjà auto-avancée ET confiance haute — la parole neuve
+        // arrive TOUJOURS d'abord en partielle basse confiance (0.01), même pour
+        // une valeur répétée (" 30" puis " 30"), donc une répétition volontaire
+        // n'est jamais avalée ici. Moteurs sans confiance interim (iOS, Android
+        // selon versions) : seuil non atteint → comportement inchangé.
+        if (!efBeepTimer && efAutoAdvanced && numInterim === efLastInterimNum &&
+            (result[0].confidence || 0) >= 0.5) return;
         // Un nouvel énoncé démarre. Si une auto-avance est encore "en attente de final"
         // (efAutoAdvanced true), son final tardif arriverait après la fermeture de la
         // fenêtre de correction ci-dessous et écraserait le rayon courant : on mémorise
