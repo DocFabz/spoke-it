@@ -13961,11 +13961,9 @@ function efCommitCurrent() {
 
   if (step.side === 'fo') tmData.fo[step.idx] = parsed;
   else                     tmData.fa[step.idx] = parsed;
-  // Deux commits identiques consécutifs → recyclage de la session SR (voir
-  // efCycleSR). Déclenché sur le COMMIT et non sur le final : le moteur cloud
-  // ne finalise pas de façon fiable un même mot répété (banc d'essai : quatre
-  // interims « 16 », zéro final en 20s). Différé de 250ms pour laisser passer
-  // la transition efPendingNext et un éventuel final rapide.
+  // Deux commits identiques consécutifs → recyclage de la session SR (efCycleSR).
+  // Sur le COMMIT et non sur le final : le moteur ne finalise pas de façon
+  // fiable un mot répété. 250ms : laisser passer la transition efPendingNext.
   efCommitPrev2 = efCommitPrev1; efCommitPrev1 = parsed;
   if (efMicActive && efCommitPrev1 === efCommitPrev2) setTimeout(efCycleSR, 250);
   inp.value = tmDisplayValue(parsed);
@@ -14511,6 +14509,9 @@ var efStaleFinalGuard = null; // valeur (string) d'un final TARDIF à ignorer. A
                               // fenêtre de correction (efAutoAdvanced remis à false) ; sans garde ce final
                               // (typiquement un long "zéro virgule XX") écraserait le rayon courant. Armé dans
                               // la branche intermédiaire, consommé en tête du bloc isFinal.
+var efCommitPrev1    = null;  // deux dernières valeurs commitées (efCommitCurrent). Égales → efCycleSR :
+var efCommitPrev2    = null;  // le moteur cloud Chrome se tait au 3e énoncé identique d'une même session.
+var efCycling        = false; // recyclage de session SR en cours (efCycleSR) — anti-réentrance.
 
 
 function efSaveState() {
@@ -14573,6 +14574,11 @@ function efIsIPad() {
   return /iPad/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 &&
      !/iPhone|iPod/.test(navigator.userAgent));
+}
+
+// Desktop strict (ni iOS ni Android) : périmètre du recyclage de session (efCycleSR).
+function efIsDesktop() {
+  return !efIsIOS() && !/Android|Mobile/i.test(navigator.userAgent);
 }
 
 async function efRequestWakeLock() {
@@ -14910,39 +14916,31 @@ function efWarmSR() {
 
 // ── Recyclage de session SR (Chrome desktop) ─────────────────────────────────
 // Mesuré (traces Spokeit + banc d'essai autonome) : en session continue, le
-// moteur cloud de Chrome n'émet PLUS RIEN — ni interim, ni final, ni onend, ni
-// onerror — au 3e énoncé identique consécutif (« 30 30 30 », « 24 24 24 »,
-// « 16 16 16 »), session vivante. Un mot différent débloque. Cas courant en
-// atelier : on égalise à une valeur cible et on la répète. Remède : repartir
-// d'un contexte vierge dès que deux commits identiques se suivent — abandon de
-// l'instance courante, relance d'une instance PRÉCHAUFFÉE (efWarmSR) après son
-// onend. Trou d'écoute mesuré ≈ 300ms (start → audiostart), pendant la lecture
-// du cadran. Démarrer la nouvelle instance AVANT onend(old) casse la reco :
-// on attend onend, filet 400ms. Desktop strict : iOS recrée déjà une instance
-// à chaque onend ; sur Android la reco passe par le service système et n'a pas
-// montré ce gel. En file:// Chrome redemande la permission micro à chaque
-// start() (permissions non persistées) : tester en http(s).
-var efCommitPrev1 = null, efCommitPrev2 = null;
-var efCycling = false;
-function efIsDesktop() {
-  return !efIsIOS() && !/Android|Mobile/i.test(navigator.userAgent);
-}
+// moteur cloud Chrome n'émet plus rien — ni interim, ni final, ni onend, ni
+// onerror — au 3e énoncé identique consécutif (« 30 30 30 », « 24 24 24 »),
+// session vivante ; un mot différent débloque. Cas courant : on égalise à une
+// valeur cible et on la répète. Remède : contexte vierge dès que deux commits
+// identiques se suivent — abort de l'instance courante, relance de l'instance
+// préchauffée (efWarmSR) après son onend, filet 400ms. Trou mesuré ≈ 300ms
+// (start → audiostart), pendant la lecture du cadran. Démarrer la nouvelle
+// instance AVANT onend(old) casse la reco. Desktop strict : iOS recrée déjà
+// une instance à chaque onend, Android n'a pas montré ce gel. NB : en file://
+// Chrome redemande la permission micro à chaque start() — tester en http(s).
 function efCycleSR() {
   if (!efIsDesktop() || !efMicActive || !efMicRecog || efCycling) return;
-  if (efPendingNext) { setTimeout(efCycleSR, 100); return; } // transition en cours : réessayer
+  if (efPendingNext) { setTimeout(efCycleSR, 100); return; } // transition en cours
   var old = efMicRecog;
-  efCycling = true;
-  efMicRecog = null;         // onend(old) → r !== efMicRecog → aucune relance auto
-  efCommitPrev1 = efCommitPrev2 = null; // contexte vierge : l'historique repart
-  // Le final de l'ancienne session ne viendra jamais : solder l'auto-avance en
-  // cours, sinon le prochain interim armerait une garde « final tardif » sur
-  // une valeur déjà écrite, et le final de la NOUVELLE session (même valeur,
-  // cas nominal ici) serait pris pour ce final tardif et jeté.
-  efAutoAdvanced   = false;
-  efAutoStep       = null;
-  efLastInterimNum = null;
+  efCycling  = true;
+  efMicRecog = null; // onend(old) → r !== efMicRecog → pas de relance auto
+  efCommitPrev1 = efCommitPrev2 = null;
+  // Le final de l'ancienne session ne viendra jamais : solder l'auto-avance,
+  // sinon le prochain interim armerait efStaleFinalGuard sur une valeur déjà
+  // écrite et le final de la NOUVELLE session (même valeur) serait jeté.
+  efAutoAdvanced    = false;
+  efAutoStep        = null;
+  efLastInterimNum  = null;
   efStaleFinalGuard = null;
-  efWarmSR();                // si l'instance de rechange manque
+  efWarmSR();
   var done = false;
   var relaunch = function() {
     if (done) return;
@@ -15066,23 +15064,17 @@ function efStartMic(forceLang) {
         // aussi le timer OOR (efOorFired reste posé — cohérent : même
         // valeur, même verdict).
         if (efBeepTimer && numInterim === efLastInterimNum) return;
-        // DEDUP moteur, 2e forme — RÉ-ÉMISSION STABILISÉE APRÈS le timer.
-        // Chrome desktop émet chaque énoncé en deux temps : une hypothèse
-        // partielle (confidence ≈ 0.01, ne contient que le segment en cours,
-        // ex. " 30") puis, ~0.9-1.2s plus tard et sans nouvelle parole, la
-        // version STABILISÉE de toute la séquence non finalisée (confidence
-        // ≈ 0.90, ex. " 29 30"). En dictée continue, sans pause, le moteur ne
-        // finalise pas et n'émet QUE ces stabilisations. Elles arrivent après
-        // l'expiration des 500/850ms : efBeepTimer est déjà null, la 1re forme
-        // du dedup ne s'applique plus, et la ré-émission était traitée comme un
-        // NOUVEL énoncé → 2e auto-avance, valeur écrite sur DEUX rayons ("29 29",
-        // "30 30"), décalage de toute la suite. Trace Chrome : « 29, 30, 30 »
-        // dictés → 5 commits. Signature de la ré-émission : même dernier nombre
-        // que la valeur déjà auto-avancée ET confiance haute — la parole neuve
-        // arrive TOUJOURS d'abord en partielle basse confiance (0.01), même pour
-        // une valeur répétée (" 30" puis " 30"), donc une répétition volontaire
-        // n'est jamais avalée ici. Moteurs sans confiance interim (iOS, Android
-        // selon versions) : seuil non atteint → comportement inchangé.
+        // DEDUP moteur, 2e forme — ré-émission STABILISÉE après le timer. Chrome
+        // desktop émet d'abord une partielle (confidence ≈ 0.01, segment en
+        // cours : " 30") puis, ~1s plus tard sans nouvelle parole, la version
+        // stabilisée de la séquence non finalisée (≈ 0.90 : " 29 30"). En
+        // dictée continue elle arrive APRÈS l'expiration du timer : efBeepTimer
+        // est null, la 1re forme ne s'applique plus, et elle était traitée en
+        // nouvel énoncé → 2e auto-avance, valeur écrite sur DEUX rayons
+        // (« 29, 30, 30 » dictés → 5 commits). Signature : même dernier nombre
+        // que la valeur déjà auto-avancée ET confiance haute. Une répétition
+        // volontaire arrive toujours d'abord en partielle à 0.01 → jamais
+        // avalée. Moteur sans confiance interim (iOS/Android) : inchangé.
         if (!efBeepTimer && efAutoAdvanced && numInterim === efLastInterimNum &&
             (result[0].confidence || 0) >= 0.5) return;
         // Un nouvel énoncé démarre. Si une auto-avance est encore "en attente de final"
@@ -15402,9 +15394,7 @@ function efStartMic(forceLang) {
     r.start();
     efSetMicActive(true);
     efRequestWakeLock();
-    // Desktop : re-préchauffer aussitôt une instance de rechange pour que le
-    // prochain recyclage (efCycleSR) n'ait pas à payer new SR() à chaud.
-    if (!efIsIOS()) setTimeout(efWarmSR, 0);
+    if (!efIsIOS()) setTimeout(efWarmSR, 0); // instance de rechange prête pour efCycleSR
   };
   if (efAudioCtx.state === 'suspended') {
     efAudioCtx.resume().then(_startNow).catch(_startNow);
@@ -15664,7 +15654,7 @@ function efStopMic() {
   efStaleFinalGuard = null;
   efNavExecuted    = null;
   efCycling        = false;
-  efCommitPrev1 = efCommitPrev2 = null;
+  efCommitPrev1    = efCommitPrev2 = null;
   if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
   if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
   // Couper toute synthèse en cours et refermer la fenêtre sourde
