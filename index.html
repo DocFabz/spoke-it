@@ -14453,9 +14453,17 @@ var efMicRecog       = null;
 // Ordre de priorité dans le bloc isFinal :
 //   1. efBeepTimer annulé
 //   2. Commandes nav (isFinal)
-//   3. efOorFired  → return immédiat
-//   4. efAutoAdvanced → correction éventuelle du step précédent + return
-//   5. Traitement normal → efNext()
+//   3. Repêchage alternatives : n°1 sans aucun nombre → 1re alternative en plage
+//   4. efOorFired  → return immédiat
+//   5. efAutoAdvanced → correction éventuelle du step précédent + return
+//   6. Traitement normal → efNext()
+//
+// Chrome desktop (efIsChromeDesktop) — voir efCycleSR : quand la valeur
+// auto-avancée égale le dernier commit, la session SR est recyclée dès la
+// décision. Le final de l'énoncé en cours ne vient donc JAMAIS ; efCycleSR
+// solde lui-même efAutoAdvanced / efAutoStep / efLastInterimNum /
+// efStaleFinalGuard. Les bips sont différés à l'audiostart de la nouvelle
+// session (efCycleBeep + efCycleAudioReady).
 //
 // NB final OOR tardif : un final hors-plage peut arriver APRÈS qu'efOorFired a été
 //   remis à false par l'intermédiaire de la valeur suivante ; il retombe alors en
