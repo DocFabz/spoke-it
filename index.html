@@ -14942,11 +14942,9 @@ function efWarmSR() {
 // l'instance courante, relance de l'instance préchauffée (efWarmSR) après son
 // onend, filet 400ms. Trou mesuré ≈ 300ms (start → audiostart), pendant la
 // lecture du cadran. Démarrer la nouvelle instance AVANT onend(old) casse la
-// reco. Ping-pong strict : deux instances au plus (active + rechange), la
-// rechange est préparée à l'audiostart de l'active (jamais deux négociations
-// micro en même temps), l'ancienne est délestée de ses handlers et de sa
-// référence à son onend. NB : en file:// Chrome redemande la permission micro
-// à chaque start() — tester en http(s).
+// reco. NB : en file:// Chrome redemande la permission micro à chaque start()
+// — tester en http(s).
+
 // Bips de validation différés par efCycleSR (voir efCycleBeep) : joués à
 // l'audiostart de la session recyclée, ou par le filet 800ms de relaunch.
 function efCycleBeepPlay() {
@@ -14985,8 +14983,7 @@ function efCycleSR() {
   };
   old.onresult = function() {};
   old.onerror  = function() {};
-  old.onaudiostart = old.onstart = old.onspeechstart = old.onspeechend = null;
-  old.onend    = function() { old.onend = null; relaunch(); old = null; }; // libérer l'ancienne
+  old.onend    = relaunch;
   setTimeout(relaunch, 400);
   try { old.abort(); } catch(e) { relaunch(); }
 }
@@ -15021,10 +15018,6 @@ function efStartMic(forceLang) {
   r.onaudiostart = function() {
     efSessionGranted = true;
     efCycleBeepPlay(); // session recyclée : écoute rouverte, bips différés
-    // Ping-pong : préparer la rechange MAINTENANT, la session active écoute
-    // déjà — jamais deux négociations micro simultanées (new SR() en déclenche
-    // une, cf. efWarmSR). Une seule rechange à la fois (efWarmSR idempotent).
-    if (efIsChromeDesktop()) setTimeout(efWarmSR, 0);
   };
   r.onresult = function(e) {
     efSessionGranted = true;
@@ -15463,6 +15456,7 @@ function efStartMic(forceLang) {
     r.start();
     efSetMicActive(true);
     efRequestWakeLock();
+    if (efIsChromeDesktop()) setTimeout(efWarmSR, 0); // instance de rechange prête pour efCycleSR
   };
   if (efAudioCtx.state === 'suspended') {
     efAudioCtx.resume().then(_startNow).catch(_startNow);
