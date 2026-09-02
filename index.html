@@ -14948,31 +14948,34 @@ function efCycleSR() {
   var old = efMicRecog;
   efCycling = true;
   efMicRecog = null;         // onend(old) → r !== efMicRecog → aucune relance auto
-  efWarmSR();                // instance fraîche, consommée par efStartMic
   var t0 = performance.now();
   var done = false;
-  var relaunch = function() {
+  var relaunch = function(how) {
     if (done) return;
     done = true;
     efCycling = false;
     if (!efMicActive) return;
     try {
       efStartMic();
-      efTrace('SR cycle: restarted', { gap: (performance.now() - t0) | 0 });
+      efTrace('SR cycle: restarted', { how: how, gap: (performance.now() - t0) | 0 });
     } catch(err) {
-      // start() refusé (ancienne session pas encore libérée) : une seule reprise
-      efTrace('SR cycle: start failed, retry', { err: String(err) });
+      efTrace('SR cycle: start failed', { how: how, err: String(err) });
       efMicRecog = null;
-      setTimeout(function() { if (efMicActive && !efMicRecog) { try { efStartMic(); } catch(e2) {} } }, 150);
+      done = false; efCycling = true; // laisser onend(old) ou le filet relancer
     }
   };
   old.onresult = function() {};
   old.onerror  = function() {};
-  old.onend    = relaunch;
-  setTimeout(relaunch, 400); // filet si onend ne vient pas
-  efTrace('SR cycle: abort old');
+  old.onend    = function() { efTrace('SR cycle: old ended', { gap: (performance.now() - t0) | 0 }); relaunch('onend'); };
   efCommitPrev1 = efCommitPrev2 = null; // contexte vierge : l'historique repart
-  try { old.abort(); } catch(e) { relaunch(); }
+  efTrace('SR cycle: abort old');
+  try { old.abort(); } catch(e) {}
+  // Démarrage IMMÉDIAT de l'instance préchauffée, sans attendre onend(old) :
+  // Chrome libère la session à l'abort() de façon synchrone côté renderer.
+  // Si start() est refusé (ancienne session pas encore libérée), relaunch se
+  // ré-arme et onend(old) — ou le filet 400ms — relance.
+  relaunch('immediate');
+  setTimeout(function() { relaunch('filet'); }, 400);
 }
 
 function efStartMic(forceLang) {
@@ -15532,6 +15535,9 @@ function efStartMic(forceLang) {
     r.start();
     efSetMicActive(true);
     efRequestWakeLock();
+    // Desktop : re-préchauffer aussitôt une instance de rechange pour que le
+    // prochain recyclage (efCycleSR) n'ait pas à payer new SR() à chaud.
+    if (!efIsIOS()) setTimeout(efWarmSR, 0);
   };
   if (efAudioCtx.state === 'suspended') {
     efAudioCtx.resume().then(_startNow).catch(_startNow);
