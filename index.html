@@ -13964,6 +13964,7 @@ function efCommitCurrent() {
   if (step.side === 'fo') tmData.fo[step.idx] = parsed;
   else                     tmData.fa[step.idx] = parsed;
   efTrace('COMMIT', { side: step.side, idx: step.idx, spoke: step.idx + 1, value: parsed, raw: raw });
+  efCommitPrev2 = efCommitPrev1; efCommitPrev1 = parsed; // historique pour efCycleNeeded
   inp.value = tmDisplayValue(parsed);
   efSyncTableCell(step);
   tmUpdateCell(step.idx, step.side);
@@ -14932,6 +14933,16 @@ function efWarmSR() {
 var efCycling      = false;
 var efNoFinalTimer = null;
 var EF_NO_FINAL_MS = 3000;
+// Recycler à CHAQUE final coûtait un trou d'écoute par valeur — perçu comme un
+// ralentissement général. Or la surdité n'apparaît qu'à la 3e occurrence
+// consécutive d'un même jeton (« 29, 30, 30 » passe ; le 30 suivant ne sort
+// plus). On ne recycle donc que lorsque les deux derniers commits sont égaux :
+// c'est exactement l'état où le prochain énoncé identique serait perdu. Toute
+// autre suite garde la session — zéro trou.
+var efCommitPrev1 = null, efCommitPrev2 = null;
+function efCycleNeeded() {
+  return efCommitPrev1 !== null && efCommitPrev1 === efCommitPrev2;
+}
 function efCycleSR() {
   if (efIsIOS() || !efMicActive || !efMicRecog || efCycling) return;
   var old = efMicRecog;
@@ -14960,6 +14971,7 @@ function efCycleSR() {
   old.onend    = relaunch;
   setTimeout(relaunch, 400); // filet si onend ne vient pas
   efTrace('SR cycle: abort old');
+  efCommitPrev1 = efCommitPrev2 = null; // contexte vierge : l'historique repart
   try { old.abort(); } catch(e) { relaunch(); }
 }
 
@@ -15020,7 +15032,7 @@ function efStartMic(forceLang) {
     if (efNoFinalTimer) { clearTimeout(efNoFinalTimer); efNoFinalTimer = null; }
     // Recyclage de session après chaque final (desktop, voir efCycleSR) —
     // différé : le final est d'abord traité normalement ci-dessous.
-    if (e.results[e.results.length - 1].isFinal) setTimeout(efCycleSR, 0);
+    if (e.results[e.results.length - 1].isFinal) setTimeout(function() { if (efCycleNeeded()) efCycleSR(); }, 0);
 
     // Fenêtre sourde TTS : la reco entend la synthèse → tout ignorer.
     // Gate en TOUTE première position : pas d'extraction/normalisation du
@@ -15202,7 +15214,7 @@ function efStartMic(forceLang) {
               if (efNoFinalTimer) clearTimeout(efNoFinalTimer);
               efNoFinalTimer = setTimeout(function() {
                 efNoFinalTimer = null;
-                if (efAutoAdvanced && !efBeepTimer) { efTrace('SR cycle: no final'); efCycleSR(); }
+                if (efAutoAdvanced && !efBeepTimer && efCycleNeeded()) { efTrace('SR cycle: no final'); efCycleSR(); }
               }, EF_NO_FINAL_MS);
               efAutoStep = efSteps[efCurrent]; // step qui va être commité par efNext()
               var inp = $id('ef-inp');
@@ -15782,6 +15794,7 @@ function efStopMic() {
   if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
   if (efNoFinalTimer) { clearTimeout(efNoFinalTimer); efNoFinalTimer = null; }
   efCycling = false;
+  efCommitPrev1 = efCommitPrev2 = null;
   // Couper toute synthèse en cours et refermer la fenêtre sourde
   try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch(e) {}
   if (efTtsTail)  { clearTimeout(efTtsTail);  efTtsTail  = null; }
