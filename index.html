@@ -14653,6 +14653,10 @@ function efVoiceToNumber(txt) {
     'treize':13,'thirteen':13,'quatorze':14,'fourteen':14,'quinze':15,'fifteen':15,
     'seize':16,'sixteen':16,'seventeen':17,'eighteen':18,'nineteen':19,
     'vingt':20,'twenty':20,'trente':30,'thirty':30,
+    // Homophones de « vingt » (/vɛ̃/) : isolé, le moteur préfère le mot courant
+    // « vin » → transcript sans chiffre → null silencieux. Repli uniquement
+    // (ce dictionnaire n'est lu qu'en l'absence de chiffres dans le transcript).
+    'vin':20,'vins':20,'vain':20,'vint':20,
     'quarante':40,'forty':40,'cinquante':50,'fifty':50,
     'soixante':60,'sixty':60,'seventy':70,
     'septante':70,'huitante':80,'octante':80,'nonante':90,
