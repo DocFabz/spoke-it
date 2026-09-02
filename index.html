@@ -14515,6 +14515,8 @@ var efCommitPrev2    = null;  // le moteur cloud Chrome se tait au 3e énoncé i
 var efCycling        = false; // recyclage de session SR en cours (efCycleSR) — anti-réentrance.
 var efCycleBeep      = false; // bips de validation différés jusqu'à l'audiostart de la session recyclée :
                               // le bip signifie « tu peux parler », il ne doit pas précéder l'écoute.
+var efCycleAudioReady = false; // audiostart reçu depuis le dernier recyclage. Le bip différé exige les DEUX
+                              // (commit fait ET écoute rouverte), dans n'importe quel ordre d'arrivée.
 var EF_MAX_ALTS      = 5;     // hypothèses demandées au moteur (finals seulement en pratique). Repêchage
                               // isFinal : « vingt » entendu "Va" (0.57) avec "20" (0.30) en 2e hypothèse.
 
@@ -14584,9 +14586,13 @@ function efIsIPad() {
 // Chrome desktop strict (Chromium hors Edge, ni iOS ni Android) : périmètre des
 // contournements du moteur cloud Google (efCycleSR, dedup ré-émission). Safari,
 // Edge (Azure), Firefox, Android : aucun de ces chemins ne s'exécute.
+var efChromeDesktop = null; // cache : l'UA ne change pas en cours de session
 function efIsChromeDesktop() {
-  var ua = navigator.userAgent;
-  return !efIsIOS() && !/Android|Mobile/i.test(ua) && /Chrome\//.test(ua) && !/Edg\//.test(ua);
+  if (efChromeDesktop === null) {
+    var ua = navigator.userAgent;
+    efChromeDesktop = !efIsIOS() && !/Android|Mobile/i.test(ua) && /Chrome\//.test(ua) && !/Edg\//.test(ua);
+  }
+  return efChromeDesktop;
 }
 
 async function efRequestWakeLock() {
@@ -14945,10 +14951,11 @@ function efWarmSR() {
 // reco. NB : en file:// Chrome redemande la permission micro à chaque start()
 // — tester en http(s).
 
-// Bips de validation différés par efCycleSR (voir efCycleBeep) : joués à
-// l'audiostart de la session recyclée, ou par le filet 800ms de relaunch.
-function efCycleBeepPlay() {
-  if (!efCycleBeep) return;
+// Bips de validation différés par efCycleSR (voir efCycleBeep) : joués quand
+// le commit est fait ET l'écoute rouverte (audiostart), dans n'importe quel
+// ordre ; force=true (filet 800ms de relaunch) bipe même sans audiostart.
+function efCycleBeepPlay(force) {
+  if (!efCycleBeep || !(force || efCycleAudioReady)) return;
   efCycleBeep = false;
   efBeep();
   setTimeout(efBeepNext, 280);
@@ -14958,6 +14965,7 @@ function efCycleSR() {
   if (!efIsChromeDesktop() || !efMicActive || !efMicRecog || efCycling) return;
   var old = efMicRecog;
   efCycling  = true;
+  efCycleAudioReady = false;
   efMicRecog = null; // onend(old) → r !== efMicRecog → pas de relance auto
   efCommitPrev1 = efCommitPrev2 = null;
   // Le final de l'ancienne session ne viendra jamais : solder l'auto-avance,
@@ -14974,7 +14982,7 @@ function efCycleSR() {
     done = true;
     efCycling = false;
     if (!efMicActive) return;
-    setTimeout(efCycleBeepPlay, 800); // filet : biper même sans audiostart
+    setTimeout(function() { efCycleBeepPlay(true); }, 800); // filet : biper même sans audiostart
     try { efStartMic(); }
     catch(err) {
       efMicRecog = null;
@@ -15017,7 +15025,8 @@ function efStartMic(forceLang) {
   // La capture audio démarre = la permission a été accordée pour cette session.
   r.onaudiostart = function() {
     efSessionGranted = true;
-    efCycleBeepPlay(); // session recyclée : écoute rouverte, bips différés
+    efCycleAudioReady = true;
+    efCycleBeepPlay(); // session recyclée : écoute rouverte → bips différés si le commit est fait
   };
   r.onresult = function(e) {
     efSessionGranted = true;
@@ -15201,7 +15210,7 @@ function efStartMic(forceLang) {
                   efLastInterimNum = null;
                 }
                 var ok = efNext();
-                if (ok && efDeferBeep)      { efCycleBeep = true; }
+                if (ok && efDeferBeep)      { efCycleBeep = true; efCycleBeepPlay(); } // joue si l'écoute est déjà rouverte
                 else if (ok && !efTtsMode)  { efBeepNext(); }
               }, 200);
             }, efStableDelay);
@@ -15717,6 +15726,7 @@ function efStopMic() {
   efNavExecuted    = null;
   efCycling        = false;
   efCycleBeep      = false;
+  efCycleAudioReady = false;
   efCommitPrev1    = efCommitPrev2 = null;
   if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
   if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
