@@ -14932,6 +14932,15 @@ function efWarmSR() {
 // lecture du cadran. Démarrer la nouvelle instance AVANT onend(old) casse la
 // reco. NB : en file:// Chrome redemande la permission micro à chaque start()
 // — tester en http(s).
+// Bips de validation différés par efCycleSR (voir efCycleBeep) : joués à
+// l'audiostart de la session recyclée, ou par le filet 800ms de relaunch.
+function efCycleBeepPlay() {
+  if (!efCycleBeep) return;
+  efCycleBeep = false;
+  efBeep();
+  setTimeout(efBeepNext, 280);
+}
+
 function efCycleSR() {
   if (!efIsChromeDesktop() || !efMicActive || !efMicRecog || efCycling) return;
   var old = efMicRecog;
@@ -14952,8 +14961,7 @@ function efCycleSR() {
     done = true;
     efCycling = false;
     if (!efMicActive) return;
-    // Filet : si l'audiostart de la nouvelle session ne vient pas, biper quand même.
-    setTimeout(function() { if (efCycleBeep) { efCycleBeep = false; efBeep(); setTimeout(efBeepNext, 280); } }, 800);
+    setTimeout(efCycleBeepPlay, 800); // filet : biper même sans audiostart
     try { efStartMic(); }
     catch(err) {
       efMicRecog = null;
@@ -14995,8 +15003,7 @@ function efStartMic(forceLang) {
   // La capture audio démarre = la permission a été accordée pour cette session.
   r.onaudiostart = function() {
     efSessionGranted = true;
-    // Session recyclée : l'écoute est rouverte, jouer les bips différés.
-    if (efCycleBeep) { efCycleBeep = false; efBeep(); setTimeout(efBeepNext, 280); }
+    efCycleBeepPlay(); // session recyclée : écoute rouverte, bips différés
   };
   r.onresult = function(e) {
     efSessionGranted = true;
