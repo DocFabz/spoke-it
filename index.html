@@ -14513,6 +14513,8 @@ var efStaleFinalGuard = null; // valeur (string) d'un final TARDIF à ignorer. A
 var efCommitPrev1    = null;  // deux dernières valeurs commitées (efCommitCurrent). Égales → efCycleSR :
 var efCommitPrev2    = null;  // le moteur cloud Chrome se tait au 3e énoncé identique d'une même session.
 var efCycling        = false; // recyclage de session SR en cours (efCycleSR) — anti-réentrance.
+var efCycleBeep      = false; // bips de validation différés jusqu'à l'audiostart de la session recyclée :
+                              // le bip signifie « tu peux parler », il ne doit pas précéder l'écoute.
 
 
 function efSaveState() {
@@ -14950,6 +14952,8 @@ function efCycleSR() {
     done = true;
     efCycling = false;
     if (!efMicActive) return;
+    // Filet : si l'audiostart de la nouvelle session ne vient pas, biper quand même.
+    setTimeout(function() { if (efCycleBeep) { efCycleBeep = false; efBeep(); setTimeout(efBeepNext, 280); } }, 800);
     try { efStartMic(); }
     catch(err) {
       efMicRecog = null;
@@ -14989,7 +14993,11 @@ function efStartMic(forceLang) {
   var recogLang = (effLang || efGetRecogLang() || '').toLowerCase().split(/[-_]/)[0];
   r.interimResults = true;
   // La capture audio démarre = la permission a été accordée pour cette session.
-  r.onaudiostart = function() { efSessionGranted = true; };
+  r.onaudiostart = function() {
+    efSessionGranted = true;
+    // Session recyclée : l'écoute est rouverte, jouer les bips différés.
+    if (efCycleBeep) { efCycleBeep = false; efBeep(); setTimeout(efBeepNext, 280); }
+  };
   r.onresult = function(e) {
     efSessionGranted = true;
     efRestartCount = 0; // un résultat reçu = micro opérationnel
@@ -15142,10 +15150,14 @@ function efStartMic(forceLang) {
               // ~1300ms après l'interim, précisément quand arrive le 3e énoncé.
               // Ici il s'ouvre à 500/850ms et se referme ~300ms plus tard.
               if (efCommitPrev1 !== null && efCommitPrev1 === parsedInterim) efCycleSR();
+              // Session en recyclage : différer les bips à l'audiostart de la
+              // nouvelle session (efStartMic), sinon l'utilisateur parle dans le
+              // trou d'écoute. En mode TTS la synthèse dure plus que le trou.
+              var efDeferBeep = efCycling && !efTtsMode;
               var inp = $id('ef-inp');
               inp.value = numInterim;
               efUpdateKgf();
-              efFeedbackValue();
+              if (!efDeferBeep) efFeedbackValue();
               // Auto-avance dès la valeur stabilisée, sans attendre le résultat final
               efPendingNext = true;
               setTimeout(function() {
@@ -15164,7 +15176,8 @@ function efStartMic(forceLang) {
                   efLastInterimNum = null;
                 }
                 var ok = efNext();
-                if (ok && !efTtsMode) { efBeepNext(); }
+                if (ok && efDeferBeep)      { efCycleBeep = true; }
+                else if (ok && !efTtsMode)  { efBeepNext(); }
               }, 200);
             }, efStableDelay);
           } else if (efRangeNow !== null &&
@@ -15663,6 +15676,7 @@ function efStopMic() {
   efStaleFinalGuard = null;
   efNavExecuted    = null;
   efCycling        = false;
+  efCycleBeep      = false;
   efCommitPrev1    = efCommitPrev2 = null;
   if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
   if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
