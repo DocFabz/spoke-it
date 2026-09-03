@@ -360,6 +360,15 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .wheel-load-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .wheel-load-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
 .wheel-load-list { display:flex; flex-direction:column; gap:.35rem; overflow-y:auto; flex:1 }
+/* Barre de tri de la liste des roues : reprend la pilule du modal capture. */
+.wl-sort { display:flex; align-items:center; background:var(--inp); border:1px solid var(--border-s); border-radius:999px; padding:3px; gap:0; flex-shrink:0 }
+.wl-sort-btn { flex:1; padding:.34rem .3rem; background:transparent; border:none; border-radius:999px; color:var(--text3); font-family:'DM Mono',monospace; font-size:.6rem; font-weight:400; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:background .22s, color .22s; display:flex; align-items:center; justify-content:center; gap:.25rem; min-width:0 }
+.wl-sort-btn span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.wl-sort-btn:hover { color:var(--text2) }
+.wl-sort-btn.active { background:var(--card); color:var(--accent); box-shadow:0 1px 6px rgba(0,0,0,.35) }
+.wl-sort-btn.active:hover { color:var(--accent2) }
+.wl-sort-arrow { font-size:.55rem; opacity:0; flex-shrink:0 }
+.wl-sort-btn.active .wl-sort-arrow { opacity:.9 }
 .wheel-load-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .wheel-load-item:hover { border-color:var(--border-s); background:rgba(126,200,227,.03) }
 .wheel-load-item-name { flex:1; font-family:'DM Mono',monospace; font-size:.78rem; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
@@ -3397,6 +3406,11 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <div class="wheel-load-title" id="wheel-load-title">Charger une roue</div>
     <button class="wheel-load-close" onclick="closeWheelLoadModal()">✕</button>
   </div>
+  <div class="wl-sort" id="wl-sort" role="group" data-i18n-aria="wlSortBy" aria-label="Trier par">
+    <button class="wl-sort-btn" id="wl-sort-name"  onclick="wheelSortBy('name')"><span data-i18n="wlSortName">Nom</span><span class="wl-sort-arrow"></span></button>
+    <button class="wl-sort-btn" id="wl-sort-rider" onclick="wheelSortBy('rider')"><span data-i18n="wlSortRider">Rider</span><span class="wl-sort-arrow"></span></button>
+    <button class="wl-sort-btn" id="wl-sort-date"  onclick="wheelSortBy('date')"><span data-i18n="wlSortDate">Date</span><span class="wl-sort-arrow"></span></button>
+  </div>
   <div class="wheel-load-list" id="wheel-load-list"></div>
 </div>
 
@@ -4216,6 +4230,7 @@ const i18n = {
     tmEraseNdsTitle:'Effacer NDS', tmEraseDsTitle:'Effacer DS',
     tmPlayBtnTitle:'Animer les points', tmSnapCompareBtnTitle:'Comparer deux snapshots',
     efDiagBtnTitle:'Diagramme', efMicBtnTitle:'Saisie vocale', efBtBtnTitle:'Clavier Bluetooth',
+    wlSortName:'Nom', wlSortRider:'Rider', wlSortDate:'Date', wlSortBy:'Trier par',
     snapAnimReplayTitle:'Rejouer',
     delTitle:'Supprimer', clearValuesTitle:'Effacer les valeurs', clearFieldTitle:'Effacer',
     tmRecShare:'Partager la vidéo', tmRecSave:'Télécharger la vidéo',
@@ -4451,6 +4466,7 @@ const i18n = {
     tmEraseNdsTitle:'Clear NDS', tmEraseDsTitle:'Clear DS',
     tmPlayBtnTitle:'Animate points', tmSnapCompareBtnTitle:'Compare two snapshots',
     efDiagBtnTitle:'Diagram', efMicBtnTitle:'Voice input', efBtBtnTitle:'Bluetooth keyboard',
+    wlSortName:'Name', wlSortRider:'Rider', wlSortDate:'Date', wlSortBy:'Sort by',
     snapAnimReplayTitle:'Replay',
     delTitle:'Delete', clearValuesTitle:'Clear values', clearFieldTitle:'Clear',
     tmRecShare:'Share video', tmRecSave:'Download video',
@@ -4627,6 +4643,7 @@ const LS_REGISTRY = [
   { key:'spokeit_bkpClock',       kind:'meta',      erase:false, exportField:null,            owner:'rappel de sauvegarde (amorçage)' },
   { key:'spokeit_lastSnooze',     kind:'meta',      erase:false, exportField:null,            owner:'rappel de sauvegarde (snooze 24h)' },
   { key:'spokeit_bkpDated',       kind:'pref',      erase:false, exportField:null,            owner:'export backup (nom daté/fixe)' },
+  { key:'spokeit_wlSort',         kind:'pref',      erase:false, exportField:null,            owner:'tri de la liste « Charger une roue »' },
   { key:'spokeit_appTag',         kind:'meta',      erase:false, exportField:null,            owner:'toast nouvelle version (ETag)' },
   { key:'spoke-it-lang',          kind:'pref',      erase:false, exportField:null,            owner:'i18n' },
   { key:'ef_restore',             kind:'transient', erase:true,  exportField:null,            owner:'EF Vocal (reprise crash iOS)' },
@@ -19497,14 +19514,82 @@ document.addEventListener('keydown', function(e) {
     document.body.style.overflow = '';
   };
 
+  // ── Tri de la liste (nom / rider / date), mémorisé entre deux ouvertures ──
+  // Sens par défaut : alphabétique croissant pour le texte, plus récent d'abord
+  // pour la date. Les entrées sans clé (roue non affectée, enregistrement
+  // ancien sans ts) restent TOUJOURS en fin de liste, quel que soit le sens :
+  // elles n'ont pas de rang, les intercaler ferait sauter la lecture.
+  var WL_SORT_LS  = 'spokeit_wlSort';
+  var WL_SORT_DEF = { key:'date', dir:'desc' };
+  var _wlSort = (function() {
+    try {
+      var o = JSON.parse(localStorage.getItem(WL_SORT_LS));
+      if (o && (o.key === 'name' || o.key === 'rider' || o.key === 'date') &&
+               (o.dir === 'asc' || o.dir === 'desc')) return o;
+    } catch(e) {}
+    return { key: WL_SORT_DEF.key, dir: WL_SORT_DEF.dir };
+  })();
+
+  function _wlSortKey(cfg, key) {
+    if (key === 'date') return cfg.ts || null;
+    if (key === 'name') return cfg.name || null;
+    var rd = (cfg.riderId && typeof riderById === 'function') ? riderById(cfg.riderId) : null;
+    return (rd && rd.name) ? rd.name : null;
+  }
+
+  function _wlSortApply(arr) {
+    var key = _wlSort.key, dir = _wlSort.dir;
+    var loc = (lang === 'fr') ? 'fr' : 'en';
+    return arr.sort(function(a, b) {
+      var av = _wlSortKey(a.cfg, key), bv = _wlSortKey(b.cfg, key);
+      if (av === null || bv === null) {
+        if (av === null && bv === null) return a.i - b.i;
+        return (av === null) ? 1 : -1;          // vides en fin, dans les 2 sens
+      }
+      var r = (key === 'date')
+        ? (av - bv)
+        : String(av).localeCompare(String(bv), loc, { sensitivity:'base', numeric:true });
+      if (r === 0) return a.i - b.i;            // départage stable
+      return (dir === 'asc') ? r : -r;
+    });
+  }
+
+  function _wlSortRefreshBtns() {
+    ['name','rider','date'].forEach(function(k) {
+      var b = document.getElementById('wl-sort-' + k);
+      if (!b) return;
+      var on = (_wlSort.key === k);
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var ar = b.querySelector('.wl-sort-arrow');
+      if (ar) ar.textContent = on ? (_wlSort.dir === 'asc' ? '\u2191' : '\u2193') : '';
+    });
+  }
+
+  // Clic sur la colonne active = inversion du sens ; sinon on bascule dessus
+  // avec son sens par défaut.
+  window.wheelSortBy = function(key) {
+    if (_wlSort.key === key) _wlSort.dir = (_wlSort.dir === 'asc') ? 'desc' : 'asc';
+    else _wlSort = { key: key, dir: (key === 'date') ? 'desc' : 'asc' };
+    try { lsSet(WL_SORT_LS, JSON.stringify(_wlSort)); } catch(e) {}
+    wheelRenderLoadList();
+  };
+
   // ── Render load list (filtre par wtype courant) ───────────────────────────
   function wheelRenderLoadList() {
     var list = document.getElementById('wheel-load-list');
     if (!list) return;
+    _wlSortRefreshBtns();
     var configs = (typeof loadConfigs === 'function') ? loadConfigs() : [];
-    // Filtrer par roue courante (avant / arrière)
+    // Filtrer par roue courante (avant / arrière). `o.i` est l'index d'ORIGINE
+    // dans localStorage : il survit au tri, donc loadConfig(i)/deleteConfig(i)
+    // restent corrects quel que soit l'ordre d'affichage.
     var filtered = configs.map(function(cfg, i) { return { cfg: cfg, i: i }; })
       .filter(function(o) { return (o.cfg.state.wtype || 'avant') === wtype; });
+    _wlSortApply(filtered);
+
+    var sortBar = document.getElementById('wl-sort');
+    if (sortBar) sortBar.style.display = (filtered.length > 1) ? '' : 'none';
 
     if (filtered.length === 0) {
       list.innerHTML = '<div class="wheel-load-empty">' +
