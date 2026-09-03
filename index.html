@@ -13537,16 +13537,16 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
   <div class="ef-header">
     <div class="ef-title" id="ef-title">Easy Fill</div>
     <div style="display:flex;align-items:center;gap:.4rem">
-      <button class="ef-bt-btn" id="ef-diag-btn" onclick="efToggleDiagram()" title="Diagramme">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="12,2.5 20,8 20,16 12,21.5 4,16 4,8"/>
-          <polygon points="12,7 16.5,10 16.5,14 12,17 7.5,14 7.5,10"/>
-        </svg>
-      </button>
       <button class="ef-bt-btn" id="ef-mic-btn" ontouchend="efToggleMic();event.preventDefault()" onclick="efToggleMic()" title="Saisie vocale">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="9" y="1" width="6" height="11" rx="3"/>
           <path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
+      <button class="ef-bt-btn" id="ef-diag-btn" onclick="efToggleDiagram()" title="Diagramme">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12,2.5 20,8 20,16 12,21.5 4,16 4,8"/>
+          <polygon points="12,7 16.5,10 16.5,14 12,17 7.5,14 7.5,10"/>
         </svg>
       </button>
       <button class="ef-bt-btn" id="ef-bt-btn" onclick="efToggleBt()" title="Clavier Bluetooth">
