@@ -4140,8 +4140,28 @@ const _storedLang = (function() {
     return (v === 'fr' || v === 'en') ? v : null;
   } catch(e) { return null; }
 })();
-const _browserLang = (navigator.languages?.[0] || navigator.language || 'en').toLowerCase();
-let lang = _storedLang || (_browserLang.startsWith('fr') ? 'fr' : 'en');
+// Détection navigateur : on parcourt la liste de préférences dans SON ordre et
+// on retient la première langue que l'app parle. L'ancien code ne regardait que
+// la première entrée : un appareil annonçant ['de-DE','fr-FR'] tombait en
+// anglais alors que le français était disponible juste derrière. L'ordre est
+// respecté — ['en-GB','fr-FR'] donne bien l'anglais, c'est le choix déclaré.
+const _browserLang = (function() {
+  var list = (navigator.languages && navigator.languages.length)
+    ? navigator.languages : [navigator.language || 'en'];
+  for (var i = 0; i < list.length; i++) {
+    var c = String(list[i]).toLowerCase();
+    if (c.indexOf('fr') === 0) return 'fr';
+    if (c.indexOf('en') === 0) return 'en';
+  }
+  return 'en';
+})();
+let lang = _storedLang || _browserLang;
+// La langue n'était écrite QUE par toggleLang() : sans un appui sur le bouton
+// FR/EN, elle était redéduite du navigateur à chaque lancement, et changeait
+// donc toute seule si iOS modifiait ses préférences. On fige le choix dès le
+// premier démarrage. Écriture brute : lsSet() n'existe pas encore ici, et une
+// préférence d'affichage n'a pas à horodater le rappel de sauvegarde.
+if (!_storedLang) { try { localStorage.setItem('spoke-it-lang', lang); } catch(e) {} }
 
 const i18n = {
   fr: {
@@ -7144,11 +7164,13 @@ function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 // L'heure est en 24 h dans les deux langues (hour12:false) : en-GB le fait déjà
 // par défaut, on le fige pour ne pas dépendre de l'ICU du navigateur.
 //
-// Repli FR quand `lang` n'est pas encore posé : même convention que partout
-// ailleurs dans le fichier (`var L = typeof lang !== 'undefined' ? lang : 'fr'`).
+// Repli FR si `lang` n'est pas encore posé. Le try n'est pas décoratif :
+// `lang` est un `let`, donc avant son initialisation `typeof lang` JETTE une
+// ReferenceError au lieu de renvoyer 'undefined' — le garde habituel du
+// fichier (`typeof lang !== 'undefined'`) ne protège rien ici.
 function _dateLoc() {
-  var L = (typeof lang !== 'undefined') ? lang : 'fr';
-  return L === 'fr' ? 'fr-FR' : 'en-GB';
+  var L; try { L = lang; } catch(e) {}
+  return (L === 'en') ? 'en-GB' : 'fr-FR';
 }
 
 // jj/mm/aaaa — listes « Charger une roue / un moyeu / une jante », liste des
