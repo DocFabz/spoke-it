@@ -4156,24 +4156,10 @@ const _browserLang = (function() {
   return 'en';
 })();
 let lang = _storedLang || _browserLang;
-// La langue n'était écrite QUE par toggleLang() : sans un appui sur le bouton
-// FR/EN, elle était redéduite du navigateur à chaque lancement, et changeait
-// donc toute seule si iOS modifiait ses préférences. On fige le choix au premier
-// démarrage — mais JAMAIS pendant l'analyse du document : sur iOS une écriture
-// localStorage déclenche une transaction disque synchrone sur tout le stockage
-// de l'origine (snapshots compris), et ce script bloque l'analyseur, donc tout
-// ce qui suit — jusqu'à l'activation des boutons — attendrait derrière. On la
-// repousse au repos, comme lsAuditKeys. Écriture brute : lsSet() n'existe pas
-// encore ici, et une préférence d'affichage n'horodate pas le rappel de
-// sauvegarde. Le report est sans risque : rien ne relit la clé avant le
-// prochain lancement.
-if (!_storedLang) {
-  var _persistLang = function() {
-    try { localStorage.setItem('spoke-it-lang', lang); } catch(e) {}
-  };
-  if ('requestIdleCallback' in window) requestIdleCallback(_persistLang, { timeout: 3000 });
-  else window.addEventListener('load', function() { setTimeout(_persistLang, 0); });
-}
+// Persistance retirée à ta demande : plus AUCUNE écriture localStorage pendant
+// le démarrage. La langue redevient déduite du navigateur à chaque lancement
+// tant que le bouton FR/EN n'a pas été touché — un seul appui la fige pour de
+// bon (toggleLang écrit la clé).
 
 const i18n = {
   fr: {
