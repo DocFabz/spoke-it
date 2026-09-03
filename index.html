@@ -7126,51 +7126,60 @@ function loadConfig(idx) {
 function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 // ── Dates ───────────────────────────────────────────────────────────────────
 // Quatre formats, un seul point d'écriture chacun, tous suivant `lang`.
-//   fmtDMY       FR 05/01/2026       EN 05 Jan 2026      listes « Charger… », vidéo
-//   fmtDMHM      FR 05/01 14:07      EN 05 Jan 14:07     snapshots, PDF comparatif
-//   fmtDMYLong   FR 05 janvier 2026  EN 05 January 2026  pieds de page des 4 PDF
-//   fmtDMYShort  FR 05 janv. 2026    EN 05 Jan 2026      étiquette JPEG snapshot
+//
+//   fmtDMY       FR 05/01/2026        EN 05 Jan 2026
+//   fmtDMYHM     FR 05/01/2026 14:07  EN 05 Jan 2026 14:07
+//   fmtDMYLong   FR 05 janvier 2026   EN 05 January 2026
+//   fmtDMYShort  FR 05 janv. 2026     EN 05 Jan 2026
+//
+// Règle de répartition : les listes de snapshots à l'écran portent l'heure
+// (plusieurs relevés dans la même séance de rayonnage, c'est elle qui les
+// sépare) ; tout le reste s'en tient au jour. Toutes portent l'année.
+//
 // En EN le mois est abrégé plutôt que numérique : en-GB rendrait « 05/01/2026 »,
 // strictement identique au FR, qu'un lecteur habitué au format US lit comme le
-// 1er mai. En FR les listes restent numériques — c'est l'usage local, et c'est
-// plus court dans des métas serrées.
+// 1er mai. En FR on garde le numérique dans les listes — c'est l'usage local,
+// et c'est plus court dans des métas serrées.
+//
 // L'heure est en 24 h dans les deux langues (hour12:false) : en-GB le fait déjà
 // par défaut, on le fige pour ne pas dépendre de l'ICU du navigateur.
+//
 // Repli FR quand `lang` n'est pas encore posé : même convention que partout
 // ailleurs dans le fichier (`var L = typeof lang !== 'undefined' ? lang : 'fr'`).
 function _dateLoc() {
   var L = (typeof lang !== 'undefined') ? lang : 'fr';
   return L === 'fr' ? 'fr-FR' : 'en-GB';
 }
-function _dateMonthOpt() { return _dateLoc() === 'fr-FR' ? '2-digit' : 'short'; }
 
-// jj/mm/aaaa — listes « Charger… » (roues, moyeux, jantes), roues d'un rider,
-// incrustation de l'export vidéo.
+// jj/mm/aaaa — listes « Charger une roue / un moyeu / une jante », liste des
+// roues d'un rider, cartes du PDF comparatif, incrustation de l'export vidéo.
 function fmtDMY(ts) {
-  return new Date(ts).toLocaleDateString(_dateLoc(),
-    { day:'2-digit', month:_dateMonthOpt(), year:'numeric' });
+  var loc = _dateLoc();
+  return new Date(ts).toLocaleDateString(loc,
+    { day:'2-digit', month:(loc === 'fr-FR' ? '2-digit' : 'short'), year:'numeric' });
 }
 
-// jj/mm hh:mm — listes de snapshots et cartes du PDF comparatif. Pas d'année :
-// les snapshots d'une même roue se lisent au jour et à l'heure.
-function fmtDMHM(ts) {
-  var d = new Date(ts), loc = _dateLoc();
-  return d.toLocaleDateString(loc, { day:'2-digit', month:_dateMonthOpt() }) + ' ' +
-         d.toLocaleTimeString(loc, { hour:'2-digit', minute:'2-digit', hour12:false });
+// jj/mm/aaaa hh:mm — les deux listes de snapshots à l'écran : celle du module
+// Snapshots et celle de sélection pour comparaison. La date vient de fmtDMY,
+// pas d'un rendu parallèle : il n'existe qu'une façon d'écrire un 12 mai ici.
+function fmtDMYHM(ts) {
+  return fmtDMY(ts) + ' ' +
+         new Date(ts).toLocaleTimeString(_dateLoc(),
+           { hour:'2-digit', minute:'2-digit', hour12:false });
 }
 
 // jj mois aaaa — pieds de page des 4 PDF (conversion, tension, diagramme,
-// comparaison). Le mois en toutes lettres est écrit dans la langue courante ;
-// Les 12 mois français, longs et abrégés, tiennent dans WinAnsi (vérifié) :
-// les polices standard de jsPDF les rendent tels quels, pdfSanitize inutile.
+// comparaison). Les 12 mois français, longs comme abrégés, tiennent dans
+// WinAnsi (vérifié) : les polices standard de jsPDF les rendent tels quels,
+// pdfSanitize est inutile ici.
 function fmtDMYLong(ts) {
   return new Date(ts).toLocaleDateString(_dateLoc(),
     { day:'2-digit', month:'long', year:'numeric' });
 }
 
-// jj mois. aaaa — étiquette de snapshot des exports JPEG, seule ligne de date
-// d'un canvas où le mois long ne tient pas. Un seul appelant : ce n'est pas une
-// déduplication, c'est le regroupement — toutes les dates du fichier sortent
+// jj mois. aaaa — étiquette de snapshot des exports JPEG, où le mois long ne
+// tient pas dans la ligne du canvas. Un seul appelant : ce n'est pas une
+// déduplication mais un regroupement — toutes les dates du fichier sortent
 // d'ici, une évolution de format ne se cherche qu'à un endroit.
 function fmtDMYShort(ts) {
   return new Date(ts).toLocaleDateString(_dateLoc(),
@@ -17796,7 +17805,7 @@ function snapRenderList() {
     return;
   }
   list.innerHTML = snaps.map((snap, i) => {
-    const dateStr = fmtDMHM(snap.ts);
+    const dateStr = fmtDMYHM(snap.ts);
     const infoStr = escHtml([_snapResolveTensio(snap), _snapSpokeLabel(snap, wtype)].filter(Boolean).join(' · '));
     return '<div class="snap-item" onclick="snapLoad(' + i + ')">'
       + '<div class="snap-item-info">'
@@ -17949,7 +17958,7 @@ function _snapCompareRenderList(snaps) {
   if (!list) return;
   list.innerHTML = snaps.slice().reverse().map(function(snap, ri) {
     var i = snaps.length - 1 - ri; // original index
-    var dateStr = fmtDMHM(snap.ts);
+    var dateStr = fmtDMYHM(snap.ts);
     var infoStr = escHtml([_snapResolveTensio(snap), _snapSpokeLabel(snap, wtype)].filter(Boolean).join(' · '));
     return '<div class="snap-item" id="snapcmp-item-' + i + '" onclick="_snapCompareToggle(' + i + ')" style="cursor:pointer">'
       + '<div class="snap-item-info">'
@@ -18328,7 +18337,7 @@ async function snapComparePDF() {
   [rendA, rendB].forEach(function(rend, si) {
     var snap   = si===0 ? snapA : snapB;
     var cardX  = ML + si*(colW+colGap);
-    var dstr   = fmtDMHM(snap.ts);
+    var dstr   = fmtDMY(snap.ts);
 
     // Label snapshot au-dessus de la card
     doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor.apply(doc,C_ACCENT);
