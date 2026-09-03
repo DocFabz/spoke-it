@@ -330,7 +330,6 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .hr-load-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .hr-load-item:hover { border-color:var(--border-s); background:rgba(126,200,227,.03) }
 .hr-load-item-name { flex:1; font-family:'DM Mono',monospace; font-size:.78rem; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-.hr-load-item-meta { font-family:'DM Mono',monospace; font-size:.63rem; color:var(--text3); white-space:nowrap }
 .hr-load-item-del { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; touch-action:manipulation; padding:.1rem .25rem; transition:color .2s; flex-shrink:0 }
 .hr-load-item-del:hover { color:var(--warm) }
 .hr-load-empty { font-size:.72rem; color:var(--text3); font-style:italic; text-align:center; padding:.5rem }
@@ -361,17 +360,15 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .wheel-load-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .wheel-load-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
 .wheel-load-list { display:flex; flex-direction:column; gap:.35rem; overflow-y:auto; flex:1 }
-/* Barre de tri des listes « Charger… » (roues, moyeux, jantes) : reprend la
-   pilule du modal capture. Un seul jeu de règles, deux préfixes de classe —
-   les deux modales ont le même gabarit, elles doivent rester au pixel près. */
-.wl-sort, .hr-sort { display:flex; align-items:center; background:var(--inp); border:1px solid var(--border-s); border-radius:999px; padding:3px; gap:0; flex-shrink:0 }
-.wl-sort-btn, .hr-sort-btn { flex:1; padding:.34rem .3rem; background:transparent; border:none; border-radius:999px; color:var(--text3); font-family:'DM Mono',monospace; font-size:.6rem; font-weight:400; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:background .22s, color .22s; display:flex; align-items:center; justify-content:center; gap:.25rem; min-width:0 }
-.wl-sort-btn span, .hr-sort-btn span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-.wl-sort-btn:hover, .hr-sort-btn:hover { color:var(--text2) }
-.wl-sort-btn.active, .hr-sort-btn.active { background:var(--card); color:var(--accent); box-shadow:0 1px 6px rgba(0,0,0,.35) }
-.wl-sort-btn.active:hover, .hr-sort-btn.active:hover { color:var(--accent2) }
-.wl-sort-arrow, .hr-sort-arrow { font-size:.55rem; opacity:0; flex-shrink:0 }
-.wl-sort-btn.active .wl-sort-arrow, .hr-sort-btn.active .hr-sort-arrow { opacity:.9 }
+/* Barre de tri de la liste des roues : reprend la pilule du modal capture. */
+.wl-sort { display:flex; align-items:center; background:var(--inp); border:1px solid var(--border-s); border-radius:999px; padding:3px; gap:0; flex-shrink:0 }
+.wl-sort-btn { flex:1; padding:.34rem .3rem; background:transparent; border:none; border-radius:999px; color:var(--text3); font-family:'DM Mono',monospace; font-size:.6rem; font-weight:400; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:background .22s, color .22s; display:flex; align-items:center; justify-content:center; gap:.25rem; min-width:0 }
+.wl-sort-btn span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.wl-sort-btn:hover { color:var(--text2) }
+.wl-sort-btn.active { background:var(--card); color:var(--accent); box-shadow:0 1px 6px rgba(0,0,0,.35) }
+.wl-sort-btn.active:hover { color:var(--accent2) }
+.wl-sort-arrow { font-size:.55rem; opacity:0; flex-shrink:0 }
+.wl-sort-btn.active .wl-sort-arrow { opacity:.9 }
 .wheel-load-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .wheel-load-item:hover { border-color:var(--border-s); background:rgba(126,200,227,.03) }
 .wheel-load-item-name { flex:1; font-family:'DM Mono',monospace; font-size:.78rem; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
@@ -3376,10 +3373,6 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <div class="hr-load-title" id="hr-load-title">Charger un moyeu</div>
     <button class="hr-load-close" onclick="closeHrLoadModal()">✕</button>
   </div>
-  <div class="hr-sort" id="hr-sort" role="group" data-i18n-aria="wlSortBy" aria-label="Trier par">
-    <button class="hr-sort-btn" id="hr-sort-name" onclick="hrSortBy('name')"><span data-i18n="wlSortName">Nom</span><span class="hr-sort-arrow"></span></button>
-    <button class="hr-sort-btn" id="hr-sort-date" onclick="hrSortBy('date')"><span data-i18n="wlSortDate">Date</span><span class="hr-sort-arrow"></span></button>
-  </div>
   <div class="hr-load-list" id="hr-load-list"></div>
 </div>
 
@@ -4140,26 +4133,8 @@ const _storedLang = (function() {
     return (v === 'fr' || v === 'en') ? v : null;
   } catch(e) { return null; }
 })();
-// Détection navigateur : on parcourt la liste de préférences dans SON ordre et
-// on retient la première langue que l'app parle. L'ancien code ne regardait que
-// la première entrée : un appareil annonçant ['de-DE','fr-FR'] tombait en
-// anglais alors que le français était disponible juste derrière. L'ordre est
-// respecté — ['en-GB','fr-FR'] donne bien l'anglais, c'est le choix déclaré.
-const _browserLang = (function() {
-  var list = (navigator.languages && navigator.languages.length)
-    ? navigator.languages : [navigator.language || 'en'];
-  for (var i = 0; i < list.length; i++) {
-    var c = String(list[i]).toLowerCase();
-    if (c.indexOf('fr') === 0) return 'fr';
-    if (c.indexOf('en') === 0) return 'en';
-  }
-  return 'en';
-})();
-let lang = _storedLang || _browserLang;
-// Persistance retirée à ta demande : plus AUCUNE écriture localStorage pendant
-// le démarrage. La langue redevient déduite du navigateur à chaque lancement
-// tant que le bouton FR/EN n'a pas été touché — un seul appui la fige pour de
-// bon (toggleLang écrit la clé).
+const _browserLang = (navigator.languages?.[0] || navigator.language || 'en').toLowerCase();
+let lang = _storedLang || (_browserLang.startsWith('fr') ? 'fr' : 'en');
 
 const i18n = {
   fr: {
@@ -4669,7 +4644,6 @@ const LS_REGISTRY = [
   { key:'spokeit_lastSnooze',     kind:'meta',      erase:false, exportField:null,            owner:'rappel de sauvegarde (snooze 24h)' },
   { key:'spokeit_bkpDated',       kind:'pref',      erase:false, exportField:null,            owner:'export backup (nom daté/fixe)' },
   { key:'spokeit_wlSort',         kind:'pref',      erase:false, exportField:null,            owner:'tri de la liste « Charger une roue »' },
-  { key:'spokeit_hrSort',         kind:'pref',      erase:false, exportField:null,            owner:'tri des listes « Charger un moyeu / une jante »' },
   { key:'spokeit_appTag',         kind:'meta',      erase:false, exportField:null,            owner:'toast nouvelle version (ETag)' },
   { key:'spoke-it-lang',          kind:'pref',      erase:false, exportField:null,            owner:'i18n' },
   { key:'ef_restore',             kind:'transient', erase:true,  exportField:null,            owner:'EF Vocal (reprise crash iOS)' },
@@ -7142,69 +7116,6 @@ function loadConfig(idx) {
 }
 
 function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-// ── Dates ───────────────────────────────────────────────────────────────────
-// Quatre formats, un seul point d'écriture chacun, tous suivant `lang`.
-//
-//   fmtDMY       FR 05/01/2026        EN 05 Jan 2026
-//   fmtDMYHM     FR 05/01/2026 14:07  EN 05 Jan 2026 14:07
-//   fmtDMYLong   FR 05 janvier 2026   EN 05 January 2026
-//   fmtDMYShort  FR 05 janv. 2026     EN 05 Jan 2026
-//
-// Règle de répartition : les listes de snapshots à l'écran portent l'heure
-// (plusieurs relevés dans la même séance de rayonnage, c'est elle qui les
-// sépare) ; tout le reste s'en tient au jour. Toutes portent l'année.
-//
-// En EN le mois est abrégé plutôt que numérique : en-GB rendrait « 05/01/2026 »,
-// strictement identique au FR, qu'un lecteur habitué au format US lit comme le
-// 1er mai. En FR on garde le numérique dans les listes — c'est l'usage local,
-// et c'est plus court dans des métas serrées.
-//
-// L'heure est en 24 h dans les deux langues (hour12:false) : en-GB le fait déjà
-// par défaut, on le fige pour ne pas dépendre de l'ICU du navigateur.
-//
-// Repli FR si `lang` n'est pas encore posé. Le try n'est pas décoratif :
-// `lang` est un `let`, donc avant son initialisation `typeof lang` JETTE une
-// ReferenceError au lieu de renvoyer 'undefined' — le garde habituel du
-// fichier (`typeof lang !== 'undefined'`) ne protège rien ici.
-function _dateLoc() {
-  var L; try { L = lang; } catch(e) {}
-  return (L === 'en') ? 'en-GB' : 'fr-FR';
-}
-
-// jj/mm/aaaa — listes « Charger une roue / un moyeu / une jante », liste des
-// roues d'un rider, cartes du PDF comparatif, incrustation de l'export vidéo.
-function fmtDMY(ts) {
-  var loc = _dateLoc();
-  return new Date(ts).toLocaleDateString(loc,
-    { day:'2-digit', month:(loc === 'fr-FR' ? '2-digit' : 'short'), year:'numeric' });
-}
-
-// jj/mm/aaaa hh:mm — les deux listes de snapshots à l'écran : celle du module
-// Snapshots et celle de sélection pour comparaison. La date vient de fmtDMY,
-// pas d'un rendu parallèle : il n'existe qu'une façon d'écrire un 12 mai ici.
-function fmtDMYHM(ts) {
-  return fmtDMY(ts) + ' ' +
-         new Date(ts).toLocaleTimeString(_dateLoc(),
-           { hour:'2-digit', minute:'2-digit', hour12:false });
-}
-
-// jj mois aaaa — pieds de page des 4 PDF (conversion, tension, diagramme,
-// comparaison). Les 12 mois français, longs comme abrégés, tiennent dans
-// WinAnsi (vérifié) : les polices standard de jsPDF les rendent tels quels,
-// pdfSanitize est inutile ici.
-function fmtDMYLong(ts) {
-  return new Date(ts).toLocaleDateString(_dateLoc(),
-    { day:'2-digit', month:'long', year:'numeric' });
-}
-
-// jj mois. aaaa — étiquette de snapshot des exports JPEG, où le mois long ne
-// tient pas dans la ligne du canvas. Un seul appelant : ce n'est pas une
-// déduplication mais un regroupement — toutes les dates du fichier sortent
-// d'ici, une évolution de format ne se cherche qu'à un endroit.
-function fmtDMYShort(ts) {
-  return new Date(ts).toLocaleDateString(_dateLoc(),
-    { day:'2-digit', month:'short', year:'numeric' });
-}
 
 function renderConfigsList() {
   if (typeof hrUpdateButtons === 'function') hrUpdateButtons();
@@ -10452,7 +10363,8 @@ async function tmConvExportPdf() {
 
   const atelier  = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
   const workshop = (atelier.name && atelier.name.trim()) ? atelier.name.trim() : 'Spoke It';
-  const dateStr  = fmtDMYLong(Date.now());
+  const now      = new Date();
+  const dateStr  = now.toLocaleDateString(L === 'fr' ? 'fr-FR' : 'en-GB', { day:'2-digit', month:'long', year:'numeric' });
 
   let Y = MT;
 
@@ -12511,7 +12423,8 @@ async function tmExportPdfWithOpts(opts) {
   if (!radar) return;
 
   // ── Collecte des données ──────────────────────────────────────────────────
-  const dateStr    = fmtDMYLong(Date.now());
+  const now        = new Date();
+  const dateStr    = now.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', { day:'2-digit', month:'long', year:'numeric' });
   const wheelName  = (_loadedConfigName[wtype]) || '';
   const wheelLabel = wtype === 'arriere' ? t('rearLabel') : t('frontLabel');
   // `sumD` et non `sd` : la globale `sd` est le DIAMETRE du rayon. La masquer
@@ -16328,7 +16241,8 @@ async function diagGeneratePdf() {
   var wheelInp = document.getElementById('diag-wheel');
   var wheelName = wheelInp ? wheelInp.value.trim() : '';
 
-  var dateStr = fmtDMYLong(Date.now());
+  var now     = new Date();
+  var dateStr = now.toLocaleDateString(L === 'fr' ? 'fr-FR' : 'en-GB', { day:'2-digit', month:'long', year:'numeric' });
 
   var leg = radarLegLabels(wtype);
 
@@ -17114,94 +17028,9 @@ function closeHrLoadModal() {
   document.body.style.overflow = '';
 }
 
-// ── Tri des listes (nom / date), mémorisé entre deux ouvertures ─────────────
-// Même modèle que « Charger une roue » : alphabétique croissant par défaut
-// pour le texte, plus récent d'abord pour la date. Les entrées sans clé
-// (enregistrement ancien ou importé sans ts) restent TOUJOURS en fin de liste,
-// quel que soit le sens : elles n'ont pas de rang, les intercaler ferait
-// sauter la lecture.
-// La préférence est distincte moyeu / jante : la modale est mutualisée, les
-// deux listes ne le sont pas — trier ses moyeux par nom ne doit pas décider
-// de l'ordre de ses jantes.
-var HR_SORT_LS  = 'spokeit_hrSort';
-var HR_SORT_DEF = { key:'date', dir:'desc' };
-
-// Lecture PARESSEUSE : au premier affichage d'une liste, pas à l'analyse du
-// document. Un getItem au parse retarde tout ce qui suit dans un fichier de
-// 1,6 Mo, pour une préférence dont personne n'a besoin avant l'ouverture de
-// la modale.
-var _hrSort = null;
-function _hrSortState(type) {
-  if (!_hrSort) {
-    function ok(o) {
-      return (o && (o.key === 'name' || o.key === 'date') &&
-                   (o.dir === 'asc'  || o.dir === 'desc'))
-        ? { key:o.key, dir:o.dir } : null;
-    }
-    var out = { hub:{ key:HR_SORT_DEF.key, dir:HR_SORT_DEF.dir },
-                rim:{ key:HR_SORT_DEF.key, dir:HR_SORT_DEF.dir } };
-    try {
-      var o = JSON.parse(localStorage.getItem(HR_SORT_LS));
-      if (o) {
-        if (ok(o.hub)) out.hub = ok(o.hub);
-        if (ok(o.rim)) out.rim = ok(o.rim);
-      }
-    } catch(e) {}
-    _hrSort = out;
-  }
-  return _hrSort[type === 'hub' ? 'hub' : 'rim'];
-}
-
-function _hrSortKey(entry, key) {
-  if (key === 'date') return entry.ts || null;
-  return entry.name || null;
-}
-
-function _hrSortApply(type, arr) {
-  var st  = _hrSortState(type);
-  var loc = (lang === 'fr') ? 'fr' : 'en';
-  return arr.sort(function(a, b) {
-    var av = _hrSortKey(a.entry, st.key), bv = _hrSortKey(b.entry, st.key);
-    if (av === null || bv === null) {
-      if (av === null && bv === null) return a.gi - b.gi;
-      return (av === null) ? 1 : -1;          // vides en fin, dans les 2 sens
-    }
-    var r = (st.key === 'date')
-      ? (av - bv)
-      : String(av).localeCompare(String(bv), loc, { sensitivity:'base', numeric:true });
-    if (r === 0) return a.gi - b.gi;           // départage stable
-    return (st.dir === 'asc') ? r : -r;
-  });
-}
-
-function _hrSortRefreshBtns(type) {
-  var st = _hrSortState(type);
-  ['name','date'].forEach(function(k) {
-    var b = document.getElementById('hr-sort-' + k);
-    if (!b) return;
-    var on = (st.key === k);
-    b.classList.toggle('active', on);
-    b.setAttribute('aria-pressed', on ? 'true' : 'false');
-    var ar = b.querySelector('.hr-sort-arrow');
-    if (ar) ar.textContent = on ? (st.dir === 'asc' ? '\u2191' : '\u2193') : '';
-  });
-}
-
-// Clic sur la colonne active = inversion du sens ; sinon on bascule dessus
-// avec son sens par défaut. _hrModalType porte le type ouvert (hub | rim).
-function hrSortBy(key) {
-  var type = (_hrModalType === 'hub') ? 'hub' : 'rim';
-  var st   = _hrSortState(type);   // garantit le chargement paresseux
-  if (st.key === key) st.dir = (st.dir === 'asc') ? 'desc' : 'asc';
-  else _hrSort[type] = { key: key, dir: (key === 'date') ? 'desc' : 'asc' };
-  try { lsSet(HR_SORT_LS, JSON.stringify(_hrSort)); } catch(e) {}
-  hrRenderLoadList(_hrModalType);
-}
-
 function hrRenderLoadList(type) {
   var list = document.getElementById('hr-load-list');
   if (!list) return;
-  _hrSortRefreshBtns(type);
   // Index global (gi) capturé AVANT filtrage : la suppression splice le
   // tableau complet du storage, jamais l'index de la vue filtrée (sinon,
   // moyeux AV/AR mélangés => mauvais moyeu supprimé). Même pattern que
@@ -17212,11 +17041,6 @@ function hrRenderLoadList(type) {
   if (type === 'hub') {
     arr = arr.filter(function(o) { return (o.entry.data && o.entry.data.wtype ? o.entry.data.wtype : 'avant') === wtype; });
   }
-  _hrSortApply(type, arr);
-
-  // Barre de tri masquée sous 2 entrées : rien à ordonner.
-  var sortBar = document.getElementById('hr-sort');
-  if (sortBar) sortBar.style.display = (arr.length > 1) ? '' : 'none';
 
   if (arr.length === 0) {
     list.innerHTML = '<div class="hr-load-empty">' +
@@ -17232,13 +17056,6 @@ function hrRenderLoadList(type) {
     var nameEl = document.createElement('div');
     nameEl.className = 'hr-load-item-name';
     nameEl.textContent = entry.name;
-
-    // Date d'enregistrement. Absente sur les entrées anciennes ou importées
-    // sans ts : on n'affiche alors rien.
-    var dateStr = entry.ts ? fmtDMY(entry.ts) : '';
-    var metaEl = document.createElement('div');
-    metaEl.className = 'hr-load-item-meta';
-    metaEl.textContent = dateStr;
 
     var delBtn = document.createElement('button');
     delBtn.className = 'hr-load-item-del';
@@ -17258,7 +17075,6 @@ function hrRenderLoadList(type) {
     });
 
     item.appendChild(nameEl);
-    if (dateStr) item.appendChild(metaEl);
     item.appendChild(delBtn);
     item.addEventListener('click', function() {
       // Charger un moyeu ou une jante invalide la roue courante (même
@@ -17832,7 +17648,11 @@ function snapRenderList() {
     return;
   }
   list.innerHTML = snaps.map((snap, i) => {
-    const dateStr = fmtDMYHM(snap.ts);
+    const d = new Date(snap.ts);
+    const dateStr = String(d.getDate()).padStart(2,'0') + '/'
+      + String(d.getMonth()+1).padStart(2,'0') + ' '
+      + String(d.getHours()).padStart(2,'0') + ':'
+      + String(d.getMinutes()).padStart(2,'0');
     const infoStr = escHtml([_snapResolveTensio(snap), _snapSpokeLabel(snap, wtype)].filter(Boolean).join(' · '));
     return '<div class="snap-item" onclick="snapLoad(' + i + ')">'
       + '<div class="snap-item-info">'
@@ -17985,7 +17805,11 @@ function _snapCompareRenderList(snaps) {
   if (!list) return;
   list.innerHTML = snaps.slice().reverse().map(function(snap, ri) {
     var i = snaps.length - 1 - ri; // original index
-    var dateStr = fmtDMYHM(snap.ts);
+    var d = new Date(snap.ts);
+    var dateStr = String(d.getDate()).padStart(2,'0') + '/'
+      + String(d.getMonth()+1).padStart(2,'0') + ' '
+      + String(d.getHours()).padStart(2,'0') + ':'
+      + String(d.getMinutes()).padStart(2,'0');
     var infoStr = escHtml([_snapResolveTensio(snap), _snapSpokeLabel(snap, wtype)].filter(Boolean).join(' · '));
     return '<div class="snap-item" id="snapcmp-item-' + i + '" onclick="_snapCompareToggle(' + i + ')" style="cursor:pointer">'
       + '<div class="snap-item-info">'
@@ -18264,7 +18088,8 @@ async function snapComparePDF() {
     var _rd = riderById(_riderCfg.riderId);
     if (_rd && _rd.name) pdfRiderName = _rd.name;
   }
-  var dateStr = fmtDMYLong(Date.now());
+  var now = new Date();
+  var dateStr = now.toLocaleDateString(L==='fr'?'fr-FR':'en-GB',{day:'2-digit',month:'long',year:'numeric'});
 
   function sanitize(str) { return pdfSanitize(str); } // délégué → pdfSanitize (source unique)
   var PW=210, PH=297, ML=14, MR=14, MT=14, CW=PW-ML-MR;
@@ -18364,7 +18189,9 @@ async function snapComparePDF() {
   [rendA, rendB].forEach(function(rend, si) {
     var snap   = si===0 ? snapA : snapB;
     var cardX  = ML + si*(colW+colGap);
-    var dstr   = fmtDMY(snap.ts);
+    var d3     = new Date(snap.ts);
+    var dstr   = String(d3.getDate()).padStart(2,'0')+'/'+String(d3.getMonth()+1).padStart(2,'0')
+               +' '+String(d3.getHours()).padStart(2,'0')+':'+String(d3.getMinutes()).padStart(2,'0');
 
     // Label snapshot au-dessus de la card
     doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor.apply(doc,C_ACCENT);
@@ -18636,7 +18463,7 @@ async function snapCompareJPEG() {
 
     // Étiquette snapshot (S1, S2…)
     var snapLbl = 'S' + snap.num;
-    var dateStr = fmtDMYShort(snap.ts);
+    var dateStr = new Date(snap.ts).toLocaleDateString(L === 'fr' ? 'fr-FR' : 'en-GB', { day:'2-digit', month:'short', year:'numeric' });
 
     var hLine1 = headerH * 0.30;
     var hLine2 = headerH * 0.72;
@@ -18879,6 +18706,8 @@ async function snapCompareAnim() {
   if (!allVals.length) return;
   var scaleMax = Math.ceil(Math.max.apply(null, allVals) / 20) * 20 || 20;
   function lerp(a, b, t) { if (a === null && b === null) return null; if (a === null) return b * t; if (b === null) return a * (1 - t); return a + (b - a) * t; }
+  function fmtDate(ts) { var d = new Date(ts); return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear(); }
+
   function drawFrame(elapsed) {
     var w = VW, h = VH, radarH = w; // zone radar = carré du haut
     var cx = w/2, cy = radarH/2, R = w*0.38, N = perSide*2, step = (2*Math.PI)/N;
@@ -18953,8 +18782,8 @@ async function snapCompareAnim() {
     var wname = 'Powered by spokeit.fr';
     ctx.globalAlpha=1; ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.textAlign='left'; ctx.fillText(wname, PAD, PAD);
     ctx.textAlign='right';
-    if (alphaA>0) { ctx.globalAlpha=alphaA; ctx.fillStyle='rgba(126,200,227,1)'; ctx.fillText(fmtDMY(snapA.ts), w-PAD, PAD); }
-    if (alphaB>0) { ctx.globalAlpha=alphaB; ctx.fillStyle='rgba(126,200,227,1)'; ctx.fillText(fmtDMY(snapB.ts), w-PAD, PAD); }
+    if (alphaA>0) { ctx.globalAlpha=alphaA; ctx.fillStyle='rgba(126,200,227,1)'; ctx.fillText(fmtDate(snapA.ts), w-PAD, PAD); }
+    if (alphaB>0) { ctx.globalAlpha=alphaB; ctx.fillStyle='rgba(126,200,227,1)'; ctx.fillText(fmtDate(snapB.ts), w-PAD, PAD); }
     ctx.globalAlpha=1;
   }
 
@@ -19781,7 +19610,12 @@ document.addEventListener('keydown', function(e) {
       // Chip rider si la roue est affectée
       var riderEl = (typeof riderChipEl === 'function') ? riderChipEl(cfg.riderId) : null;
 
-      var dateStr = cfg.ts ? fmtDMY(cfg.ts) : '';
+      var dateStr = '';
+      if (cfg.ts) {
+        var d = new Date(cfg.ts);
+        dateStr = String(d.getDate()).padStart(2,'0') + '/' +
+                  String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+      }
       var metaEl = document.createElement('div');
       metaEl.className = 'wheel-load-item-meta';
       metaEl.textContent = dateStr;
@@ -19957,7 +19791,12 @@ document.addEventListener('keydown', function(e) {
         ? (lang === 'fr' ? 'AR' : 'R') : (lang === 'fr' ? 'AV' : 'F');
       nameEl.textContent = cfg.name + '  · ' + sideTag;
 
-      var dateStr = cfg.ts ? fmtDMY(cfg.ts) : '';
+      var dateStr = '';
+      if (cfg.ts) {
+        var d = new Date(cfg.ts);
+        dateStr = String(d.getDate()).padStart(2,'0') + '/' +
+                  String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+      }
       var metaEl = document.createElement('div');
       metaEl.className = 'wheel-load-item-meta';
       metaEl.textContent = dateStr;
