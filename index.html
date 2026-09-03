@@ -18357,6 +18357,7 @@ async function snapCompareJPEG() {
   selPair.sort(function(a, b) { return a.ts - b.ts; }); // plus ancien à gauche
   var snapA = selPair[0];
   var snapB = selPair[1];
+  if (!snapA || !snapB) return; // symétrie avec snapComparePDF : sélection orpheline
   var L = typeof lang !== 'undefined' ? lang : 'fr';
 
   // Constantes identiques à tmScreenshot
@@ -18656,6 +18657,7 @@ async function snapCompareAnim() {
   var selPair = [snaps[_snapCompareSelected[0]], snaps[_snapCompareSelected[1]]];
   selPair.sort(function(a, b) { return a.ts - b.ts; });
   var snapA = selPair[0], snapB = selPair[1];
+  if (!snapA || !snapB) return; // symétrie avec snapComparePDF : sélection orpheline
 
   snapCompareClose();
   await document.fonts.ready;
