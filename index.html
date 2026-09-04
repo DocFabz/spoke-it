@@ -4344,6 +4344,7 @@ const i18n = {
     riderAssign:'Affecter à un rider',
     riderAssignNone:'Aucun',
     riderUnassign:'Désaffecter',
+    riderUnassignConfirm:'Désaffecter <strong>{name}</strong> de ce rider ? La roue et ses mesures sont conservées.',
     eraseMgrTitle:'Supprimer des données',
     eraseMgrWheels:'Roues',
     eraseMgrCustomTensios:'Tensiomètres perso',
@@ -4580,6 +4581,7 @@ const i18n = {
     riderAssign:'Assign to a rider',
     riderAssignNone:'None',
     riderUnassign:'Unassign',
+    riderUnassignConfirm:'Unassign <strong>{name}</strong> from this rider? The wheel and its measurements are kept.',
     eraseMgrTitle:'Delete data',
     eraseMgrWheels:'Wheels',
     eraseMgrCustomTensios:'Custom tensiometers',
@@ -20029,11 +20031,23 @@ document.addEventListener('keydown', function(e) {
       delBtn.title = t('riderUnassign');
       delBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        var cfgs = loadConfigs();
-        if (cfgs[i]) { cfgs[i].riderId = null; persistConfigs(cfgs); }
-        riderRenderWheels(riderId);
-        // Retirer la capsule rider de la card Roue si cette roue est chargée
-        if (typeof _refreshLoadedBadges === 'function') _refreshLoadedBadges();
+        // Le × est visuellement identique à celui de « Charger une roue », qui,
+        // lui, supprime : sans confirmation, le geste est ambigu. Le message
+        // rappelle que rien n'est perdu — l'inverse du message de suppression.
+        var msg = t('riderUnassignConfirm').split('{name}').join(escHtml(cfg.name));
+        confirmShow(msg, function() {
+          // `i` est l'index d'ORIGINE capturé au rendu : re-vérifié par nom ET
+          // par affectation avant écriture, la confirmation ayant introduit un
+          // délai (la roue a pu être renommée, supprimée ou réaffectée).
+          var cfgs = loadConfigs();
+          if (!cfgs[i] || cfgs[i].name !== cfg.name || cfgs[i].riderId !== riderId) {
+            riderRenderWheels(riderId); return;
+          }
+          cfgs[i].riderId = null; persistConfigs(cfgs);
+          riderRenderWheels(riderId);
+          // Retirer la capsule rider de la card Roue si cette roue est chargée
+          if (typeof _refreshLoadedBadges === 'function') _refreshLoadedBadges();
+        });
       });
 
       item.appendChild(nameEl);
@@ -20117,6 +20131,10 @@ document.addEventListener('keydown', function(e) {
   // ── Fermeture clavier (Échap) ───────────────────────────────────────────────
   document.addEventListener('keydown', function(e) {
     if (e.key !== 'Escape') return;
+    // La confirmation (z-index 9996) est au-dessus et gère son propre Échap :
+    // sans ce garde, un seul appui fermerait AUSSI la modale sous-jacente.
+    var _cf = document.getElementById('confirm-modal');
+    if (_cf && _cf.classList.contains('show')) return;
     if (document.getElementById('rideredit-modal').classList.contains('show'))   { e.preventDefault(); closeRiderEdit(); return; }
     if (document.getElementById('riderload-modal').classList.contains('show'))   { e.preventDefault(); closeRiderLoad(); return; }
     if (document.getElementById('riderchoose-modal').classList.contains('show')) { e.preventDefault(); closeRiderChoose(); return; }
