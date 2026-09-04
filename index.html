@@ -377,8 +377,9 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .wheel-load-item-name { flex:1; font-family:'DM Mono',monospace; font-size:.78rem; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .wheel-load-item-rider { display:inline-flex; align-items:center; gap:.2rem; flex-shrink:0; max-width:42%; font-family:'DM Mono',monospace; font-size:.55rem; line-height:1; color:var(--accent2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .wheel-load-item-rider svg { flex-shrink:0; opacity:.85; width:8px; height:8px }
-/* Le nom du rider vit dans son propre span : text-overflow ne s'applique pas
-   à un item de flex anonyme, sans ce span il serait coupé net sans les « … ». */
+/* Le span porte le min-width:0 (un item de flex anonyme ne descend pas sous la
+   largeur de son mot le plus long et bloquerait le rétrécissement) et l'ellipse :
+   text-overflow ne s'applique pas à un item anonyme, d'où le span. */
 .wheel-load-item-rider-txt { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .wheel-load-item-meta { font-family:'DM Mono',monospace; font-size:.63rem; color:var(--text3); white-space:nowrap }
 .wheel-load-item-del { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; touch-action:manipulation; padding:.1rem .25rem; transition:color .2s; flex-shrink:0 }
