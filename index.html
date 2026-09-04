@@ -7143,21 +7143,31 @@ function loadConfig(idx) {
 
 function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 // ── Dates ───────────────────────────────────────────────────────────────────
-// Quatre formats, un seul point d'écriture chacun, tous suivant `lang`.
+// Deux formats, un seul point d'écriture chacun, tous deux suivant `lang`.
 //
-//   fmtDMY       FR 05/01/2026        EN 05 Jan 2026
-//   fmtDMYHM     FR 05/01/2026 14:07  EN 05 Jan 2026 14:07
-//   fmtDMYLong   FR 05 janvier 2026   EN 05 January 2026
-//   fmtDMYShort  FR 05 janv. 2026     EN 05 Jan 2026
+//   fmtDMY    FR 05/01/2026        EN 2026-01-05
+//   fmtDMYHM  FR 05/01/2026 14:07  EN 2026-01-05 14:07
+//
+// Plus aucun mois écrit nulle part : les deux sorties sont purement numériques
+// donc entièrement ASCII — rien à faire passer par pdfSanitize, et aucune
+// dépendance aux noms de mois de l'ICU du navigateur.
 //
 // Règle de répartition : les listes de snapshots à l'écran portent l'heure
 // (plusieurs relevés dans la même séance de rayonnage, c'est elle qui les
 // sépare) ; tout le reste s'en tient au jour. Toutes portent l'année.
 //
-// En EN le mois est abrégé plutôt que numérique : en-GB rendrait « 05/01/2026 »,
-// strictement identique au FR, qu'un lecteur habitué au format US lit comme le
-// 1er mai. En FR on garde le numérique dans les listes — c'est l'usage local,
-// et c'est plus court dans des métas serrées.
+// En EN les formats numériques sont en ISO 8601 (aaaa-mm-jj) : en-GB rendrait
+// « 05/01/2026 », strictement identique au FR, qu'un lecteur habitué au format
+// US lit comme le 1er mai. L'ISO ne se prête à aucune lecture fausse, quelle que
+// soit l'origine du lecteur, et l'ordre décroissant de granularité fait
+// coïncider tri alphabétique et tri chronologique dans les listes.
+// Il s'écrit avec des TIRETS, pas des barres obliques : « 2026/01/05 » n'est pas
+// de l'ISO et ferait hésiter là où la norme ne laisse aucun doute.
+// L'ISO n'est pas produit par toLocaleDateString mais construit à la main : la
+// norme est indépendante de toute locale, la faire dépendre des données ICU du
+// navigateur serait lui donner une liberté qu'elle n'a pas.
+// En FR on garde le numérique local — c'est l'usage, et c'est plus court dans
+// des métas serrées.
 //
 // L'heure est en 24 h dans les deux langues (hour12:false) : en-GB le fait déjà
 // par défaut, on le fige pour ne pas dépendre de l'ICU du navigateur.
@@ -7171,39 +7181,30 @@ function _dateLoc() {
   return (L === 'en') ? 'en-GB' : 'fr-FR';
 }
 
-// jj/mm/aaaa — listes « Charger une roue / un moyeu / une jante », liste des
-// roues d'un rider, cartes du PDF comparatif, incrustation de l'export vidéo.
+// FR jj/mm/aaaa · EN aaaa-mm-jj — partout où une date paraît sans son heure :
+// listes « Charger une roue / un moyeu / une jante », roues d'un rider, cartes
+// et pieds de page des PDF, étiquette de snapshot des JPEG, export vidéo.
 function fmtDMY(ts) {
-  var loc = _dateLoc();
-  return new Date(ts).toLocaleDateString(loc,
-    { day:'2-digit', month:(loc === 'fr-FR' ? '2-digit' : 'short'), year:'numeric' });
+  var d = new Date(ts);
+  if (_dateLoc() === 'fr-FR') {
+    return d.toLocaleDateString('fr-FR',
+      { day:'2-digit', month:'2-digit', year:'numeric' });
+  }
+  return d.getFullYear() + '-' +
+         String(d.getMonth() + 1).padStart(2, '0') + '-' +
+         String(d.getDate()).padStart(2, '0');
 }
 
-// jj/mm/aaaa hh:mm — les deux listes de snapshots à l'écran : celle du module
-// Snapshots et celle de sélection pour comparaison. La date vient de fmtDMY,
-// pas d'un rendu parallèle : il n'existe qu'une façon d'écrire un 12 mai ici.
+// FR jj/mm/aaaa hh:mm · EN aaaa-mm-jj hh:mm — les deux listes de snapshots à
+// l'écran : celle du module Snapshots et celle de sélection pour comparaison.
+// La date vient de fmtDMY, pas d'un rendu parallèle : il n'existe qu'une façon
+// d'écrire un 12 mai ici. L'heure reste séparée par une espace et non par le
+// « T » de la norme : ISO 8601 régit un échange de données, pas un affichage,
+// et « 2026-01-05T14:07 » se lit mal dans une liste.
 function fmtDMYHM(ts) {
   return fmtDMY(ts) + ' ' +
          new Date(ts).toLocaleTimeString(_dateLoc(),
            { hour:'2-digit', minute:'2-digit', hour12:false });
-}
-
-// jj mois aaaa — pieds de page des 4 PDF (conversion, tension, diagramme,
-// comparaison). Les 12 mois français, longs comme abrégés, tiennent dans
-// WinAnsi (vérifié) : les polices standard de jsPDF les rendent tels quels,
-// pdfSanitize est inutile ici.
-function fmtDMYLong(ts) {
-  return new Date(ts).toLocaleDateString(_dateLoc(),
-    { day:'2-digit', month:'long', year:'numeric' });
-}
-
-// jj mois. aaaa — étiquette de snapshot des exports JPEG, où le mois long ne
-// tient pas dans la ligne du canvas. Un seul appelant : ce n'est pas une
-// déduplication mais un regroupement — toutes les dates du fichier sortent
-// d'ici, une évolution de format ne se cherche qu'à un endroit.
-function fmtDMYShort(ts) {
-  return new Date(ts).toLocaleDateString(_dateLoc(),
-    { day:'2-digit', month:'short', year:'numeric' });
 }
 
 function renderConfigsList() {
@@ -7492,8 +7493,12 @@ function bkpDatedPref() {
   try { return localStorage.getItem('spokeit_bkpDated') !== '0'; } catch(e) { return true; }
 }
 // Horodatage des noms de fichier : AA-MM-JJ, qui trie chronologiquement dans un
-// dossier. Source unique pour les deux exports — backup complet et roue — qui
-// employaient deux formats différents et cohabitaient dans le même répertoire.
+// dossier. Source unique pour les trois exports .json — backup complet, partage
+// de roue, partage de charte — qui employaient des formats différents et
+// cohabitaient dans le même répertoire.
+// Volontairement distinct de l'ISO des dates affichées : passer à AAAA-MM-JJ
+// ferait trier « Spokeit2026-… » AVANT « Spokeit26-… » (0 < 6), et les
+// sauvegardes déjà nommées se mélangeraient à l'envers des nouvelles.
 function _dateStamp() {
   var d = new Date();
   return String(d.getFullYear()).slice(-2) + '-'
@@ -10452,7 +10457,7 @@ async function tmConvExportPdf() {
 
   const atelier  = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
   const workshop = (atelier.name && atelier.name.trim()) ? atelier.name.trim() : 'Spoke It';
-  const dateStr  = fmtDMYLong(Date.now());
+  const dateStr  = fmtDMY(Date.now());
 
   let Y = MT;
 
@@ -12511,7 +12516,7 @@ async function tmExportPdfWithOpts(opts) {
   if (!radar) return;
 
   // ── Collecte des données ──────────────────────────────────────────────────
-  const dateStr    = fmtDMYLong(Date.now());
+  const dateStr    = fmtDMY(Date.now());
   const wheelName  = (_loadedConfigName[wtype]) || '';
   const wheelLabel = wtype === 'arriere' ? t('rearLabel') : t('frontLabel');
   // `sumD` et non `sd` : la globale `sd` est le DIAMETRE du rayon. La masquer
@@ -16328,7 +16333,7 @@ async function diagGeneratePdf() {
   var wheelInp = document.getElementById('diag-wheel');
   var wheelName = wheelInp ? wheelInp.value.trim() : '';
 
-  var dateStr = fmtDMYLong(Date.now());
+  var dateStr = fmtDMY(Date.now());
 
   var leg = radarLegLabels(wtype);
 
@@ -18264,7 +18269,7 @@ async function snapComparePDF() {
     var _rd = riderById(_riderCfg.riderId);
     if (_rd && _rd.name) pdfRiderName = _rd.name;
   }
-  var dateStr = fmtDMYLong(Date.now());
+  var dateStr = fmtDMY(Date.now());
 
   function sanitize(str) { return pdfSanitize(str); } // délégué → pdfSanitize (source unique)
   var PW=210, PH=297, ML=14, MR=14, MT=14, CW=PW-ML-MR;
@@ -18636,7 +18641,7 @@ async function snapCompareJPEG() {
 
     // Étiquette snapshot (S1, S2…)
     var snapLbl = 'S' + snap.num;
-    var dateStr = fmtDMYShort(snap.ts);
+    var dateStr = fmtDMY(snap.ts);
 
     var hLine1 = headerH * 0.30;
     var hLine2 = headerH * 0.72;
