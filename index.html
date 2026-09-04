@@ -17066,7 +17066,9 @@ function openHrSaveModal(type) {
   document.getElementById('hr-save-overlay').classList.add('show');
   document.getElementById('hr-save-modal').classList.add('show');
   document.body.style.overflow = 'hidden';
-  setTimeout(function() { if (inp) inp.focus(); }, 180);
+  // select() : le nom pré-rempli est surligné, une frappe le remplace d'un coup.
+  // Ne s'applique qu'au focus d'ouverture — un clic dans le champ rend le curseur.
+  setTimeout(function() { if (inp) { inp.focus(); inp.select(); } }, 180);
 }
 
 function closeHrSaveModal() {
@@ -19679,7 +19681,8 @@ document.addEventListener('keydown', function(e) {
     document.getElementById('wheel-save-overlay').classList.add('show');
     document.getElementById('wheel-save-modal').classList.add('show');
     document.body.style.overflow = 'hidden';
-    setTimeout(function() { if (inp) inp.focus(); }, 120);
+    // Même modèle que la modale moyeu/jante : nom pré-rempli surligné à l'ouverture.
+    setTimeout(function() { if (inp) { inp.focus(); inp.select(); } }, 120);
   };
 
   window.closeWheelSaveModal = function() {
