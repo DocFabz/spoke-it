@@ -17054,7 +17054,14 @@ function openHrSaveModal(type) {
       ? (lang === 'fr' ? 'Enregistrer le moyeu ' + side : 'Save ' + side + ' hub')
       : (lang === 'fr' ? 'Enregistrer la jante' : 'Save rim');
   }
-  if (inp) { inp.value = ''; inp.placeholder = lang === 'fr' ? 'Nom…' : 'Name…'; }
+  if (inp) {
+    // Pré-remplir avec le nom déjà chargé s'il y en a un (même modèle que la roue)
+    var loadedName = isHub
+      ? (typeof _loadedHubName !== 'undefined' ? _loadedHubName[wtype] : null)
+      : (typeof _loadedRimName !== 'undefined' ? _loadedRimName[wtype] : null);
+    inp.value = loadedName || '';
+    inp.placeholder = lang === 'fr' ? 'Nom…' : 'Name…';
+  }
   if (fb)  { fb.textContent = ''; }
   document.getElementById('hr-save-overlay').classList.add('show');
   document.getElementById('hr-save-modal').classList.add('show');
