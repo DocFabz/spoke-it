@@ -17251,15 +17251,31 @@ function hrRenderLoadList(type) {
     delBtn.title = lang === 'fr' ? 'Supprimer' : 'Delete';
     delBtn.addEventListener('click', function(e) {
       e.stopPropagation();
-      var a = hrLoadAll(type);
-      a.splice(gi, 1);
-      hrPersist(type, a);
-      hrRenderLoadList(type);
-      hrUpdateButtons();
-      if (typeof renderEraseMgr === 'function') {
-        var openKeys = Array.from(document.querySelectorAll('.erasemgr-acc-body.open')).map(function(el) { return el.dataset.key; });
-        renderEraseMgr(openKeys);
-      }
+      // Suppression définitive (aucune corbeille) et croix posée DANS une ligne
+      // entièrement cliquable : sur mobile, un pouce qui vise la ligne attrape
+      // la croix. Même geste de confirmation que l'écrasement dans hrSave().
+      var L = typeof lang !== 'undefined' ? lang : 'fr';
+      var what = (type === 'hub')
+        ? (L === 'fr' ? 'le moyeu' : 'hub')
+        : (L === 'fr' ? 'la jante' : 'rim');
+      var msg = (L === 'fr')
+        ? 'Supprimer ' + what + ' <strong>' + escHtml(entry.name) + '</strong> ?'
+        : 'Delete ' + what + ' <strong>' + escHtml(entry.name) + '</strong>?';
+      confirmShow(msg, function() {
+        // Index global re-vérifié par identité AVANT le splice : `gi` a été
+        // capturé au rendu, la confirmation a introduit un délai. Même garde
+        // que ccDeleteDirect — un index périmé supprime la MAUVAISE entrée.
+        var a = hrLoadAll(type);
+        if (!a[gi] || a[gi].name !== entry.name) { hrRenderLoadList(type); return; }
+        a.splice(gi, 1);
+        hrPersist(type, a);
+        hrRenderLoadList(type);
+        hrUpdateButtons();
+        if (typeof renderEraseMgr === 'function') {
+          var openKeys = Array.from(document.querySelectorAll('.erasemgr-acc-body.open')).map(function(el) { return el.dataset.key; });
+          renderEraseMgr(openKeys);
+        }
+      });
     });
 
     item.appendChild(nameEl);
@@ -17307,6 +17323,11 @@ function hrRenderLoadList(type) {
 // ── Keyboard close ───────────────────────────────────────────────────────────
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
+    // La confirmation (z-index 9996) est au-dessus et gère son propre Échap :
+    // sans ce garde, un seul appui fermerait AUSSI la modale sous-jacente,
+    // les deux listeners étant posés sur document.
+    var _cf = document.getElementById('confirm-modal');
+    if (_cf && _cf.classList.contains('show')) return;
     if (document.getElementById('hr-save-modal').classList.contains('show')) { e.preventDefault(); closeHrSaveModal(); }
     if (document.getElementById('hr-load-modal').classList.contains('show')) { e.preventDefault(); closeHrLoadModal(); }
   }
@@ -19797,10 +19818,30 @@ document.addEventListener('keydown', function(e) {
       delBtn.title = lang === 'fr' ? 'Supprimer' : 'Delete';
       delBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        if (typeof deleteConfig === 'function') deleteConfig(i);
-        wheelRenderLoadList(); // re-render
-        // Mettre à jour aussi la liste principale si visible
-        if (typeof renderConfigsList === 'function') renderConfigsList();
+        // Le plus destructeur des trois : la config emporte l'état ET les
+        // snapshots (mesures de tension, commentaires). Le message les compte
+        // explicitement — « Supprimer ? » seul sous-estime la perte.
+        var L  = typeof lang !== 'undefined' ? lang : 'fr';
+        var ns = (cfg.snapshots || []).length;
+        var tail = '';
+        if (ns > 0) {
+          tail = (L === 'fr')
+            ? (ns > 1 ? ' et ses ' + ns + ' snapshots' : ' et son snapshot')
+            : (ns > 1 ? ' and its ' + ns + ' snapshots' : ' and its snapshot');
+        }
+        var msg = (L === 'fr')
+          ? 'Supprimer <strong>' + escHtml(cfg.name) + '</strong>' + tail + ' ?'
+          : 'Delete <strong>' + escHtml(cfg.name) + '</strong>' + tail + '?';
+        confirmShow(msg, function() {
+          // `i` est l'index d'ORIGINE capturé au rendu : re-vérifié par nom
+          // avant destruction, la confirmation ayant introduit un délai.
+          var cfgs = (typeof loadConfigs === 'function') ? loadConfigs() : [];
+          if (!cfgs[i] || cfgs[i].name !== cfg.name) { wheelRenderLoadList(); return; }
+          if (typeof deleteConfig === 'function') deleteConfig(i);
+          wheelRenderLoadList(); // re-render
+          // Mettre à jour aussi la liste principale si visible
+          if (typeof renderConfigsList === 'function') renderConfigsList();
+        });
       });
 
       item.appendChild(nameEl);
@@ -19820,6 +19861,9 @@ document.addEventListener('keydown', function(e) {
   // ── Keyboard close ────────────────────────────────────────────────────────
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
+      // Idem : la confirmation passe devant, elle se ferme seule.
+      var _cf = document.getElementById('confirm-modal');
+      if (_cf && _cf.classList.contains('show')) return;
       if (document.getElementById('wsr-modal').classList.contains('show')) {
         e.preventDefault(); closeWheelSaveRiderModal(); return;
       }
