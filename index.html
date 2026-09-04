@@ -377,6 +377,9 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .wheel-load-item-name { flex:1; font-family:'DM Mono',monospace; font-size:.78rem; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .wheel-load-item-rider { display:inline-flex; align-items:center; gap:.2rem; flex-shrink:0; max-width:42%; font-family:'DM Mono',monospace; font-size:.55rem; line-height:1; color:var(--accent2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .wheel-load-item-rider svg { flex-shrink:0; opacity:.85; width:8px; height:8px }
+/* Le nom du rider vit dans son propre span : text-overflow ne s'applique pas
+   à un item de flex anonyme, sans ce span il serait coupé net sans les « … ». */
+.wheel-load-item-rider-txt { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .wheel-load-item-meta { font-family:'DM Mono',monospace; font-size:.63rem; color:var(--text3); white-space:nowrap }
 .wheel-load-item-del { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; touch-action:manipulation; padding:.1rem .25rem; transition:color .2s; flex-shrink:0 }
 .wheel-load-item-del:hover { color:var(--warm) }
@@ -1417,10 +1420,15 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 /* ── Loaded config name ────────────────────────────────────────────────────── */
 .cfg-loaded-name {
   display:none; align-items:center; gap:.3rem;
+  /* Le badge est le seul élément qui cède : min-width:0 lève le plancher
+     min-content du flex item, le shrink élevé le fait absorber tout le
+     manque de place avant que le libellé ou les boutons ne bougent. */
+  min-width:0; flex:0 999 auto; overflow:hidden;
 }
 .cfg-loaded-name.show { display:inline-flex }
-.cfg-loaded-text { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:400; color:#fff; letter-spacing:.06em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px }
-.cfg-loaded-name .wheel-load-item-rider { max-width:110px }
+.cfg-loaded-text { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:400; color:#fff; letter-spacing:.06em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; min-width:0; flex:0 1 auto }
+/* La capsule rider (info secondaire) se tronque 3x plus vite que le nom. */
+.cfg-loaded-name .wheel-load-item-rider { max-width:110px; min-width:0; flex:0 3 auto }
 
 /* ── Conversion table modal ────────────────────────────────────────────────── */
 .tm-conv-overlay  { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
@@ -4847,7 +4855,10 @@ function riderChipEl(riderId) {
   chip.className = 'wheel-load-item-rider';
   chip.title = rd.name;
   chip.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-  chip.appendChild(document.createTextNode(rd.name));
+  const chipTxt = document.createElement('span');
+  chipTxt.className = 'wheel-load-item-rider-txt';
+  chipTxt.textContent = rd.name;
+  chip.appendChild(chipTxt);
   return chip;
 }
 
