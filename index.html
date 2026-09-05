@@ -372,6 +372,19 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .wl-sort-btn.active:hover, .hr-sort-btn.active:hover { color:var(--accent2) }
 .wl-sort-arrow, .hr-sort-arrow { font-size:.55rem; opacity:0; flex-shrink:0 }
 .wl-sort-btn.active .wl-sort-arrow, .hr-sort-btn.active .hr-sort-arrow { opacity:.9 }
+/* Filtre « Période » des modales de chargement : style du bouton « Chartes »
+   (fond transparent, bordure et texte accent, DM Sans majuscules, rayon --rs),
+   en plus petit, et aligné à droite — le conteneur de la modale est un
+   flex-column, d'où align-self.
+   `width:auto` annule le width:100% de la règle globale input/select : le
+   bouton se dimensionne sur son option la plus longue.
+   Le conteneur ne sert qu'à porter le chevron, qu'un <select> en
+   appearance:none ne peut pas afficher lui-même. */
+.wl-period, .hr-period { position:relative; display:inline-flex; align-items:center; align-self:flex-end; max-width:100%; flex-shrink:0 }
+.wl-period-sel, .hr-period-sel { width:auto; max-width:100%; height:1.65rem; padding:0 1.5rem 0 .7rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.6rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:background .25s, border-color .25s, color .25s }
+.wl-period-sel option, .hr-period-sel option { background:var(--card); color:var(--text2); font-weight:400; letter-spacing:normal }
+.wl-period-sel:hover, .hr-period-sel:hover { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06) }
+.wl-period::after, .hr-period::after { content:''; position:absolute; right:.7rem; top:calc(50% - 3px); width:5px; height:5px; border-right:1.2px solid var(--accent2); border-bottom:1.2px solid var(--accent2); transform:rotate(45deg); pointer-events:none }
 .wheel-load-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .wheel-load-item:hover { border-color:var(--border-s); background:rgba(126,200,227,.03) }
 .wheel-load-item-name { flex:1; font-family:'DM Mono',monospace; font-size:.78rem; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
@@ -3385,6 +3398,9 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <div class="hr-load-title" id="hr-load-title">Charger un moyeu</div>
     <button class="hr-load-close" onclick="closeHrLoadModal()">✕</button>
   </div>
+  <div class="hr-period" id="hr-period">
+    <select class="hr-period-sel" id="hr-period-sel" data-i18n-aria="wlPeriod" aria-label="Période" onchange="hrPeriodBy(this.value)"></select>
+  </div>
   <div class="hr-sort" id="hr-sort" role="group" data-i18n-aria="wlSortBy" aria-label="Trier par">
     <button class="hr-sort-btn" id="hr-sort-name" onclick="hrSortBy('name')"><span data-i18n="wlSortName">Nom</span><span class="hr-sort-arrow"></span></button>
     <button class="hr-sort-btn" id="hr-sort-date" onclick="hrSortBy('date')"><span data-i18n="wlSortDate">Date</span><span class="hr-sort-arrow"></span></button>
@@ -3421,6 +3437,9 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
   <div class="wheel-load-header">
     <div class="wheel-load-title" id="wheel-load-title">Charger une roue</div>
     <button class="wheel-load-close" onclick="closeWheelLoadModal()">✕</button>
+  </div>
+  <div class="wl-period" id="wl-period">
+    <select class="wl-period-sel" id="wl-period-sel" data-i18n-aria="wlPeriod" aria-label="Période" onchange="wheelPeriodBy(this.value)"></select>
   </div>
   <div class="wl-sort" id="wl-sort" role="group" data-i18n-aria="wlSortBy" aria-label="Trier par">
     <button class="wl-sort-btn" id="wl-sort-name"  onclick="wheelSortBy('name')"><span data-i18n="wlSortName">Nom</span><span class="wl-sort-arrow"></span></button>
@@ -4265,6 +4284,7 @@ const i18n = {
     tmPlayBtnTitle:'Animer les points', tmSnapCompareBtnTitle:'Comparer deux snapshots',
     efDiagBtnTitle:'Diagramme', efMicBtnTitle:'Saisie vocale', efBtBtnTitle:'Clavier Bluetooth',
     wlSortName:'Nom', wlSortRider:'Rider', wlSortDate:'Date', wlSortBy:'Trier par',
+    wlPeriod:'Période', wlPeriodAll:'Tout', wlPeriodNone:'Sans date',
     snapAnimReplayTitle:'Rejouer',
     delTitle:'Supprimer', clearValuesTitle:'Effacer les valeurs', clearFieldTitle:'Effacer',
     tmRecShare:'Partager la vidéo', tmRecSave:'Télécharger la vidéo',
@@ -4502,6 +4522,7 @@ const i18n = {
     tmPlayBtnTitle:'Animate points', tmSnapCompareBtnTitle:'Compare two snapshots',
     efDiagBtnTitle:'Diagram', efMicBtnTitle:'Voice input', efBtBtnTitle:'Bluetooth keyboard',
     wlSortName:'Name', wlSortRider:'Rider', wlSortDate:'Date', wlSortBy:'Sort by',
+    wlPeriod:'Period', wlPeriodAll:'All', wlPeriodNone:'Undated',
     snapAnimReplayTitle:'Replay',
     delTitle:'Delete', clearValuesTitle:'Clear values', clearFieldTitle:'Clear',
     tmRecShare:'Share video', tmRecSave:'Download video',
@@ -17130,6 +17151,8 @@ function openHrLoadModal(type) {
       ? (lang === 'fr' ? 'Charger un moyeu ' + side : 'Load ' + side + ' hub')
       : (lang === 'fr' ? 'Charger une jante' : 'Load rim');
   }
+  // Filtre remis à zéro : voir le commentaire du bloc « Filtre Période ».
+  _hrPeriod[(type === 'hub') ? 'hub' : 'rim'] = 'all';
   hrRenderLoadList(type);
   document.getElementById('hr-load-overlay').classList.add('show');
   document.getElementById('hr-load-modal').classList.add('show');
@@ -17140,6 +17163,81 @@ function closeHrLoadModal() {
   document.getElementById('hr-load-overlay').classList.remove('show');
   document.getElementById('hr-load-modal').classList.remove('show');
   document.body.style.overflow = '';
+}
+
+// ── Filtre « Période » (Tout / année / sans date) ───────────────────────────
+// S'applique EN AMONT du tri : la liste est d'abord réduite à la période
+// choisie, _hrSortApply / _wlSortApply ordonnent ensuite ce qui reste. Le tri
+// ne connaît donc pas la notion de période.
+//
+// Contrairement au tri, la sélection n'est PAS mémorisée : un tri réordonne,
+// un filtre CACHE. Rouvrir la modale sur « 2025 » et ne pas voir le moyeu
+// enregistré hier ressemblerait à une perte de données. Remis à « Tout » à
+// chaque ouverture (cf. openHrLoadModal / openWheelLoadModal).
+//
+// Primitives partagées : déclarées ici au niveau supérieur, donc globales, et
+// consommées telles quelles par le bloc « WHEEL SAVE / LOAD MODAL » plus bas.
+
+// Clé de période d'une entrée. Les enregistrements anciens ou importés sans ts
+// n'appartiennent à aucune année : ils forment leur propre groupe, visible
+// sous « Tout » et sous « Sans date », jamais sous une année.
+// Un ts illisible (fichier importé corrompu ou édité à la main) donne une
+// année NaN : il rejoint le même groupe plutôt que de créer une option
+// « NaN » et de fausser le comparateur de tri.
+function _perKey(ts) {
+  var y = ts ? new Date(ts).getFullYear() : NaN;
+  return isFinite(y) ? String(y) : 'none';
+}
+
+// Inventaire des périodes présentes : années décroissantes + compte, et
+// nombre d'entrées sans date. TOUJOURS calculé sur la liste DÉJÀ filtrée par
+// wtype — proposer 2024 dans la modale « avant » alors que la seule entrée de
+// 2024 est une roue arrière donnerait une sélection vide.
+function _perScan(tss) {
+  var counts = {}, none = 0, i, k;
+  for (i = 0; i < tss.length; i++) {
+    k = _perKey(tss[i]);
+    if (k === 'none') none++;
+    else counts[k] = (counts[k] || 0) + 1;
+  }
+  var years = Object.keys(counts).sort(function(a, b) { return Number(b) - Number(a); });
+  return { years: years, counts: counts, none: none };
+}
+
+// (Re)construit les options du select et RETOURNE la valeur effectivement
+// retenue. Si la période courante n'existe plus — dernière entrée de l'année
+// supprimée pendant que la modale est ouverte — on retombe sur « Tout »
+// plutôt que de laisser le select pointer une option absente.
+function _perFill(sel, scan, cur) {
+  var opts = [{ v:'all', k:'wlPeriodAll' }];
+  scan.years.forEach(function(y) { opts.push({ v:y, txt: y + ' (' + scan.counts[y] + ')' }); });
+  if (scan.none) opts.push({ v:'none', k:'wlPeriodNone' });
+
+  var val = opts.some(function(o) { return o.v === cur; }) ? cur : 'all';
+
+  sel.innerHTML = '';
+  opts.forEach(function(o) {
+    var el = document.createElement('option');
+    el.value = o.v;
+    // data-i18n sur « Tout » et « Sans date » : applyLang les retraduit modale
+    // ouverte. C'est aussi pourquoi elles ne portent pas de compte — applyLang
+    // réécrit le textContent entier et l'effacerait. Les années, elles, n'ont
+    // rien à traduire.
+    if (o.k) { el.dataset.i18n = o.k; el.textContent = t(o.k); }
+    else       el.textContent = o.txt;
+    if (o.v === val) el.selected = true;
+    sel.appendChild(el);
+  });
+  return val;
+}
+
+// Période courante, distincte moyeu / jante : la modale est mutualisée, les
+// deux listes ne le sont pas.
+var _hrPeriod = { hub:'all', rim:'all' };
+
+function hrPeriodBy(val) {
+  _hrPeriod[(_hrModalType === 'hub') ? 'hub' : 'rim'] = val;
+  hrRenderLoadList(_hrModalType);
 }
 
 // ── Tri des listes (nom / date), mémorisé entre deux ouvertures ─────────────
@@ -17240,6 +17338,25 @@ function hrRenderLoadList(type) {
   if (type === 'hub') {
     arr = arr.filter(function(o) { return (o.entry.data && o.entry.data.wtype ? o.entry.data.wtype : 'avant') === wtype; });
   }
+
+  // ── Période ──────────────────────────────────────────────────────────────
+  // Options construites sur la liste déjà filtrée par wtype, PUIS filtrage —
+  // donc en amont du tri, qui ne travaille que sur la période retenue.
+  var _pk    = (type === 'hub') ? 'hub' : 'rim';
+  var _psel  = document.getElementById('hr-period-sel');
+  var _prow  = document.getElementById('hr-period');
+  var _pscan = _perScan(arr.map(function(o) { return o.entry.ts; }));
+  if (_psel) _hrPeriod[_pk] = _perFill(_psel, _pscan, _hrPeriod[_pk]);
+  // Masqué sous 2 périodes : rien à filtrer. Même règle que la barre de tri
+  // sous 2 entrées — pas de contrôle inutile la première année d'usage.
+  // Masquage porté par le conteneur et non par le select : le chevron est son
+  // pseudo-élément, masquer le select seul le laisserait flotter.
+  if (_prow) _prow.style.display =
+    ((_pscan.years.length + (_pscan.none ? 1 : 0)) > 1) ? '' : 'none';
+  if (_hrPeriod[_pk] !== 'all') {
+    arr = arr.filter(function(o) { return _perKey(o.entry.ts) === _hrPeriod[_pk]; });
+  }
+
   _hrSortApply(type, arr);
 
   // Barre de tri masquée sous 2 entrées : rien à ordonner.
@@ -19723,6 +19840,8 @@ document.addEventListener('keydown', function(e) {
         : (lang === 'fr' ? 'arrière' : 'rear');
       title.textContent = lang === 'fr' ? 'Charger une roue ' + side : 'Load ' + side + ' wheel';
     }
+    // Filtre remis à zéro : voir le commentaire du bloc « Filtre Période ».
+    _wlPeriod = 'all';
     wheelRenderLoadList();
     document.getElementById('wheel-load-overlay').classList.add('show');
     document.getElementById('wheel-load-modal').classList.add('show');
@@ -19733,6 +19852,15 @@ document.addEventListener('keydown', function(e) {
     document.getElementById('wheel-load-overlay').classList.remove('show');
     document.getElementById('wheel-load-modal').classList.remove('show');
     document.body.style.overflow = '';
+  };
+
+  // ── Période (Tout / année / sans date), NON mémorisée ─────────────────────
+  // Primitives _perKey / _perScan / _perFill : bloc HUB/RIM plus haut.
+  var _wlPeriod = 'all';
+
+  window.wheelPeriodBy = function(val) {
+    _wlPeriod = val;
+    wheelRenderLoadList();
   };
 
   // ── Tri de la liste (nom / rider / date), mémorisé entre deux ouvertures ──
@@ -19807,6 +19935,21 @@ document.addEventListener('keydown', function(e) {
     // restent corrects quel que soit l'ordre d'affichage.
     var filtered = configs.map(function(cfg, i) { return { cfg: cfg, i: i }; })
       .filter(function(o) { return (o.cfg.state.wtype || 'avant') === wtype; });
+
+    // ── Période ────────────────────────────────────────────────────────────
+    // Options construites sur la liste déjà filtrée par wtype, PUIS filtrage —
+    // donc en amont du tri, qui ne travaille que sur la période retenue.
+    var _psel  = document.getElementById('wl-period-sel');
+    var _prow  = document.getElementById('wl-period');
+    var _pscan = _perScan(filtered.map(function(o) { return o.cfg.ts; }));
+    if (_psel) _wlPeriod = _perFill(_psel, _pscan, _wlPeriod);
+    // Masquage sous 2 périodes, porté par le conteneur : cf. hrRenderLoadList.
+    if (_prow) _prow.style.display =
+      ((_pscan.years.length + (_pscan.none ? 1 : 0)) > 1) ? '' : 'none';
+    if (_wlPeriod !== 'all') {
+      filtered = filtered.filter(function(o) { return _perKey(o.cfg.ts) === _wlPeriod; });
+    }
+
     _wlSortApply(filtered);
 
     var sortBar = document.getElementById('wl-sort');
