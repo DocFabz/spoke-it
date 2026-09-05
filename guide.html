@@ -154,10 +154,19 @@ footer{
 }
 footer a{color:var(--accent); text-decoration:none}
 footer a:hover{text-decoration:underline}
-.back{
+/* Bouton de sortie en fin de manuel : n'a de sens que dans le panneau de
+   l'application, qui sait le fermer. Consulté seul dans un navigateur, la
+   page n'a rien à fermer et le bouton reste absent. */
+.foot-close{display:none; margin-top:1.4rem}
+body.embedded .foot-close{display:block}
+.close-btn{
   font-family:'DM Mono',monospace; font-size:.68rem; letter-spacing:.12em;
-  text-transform:uppercase;
+  text-transform:uppercase; color:var(--warm);
+  background:none; border:1px solid var(--border); border-radius:var(--rs);
+  padding:.42rem .9rem; cursor:pointer;
+  transition:border-color .2s, color .2s;
 }
+.close-btn:hover{border-color:rgba(232,146,124,.6); color:#f0b49a}
 .empty{
   display:none; color:var(--text3); font-size:.9rem;
   font-family:'DM Mono',monospace; letter-spacing:.06em;
@@ -205,7 +214,6 @@ a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{
 /* Manuel affiché dans le panneau de l'application : la croix du panneau
    remplace le lien de retour, et l'en-tête n'a plus à respirer autant. */
 body.embedded header{padding-top:1.5rem}
-body.embedded .back{display:none}
 </style>
 </head>
 <body>
@@ -484,7 +492,7 @@ body.embedded .back{display:none}
 <footer>
   <p lang="fr">Spoke It est un outil d'aide au montage, à visée indicative. Les résultats sont des estimations théoriques : mesurez, recoupez, et ne roulez jamais sur un montage non vérifié.</p>
   <p lang="en">Spoke It is a wheelbuilding aid, indicative only. Its results are theoretical estimates: measure, cross-check, and never ride an unverified build.</p>
-  <p><a class="back" href="https://spokeit.fr/"><span lang="fr">&#8592; Retour &#224; l'application</span><span lang="en">&#8592; Back to the app</span></a></p>
+  <p class="foot-close"><button type="button" id="closebtn" class="close-btn">&#10005;&nbsp; <span lang="fr">Fermer</span><span lang="en">Close</span></button></p>
 </footer>
 </main>
 </div>
@@ -550,6 +558,15 @@ body.embedded .back{display:none}
   // du panneau, pas par le lien de pied de page.
   try { if (window.top !== window.self) document.body.classList.add('embedded'); }
   catch (err) { document.body.classList.add('embedded'); }
+
+  // Fermeture : la page ne se ferme pas elle-même, elle le demande au panneau
+  // qui l'héberge. Même origine, mais on passe par un message plutôt que par
+  // un appel direct à parent.closeHelp() — la page reste ainsi autonome.
+  var cb = document.getElementById('closebtn');
+  if (cb) cb.addEventListener('click', function(){
+    try { window.parent.postMessage({ spokeit: 'closeHelp' }, location.origin); }
+    catch (err) {}
+  });
 
   // Langue : celle passée par l'application (?lang=fr|en), sinon le navigateur.
   var asked = (location.search.match(/[?&]lang=(fr|en)(?:&|$)/i) || [])[1];

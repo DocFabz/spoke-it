@@ -7477,6 +7477,11 @@ function closeHelp(fromPop) {
   }
   window.helpSync = helpSync;
   window.addEventListener('popstate', function() { closeHelp(true); });
+  // Le bouton Fermer en fin de manuel demande la fermeture depuis l'iframe.
+  window.addEventListener('message', function(e) {
+    if (e.origin !== location.origin) return;
+    if (e.data && e.data.spokeit === 'closeHelp') closeHelp();
+  });
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && $id('help-sheet') && $id('help-sheet').classList.contains('show')) {
       e.preventDefault();
