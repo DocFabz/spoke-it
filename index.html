@@ -183,6 +183,18 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .save-mgr-btn:hover { border-color:var(--accent); color:var(--accent) }
 .save-mgr-btn:disabled { opacity:.3; cursor:default; pointer-events:none }
 
+/* ── Panneau Mode d'emploi ──────────────────────────────────────────────────
+   Plein écran opaque plutôt qu'une modale centrée : le manuel est une page
+   entière, pas une boîte de dialogue. Aucune navigation n'a lieu, l'app reste
+   vivante dessous avec sa saisie en cours. */
+.help-sheet { position:fixed; inset:0; z-index:9985; background:var(--bg); display:none; flex-direction:column; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px) }
+.help-sheet.show { display:flex }
+.help-sheet-head { flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding:.6rem .95rem; border-bottom:1px solid var(--border) }
+.help-sheet-title { font-size:.6rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
+.help-sheet-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--warm); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
+.help-sheet-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm2) }
+.help-frame { flex:1 1 auto; width:100%; border:0; background:var(--bg) }
+
 /* ── Modale Atelier ─────────────────────────────────────────────────────────── */
 .ateliermgr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
 .ateliermgr-overlay.show { display:block; opacity:1 }
@@ -1854,6 +1866,15 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
   <span data-i18n="backupReminderMsg">Sauvegardez vos données.</span>
   <button id="bkp-snooze" type="button" onclick="bkpSnooze(event)" title="Reporter" aria-label="Reporter">&#x2715;</button>
+</div>
+
+<!-- ── Panneau Mode d'emploi ── -->
+<div class="help-sheet" id="help-sheet" role="dialog" aria-modal="true" aria-labelledby="help-sheet-title">
+  <div class="help-sheet-head">
+    <span class="help-sheet-title" id="help-sheet-title">Mode d'emploi</span>
+    <button class="help-sheet-close" onclick="closeHelp()" aria-label="Fermer">&#x2715;</button>
+  </div>
+  <iframe class="help-frame" id="help-frame" title="Mode d'emploi" src="about:blank"></iframe>
 </div>
 
 <!-- ── Modale Atelier ── -->
@@ -4293,6 +4314,8 @@ const i18n = {
     hookeBtnTitle:'Courbe de Hooke',
     helpBtnTitle:'Mode d\'emploi',
     helpBtnTitleOffline:'Mode d\'emploi — connexion requise',
+    helpSheetTitle:'Mode d\'emploi',
+    helpCloseTitle:'Fermer',
     tmInvertNdsTitle:'Inverser NDS', tmInvertDsTitle:'Inverser DS',
     tmEraseNdsTitle:'Effacer NDS', tmEraseDsTitle:'Effacer DS',
     tmPlayBtnTitle:'Animer les points', tmSnapCompareBtnTitle:'Comparer deux snapshots',
@@ -4548,6 +4571,8 @@ const i18n = {
     hookeBtnTitle:'Hooke curve',
     helpBtnTitle:'User manual',
     helpBtnTitleOffline:'User manual — connection required',
+    helpSheetTitle:'User manual',
+    helpCloseTitle:'Close',
     tmInvertNdsTitle:'Invert NDS', tmInvertDsTitle:'Invert DS',
     tmEraseNdsTitle:'Clear NDS', tmEraseDsTitle:'Clear DS',
     tmPlayBtnTitle:'Animate points', tmSnapCompareBtnTitle:'Compare two snapshots',
@@ -5220,7 +5245,7 @@ function applyLang() {
   $id('lang-btn').textContent = lang === 'fr' ? 'EN' : 'FR';
   var bkpSn = $id('bkp-snooze'); if (bkpSn) { bkpSn.title = t('backupSnoozeTitle'); bkpSn.setAttribute('aria-label', t('backupSnoozeTitle')); }
   var pkBtn = $id('save-mgr-btn'); if (pkBtn) { pkBtn.title = t('pickerMenuBtn'); pkBtn.setAttribute('aria-label', t('pickerMenuBtn')); }
-  if (typeof helpUpdateBtn === 'function') helpUpdateBtn();
+  if (typeof helpSync === 'function') helpSync();
   // Tooltips des boutons d'icône de card (load/save/info) : title figé FR dans
   // le HTML, retraduit ici — même mécanisme que bkp-snooze / save-mgr-btn.
   Object.entries({
@@ -7400,30 +7425,74 @@ function closeTou() {
 }
 
 // ── Mode d'emploi ─────────────────────────────────────────────────────────────
-// Page statique servie par le même dépôt. La langue courante voyage en query
-// pour que le manuel s'ouvre du bon côté. Ouverture dans un onglet séparé :
-// installée, l'application reste ouverte dessous (Custom Tab sur Android,
-// vue Safari intégrée sur iOS).
+// Le manuel (page statique du même dépôt) est chargé dans une iframe plein
+// écran. Rien ne navigue : l'application n'est pas rechargée, la saisie en
+// cours survit à l'aller-retour. L'iframe n'est chargée qu'au premier appui.
 function openHelp() {
-  window.open('guide.html?lang=' + lang, '_blank', 'noopener');
+  var sheet = $id('help-sheet'), frame = $id('help-frame');
+  if (!sheet || !frame) return;
+  var wanted = 'guide.html?lang=' + lang;
+  if (frame.getAttribute('data-src') !== wanted) {
+    frame.setAttribute('data-src', wanted);
+    frame.src = wanted;
+  }
+  sheet.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  // Un cran d'historique : sur Android, le bouton retour ferme le panneau au
+  // lieu de quitter l'application.
+  try { history.pushState({ help: 1 }, ''); } catch (err) {}
 }
 
-// Le manuel n'est pas mis en cache : hors ligne, le bouton est grisé plutôt
-// que d'ouvrir un onglet vide. Même signal que le bouton micro d'Easy Fill.
-(function() {
-  function helpUpdateBtn() {
-    var btn = $id('help-btn');
-    if (!btn) return;
-    var on = navigator.onLine;
-    btn.disabled = !on;
-    var key = on ? 'helpBtnTitle' : 'helpBtnTitleOffline';
-    btn.title = t(key);
-    btn.setAttribute('aria-label', t(key));
+function closeHelp(fromPop) {
+  var sheet = $id('help-sheet');
+  if (!sheet || !sheet.classList.contains('show')) return;
+  sheet.classList.remove('show');
+  document.body.style.overflow = '';
+  if (!fromPop && history.state && history.state.help) {
+    try { history.back(); } catch (err) {}
   }
-  window.helpUpdateBtn = helpUpdateBtn;
-  window.addEventListener('online',  helpUpdateBtn);
-  window.addEventListener('offline', helpUpdateBtn);
-  document.addEventListener('DOMContentLoaded', helpUpdateBtn);
+}
+
+// Le manuel n'est pas en cache : hors ligne, le bouton est grisé plutôt que
+// d'ouvrir un panneau vide. Même signal que le bouton micro d'Easy Fill.
+// helpSync est aussi l'écrivain unique des libellés du panneau, appelé par
+// applyLang : le titre du bouton dépend à la fois de la langue et du réseau.
+(function() {
+  function helpSync() {
+    var btn = $id('help-btn');
+    if (btn) {
+      var on  = navigator.onLine;
+      var key = on ? 'helpBtnTitle' : 'helpBtnTitleOffline';
+      btn.disabled = !on;
+      btn.title = t(key);
+      btn.setAttribute('aria-label', t(key));
+    }
+    var ttl = $id('help-sheet-title');
+    if (ttl) ttl.textContent = t('helpSheetTitle');
+    var cls = $id('help-sheet') && $id('help-sheet').querySelector('.help-sheet-close');
+    if (cls) cls.setAttribute('aria-label', t('helpCloseTitle'));
+    // Panneau déjà ouvert au moment d'une bascule FR/EN : on recharge le
+    // manuel dans la nouvelle langue plutôt que de laisser les deux diverger.
+    var sheet = $id('help-sheet'), frame = $id('help-frame');
+    if (sheet && frame && sheet.classList.contains('show')) {
+      var wanted = 'guide.html?lang=' + lang;
+      if (frame.getAttribute('data-src') !== wanted) {
+        frame.setAttribute('data-src', wanted);
+        frame.src = wanted;
+      }
+    }
+  }
+  window.helpSync = helpSync;
+  window.addEventListener('online',  helpSync);
+  window.addEventListener('offline', helpSync);
+  window.addEventListener('popstate', function() { closeHelp(true); });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && $id('help-sheet') && $id('help-sheet').classList.contains('show')) {
+      e.preventDefault();
+      closeHelp();
+    }
+  });
+  document.addEventListener('DOMContentLoaded', helpSync);
 })();
 
 // ── Installation ──────────────────────────────────────────────────────────────
