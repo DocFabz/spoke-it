@@ -9350,6 +9350,8 @@ function renderEraseMgr(openKeys) {
   acc.className = 'erasemgr-acc';
   body.appendChild(acc);
 
+  // msgFn est REQUIS : il produit le message de confirmation, construit au
+  // clic. Voir le gestionnaire du bouton plus bas.
   function makeItem(name, sub, onDel, riderId, msgFn) {
     const div = document.createElement('div');
     div.className = 'erasemgr-item';
@@ -9384,8 +9386,7 @@ function renderEraseMgr(openKeys) {
         onDel();
         renderEraseMgr(openKeys);
       };
-      const msg = msgFn ? msgFn() : '';
-      if (msg) confirmShow(msg, run); else run();
+      confirmShow(msgFn(), run);
     });
     div.appendChild(info);
     div.appendChild(btn);
@@ -9456,7 +9457,7 @@ function renderEraseMgr(openKeys) {
       // laisse croire que la suppression emporte les roues avec lui. Compté au
       // clic sur le storage, jamais sur le `sub` calculé au rendu.
       const nb = loadConfigs().filter(c => c.riderId === r.id).length;
-      return t('eraseMgrDelRider').replace('{name}', escHtml(r.name))
+      return t('eraseMgrDelRider').split('{name}').join(escHtml(r.name))
         + (nb === 0 ? ''
          : nb === 1 ? t('eraseMgrDelRiderKeep1')
          :            t('eraseMgrDelRiderKeepN').replace('{n}', nb));
@@ -9492,7 +9493,7 @@ function renderEraseMgr(openKeys) {
       const tmKey   = 'ct_' + ct.id;
       const nCharts = ccLoadAll().filter(c => c.tensioKey === tmKey).length;
       const nSnaps  = _emCountSnaps(sn => sn.tmType === tmKey);
-      return t('eraseMgrDelTensio').replace('{name}', escHtml(CC_PREFIX + ct.name))
+      return t('eraseMgrDelTensio').split('{name}').join(escHtml(CC_PREFIX + ct.name))
         + _emAlso(nCharts, nSnaps);
     }
   ));
@@ -9530,7 +9531,7 @@ function renderEraseMgr(openKeys) {
           return k === deadKey && _tmStoreKeyOf(sn.tmType, sn.tmDTSub) === cc.tensioKey;
         });
       });
-      return t('eraseMgrDelChart').replace('{name}', escHtml(deadKey)) + _emAlso(0, nSnaps);
+      return t('eraseMgrDelChart').split('{name}').join(escHtml(deadKey)) + _emAlso(0, nSnaps);
     }
   ));
   acc.appendChild(makeAccSection('eraseMgrCustomSpokes', spokeItems, openKeys));
@@ -17797,6 +17798,7 @@ window.renderEraseMgr = function(openKeys) {
     if (old) old.remove();
   });
 
+  // msgFn requis, comme makeItem (module principal).
   function makeEraseMgrItem(name, onDel, msgFn) {
     var div = document.createElement('div');
     div.className = 'erasemgr-item';
@@ -17819,8 +17821,7 @@ window.renderEraseMgr = function(openKeys) {
         onDel();
         window.renderEraseMgr(ok);
       };
-      var msg = msgFn ? msgFn() : '';
-      if (msg && typeof confirmShow === 'function') confirmShow(msg, run); else run();
+      confirmShow(msgFn(), run);
     });
     div.appendChild(info);
     div.appendChild(btn);
