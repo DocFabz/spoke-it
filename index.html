@@ -4368,7 +4368,7 @@ const i18n = {
     riderAssign:'Affecter à un rider',
     riderAssignNone:'Aucun',
     riderUnassign:'Désaffecter',
-    riderUnassignConfirm:'Désaffecter <strong>{name}</strong> de ce rider ? La roue et ses mesures sont conservées.',
+    riderUnassignConfirm:'Désaffecter <strong>{name}</strong> de ce rider ? La roue et ses mesures sont conservées.',
     eraseMgrTitle:'Supprimer des données',
     eraseMgrWheels:'Roues',
     eraseMgrCustomTensios:'Tensiomètres perso',
@@ -4381,6 +4381,17 @@ const i18n = {
     eraseMgrAllConfirm:'Voulez-vous supprimer l\u2019ensemble de vos enregistrements ?',
     eraseMgrYearConfirm:'Voulez-vous supprimer vos enregistrements de {y} ?<br><span style="opacity:.75">Tensiom\u00e8tres et rayons perso, non dat\u00e9s, seront conserv\u00e9s.</span>',
     eraseMgrNoneConfirm:'Voulez-vous supprimer vos enregistrements sans date ?<br><span style="opacity:.75">Tensiom\u00e8tres et rayons perso seront conserv\u00e9s.</span>',
+    eraseMgrDelRider:'Supprimer le rider <strong>{name}</strong> ?',
+    eraseMgrDelRiderKeep1:'<br><span style="opacity:.75">Sa roue est conservée, simplement désaffectée.</span>',
+    eraseMgrDelRiderKeepN:'<br><span style="opacity:.75">Ses {n} roues sont conservées, simplement désaffectées.</span>',
+    eraseMgrDelTensio:'Supprimer le tensiomètre <strong>{name}</strong> ?',
+    eraseMgrDelChart:'Supprimer la charte <strong>{name}</strong> ?',
+    eraseMgrDelAlso:'<br><span style="opacity:.75">Emporte aussi : {list}.</span>',
+    eraseMgrDelNCharts1:'1 charte de rayon perso',
+    eraseMgrDelNChartsN:'{n} chartes de rayons perso',
+    eraseMgrDelNSnaps1:'1 snapshot',
+    eraseMgrDelNSnapsN:'{n} snapshots',
+    eraseMgrDelAnd:' et ',
     diffLabel:'Différentiel',
     radialDiscWarn:'⚠ Incompatible roue à disque',
     crossGeomWarn:'⚠ Croisement impossible : {a}° au moyeu, rayon tangent à la bride',
@@ -4623,6 +4634,17 @@ const i18n = {
     eraseMgrAllConfirm:'Do you want to delete all your records?',
     eraseMgrYearConfirm:'Delete your {y} records?<br><span style="opacity:.75">Custom tensiometers and spokes, which carry no date, will be kept.</span>',
     eraseMgrNoneConfirm:'Delete your undated records?<br><span style="opacity:.75">Custom tensiometers and spokes will be kept.</span>',
+    eraseMgrDelRider:'Delete rider <strong>{name}</strong>?',
+    eraseMgrDelRiderKeep1:'<br><span style="opacity:.75">Their wheel is kept, just unassigned.</span>',
+    eraseMgrDelRiderKeepN:'<br><span style="opacity:.75">Their {n} wheels are kept, just unassigned.</span>',
+    eraseMgrDelTensio:'Delete tensiometer <strong>{name}</strong>?',
+    eraseMgrDelChart:'Delete chart <strong>{name}</strong>?',
+    eraseMgrDelAlso:'<br><span style="opacity:.75">Also deletes: {list}.</span>',
+    eraseMgrDelNCharts1:'1 custom spoke chart',
+    eraseMgrDelNChartsN:'{n} custom spoke charts',
+    eraseMgrDelNSnaps1:'1 snapshot',
+    eraseMgrDelNSnapsN:'{n} snapshots',
+    eraseMgrDelAnd:' and ',
     diffLabel:'Differential',
     radialDiscWarn:'⚠ Disc brake incompatible',
     crossGeomWarn:'⚠ Impossible lacing: {a}° at the hub, spoke tangent to the flange',
@@ -7170,7 +7192,7 @@ function saveConfig(nameOverride, riderIdOverride, skipConfirm) {
   if (existIdx >= 0 && !skipConfirm) {
     var L = typeof lang !== 'undefined' ? lang : 'fr';
     var msg = L === 'fr'
-      ? '<strong>' + escHtml(name) + '</strong> existe déjà. Remplacer ?'
+      ? '<strong>' + escHtml(name) + '</strong> existe déjà. Remplacer ?'
       : '<strong>' + escHtml(name) + '</strong> already exists. Replace?';
     confirmShow(msg, doSave);
   } else {
@@ -7179,6 +7201,36 @@ function saveConfig(nameOverride, riderIdOverride, skipConfirm) {
 }
 
 function deleteConfig(idx) { const configs = loadConfigs(); configs.splice(idx, 1); persistConfigs(configs); renderConfigsList(); }
+
+// ── Suppression d'une roue : identité et message, source unique ───────────────
+// Un index de config capturé au rendu peut viser une AUTRE roue au moment où
+// la suppression s'exécute : la confirmation introduit un délai, et la liste a
+// pu bouger entre-temps. Nom ET côté sont vérifiés — deux roues homonymes
+// avant/arrière coexistent légitimement, le nom seul ne les distingue pas.
+function wheelStillAt(i, cfg) {
+  const c = loadConfigs()[i];
+  return !!c && c.name === cfg.name
+      && (c.state?.wtype || 'avant') === (cfg.state?.wtype || 'avant');
+}
+
+// La modale de chargement et le Data manager suppriment exactement la même
+// chose : ils doivent le dire avec les mêmes mots, d'où le message unique.
+// Le plus destructeur des trois : la config emporte l'état ET les snapshots
+// (mesures de tension, commentaires). Le message les compte explicitement —
+// « Supprimer ? » seul sous-estime la perte.
+function wheelDelMsg(cfg) {
+  const L  = (typeof lang !== 'undefined') ? lang : 'fr';
+  const ns = (cfg.snapshots || []).length;
+  let tail = '';
+  if (ns > 0) {
+    tail = (L === 'fr')
+      ? (ns > 1 ? ' et ses ' + ns + ' snapshots' : ' et son snapshot')
+      : (ns > 1 ? ' and its ' + ns + ' snapshots' : ' and its snapshot');
+  }
+  return (L === 'fr')
+    ? 'Supprimer <strong>' + escHtml(cfg.name) + '</strong>' + tail + ' ?'
+    : 'Delete <strong>' + escHtml(cfg.name) + '</strong>' + tail + '?';
+}
 
 function loadConfig(idx) {
   const configs = loadConfigs(), cfg = configs[idx]; if (!cfg) return;
@@ -9237,6 +9289,31 @@ function _emPerPass(ts) {
   return _perKey(ts) === _emPeriod;
 }
 
+// ── Confirmations de suppression à l'unité ───────────────────────────────────
+// Compte les snapshots qu'une suppression emporterait, avec le prédicat EXACT
+// passé ensuite à snapPurgeOrphans : le nombre annoncé est, par construction,
+// celui qui sera purgé. Un compteur écrit à part dériverait du jour où l'un
+// des deux changerait.
+function _emCountSnaps(match) {
+  let n = 0;
+  loadConfigs().forEach(function(cfg) {
+    (cfg.snapshots || []).forEach(function(sn) { if (match(sn)) n++; });
+  });
+  return n;
+}
+
+// Queue « Emporte aussi : … », omise quand il n'y a rien à emporter : annoncer
+// une perte nulle est aussi trompeur que taire une perte réelle.
+function _emAlso(nCharts, nSnaps) {
+  const parts = [];
+  if (nCharts > 0) parts.push(nCharts === 1 ? t('eraseMgrDelNCharts1')
+                                            : t('eraseMgrDelNChartsN').replace('{n}', nCharts));
+  if (nSnaps  > 0) parts.push(nSnaps === 1 ? t('eraseMgrDelNSnaps1')
+                                           : t('eraseMgrDelNSnapsN').replace('{n}', nSnaps));
+  if (!parts.length) return '';
+  return t('eraseMgrDelAlso').replace('{list}', parts.join(t('eraseMgrDelAnd')));
+}
+
 function renderEraseMgr(openKeys) {
   const body = $id('erasemgr-body');
   body.innerHTML = '';
@@ -9273,7 +9350,7 @@ function renderEraseMgr(openKeys) {
   acc.className = 'erasemgr-acc';
   body.appendChild(acc);
 
-  function makeItem(name, sub, onDel, riderId) {
+  function makeItem(name, sub, onDel, riderId, msgFn) {
     const div = document.createElement('div');
     div.className = 'erasemgr-item';
     const info = document.createElement('div');
@@ -9296,11 +9373,19 @@ function renderEraseMgr(openKeys) {
     btn.textContent = t('eraseMgrDel');
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      // Mémoriser les sections ouvertes
-      const openKeys = Array.from(document.querySelectorAll('.erasemgr-acc-body.open'))
-        .map(el => el.dataset.key);
-      onDel();
-      renderEraseMgr(openKeys);
+      // Suppression définitive, sans corbeille : même geste de confirmation que
+      // les modales de chargement, d'où le passage par confirmShow. Le message
+      // est construit AU CLIC et non au rendu — les compteurs qu'il annonce
+      // doivent être ceux de l'instant, la liste ayant pu bouger depuis.
+      const run = () => {
+        // Mémoriser les sections ouvertes
+        const openKeys = Array.from(document.querySelectorAll('.erasemgr-acc-body.open'))
+          .map(el => el.dataset.key);
+        onDel();
+        renderEraseMgr(openKeys);
+      };
+      const msg = msgFn ? msgFn() : '';
+      if (msg) confirmShow(msg, run); else run();
     });
     div.appendChild(info);
     div.appendChild(btn);
@@ -9366,6 +9451,15 @@ function renderEraseMgr(openKeys) {
       persistRiders(arr);
       // Retirer la capsule rider de la card Roue si concernée
       if (typeof _refreshLoadedBadges === 'function') _refreshLoadedBadges();
+    }, null, function() {
+      // Le rider part, ses roues restent : sans cette précision le message
+      // laisse croire que la suppression emporte les roues avec lui. Compté au
+      // clic sur le storage, jamais sur le `sub` calculé au rendu.
+      const nb = loadConfigs().filter(c => c.riderId === r.id).length;
+      return t('eraseMgrDelRider').replace('{name}', escHtml(r.name))
+        + (nb === 0 ? ''
+         : nb === 1 ? t('eraseMgrDelRiderKeep1')
+         :            t('eraseMgrDelRiderKeepN').replace('{n}', nb));
     });
   });
   acc.appendChild(makeAccSection('eraseMgrRiders', riderItems, openKeys));
@@ -9378,15 +9472,29 @@ function renderEraseMgr(openKeys) {
     .map(({ cfg, i }) => makeItem(
       cfg.name,
       (cfg.state?.wtype || 'avant') === 'avant' ? t('frontLabel') : t('rearLabel'),
-      () => deleteConfig(i),
-      cfg.riderId
+      // `i` est l'index d'ORIGINE : re-vérifié par identité avant destruction,
+      // la confirmation ayant introduit un délai (cf. wheelStillAt).
+      () => { if (wheelStillAt(i, cfg)) deleteConfig(i); },
+      cfg.riderId,
+      () => wheelDelMsg(cfg)
     ));
   acc.appendChild(makeAccSection('eraseMgrWheels', wheelItems, openKeys));
 
   // Tensiomètres perso
   const tensioItems = tensios.map(ct => makeItem(
     CC_PREFIX + ct.name, null,
-    () => { const idx = ctLoadAll().findIndex(c => c.id === ct.id); if (idx >= 0) ctDelete(idx); }
+    () => { const idx = ctLoadAll().findIndex(c => c.id === ct.id); if (idx >= 0) ctDelete(idx); },
+    null,
+    () => {
+      // ctDelete emporte aussi les chartes du tensiomètre ET purge les
+      // snapshots mesurés avec lui : le message les compte, avec le prédicat
+      // même de ctDelete (sn.tmType === tmKey).
+      const tmKey   = 'ct_' + ct.id;
+      const nCharts = ccLoadAll().filter(c => c.tensioKey === tmKey).length;
+      const nSnaps  = _emCountSnaps(sn => sn.tmType === tmKey);
+      return t('eraseMgrDelTensio').replace('{name}', escHtml(CC_PREFIX + ct.name))
+        + _emAlso(nCharts, nSnaps);
+    }
   ));
   acc.appendChild(makeAccSection('eraseMgrCustomTensios', tensioItems, openKeys));
 
@@ -9410,6 +9518,19 @@ function renderEraseMgr(openKeys) {
     () => {
       const idx = ccLoadAll().findIndex(c => c.name === cc.name && c.tensioKey === cc.tensioKey);
       if (idx >= 0) ccDeleteDirect(idx, null);
+    },
+    null,
+    () => {
+      // Même clé d'identité que ccDeleteDirect — couple (tensioKey, nom) : une
+      // charte homonyme portée par un autre tensiomètre ne doit pas être
+      // comptée, ses snapshots survivront.
+      const deadKey = CC_PREFIX + cc.name;
+      const nSnaps  = _emCountSnaps(function(sn) {
+        return _srcSpokeKeys(sn).some(function(k) {
+          return k === deadKey && _tmStoreKeyOf(sn.tmType, sn.tmDTSub) === cc.tensioKey;
+        });
+      });
+      return t('eraseMgrDelChart').replace('{name}', escHtml(deadKey)) + _emAlso(0, nSnaps);
     }
   ));
   acc.appendChild(makeAccSection('eraseMgrCustomSpokes', spokeItems, openKeys));
@@ -17311,7 +17432,7 @@ function confirmHrSave() {
       ? (L === 'fr' ? 'ce moyeu' : 'this hub')
       : (L === 'fr' ? 'cette jante' : 'this rim');
     var msg = L === 'fr'
-      ? '<strong>' + escHtml(name) + '</strong> existe déjà. Remplacer ' + label + ' ?'
+      ? '<strong>' + escHtml(name) + '</strong> existe déjà. Remplacer ' + label + ' ?'
       : '<strong>' + escHtml(name) + '</strong> already exists. Replace ' + label + '?';
     confirmShow(msg, doHrSave);
   } else {
@@ -17505,6 +17626,18 @@ function hrSortBy(key) {
   hrRenderLoadList(_hrModalType);
 }
 
+// Message de suppression moyeu/jante — source unique de la modale de
+// chargement et du Data manager, qui suppriment la même entrée.
+function hrDelMsg(type, name) {
+  var L = typeof lang !== 'undefined' ? lang : 'fr';
+  var what = (type === 'hub')
+    ? (L === 'fr' ? 'le moyeu' : 'hub')
+    : (L === 'fr' ? 'la jante' : 'rim');
+  return (L === 'fr')
+    ? 'Supprimer ' + what + ' <strong>' + escHtml(name) + '</strong> ?'
+    : 'Delete ' + what + ' <strong>' + escHtml(name) + '</strong>?';
+}
+
 function hrRenderLoadList(type) {
   var list = document.getElementById('hr-load-list');
   if (!list) return;
@@ -17575,14 +17708,7 @@ function hrRenderLoadList(type) {
       // Suppression définitive (aucune corbeille) et croix posée DANS une ligne
       // entièrement cliquable : sur mobile, un pouce qui vise la ligne attrape
       // la croix. Même geste de confirmation que l'écrasement dans hrSave().
-      var L = typeof lang !== 'undefined' ? lang : 'fr';
-      var what = (type === 'hub')
-        ? (L === 'fr' ? 'le moyeu' : 'hub')
-        : (L === 'fr' ? 'la jante' : 'rim');
-      var msg = (L === 'fr')
-        ? 'Supprimer ' + what + ' <strong>' + escHtml(entry.name) + '</strong> ?'
-        : 'Delete ' + what + ' <strong>' + escHtml(entry.name) + '</strong>?';
-      confirmShow(msg, function() {
+      confirmShow(hrDelMsg(type, entry.name), function() {
         // Index global re-vérifié par identité AVANT le splice : `gi` a été
         // capturé au rendu, la confirmation a introduit un délai. Même garde
         // que ccDeleteDirect — un index périmé supprime la MAUVAISE entrée.
@@ -17671,7 +17797,7 @@ window.renderEraseMgr = function(openKeys) {
     if (old) old.remove();
   });
 
-  function makeEraseMgrItem(name, onDel) {
+  function makeEraseMgrItem(name, onDel, msgFn) {
     var div = document.createElement('div');
     div.className = 'erasemgr-item';
     var info = document.createElement('div');
@@ -17685,9 +17811,16 @@ window.renderEraseMgr = function(openKeys) {
     btn.textContent = typeof t === 'function' ? t('eraseMgrDel') : '×';
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      var ok = Array.from(document.querySelectorAll('.erasemgr-acc-body.open')).map(function(el) { return el.dataset.key; });
-      onDel();
-      window.renderEraseMgr(ok);
+      // Même confirmation que les items du module principal (makeItem) et que
+      // la modale de chargement moyeu/jante : une seule et même suppression,
+      // trois portes d'entrée.
+      var run = function() {
+        var ok = Array.from(document.querySelectorAll('.erasemgr-acc-body.open')).map(function(el) { return el.dataset.key; });
+        onDel();
+        window.renderEraseMgr(ok);
+      };
+      var msg = msgFn ? msgFn() : '';
+      if (msg && typeof confirmShow === 'function') confirmShow(msg, run); else run();
     });
     div.appendChild(info);
     div.appendChild(btn);
@@ -17746,10 +17879,14 @@ window.renderEraseMgr = function(openKeys) {
   var hubItems = emPerPairs(hubs).map(function(o) {
     return makeEraseMgrItem(o.entry.name, function() {
       var a = hrLoadAll('hub');
+      // Index global re-vérifié par identité AVANT le splice : `gi` a été
+      // capturé au rendu, la confirmation a introduit un délai. Même garde que
+      // hrRenderLoadList — un index périmé supprime la MAUVAISE entrée.
+      if (!a[o.gi] || a[o.gi].name !== o.entry.name) return;
       a.splice(o.gi, 1);
       hrPersist('hub', a);
       hrUpdateButtons();
-    });
+    }, function() { return hrDelMsg('hub', o.entry.name); });
   });
   acc.appendChild(hrMakeAccSection('__hubs__', lang === 'fr' ? 'Moyeux' : 'Hubs', hubItems, openKeys, 'erasemgr-hub-section'));
 
@@ -17757,10 +17894,12 @@ window.renderEraseMgr = function(openKeys) {
   var rimItems = emPerPairs(rims).map(function(o) {
     return makeEraseMgrItem(o.entry.name, function() {
       var a = hrLoadAll('rim');
+      // Identité re-vérifiée avant le splice : cf. section moyeux.
+      if (!a[o.gi] || a[o.gi].name !== o.entry.name) return;
       a.splice(o.gi, 1);
       hrPersist('rim', a);
       hrUpdateButtons();
-    });
+    }, function() { return hrDelMsg('rim', o.entry.name); });
   });
   acc.appendChild(hrMakeAccSection('__rims__', lang === 'fr' ? 'Jantes' : 'Rims', rimItems, openKeys, 'erasemgr-rim-section'));
 };
@@ -18011,7 +18150,7 @@ function snapRegisterAndSave() {
   if (existIdx >= 0) {
     var L = typeof lang !== 'undefined' ? lang : 'fr';
     var msg = L === 'fr'
-      ? '<strong>' + escHtml(name) + '</strong> existe déjà. Remplacer ?'
+      ? '<strong>' + escHtml(name) + '</strong> existe déjà. Remplacer ?'
       : '<strong>' + escHtml(name) + '</strong> already exists. Replace?';
     confirmShow(msg, doRegister);
   } else {
@@ -19626,9 +19765,18 @@ function confirmProceed() {
   if (cb) cb();
 }
 
+// Escape en phase de CAPTURE, et propagation coupée : la confirmation est
+// toujours la modale du dessus. Les modales qui la portent (Data manager,
+// chargement, gestionnaire de sauvegarde…) posent leurs propres gestionnaires
+// Escape sur document en phase de bouillonnement ; sans ce garde, une seule
+// touche annulait la confirmation ET fermait la modale derrière elle.
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape' && document.getElementById('confirm-modal').classList.contains('show')) confirmDismiss();
-});
+  if (e.key !== 'Escape') return;
+  var m = document.getElementById('confirm-modal');
+  if (!m || !m.classList.contains('show')) return;
+  e.stopPropagation();
+  confirmDismiss();
+}, true);
 </script>
 
 
@@ -20175,25 +20323,12 @@ document.addEventListener('keydown', function(e) {
       delBtn.title = lang === 'fr' ? 'Supprimer' : 'Delete';
       delBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        // Le plus destructeur des trois : la config emporte l'état ET les
-        // snapshots (mesures de tension, commentaires). Le message les compte
-        // explicitement — « Supprimer ? » seul sous-estime la perte.
-        var L  = typeof lang !== 'undefined' ? lang : 'fr';
-        var ns = (cfg.snapshots || []).length;
-        var tail = '';
-        if (ns > 0) {
-          tail = (L === 'fr')
-            ? (ns > 1 ? ' et ses ' + ns + ' snapshots' : ' et son snapshot')
-            : (ns > 1 ? ' and its ' + ns + ' snapshots' : ' and its snapshot');
-        }
-        var msg = (L === 'fr')
-          ? 'Supprimer <strong>' + escHtml(cfg.name) + '</strong>' + tail + ' ?'
-          : 'Delete <strong>' + escHtml(cfg.name) + '</strong>' + tail + '?';
-        confirmShow(msg, function() {
-          // `i` est l'index d'ORIGINE capturé au rendu : re-vérifié par nom
-          // avant destruction, la confirmation ayant introduit un délai.
-          var cfgs = (typeof loadConfigs === 'function') ? loadConfigs() : [];
-          if (!cfgs[i] || cfgs[i].name !== cfg.name) { wheelRenderLoadList(); return; }
+        // Message et garde d'identité partagés avec le Data manager
+        // (wheelDelMsg / wheelStillAt) : même suppression, mêmes mots.
+        confirmShow(wheelDelMsg(cfg), function() {
+          // `i` est l'index d'ORIGINE capturé au rendu : re-vérifié par
+          // identité avant destruction, la confirmation ayant introduit un délai.
+          if (!wheelStillAt(i, cfg)) { wheelRenderLoadList(); return; }
           if (typeof deleteConfig === 'function') deleteConfig(i);
           wheelRenderLoadList(); // re-render
           // Mettre à jour aussi la liste principale si visible
