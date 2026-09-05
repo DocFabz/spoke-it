@@ -4313,7 +4313,6 @@ const i18n = {
     // la map id→clé d'applyLang ou au rendu — cf. delTitle/clearValuesTitle)
     hookeBtnTitle:'Courbe de Hooke',
     helpBtnTitle:'Mode d\'emploi',
-    helpBtnTitleOffline:'Mode d\'emploi — connexion requise',
     helpSheetTitle:'Mode d\'emploi',
     helpCloseTitle:'Fermer',
     tmInvertNdsTitle:'Inverser NDS', tmInvertDsTitle:'Inverser DS',
@@ -4570,7 +4569,6 @@ const i18n = {
     // id→key map or at render time — cf. delTitle/clearValuesTitle)
     hookeBtnTitle:'Hooke curve',
     helpBtnTitle:'User manual',
-    helpBtnTitleOffline:'User manual — connection required',
     helpSheetTitle:'User manual',
     helpCloseTitle:'Close',
     tmInvertNdsTitle:'Invert NDS', tmInvertDsTitle:'Invert DS',
@@ -7453,19 +7451,14 @@ function closeHelp(fromPop) {
   }
 }
 
-// Le manuel n'est pas en cache : hors ligne, le bouton est grisé plutôt que
-// d'ouvrir un panneau vide. Même signal que le bouton micro d'Easy Fill.
-// helpSync est aussi l'écrivain unique des libellés du panneau, appelé par
-// applyLang : le titre du bouton dépend à la fois de la langue et du réseau.
+// helpSync : écrivain unique des libellés du bouton et du panneau, appelé au
+// démarrage et par applyLang.
 (function() {
   function helpSync() {
     var btn = $id('help-btn');
     if (btn) {
-      var on  = navigator.onLine;
-      var key = on ? 'helpBtnTitle' : 'helpBtnTitleOffline';
-      btn.disabled = !on;
-      btn.title = t(key);
-      btn.setAttribute('aria-label', t(key));
+      btn.title = t('helpBtnTitle');
+      btn.setAttribute('aria-label', t('helpBtnTitle'));
     }
     var ttl = $id('help-sheet-title');
     if (ttl) ttl.textContent = t('helpSheetTitle');
@@ -7483,8 +7476,6 @@ function closeHelp(fromPop) {
     }
   }
   window.helpSync = helpSync;
-  window.addEventListener('online',  helpSync);
-  window.addEventListener('offline', helpSync);
   window.addEventListener('popstate', function() { closeHelp(true); });
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && $id('help-sheet') && $id('help-sheet').classList.contains('show')) {

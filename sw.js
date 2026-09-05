@@ -11,8 +11,19 @@
    ─────────────────────────────────────────────────────────────────────────── */
 var CACHE = 'spokeit-offline';
 
+/* Le mode d'emploi, chargé par l'app dans une iframe. Deux entrées distinctes
+   dans le cache : './' pour l'app, GUIDE pour le manuel. */
+var GUIDE = 'guide.html';
+
 self.addEventListener('install', function(e) {
-  e.waitUntil(caches.open(CACHE).then(function(c) { return c.add('./'); }));
+  e.waitUntil(caches.open(CACHE).then(function(c) {
+    /* Le manuel est pré-chargé pour être consultable hors-ligne dès la
+       première fois. Son échec ne doit pas faire échouer l'installation :
+       l'app doit rester installable même si le manuel manque. */
+    return c.add('./').then(function() {
+      return c.add(GUIDE).catch(function() {});
+    });
+  }));
   self.skipWaiting();
 });
 
@@ -37,11 +48,27 @@ self.addEventListener('fetch', function(e) {
   var req = e.request;
   if (req.method !== 'GET') return;
 
-  /* Navigation → clé unique './' (insensible au hash #r= des recettes) */
-  if (req.mode === 'navigate') { e.respondWith(networkFirst(req, './')); return; }
+  var url = new URL(req.url);
+
+  /* Manuel → clé propre, testée AVANT la branche navigation : le chargement
+     d'une iframe est lui aussi une navigation, et il écraserait sinon
+     l'entrée './' de l'app par le manuel. La clé fixe ignore ?lang=, les deux
+     langues étant servies par le même fichier. */
+  if (url.origin === self.location.origin &&
+      url.pathname.replace(/^.*\//, '') === GUIDE) {
+    e.respondWith(networkFirst(req, GUIDE));
+    return;
+  }
+
+  /* Navigation de premier niveau → clé unique './'. Le test sur destination
+     écarte les iframes : seul le document principal alimente cette entrée. */
+  if (req.mode === 'navigate' && req.destination !== 'iframe') {
+    e.respondWith(networkFirst(req, './'));
+    return;
+  }
 
   /* Google Fonts → même logique, pour que les polices survivent hors-ligne */
-  var h = new URL(req.url).hostname;
+  var h = url.hostname;
   if (h === 'fonts.googleapis.com' || h === 'fonts.gstatic.com') {
     e.respondWith(networkFirst(req));
   }
