@@ -181,6 +181,7 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 
 .save-mgr-btn { background:transparent; border:1px solid var(--border-s); border-radius:7px; color:#b8c8d8; padding:.28rem .9rem; cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s; display:inline-flex; align-items:center; justify-content:center; line-height:1 }
 .save-mgr-btn:hover { border-color:var(--accent); color:var(--accent) }
+.save-mgr-btn:disabled { opacity:.3; cursor:default; pointer-events:none }
 
 /* ── Modale Atelier ─────────────────────────────────────────────────────────── */
 .ateliermgr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
@@ -1812,6 +1813,13 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
   </div>
   <div class="hline"></div>
   <div class="header-actions" style="position:relative">
+    <button class="save-mgr-btn" onclick="openHelp()" id="help-btn" title="Mode d'emploi" aria-label="Mode d'emploi">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 7.5v11"/>
+        <path d="M12 7.5C12 6.4 10.9 5.5 9.5 5.5H4.5A.5.5 0 0 0 4 6v10a.5.5 0 0 0 .5.5h5c1.4 0 2.5.9 2.5 2"/>
+        <path d="M12 7.5c0-1.1 1.1-2 2.5-2h5a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-.5.5h-5c-1.4 0-2.5.9-2.5 2"/>
+      </svg>
+    </button>
     <button class="save-mgr-btn" onclick="openAtelierMgr()" id="atelier-mgr-btn" title="Atelier">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
@@ -4283,6 +4291,8 @@ const i18n = {
     // Tooltips (title figé FR dans le HTML statique ou généré, retraduit par
     // la map id→clé d'applyLang ou au rendu — cf. delTitle/clearValuesTitle)
     hookeBtnTitle:'Courbe de Hooke',
+    helpBtnTitle:'Mode d\'emploi',
+    helpBtnTitleOffline:'Mode d\'emploi — connexion requise',
     tmInvertNdsTitle:'Inverser NDS', tmInvertDsTitle:'Inverser DS',
     tmEraseNdsTitle:'Effacer NDS', tmEraseDsTitle:'Effacer DS',
     tmPlayBtnTitle:'Animer les points', tmSnapCompareBtnTitle:'Comparer deux snapshots',
@@ -4536,6 +4546,8 @@ const i18n = {
     // Tooltips (FR-hardcoded title attributes, retranslated via applyLang's
     // id→key map or at render time — cf. delTitle/clearValuesTitle)
     hookeBtnTitle:'Hooke curve',
+    helpBtnTitle:'User manual',
+    helpBtnTitleOffline:'User manual — connection required',
     tmInvertNdsTitle:'Invert NDS', tmInvertDsTitle:'Invert DS',
     tmEraseNdsTitle:'Clear NDS', tmEraseDsTitle:'Clear DS',
     tmPlayBtnTitle:'Animate points', tmSnapCompareBtnTitle:'Compare two snapshots',
@@ -5208,6 +5220,7 @@ function applyLang() {
   $id('lang-btn').textContent = lang === 'fr' ? 'EN' : 'FR';
   var bkpSn = $id('bkp-snooze'); if (bkpSn) { bkpSn.title = t('backupSnoozeTitle'); bkpSn.setAttribute('aria-label', t('backupSnoozeTitle')); }
   var pkBtn = $id('save-mgr-btn'); if (pkBtn) { pkBtn.title = t('pickerMenuBtn'); pkBtn.setAttribute('aria-label', t('pickerMenuBtn')); }
+  if (typeof helpUpdateBtn === 'function') helpUpdateBtn();
   // Tooltips des boutons d'icône de card (load/save/info) : title figé FR dans
   // le HTML, retraduit ici — même mécanisme que bkp-snooze / save-mgr-btn.
   Object.entries({
@@ -7385,6 +7398,33 @@ function closeTou() {
   $id('tou-overlay').classList.remove('show');
   $id('tou-modal').classList.remove('show');
 }
+
+// ── Mode d'emploi ─────────────────────────────────────────────────────────────
+// Page statique servie par le même dépôt. La langue courante voyage en query
+// pour que le manuel s'ouvre du bon côté. Ouverture dans un onglet séparé :
+// installée, l'application reste ouverte dessous (Custom Tab sur Android,
+// vue Safari intégrée sur iOS).
+function openHelp() {
+  window.open('guide.html?lang=' + lang, '_blank', 'noopener');
+}
+
+// Le manuel n'est pas mis en cache : hors ligne, le bouton est grisé plutôt
+// que d'ouvrir un onglet vide. Même signal que le bouton micro d'Easy Fill.
+(function() {
+  function helpUpdateBtn() {
+    var btn = $id('help-btn');
+    if (!btn) return;
+    var on = navigator.onLine;
+    btn.disabled = !on;
+    var key = on ? 'helpBtnTitle' : 'helpBtnTitleOffline';
+    btn.title = t(key);
+    btn.setAttribute('aria-label', t(key));
+  }
+  window.helpUpdateBtn = helpUpdateBtn;
+  window.addEventListener('online',  helpUpdateBtn);
+  window.addEventListener('offline', helpUpdateBtn);
+  document.addEventListener('DOMContentLoaded', helpUpdateBtn);
+})();
 
 // ── Installation ──────────────────────────────────────────────────────────────
 function openInstall() {
