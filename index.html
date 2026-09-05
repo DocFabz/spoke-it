@@ -248,6 +248,7 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .erasemgr-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
 .erasemgr-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .erasemgr-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
+.em-period { margin-top:-.35rem }
 .erasemgr-acc { display:flex; flex-direction:column; gap:.45rem }
 .erasemgr-acc-head { display:flex; align-items:center; gap:.5rem; padding:.5rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; user-select:none; transition:border-color .2s }
 .erasemgr-acc-head:hover:not(.disabled) { border-color:var(--border-s) }
@@ -380,11 +381,11 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
    bouton se dimensionne sur son option la plus longue.
    Le conteneur ne sert qu'à porter le chevron, qu'un <select> en
    appearance:none ne peut pas afficher lui-même. */
-.wl-period, .hr-period { position:relative; display:inline-flex; align-items:center; align-self:flex-end; max-width:100%; flex-shrink:0 }
-.wl-period-sel, .hr-period-sel { width:auto; max-width:100%; height:1.65rem; padding:0 1.5rem 0 .7rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.6rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:background .25s, border-color .25s, color .25s }
-.wl-period-sel option, .hr-period-sel option { background:var(--card); color:var(--text2); font-weight:400; letter-spacing:normal }
-.wl-period-sel:hover, .hr-period-sel:hover { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06) }
-.wl-period::after, .hr-period::after { content:''; position:absolute; right:.7rem; top:calc(50% - 3px); width:5px; height:5px; border-right:1.2px solid var(--accent2); border-bottom:1.2px solid var(--accent2); transform:rotate(45deg); pointer-events:none }
+.wl-period, .hr-period, .em-period { position:relative; display:inline-flex; align-items:center; align-self:flex-end; max-width:100%; flex-shrink:0 }
+.wl-period-sel, .hr-period-sel, .em-period-sel { width:auto; max-width:100%; height:1.65rem; padding:0 1.5rem 0 .7rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.6rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:background .25s, border-color .25s, color .25s }
+.wl-period-sel option, .hr-period-sel option, .em-period-sel option { background:var(--card); color:var(--text2); font-weight:400; letter-spacing:normal }
+.wl-period-sel:hover, .hr-period-sel:hover, .em-period-sel:hover { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06) }
+.wl-period::after, .hr-period::after, .em-period::after { content:''; position:absolute; right:.7rem; top:calc(50% - 3px); width:5px; height:5px; border-right:1.2px solid var(--accent2); border-bottom:1.2px solid var(--accent2); transform:rotate(45deg); pointer-events:none }
 .wheel-load-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .wheel-load-item:hover { border-color:var(--border-s); background:rgba(126,200,227,.03) }
 .wheel-load-item-name { flex:1; font-family:'DM Mono',monospace; font-size:.78rem; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
@@ -3675,9 +3676,12 @@ document.addEventListener('keydown', function(e) {
     </div>
     <button class="erasemgr-close" onclick="closeEraseMgr()">&#x2715;</button>
   </div>
+  <div class="em-period" id="em-period">
+    <select class="em-period-sel" id="em-period-sel" data-i18n-aria="wlPeriod" aria-label="Période" onchange="emPeriodBy(this.value)"></select>
+  </div>
   <div id="erasemgr-body"></div>
   <div class="erasemgr-footer">
-    <button class="erasemgr-eraseall" onclick="eraseMgrEraseAll()"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg><span data-i18n="eraseMgrAllBtn">Tout effacer</span></button>
+    <button class="erasemgr-eraseall" onclick="eraseMgrEraseAll()"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg><span id="erasemgr-eraseall-lbl" data-i18n="eraseMgrAllBtn">Tout effacer</span></button>
   </div>
 </div>
 
@@ -4372,7 +4376,11 @@ const i18n = {
     eraseMgrRiders:'Riders',
     eraseMgrDel:'✕',
     eraseMgrAllBtn:'Tout effacer',
+    eraseMgrYearBtn:'Effacer {y}',
+    eraseMgrNoneBtn:'Effacer sans date',
     eraseMgrAllConfirm:'Voulez-vous supprimer l\u2019ensemble de vos enregistrements ?',
+    eraseMgrYearConfirm:'Voulez-vous supprimer vos enregistrements de {y} ?<br><span style="opacity:.75">Tensiom\u00e8tres et rayons perso, non dat\u00e9s, seront conserv\u00e9s.</span>',
+    eraseMgrNoneConfirm:'Voulez-vous supprimer vos enregistrements sans date ?<br><span style="opacity:.75">Tensiom\u00e8tres et rayons perso seront conserv\u00e9s.</span>',
     diffLabel:'Différentiel',
     radialDiscWarn:'⚠ Incompatible roue à disque',
     crossGeomWarn:'⚠ Croisement impossible : {a}° au moyeu, rayon tangent à la bride',
@@ -4610,7 +4618,11 @@ const i18n = {
     eraseMgrRiders:'Riders',
     eraseMgrDel:'✕',
     eraseMgrAllBtn:'Erase all',
+    eraseMgrYearBtn:'Erase {y}',
+    eraseMgrNoneBtn:'Erase undated',
     eraseMgrAllConfirm:'Do you want to delete all your records?',
+    eraseMgrYearConfirm:'Delete your {y} records?<br><span style="opacity:.75">Custom tensiometers and spokes, which carry no date, will be kept.</span>',
+    eraseMgrNoneConfirm:'Delete your undated records?<br><span style="opacity:.75">Custom tensiometers and spokes will be kept.</span>',
     diffLabel:'Differential',
     radialDiscWarn:'⚠ Disc brake incompatible',
     crossGeomWarn:'⚠ Impossible lacing: {a}° at the hub, spoke tangent to the flange',
@@ -4717,6 +4729,7 @@ const LS_DATA_KEYS = (function() {
 const LS_LEGACY_KEYS = [
   'spoke-it-theme',         // ancien toggle de thème
   'spoke-it-backup-remind', // ancien rappel de sauvegarde (avant le modèle à deux horloges)
+  'spokeit_emSort',         // tri Nom/Date du Data manager, essai abandonné (remplacé par le filtre Période)
 ];
 // Audit au démarrage (hors chemin critique) : purge des clés legacy, puis
 // signaler en console toute clé de notre espace de nommage absente du
@@ -5269,6 +5282,17 @@ function _applyLangModals() {
 
   // ── Modale Save Manager ──
   if (typeof savemgrRenderLastBackup === 'function') savemgrRenderLastBackup();
+
+  // ── Data manager ──
+  // Libellé du bouton d'effacement et en-têtes de section sont posés au rendu,
+  // pas par data-i18n : re-rendu si la modale est ouverte, sections dépliées
+  // préservées. renderEraseMgr résout vers le wrapper hub/rim.
+  el = $id('erasemgr-modal');
+  if (el && el.classList.contains('show') && typeof renderEraseMgr === 'function') {
+    var _emOpen = Array.from(document.querySelectorAll('.erasemgr-acc-body.open'))
+      .map(function(x) { return x.dataset.key; });
+    renderEraseMgr(_emOpen);
+  }
 }
 
 function toggleLang() { lang = lang === 'fr' ? 'en' : 'fr'; lsSet('spoke-it-lang', lang); applyLang(); efOnLangChange(); }
@@ -7499,6 +7523,24 @@ function _importDedupName(base, exists) {
 // Réécrit les clés de rayon persistées selon la map de renommage 'tensioKey\u0000ancienNom' →
 // nouveauNom — state ET snapshots, chacun porte sa propre copie. Mutualisé
 // entre l'import de roue (_wshareResolveDeps) et l'import de backup.
+// Horodatage d'une entrée importée. L'app n'écrit jamais autre chose qu'un
+// Date.now() ; un fichier édité à la main peut porter n'importe quoi : "abc",
+// true, un objet, ou "1750000000000" recopié d'un tableur. Sans normalisation
+// la MÊME valeur est jugée « sans date » par le filtre (_perKey → NaN) mais
+// ordonnée comme datée par le tri (coercition arithmétique), et fmtDMY affiche
+// « Invalid Date » ou « 01/01/1970 ». Nombre fini strictement positif conservé
+// (chaîne numérique convertie) ; tout le reste est retiré : l'entrée rejoint
+// les « Sans date », de façon cohérente dans les trois listes.
+// Seul le backup est concerné : le partage de roue horodate lui-même à
+// l'import (wshareImport), tensios et chartes ne sont pas datés.
+function _importNormTs(entry) {
+  if (!entry || !Object.prototype.hasOwnProperty.call(entry, 'ts')) return;
+  var v = entry.ts, n = NaN;
+  if (typeof v === 'number') n = v;
+  else if (typeof v === 'string' && v.trim() !== '') n = Number(v);
+  if (Number.isFinite(n) && n > 0) entry.ts = n; else delete entry.ts;
+}
+
 function _importApplyRen(entry, ren) {
   if (!Object.keys(ren).length) return;
   var apply = function(src) {
@@ -7693,6 +7735,7 @@ function importConfigs(event) {
         const existing = loadConfigs();
         data.configs.forEach(entry => {
           if (!entry || typeof entry.name !== 'string' || !entry.state || typeof entry.state !== 'object') return;
+          _importNormTs(entry);
           _importApplyRen(entry, _bkpRen); // roues du fichier → chartes renommées
           const idx = existing.findIndex(c => c.name === entry.name && (c.state.wtype || 'avant') === (entry.state.wtype || 'avant'));
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
@@ -7704,6 +7747,7 @@ function importConfigs(event) {
         const existing = hrLoadAll('hub');
         data.savedHubs.forEach(entry => {
           if (!entry || typeof entry.name !== 'string') return;
+          _importNormTs(entry);
           const idx = existing.findIndex(h => h.name.toLowerCase() === entry.name.toLowerCase());
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
@@ -7714,6 +7758,7 @@ function importConfigs(event) {
         const existing = hrLoadAll('rim');
         data.savedRims.forEach(entry => {
           if (!entry || typeof entry.name !== 'string') return;
+          _importNormTs(entry);
           const idx = existing.findIndex(r => r.name.toLowerCase() === entry.name.toLowerCase());
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
@@ -7724,6 +7769,7 @@ function importConfigs(event) {
         const existing = loadRiders();
         data.riders.forEach(entry => {
           if (!entry || !entry.id) return;
+          _importNormTs(entry);
           const idx = existing.findIndex(r => r.id === entry.id);
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
@@ -9126,6 +9172,8 @@ ctRefreshAll();
 
 // ── Erase manager ─────────────────────────────────────────────────────────────
 function openEraseMgr() {
+  // Filtre remis à zéro : voir le commentaire du bloc « Filtre Période ».
+  _emPeriod = 'all';
   renderEraseMgr();
   $id('erasemgr-overlay').classList.add('show');
   $id('erasemgr-modal').classList.add('show');
@@ -9137,12 +9185,90 @@ function closeEraseMgr() {
   document.body.style.overflow = '';
   if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
 }
+// ── Filtre « Période » du Data manager (Tout / année / sans date) ────────────
+// Le filtre CACHE, il ne réordonne pas : chaque section conserve son ordre
+// d'affichage habituel (riders alphabétiques, le reste dans l'ordre du
+// storage). Seules les entrées de la période retenue sont listées.
+//
+// Portée : les quatre collections datées — riders, roues, moyeux, jantes. Les
+// tensiomètres et rayons perso ne portent aucun ts ; ils restent affichés quelle
+// que soit la période, faute de quoi choisir une année rendrait leur
+// suppression inaccessible.
+//
+// Comme dans les modales de chargement, la sélection n'est PAS mémorisée :
+// rouvrir le Data manager sur « 2025 » et n'y plus voir la roue enregistrée
+// hier ressemblerait à une perte de données. Remis à « Tout » à chaque
+// ouverture (cf. openEraseMgr).
+//
+// Primitives _perKey / _perScan / _perFill : déclarées par le bloc hub/rim
+// (script ultérieur), donc globales à l'exécution — d'où les gardes typeof,
+// par cohérence avec les autres appels croisés de ce module.
+var _emPeriod = 'all';
+
+function emPeriodBy(val) {
+  _emPeriod = val;
+  // Sections ouvertes préservées, et re-rendu via window.renderEraseMgr : c'est
+  // le wrapper qui rattache moyeux et jantes.
+  var openKeys = Array.from(document.querySelectorAll('.erasemgr-acc-body.open'))
+    .map(function(el) { return el.dataset.key; });
+  window.renderEraseMgr(openKeys);
+}
+
+// Vraie si l'entrée appartient à la période retenue. Une entrée sans ts ne
+// tombe sous aucune année : elle n'apparaît que sous « Tout » et « Sans date ».
+// Libellé du bouton d'effacement, aligné sur la portée réelle de l'action.
+// data-i18n est retiré du span dès le premier rendu : applyLang y réécrirait
+// « Tout effacer » sur une liste filtrée. C'est le re-rendu de la modale
+// (_applyLangModals) qui porte la traduction à chaud, et openEraseMgr celle
+// à l'ouverture. Avant le premier rendu, l'attribut statique du markup fait
+// foi — le bouton n'est alors pas visible.
+function _emRefreshEraseBtn() {
+  var lbl = $id('erasemgr-eraseall-lbl');
+  if (!lbl) return;
+  var per = (typeof _perKey === 'function') ? _emPeriod : 'all';
+  delete lbl.dataset.i18n;
+  lbl.textContent = (per === 'all')  ? t('eraseMgrAllBtn')
+                  : (per === 'none') ? t('eraseMgrNoneBtn')
+                  :                    t('eraseMgrYearBtn').replace('{y}', per);
+}
+
+function _emPerPass(ts) {
+  if (_emPeriod === 'all' || typeof _perKey !== 'function') return true;
+  return _perKey(ts) === _emPeriod;
+}
+
 function renderEraseMgr(openKeys) {
   const body = $id('erasemgr-body');
   body.innerHTML = '';
   const configs = loadConfigs();
   const charts  = ccLoadAll();
   const tensios = ctLoadAll();
+  const ridersAll = ((typeof loadRiders === 'function') ? loadRiders() : []);
+
+  // ── Période ─────────────────────────────────────────────────────────────
+  // Inventaire balayé d'un coup sur les quatre collections datées : une année
+  // n'est proposée que si au moins une entrée y tombe, toutes sections
+  // confondues. Moyeux et jantes sont lus ici, avant leur rendu par le wrapper,
+  // pour que les années qu'ils portent figurent au menu.
+  const _psel = $id('em-period-sel');
+  const _prow = $id('em-period');
+  if (typeof _perScan === 'function' && typeof _perFill === 'function') {
+    const _hubTs = (typeof hrLoadAll === 'function') ? hrLoadAll('hub').map(h => h.ts) : [];
+    const _rimTs = (typeof hrLoadAll === 'function') ? hrLoadAll('rim').map(r => r.ts) : [];
+    const _pscan = _perScan(
+      ridersAll.map(r => r.ts)
+        .concat(configs.map(c => c.ts))
+        .concat(_hubTs)
+        .concat(_rimTs));
+    if (_psel) _emPeriod = _perFill(_psel, _pscan, _emPeriod);
+    // Masquage sous 2 périodes, porté par le conteneur : cf. hrRenderLoadList.
+    if (_prow) _prow.style.display =
+      ((_pscan.years.length + (_pscan.none ? 1 : 0)) > 1) ? '' : 'none';
+  } else if (_prow) {
+    _prow.style.display = 'none';
+  }
+  _emRefreshEraseBtn();
+
   const acc = document.createElement('div');
   acc.className = 'erasemgr-acc';
   body.appendChild(acc);
@@ -9217,7 +9343,10 @@ function renderEraseMgr(openKeys) {
   }
 
   // Riders (en tête)
-  const riders = ((typeof loadRiders === 'function') ? loadRiders() : [])
+  const riders = ridersAll
+    // Filtre période appliqué AVANT le tri : l'ordre d'affichage reste le même,
+    // seule la liste rétrécit.
+    .filter(r => _emPerPass(r.ts))
     // Ordre alphabétique (insensible casse/accents), sur copie — même tri
     // que les modales rider.
     .slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }));
@@ -9242,7 +9371,10 @@ function renderEraseMgr(openKeys) {
   acc.appendChild(makeAccSection('eraseMgrRiders', riderItems, openKeys));
 
   // Roues (avant + arrière)
+  // `i` est l'index d'ORIGINE dans localStorage : il survit au filtrage, donc
+  // deleteConfig(i) reste correct même quand la liste affichée est réduite.
   const wheelItems = configs.map((cfg, i) => ({ cfg, i }))
+    .filter(({ cfg }) => _emPerPass(cfg.ts))
     .map(({ cfg, i }) => makeItem(
       cfg.name,
       (cfg.state?.wtype || 'avant') === 'avant' ? t('frontLabel') : t('rearLabel'),
@@ -9284,8 +9416,57 @@ function renderEraseMgr(openKeys) {
 }
 
 // ── Tout effacer : supprime l'ensemble des enregistrements du Data manager ──
+// ── Effacement cantonné à une période ────────────────────────────────────────
+// Ne touche QUE les collections datées : riders, roues, moyeux, jantes. Les
+// tensiomètres et rayons perso ne portent aucun ts — ils n'appartiennent à
+// aucune année et ne partent donc qu'avec « Tout ».
+// Aucun filet de sécurité registre ici, contrairement à l'effacement total :
+// une purge à froid par clé emporterait des collections entières, période ou
+// pas. Chaque liste est réécrite filtrée, jamais supprimée.
+function eraseMgrErasePeriod(per) {
+  const doomed = ts => _perKey(ts) === per;
+
+  // Roues (snapshots inclus, portés par chaque config)
+  const cfgs = loadConfigs().filter(c => !doomed(c.ts));
+
+  // Riders de la période : leurs roues CONSERVÉES sont désaffectées, jamais
+  // supprimées — même règle que la suppression d'un rider à l'unité.
+  const riders = loadRiders();
+  const gone   = {};
+  riders.forEach(r => { if (doomed(r.ts)) gone[r.id] = true; });
+  cfgs.forEach(c => { if (c.riderId && gone[c.riderId]) c.riderId = null; });
+
+  persistConfigs(cfgs);
+  persistRiders(riders.filter(r => !doomed(r.ts)));
+  renderConfigsList();
+  if (typeof _refreshLoadedBadges === 'function') _refreshLoadedBadges();
+
+  // Moyeux / jantes (module hub/rim, bloc script ultérieur)
+  if (typeof hrLoadAll === 'function' && typeof hrPersist === 'function') {
+    hrPersist('hub', hrLoadAll('hub').filter(e => !doomed(e.ts)));
+    hrPersist('rim', hrLoadAll('rim').filter(e => !doomed(e.ts)));
+    if (typeof hrUpdateButtons === 'function') hrUpdateButtons();
+  }
+
+  // La période effacée n'existe plus : _perFill retombera sur « Tout » au
+  // rendu, plutôt que de laisser le select pointer une option absente.
+  renderEraseMgr();
+}
+
 function eraseMgrEraseAll() {
-  confirmShow(t('eraseMgrAllConfirm'), function() {
+  // La suppression suit la période affichée : le message doit donc nommer sa
+  // portée, sans quoi « supprimer l'ensemble de vos enregistrements » devant
+  // une liste réduite à 2024 serait un contresens dans les deux sens — soit
+  // l'utilisateur croit tout perdre, soit il croit ne perdre que 2024.
+  // Repli sur « Tout » si les primitives de période manquent (bloc hub/rim
+  // absent) : sans _perKey, aucun cantonnement n'est calculable.
+  const per = (typeof _perKey === 'function') ? _emPeriod : 'all';
+  const msg = (per === 'all')  ? t('eraseMgrAllConfirm')
+            : (per === 'none') ? t('eraseMgrNoneConfirm')
+            :                    t('eraseMgrYearConfirm').replace('{y}', per);
+
+  confirmShow(msg, function() {
+    if (per !== 'all') { eraseMgrErasePeriod(per); return; }
     // Riders
     persistRiders([]);
     // Roues (snapshots inclus, portés par chaque config)
@@ -17552,11 +17733,20 @@ window.renderEraseMgr = function(openKeys) {
     return wrap;
   }
 
+  // Filtre période du Data manager (module principal, bloc antérieur). Sans le
+  // moteur, on affiche tout plutôt que de casser le rendu — même convention que
+  // les autres appels croisés.
+  function emPerPairs(arr) {
+    var pairs = arr.map(function(entry, gi) { return { entry: entry, gi: gi }; });
+    if (typeof _emPerPass !== 'function') return pairs;
+    return pairs.filter(function(o) { return _emPerPass(o.entry.ts); });
+  }
+
   var hubs = hrLoadAll('hub');
-  var hubItems = hubs.map(function(entry, idx) {
-    return makeEraseMgrItem(entry.name, function() {
+  var hubItems = emPerPairs(hubs).map(function(o) {
+    return makeEraseMgrItem(o.entry.name, function() {
       var a = hrLoadAll('hub');
-      a.splice(idx, 1);
+      a.splice(o.gi, 1);
       hrPersist('hub', a);
       hrUpdateButtons();
     });
@@ -17564,10 +17754,10 @@ window.renderEraseMgr = function(openKeys) {
   acc.appendChild(hrMakeAccSection('__hubs__', lang === 'fr' ? 'Moyeux' : 'Hubs', hubItems, openKeys, 'erasemgr-hub-section'));
 
   var rims = hrLoadAll('rim');
-  var rimItems = rims.map(function(entry, idx) {
-    return makeEraseMgrItem(entry.name, function() {
+  var rimItems = emPerPairs(rims).map(function(o) {
+    return makeEraseMgrItem(o.entry.name, function() {
       var a = hrLoadAll('rim');
-      a.splice(idx, 1);
+      a.splice(o.gi, 1);
       hrPersist('rim', a);
       hrUpdateButtons();
     });
