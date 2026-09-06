@@ -380,7 +380,7 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
    ferait déborder la colonne. Jumeau des min-width:0 de .ateliermgr-field. */
 #wheel-info-modal .f, #wheel-info-modal select { min-width:0 }
 /* Informations Roue : téléphone en paysage — hauteur écrasée, la colonne
-   unique (2 rangées de selects + notes 6 lignes + 2 boutons ≈ 28rem) ne tient
+   unique (2 rangées de selects + notes + 2 boutons) ne tient
    pas. On passe en grille 2 colonnes : selects à gauche, notes à droite qui
    prend toute la hauteur disponible, boutons en pied de grille.
    max-height 520px ⇒ desktop non concerné. Même schéma que #snapcompare-modal. */
@@ -397,7 +397,7 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
   #wi-row-b       { grid-column:1; grid-row:3 }
   #wi-row-a, #wi-row-b { grid-template-columns:minmax(0,1fr) minmax(0,1fr) }
   #wi-notes-field { grid-column:2; grid-row:2/4; min-height:0 }
-  #wi-notes-field .wi-notes { height:auto; flex:1; min-height:3.5rem } /* 8.4rem fixes en portrait */
+  #wi-notes-field .wi-note-list { flex:1; max-height:none; min-height:3.5rem } /* 9.5rem fixes en portrait */
   #wi-save-btn    { grid-column:1; grid-row:4 }
   #wi-clear-btn   { grid-column:2; grid-row:4 }
 }
@@ -540,15 +540,33 @@ select.placeholder        { color:var(--text2) }
 select option             { background:#161b27 }
 .inp-readonly             { opacity:.55; cursor:not-allowed }
 .inp-disabled             { opacity:.35; cursor:not-allowed; pointer-events:none }
+.wi-note-row { display:flex; gap:.4rem }
 .wi-notes {
   background:var(--inp); border:1px solid var(--border); border-radius:var(--rs);
   color:var(--text); font-family:'DM Mono',monospace; font-size:.85rem; font-weight:300; line-height:1.4;
-  padding:.55rem .9rem; width:100%; box-sizing:border-box; resize:none;
-  height:8.4rem; /* 6 lignes (6×1.4×.85rem + padding) */
+  padding:.55rem .9rem; flex:1; min-width:0; box-sizing:border-box;
   transition:border-color .2s, background .2s;
 }
 .wi-notes:focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
 @supports (-webkit-touch-callout: none) { .wi-notes { font-size:16px } }
+.wi-note-add {
+  background:transparent; border:1px solid var(--border-s); border-radius:var(--rs);
+  color:var(--text2); font-size:.95rem; line-height:1; padding:0 .8rem; cursor:pointer;
+  touch-action:manipulation; flex-shrink:0;
+  transition:background .22s, border-color .22s, color .22s, opacity .22s;
+}
+@media (hover: hover) { .wi-note-add:hover:not(:disabled) { border-color:rgba(126,200,227,.5); color:var(--accent2); background:rgba(126,200,227,.05) } }
+.wi-note-add:disabled { opacity:.35; cursor:not-allowed }
+/* Liste des notes : même grammaire visuelle que .snap-item — une note datée est
+   un événement de l'historique de la roue, comme un snapshot. */
+.wi-note-list  { display:flex; flex-direction:column; gap:.35rem; max-height:9.5rem; overflow-y:auto; overscroll-behavior:contain }
+.wi-note-item  { display:flex; align-items:flex-start; gap:.5rem; padding:.45rem .7rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs) }
+.wi-note-info  { flex:1; display:flex; flex-direction:column; gap:.12rem; min-width:0 }
+.wi-note-txt   { font-family:'DM Mono',monospace; font-size:.75rem; color:var(--accent2); overflow-wrap:anywhere }
+.wi-note-date  { font-size:.58rem; color:var(--text3) }
+.wi-note-del   { background:transparent; border:none; color:var(--text3); font-size:.95rem; cursor:pointer; touch-action:manipulation; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
+.wi-note-del:hover { color:#f08080 }
+.wi-note-empty { font-size:.72rem; color:var(--text3); text-align:center; padding:.5rem 0; font-style:italic }
 
 /* ── Hub layout ────────────────────────────────────────────────────────────── */
 .hub-top      { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.2rem }
@@ -3604,11 +3622,12 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     </div>
   </div>
   <div class="f" id="wi-notes-field">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <label for="wi-notes" data-i18n="wiNotes">Notes</label>
-      <button class="ateliermgr-clear" onclick="atelierClear('wi-notes')">✕</button>
+    <label for="wi-notes" data-i18n="wiNotes">Notes</label>
+    <div class="wi-note-row">
+      <input class="wi-notes" id="wi-notes" type="text" maxlength="140" autocomplete="off" enterkeyhint="send">
+      <button class="wi-note-add" id="wi-note-add-btn" onclick="wiNoteAdd()" data-i18n-aria="wiNoteAddTitle">↵</button>
     </div>
-    <textarea class="wi-notes" id="wi-notes" rows="6" maxlength="500"></textarea>
+    <div class="wi-note-list" id="wi-note-list"></div>
   </div>
   <button class="ct-save-btn" id="wi-save-btn" onclick="wheelInfoSave()">
     <span data-i18n="atelierSave">✓ Sauvegarder</span>
@@ -3636,28 +3655,71 @@ window.openWheelInfoModal = function() {
   document.body.style.overflow = 'hidden';
 };
 window.closeWheelInfoModal = function() {
+  if (typeof wiNoteAdd === 'function') wiNoteAdd(true);
   document.getElementById('wheel-info-overlay').classList.remove('show');
   document.getElementById('wheel-info-modal').classList.remove('show');
   document.body.style.overflow = '';
 };
-// Sauvegarde depuis la modale : roue déjà chargée → resauvegarde directe sous
-// le même nom (skipConfirm : c'est une mise à jour volontaire, pas de popup
-// « Remplacer ? » ; riderId préservé par saveConfig). Sinon, pas de nom connu →
-// flux normal via la modale de sauvegarde (nom, rider, doublons).
-// Effacer tous les champs de la modale — champs live uniquement (selects + notes),
-// la modale reste ouverte ; rien n'est sauvegardé tant que ✓ Sauvegarder
-// n'est pas pressé (les champs sont lus par readState au moment de la save).
+// Effacer tous les champs de la modale ; elle reste ouverte. Les deux moitiés
+// n'ont PAS le même contrat : les selects sont différés (effacés à l'écran, en
+// stockage seulement au ✓), le journal de notes est persisté — sa purge part
+// aussitôt. C'est le corollaire direct de l'écriture immédiate des notes.
+//
+// Passe par une confirmation depuis que les notes sont un journal accumulé :
+// effacer quatre selects se refait en dix secondes, effacer douze notes datées
+// ne se refait pas. Sauf si rien n'est à effacer — confirmer un no-op apprend
+// à valider sans lire, ce qui désarme la confirmation le jour où elle compte.
 window.wheelInfoClearAll = function() {
+  var filled = ['wi-discipline', 'wi-size', 'wi-brake', 'wi-material'].some(function(id) {
+    var el = document.getElementById(id);
+    return el && el.value;
+  });
+  var notes = (window._wiNotes || []).length;
+  if (!filled && !notes) return;
+  if (typeof confirmShow === 'function') confirmShow(wiClearMsg(notes), _wheelInfoClearNow);
+  else _wheelInfoClearNow();
+};
+
+// Message composé en JS et non par clé i18n : il porte du markup et un pluriel
+// (même parti que hrDelMsg). Nommer le nombre de notes est le cœur du message —
+// c'est ce qu'on ne peut pas retrouver.
+function wiClearMsg(notes) {
+  var L = typeof lang !== 'undefined' ? lang : 'fr';
+  if (L === 'fr') {
+    if (!notes)      return 'Effacer les informations de cette roue ?';
+    if (notes === 1) return 'Effacer les informations de cette roue et sa note ?';
+    return 'Effacer les informations de cette roue et ses <strong>' + notes + '</strong> notes ?';
+  }
+  if (!notes)      return 'Clear this wheel\u2019s information?';
+  if (notes === 1) return 'Clear this wheel\u2019s information and its note?';
+  return 'Clear this wheel\u2019s information and its <strong>' + notes + '</strong> notes?';
+}
+
+function _wheelInfoClearNow() {
   ['wi-discipline', 'wi-size', 'wi-brake', 'wi-material'].forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) el.value = '';
+    if (!el) return;
+    el.value = '';
+    // Sans cette resynchro, le « _ » restait affiché en blanc plein au lieu du
+    // gris select.placeholder : les deux autres chemins d'effacement (reset
+    // complet, désaffectation) la faisaient déjà, celui-ci l'oubliait.
+    if (typeof syncSelectPlaceholder === 'function') syncSelectPlaceholder(el);
   });
-  var ta = document.getElementById('wi-notes');
-  if (ta) ta.value = '';
-};
+  if (typeof wiNotesSet === 'function') wiNotesSet(null, '');
+  // Le journal étant persisté, sa purge l'est aussi. Les selects, eux, restent
+  // sous le contrat différé : ils ne sont effacés en stockage qu'au ✓.
+  if (typeof wiNotesPersist === 'function') wiNotesPersist();
+}
+// Sauvegarde depuis la modale : depuis que le journal de notes s'écrit seul, ce
+// bouton ne valide plus que les selects (discipline / taille / freinage /
+// matériau) — et sert de premier enregistrement à une roue encore sans nom.
+// Roue déjà chargée → resauvegarde directe sous le même nom (skipConfirm :
+// c'est une mise à jour volontaire, pas de popup « Remplacer ? » ; riderId
+// préservé par saveConfig). Sinon, pas de nom connu → flux normal via la modale
+// de sauvegarde (nom, rider, doublons).
 window.wheelInfoSave = function() {
   closeWheelInfoModal();
-  var name = (typeof _loadedConfigName !== 'undefined') ? _loadedConfigName[wtype] : null;
+  var name = wiLoadedName();
   if (name && typeof saveConfig === 'function') saveConfig(name, undefined, true);
   else if (typeof openWheelSaveModal === 'function') openWheelSaveModal();
 };
@@ -3666,17 +3728,170 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault(); closeWheelInfoModal();
   }
 });
-// Notes : 6 lignes max — Enter bloqué à la 6e ligne, et coupe au collage
-// via le handler input (couvre aussi la dictée / autocomplétion mobile)
-(function() {
-  var ta = document.getElementById('wi-notes');
-  if (!ta) return;
-  ta.addEventListener('input', function() {
-    var lines = ta.value.split('\n');
-    if (lines.length > 6) ta.value = lines.slice(0, 6).join('\n');
+// Notes : journal daté, pas un bloc de texte libre — on saisit une ligne, on
+// valide (Entrée ou ↵), le champ se vide et la note rejoint la liste avec sa
+// date, sur le modèle de la liste des snapshots.
+//
+// window._wiNotes est la SOURCE DE VÉRITÉ ; le champ #wi-notes n'est plus qu'une
+// boîte de dépôt (il ne porte plus d'état, contrairement aux selects voisins).
+//
+// PERSISTANCE — le journal ne suit PAS le contrat différé du reste de la modale.
+// Ajout, suppression et purge écrivent aussitôt dans la roue enregistrée
+// (wiNotesPersist), comme le fait la liste des snapshots dont il copie la forme :
+// une note datée affichée dans une liste a l'air acquise, elle doit l'être.
+// ✓ Sauvegarder ne sert donc plus qu'à valider les selects. Corollaire assumé :
+// l'écriture ne touche QUE notesLog et son miroir — jamais les selects, qu'un
+// changement non validé ne doit pas voir partir en douce.
+// Sans roue enregistrée il n'existe aucune config où écrire : la note est
+// retenue en mémoire et la modale de nommage s'ouvre, même règle que snapOpen.
+//
+// readState écrit le journal dans wheelInfo.notesLog ET en aplatit une copie
+// texte dans wheelInfo.notes — champ HISTORIQUE conservé pour qu'une save, une
+// roue partagée ou un snapshot restent lisibles par une version antérieure de
+// l'app, qui n'y verra qu'un textarea rempli. Lecture inverse : notesLog absent
+// + notes non vide = save d'avant le journal, relue comme UNE note sans date
+// (on n'invente pas d'horodatage).
+window._wiNotes = [];
+var WI_NOTES_MAX = 30;   // borne la taille de la save ; 140 car. par note
+var WI_NOTE_LEN  = 140;
+
+function wiNotesRender() {
+  var inp = document.getElementById('wi-notes');
+  if (inp) inp.placeholder = t('wiNotePlaceholder');
+  var addBtn = document.getElementById('wi-note-add-btn');
+  if (addBtn) {
+    addBtn.title    = t('wiNoteAddTitle');
+    addBtn.disabled = window._wiNotes.length >= WI_NOTES_MAX;
+  }
+  var list = document.getElementById('wi-note-list');
+  if (!list) return;
+  if (!window._wiNotes.length) {
+    list.innerHTML = '<div class="wi-note-empty">' + t('wiNotesEmpty') + '</div>';
+    return;
+  }
+  // .map avant .reverse : l'index posé dans onclick reste celui du tableau,
+  // seul l'ordre d'affichage s'inverse (plus récente en tête) — même schéma
+  // que snapRenderList.
+  list.innerHTML = window._wiNotes.map(function(note, i) {
+    return '<div class="wi-note-item">'
+      + '<div class="wi-note-info">'
+      + '<span class="wi-note-txt">' + escHtml(note.txt) + '</span>'
+      + (note.ts ? '<span class="wi-note-date">' + fmtDMYHM(note.ts) + '</span>' : '')
+      + '</div>'
+      + '<button class="wi-note-del" onclick="wiNoteDel(' + i + ')" title="' + t('delTitle') + '">×</button>'
+      + '</div>';
+  }).reverse().join('');
+}
+
+// Nom de la roue enregistrée, ou null. Une note n'a d'endroit où s'écrire que
+// si ce nom existe — même condition que les snapshots.
+function wiLoadedName() {
+  return (typeof _loadedConfigName !== 'undefined' && typeof wtype !== 'undefined')
+    ? (_loadedConfigName[wtype] || null) : null;
+}
+
+// Écriture chirurgicale : on relit la config stockée et on n'y remplace que le
+// journal. Passer par saveConfig y ferait entrer TOUT l'état vif — dont des
+// selects modifiés et pas encore validés — et ferait clignoter la card derrière
+// la modale (flashWheelCard) à chaque note.
+// wheelInfo peut manquer sur une save antérieure à la fonctionnalité : on la
+// crée, applyState relit les champs absents en chaîne vide.
+// Échec d'écriture : lsSet a déjà prévenu via le toast, on n'empile pas.
+function wiNotesPersist() {
+  var name = wiLoadedName();
+  // loadConfigs / persistConfigs vivent dans le bloc <script> principal, plus
+  // bas dans le document : un seul typeof suffit à prouver qu'il a été évalué.
+  if (!name || typeof loadConfigs !== 'function') return false;
+  var configs = loadConfigs();
+  var idx = -1;
+  for (var i = 0; i < configs.length; i++) {
+    var c = configs[i];
+    if (c && c.name === name && c.state && (c.state.wtype || 'avant') === wtype) { idx = i; break; }
+  }
+  if (idx < 0) return false;
+  if (!configs[idx].state.wheelInfo) configs[idx].state.wheelInfo = {};
+  configs[idx].state.wheelInfo.notesLog = window._wiNotes.map(function(note) {
+    return { ts: note.ts, txt: note.txt };
   });
-  ta.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && ta.value.split('\n').length >= 6) e.preventDefault();
+  configs[idx].state.wheelInfo.notes = wiNotesFlat();
+  return persistConfigs(configs);
+}
+
+// `silent` : appelé depuis closeWheelInfoModal pour valider une note tapée sans
+// Entrée. Il ne doit ni redemander le focus ni rouvrir une modale de nommage
+// par-dessus une fermeture en cours.
+window.wiNoteAdd = function(silent) {
+  var inp = document.getElementById('wi-notes');
+  if (!inp) return;
+  var txt = inp.value.trim();
+  if (!txt || window._wiNotes.length >= WI_NOTES_MAX) return;
+  window._wiNotes.push({ ts: Date.now(), txt: txt.slice(0, WI_NOTE_LEN) });
+  inp.value = '';
+  wiNotesRender();
+  if (wiLoadedName()) {
+    wiNotesPersist();
+    if (!silent) inp.focus();
+    return;
+  }
+  // Roue sans nom : la note est retenue en mémoire et part avec le premier
+  // enregistrement (readState la porte). On demande le nom tout de suite plutôt
+  // que de laisser croire à une note acquise.
+  if (!silent && typeof openWheelSaveModal === 'function') {
+    closeWheelInfoModal();
+    openWheelSaveModal();
+  }
+};
+
+window.wiNoteDel = function(i) {
+  if (!(i >= 0 && i < window._wiNotes.length)) return;
+  window._wiNotes.splice(i, 1);
+  wiNotesRender();
+  // Symétrie obligatoire : si ajouter est définitif, supprimer doit l'être aussi,
+  // sinon la croix n'efface qu'à l'écran et la note revient au rechargement.
+  wiNotesPersist();
+};
+
+// Pose de l'état (applyState, resets) : accepte le tableau, sinon retombe sur
+// la chaîne héritée. Défensif — un fichier édité à la main peut contenir
+// n'importe quoi là où on attend un tableau d'objets.
+window.wiNotesSet = function(log, legacy) {
+  var out = [];
+  if (Array.isArray(log)) {
+    log.forEach(function(note) {
+      if (!note) return;
+      var txt = typeof note === 'string' ? note
+              : (typeof note.txt === 'string' ? note.txt : '');
+      if (!txt.trim()) return;
+      out.push({ ts: (note && typeof note.ts === 'number') ? note.ts : null,
+                 txt: txt.slice(0, WI_NOTE_LEN) });
+    });
+  } else if (typeof legacy === 'string' && legacy.trim()) {
+    out.push({ ts: null, txt: legacy.slice(0, 500) });
+  }
+  // slice par la FIN : un fichier trafiqué ou venu d'une version future avec
+  // plus de 30 notes doit conserver les plus récentes, pas les plus anciennes.
+  window._wiNotes = out.slice(-WI_NOTES_MAX);
+  var inp = document.getElementById('wi-notes');
+  if (inp) inp.value = '';
+  wiNotesRender();
+};
+
+// Miroir texte du journal pour le champ notes historique (cf. en-tête).
+// Plafonné à 500 caractères, longueur que le textarea des versions antérieures
+// acceptait ; notesLog reste la version intégrale.
+window.wiNotesFlat = function() {
+  var s = window._wiNotes.map(function(note) {
+    return (note.ts ? fmtDMYHM(note.ts) + ' — ' : '') + note.txt;
+  }).join('\n');
+  return s.length > 500 ? s.slice(0, 499) + '…' : s;
+};
+
+(function() {
+  var inp = document.getElementById('wi-notes');
+  if (!inp) return;
+  inp.maxLength = WI_NOTE_LEN;
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); wiNoteAdd(); }
   });
 })();
 </script>
@@ -4298,6 +4513,7 @@ const i18n = {
     wiDiscipline:'Discipline', wiVtt:'VTT', wiRoute:'ROUTE', wiEVtt:'E-VTT', wiERoute:'E-ROUTE', wiAutre:'AUTRE',
     wiSize:'Taille', wiSize275:'27,5"', wiBrake:'Freinage', wiPatins:'Patins', wiDisque:'Disque',
     wiMaterial:'Matériau', wiAlu:'Aluminium', wiCarbone:'Carbone', wiNotes:'Notes', wiInfoBtnTitle:'Informations roue',
+    wiNotePlaceholder:'Ajouter une note…', wiNoteAddTitle:'Ajouter la note (Entrée)', wiNotesEmpty:'Aucune note.',
     wheelLoadBtnTitle:'Charger une roue', wheelSaveBtnTitle:'Enregistrer cette roue',
     hubLoadBtnTitle:'Charger un moyeu', hubSaveBtnTitle:'Enregistrer ce moyeu',
     rimLoadBtnTitle:'Charger une jante', rimSaveBtnTitle:'Enregistrer cette jante',
@@ -4574,6 +4790,7 @@ const i18n = {
     wiDiscipline:'Discipline', wiVtt:'MTB', wiRoute:'ROAD', wiEVtt:'E-MTB', wiERoute:'E-ROAD', wiAutre:'OTHER',
     wiSize:'Size', wiSize275:'27.5"', wiBrake:'Braking', wiPatins:'Rim', wiDisque:'Disc',
     wiMaterial:'Material', wiAlu:'Alloy', wiCarbone:'Carbon', wiNotes:'Notes', wiInfoBtnTitle:'Wheel information',
+    wiNotePlaceholder:'Add a note…', wiNoteAddTitle:'Add note (Enter)', wiNotesEmpty:'No notes yet.',
     wheelLoadBtnTitle:'Load a wheel', wheelSaveBtnTitle:'Save this wheel',
     hubLoadBtnTitle:'Load a hub', hubSaveBtnTitle:'Save this hub',
     rimLoadBtnTitle:'Load a rim', rimSaveBtnTitle:'Save this rim',
@@ -4963,7 +5180,7 @@ function markModified() {
       var el = $id(id);
       if (el) { el.value = ''; if (typeof syncSelectPlaceholder === 'function') syncSelectPlaceholder(el); }
     });
-    var _wiN = $id('wi-notes'); if (_wiN) _wiN.value = '';
+    if (typeof wiNotesSet === 'function') wiNotesSet(null, '');
   }
   _loadedConfigName[wtype] = null;
   _cfgFillMode[wtype] = false;
@@ -5300,6 +5517,11 @@ function applyLang() {
   document.querySelectorAll('[data-i18n-aria]').forEach(el => {
     el.setAttribute('aria-label', t(el.dataset.i18nAria));
   });
+  // ── Modale Informations Roue ──
+  // Placeholder du champ de note, titre du bouton ↵ et état vide de la liste
+  // sont posés au rendu, pas par data-i18n : re-rendu inconditionnel pour
+  // qu'ils suivent la langue (même raison que snapRenderList plus bas).
+  if (typeof wiNotesRender === 'function') wiNotesRender();
   // Titre "Déflections mesurées" / "Measured deflections" + suffixe roue
   var deflEl = $id('tm-defl-label');
   if (deflEl) {
@@ -5486,7 +5708,12 @@ function readState() {
       size:       $id('wi-size').value,
       brake:      $id('wi-brake').value,
       material:   $id('wi-material').value,
-      notes:      $id('wi-notes').value,
+      // notes : champ HISTORIQUE — miroir texte du journal, pour que saves, roues
+      // partagées et snapshots restent lisibles par une version antérieure.
+      notes:      (typeof wiNotesFlat === 'function') ? wiNotesFlat() : '',
+      notesLog:   (window._wiNotes || []).map(function(note) {
+                    return { ts: note.ts, txt: note.txt };
+                  }),
     },
   };
 }
@@ -5525,7 +5752,9 @@ function _applyStateBody(s) {
     $id('wi-size').value       = wi.size       || '';
     $id('wi-brake').value      = wi.brake      || '';
     $id('wi-material').value   = wi.material   || '';
-    $id('wi-notes').value      = wi.notes      || '';
+    // Journal de notes : notesLog s'il existe, sinon la chaîne des saves
+    // antérieures, relue comme une note unique sans date.
+    if (typeof wiNotesSet === 'function') wiNotesSet(wi.notesLog, wi.notes);
     if (typeof syncSelectPlaceholder === 'function')
       ['wi-discipline','wi-size','wi-brake','wi-material'].forEach(id => syncSelectPlaceholder($id(id)));
   }
@@ -5803,7 +6032,7 @@ function clearFormSilent() {
   // J-Bend/Straightpull : changer le type de moyeu ne doit pas perdre
   // discipline / taille / freinage / matériau / notes.
   ['wi-discipline','wi-size','wi-brake','wi-material'].forEach(id => { $id(id).value = ''; syncSelectPlaceholder($id(id)); });
-  $id('wi-notes').value = '';
+  if (typeof wiNotesSet === 'function') wiNotesSet(null, '');
   hubType = hubTypeByWheel[wtype];
   $id('btn-hub-jbend').classList.toggle('active', hubType === 'jbend');
   $id('btn-hub-sp').classList.toggle('active', hubType === 'straightpull');
