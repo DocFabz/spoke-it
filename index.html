@@ -558,6 +558,8 @@ select option             { background:#161b27 }
 }
 .wi-notes:focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
 .wi-notes::placeholder { font-family:'DM Sans',sans-serif; font-weight:400; color:var(--text3); opacity:1 }
+/* Doublon WebKit : règle séparée, un pseudo-élément inconnu invaliderait toute la liste de sélecteurs. */
+.wi-notes::-webkit-input-placeholder { font-family:'DM Sans',sans-serif; font-weight:400; color:var(--text3); opacity:1 }
 @supports (-webkit-touch-callout: none) { .wi-notes { font-size:16px } }
 .wi-note-add {
   background:transparent; border:1px solid var(--border-s); border-radius:var(--rs);
