@@ -397,7 +397,7 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
   #wi-row-b       { grid-column:1; grid-row:3 }
   #wi-row-a, #wi-row-b { grid-template-columns:minmax(0,1fr) minmax(0,1fr) }
   #wi-notes-field { grid-column:2; grid-row:2/4; min-height:0 }
-  #wi-notes-field .wi-note-list { flex:1; max-height:none; min-height:3.5rem } /* 9.5rem fixes en portrait */
+  #wi-notes-field .wi-note-list { max-height:6.5rem } /* 9.5rem en portrait */
   #wi-save-btn    { grid-column:1; grid-row:4 }
   #wi-clear-btn   { grid-column:2; grid-row:4 }
 }
@@ -3752,7 +3752,7 @@ document.addEventListener('keydown', function(e) {
 // + notes non vide = save d'avant le journal, relue comme UNE note sans date
 // (on n'invente pas d'horodatage).
 window._wiNotes = [];
-var WI_NOTES_MAX = 30;   // borne la taille de la save ; 140 car. par note
+var WI_NOTES_MAX = 10;   // borne la taille de la save ; 140 car. par note
 var WI_NOTE_LEN  = 140;
 
 function wiNotesRender() {
