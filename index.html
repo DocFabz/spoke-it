@@ -227,6 +227,9 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .ateliermgr-inp:focus { border-color:rgba(126,200,227,.4) }
 .ateliermgr-clear { background:none; border:none; color:var(--text3); font-size:.72rem; cursor:pointer; padding:.28rem .5rem; line-height:1; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s; flex-shrink:0 }
 .ateliermgr-clear:hover { color:var(--warm) }
+.ateliermgr-affix { position:relative; flex:1; min-width:0; display:flex }
+.ateliermgr-affix .ateliermgr-inp { padding-left:calc(.75rem + 1ch) }
+.ateliermgr-prefix { position:absolute; left:0; top:0; padding:.5rem .75rem; border:1px solid transparent; font-family:'DM Mono',monospace; font-size:.85rem; line-height:normal; color:var(--text3); pointer-events:none; -webkit-user-select:none; user-select:none }
 
 /* ── Save manager modal ── */
 .savemgr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
@@ -1942,7 +1945,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
   <div class="ateliermgr-field">
     <span class="ateliermgr-label" id="atelier-insta-label">Instagram</span>
     <div class="ateliermgr-inp-wrap">
-      <input class="ateliermgr-inp" id="atelier-insta" aria-labelledby="atelier-insta-label" type="text" maxlength="60" autocomplete="off">
+      <div class="ateliermgr-affix">
+        <span class="ateliermgr-prefix" aria-hidden="true">@</span>
+        <input class="ateliermgr-inp" id="atelier-insta" aria-labelledby="atelier-insta-label" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="atelierInstaInput(this)">
+      </div>
       <button class="ateliermgr-clear" onclick="atelierClear('atelier-insta')">✕</button>
     </div>
   </div>
@@ -7171,7 +7177,16 @@ document.addEventListener('keydown', function(e) {
 const LS_ATELIER = 'spokeit_atelier';
 
 function loadAtelierInfo() {
-  try { return JSON.parse(localStorage.getItem(LS_ATELIER)) || {}; } catch(e) { return {}; }
+  try {
+    const o = JSON.parse(localStorage.getItem(LS_ATELIER)) || {};
+    // Le pseudo Instagram est stocké NU : le « @ » n'existe que comme préfixe
+    // grisé du champ de saisie, jamais comme donnée — les exports, eux, ont
+    // déjà le pictogramme Instagram pour porter le canal. On rabote ici tout
+    // « @ » de tête pour couvrir d'un coup la modale, les trois exports et
+    // les sauvegardes importées antérieures à ce format.
+    if (o.insta) o.insta = String(o.insta).trim().replace(/^@+/, '');
+    return o;
+  } catch(e) { return {}; }
 }
 
 function openAtelierMgr() {
@@ -7187,6 +7202,19 @@ function openAtelierMgr() {
 function closeAtelierMgr() {
   $id('ateliermgr-overlay').classList.remove('show');
   $id('ateliermgr-modal').classList.remove('show');
+}
+
+// Un pseudo Instagram ne contient jamais de « @ » : celui du champ est le
+// préfixe grisé. On retire donc les « @ » saisis ou collés, en replaçant le
+// curseur là où l'utilisateur l'attend (décalé du nombre de « @ » ôtés à sa
+// gauche) — sans quoi un collage renverrait le curseur en fin de champ.
+function atelierInstaInput(el) {
+  const v = el.value;
+  if (v.indexOf('@') === -1) return;
+  const p = el.selectionStart == null ? v.length : el.selectionStart;
+  const cut = (v.slice(0, p).match(/@/g) || []).length;
+  el.value = v.replace(/@/g, '');
+  try { el.setSelectionRange(p - cut, p - cut); } catch(e) {}
 }
 
 function atelierClear(id) {
@@ -7206,7 +7234,7 @@ function saveAtelierInfo() {
   const info = {
     name:  $id('atelier-shop').value.trim(),
     email: $id('atelier-email').value.trim(),
-    insta: $id('atelier-insta').value.trim()
+    insta: $id('atelier-insta').value.trim().replace(/^@+/, '')
   };
   lsSet(LS_ATELIER, JSON.stringify(info));
   closeAtelierMgr();
