@@ -405,7 +405,8 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
   #wi-row-b       { grid-column:1; grid-row:3 }
   #wi-row-a, #wi-row-b { grid-template-columns:minmax(0,1fr) minmax(0,1fr) }
   #wi-notes-field { grid-column:2; grid-row:2/4; min-height:0 }
-  #wi-notes-field .wi-note-list { max-height:6.5rem; margin-top:.35rem } /* propres au paysage : en portrait la liste s'étire et respire davantage sous la saisie */
+  /* En portrait la liste s'étire et prend .9rem d'air sous la saisie ; ici, hauteur comptée. */
+  #wi-notes-field .wi-note-list { max-height:6.5rem; margin-top:.35rem }
   #wi-save-btn    { grid-column:1; grid-row:4 }
   #wi-clear-btn   { grid-column:2; grid-row:4 }
 }
