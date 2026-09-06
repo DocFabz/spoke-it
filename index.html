@@ -4795,7 +4795,7 @@ const LS_REGISTRY = [
   { key:'spokeit_bkpDated',       kind:'pref',      erase:false, exportField:null,            owner:'export backup (nom daté/fixe)' },
   { key:'spokeit_wlSort',         kind:'pref',      erase:false, exportField:null,            owner:'tri de la liste « Charger une roue »' },
   { key:'spokeit_hrSort',         kind:'pref',      erase:false, exportField:null,            owner:'tri des listes « Charger un moyeu / une jante »' },
-  { key:'spokeit_appTag',         kind:'meta',      erase:false, exportField:null,            owner:'toast nouvelle version (ETag)' },
+  { key:'spokeit_appTag',         kind:'meta',      erase:false, exportField:null,            owner:'toast nouvelle version (historique JSON des derniers ETags)' },
   { key:'spoke-it-lang',          kind:'pref',      erase:false, exportField:null,            owner:'i18n' },
   { key:'ef_restore',             kind:'transient', erase:true,  exportField:null,            owner:'EF Vocal (reprise crash iOS)' },
 ];
@@ -20780,11 +20780,23 @@ if ('serviceWorker' in navigator) {
 // à la session précédente : différent = l'app qui vient de se charger est une
 // nouvelle version (network-first : en ligne, on sert toujours le frais).
 // HEAD en cache par défaut : partage l'état du cache HTTP du document, donc
-// l'ETag lu correspond bien à la version réellement affichée.
+// l'ETag lu correspond bien à la version réellement affichée. NE PAS passer en
+// cache:'no-store' : on lirait l'état du serveur, pas celui de la page à
+// l'écran, et le toast annoncerait une version qui n'est pas encore installée.
 // localStorage BRUT (pas lsSet) : clé méta, ne doit pas horodater
 // spokeit_lastModif ni réveiller le rappel de sauvegarde.
+//
+// La clé mémorise un HISTORIQUE des derniers ETags vus, pas seulement le
+// dernier. Un comparateur à un seul souvenir retoaste à chaque ALTERNANCE :
+// après plusieurs déploiements rapprochés, plusieurs empreintes coexistent
+// (edges CDN désynchronisés, variantes d'encodage, cache HTTP chaud/froid) et
+// deux lancements successifs peuvent lire A puis B puis A — chaque bascule
+// passant alors pour une nouvelle version. Avec l'historique, un ETag déjà
+// rencontré ne redéclenche jamais rien : un vrai déploiement, dont l'empreinte
+// est inédite, toaste une fois et une seule.
 (function() {
-  var KEY = 'spokeit_appTag';
+  var KEY  = 'spokeit_appTag';
+  var KEEP = 12;   // profondeur d'historique — absorbe toute alternance réaliste
   function majCheck() {
     fetch('./', { method: 'HEAD' }).then(function(resp) {
       var tag = resp.headers.get('ETag');
@@ -20794,10 +20806,18 @@ if ('serviceWorker' in navigator) {
       // information de version -- on le retire avant comparaison/stockage,
       // sinon l'alternance cache HTTP chaud/froid (frequente en PWA iOS)
       // fait osciller la chaine et declenche le toast sans deploiement.
-      tag = tag.replace(/^W\//, '');
-      var prev = null;
-      try { prev = localStorage.getItem(KEY); } catch(e) {}
-      if (prev && prev !== tag) {
+      // Même raison pour le suffixe d'encodage (-gzip / -br / -deflate), que
+      // certains frontaux accolent à l'empreinte du contenu identique.
+      tag = tag.replace(/^W\//, '').replace(/-(?:gzip|br|deflate)("?)$/, '$1');
+      // Ancien format (chaîne nue) ou clé absente : on n'a pas d'historique
+      // exploitable, on amorce en silence plutôt que de toaster à tort.
+      var seen = [];
+      try {
+        var raw = localStorage.getItem(KEY);
+        if (raw) { var p = JSON.parse(raw); if (Array.isArray(p)) seen = p; }
+      } catch(e) {}
+      var known = seen.indexOf(tag) >= 0;
+      if (seen.length && !known) {
         // Réutilise #import-toast (haut, centré) — même pattern que
         // showImportToast, en teinte accent (info) plutôt que succès/erreur.
         var el = document.getElementById('import-toast');
@@ -20810,7 +20830,11 @@ if ('serviceWorker' in navigator) {
           el._hideTimer = setTimeout(function() { el.style.opacity = '0'; }, 3000);
         }
       }
-      try { localStorage.setItem(KEY, tag); } catch(e) {}
+      if (!known) {
+        seen.push(tag);
+        if (seen.length > KEEP) seen = seen.slice(-KEEP);
+        try { localStorage.setItem(KEY, JSON.stringify(seen)); } catch(e) {}
+      }
     }).catch(function() {}); // hors-ligne : silence, on retentera au prochain lancement en ligne
   }
   // Hors chemin critique, même modèle que le chargement GA
