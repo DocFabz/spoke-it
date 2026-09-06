@@ -379,6 +379,10 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
    (= minmax(auto,1fr)), qui la respecte : sans plancher levé, un libellé long
    ferait déborder la colonne. Jumeau des min-width:0 de .ateliermgr-field. */
 #wheel-info-modal .f, #wheel-info-modal select { min-width:0 }
+/* Informations Roue : alignée sur .wheel-load-modal (360px) plutôt que sur le
+   340px de .wheel-save-modal, qui reste inchangée. La règle paysage
+   (#wheel-info-modal.show, 640px) est plus spécifique et reste prioritaire. */
+#wheel-info-modal { max-width:360px }
 /* Informations Roue : téléphone en paysage — hauteur écrasée, la colonne
    unique (2 rangées de selects + notes + 2 boutons) ne tient
    pas. On passe en grille 2 colonnes : selects à gauche, notes à droite qui
@@ -548,6 +552,7 @@ select option             { background:#161b27 }
   transition:border-color .2s, background .2s;
 }
 .wi-notes:focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
+.wi-notes::placeholder { font-family:'DM Sans',sans-serif; font-weight:400; color:var(--text3); opacity:1 }
 @supports (-webkit-touch-callout: none) { .wi-notes { font-size:16px } }
 .wi-note-add {
   background:transparent; border:1px solid var(--border-s); border-radius:var(--rs);
@@ -559,7 +564,7 @@ select option             { background:#161b27 }
 .wi-note-add:disabled { opacity:.35; cursor:not-allowed }
 /* Liste des notes : même grammaire visuelle que .snap-item — une note datée est
    un événement de l'historique de la roue, comme un snapshot. */
-.wi-note-list  { display:flex; flex-direction:column; gap:.35rem; max-height:9.5rem; overflow-y:auto; overscroll-behavior:contain }
+.wi-note-list  { display:flex; flex-direction:column; gap:.35rem; max-height:12rem; overflow-y:auto; overscroll-behavior:contain }
 .wi-note-item  { display:flex; align-items:flex-start; gap:.5rem; padding:.45rem .7rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs) }
 .wi-note-info  { flex:1; display:flex; flex-direction:column; gap:.12rem; min-width:0 }
 .wi-note-txt   { font-family:'DM Mono',monospace; font-size:.75rem; color:var(--accent2); overflow-wrap:anywhere }
