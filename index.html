@@ -198,8 +198,32 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 /* ── Modale Atelier ─────────────────────────────────────────────────────────── */
 .ateliermgr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
 .ateliermgr-overlay.show { display:block; opacity:1 }
-.ateliermgr-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:360px; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
+.ateliermgr-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:360px; max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
 .ateliermgr-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
+/* Détache le bloc de boutons des champs (ex-style inline sur le bouton). */
+#atelier-save-btn { margin-top:1.28rem }
+/* Atelier : téléphone en paysage — 3 champs + 2 boutons ≈ 25rem en colonne
+   unique, soit plus que la hauteur visible. Grille 2 colonnes : Atelier et
+   Email côte à côte, Instagram sur toute la largeur, boutons en pied.
+   L'ordre DOM est conservé, donc tabulation = ordre visuel.
+   max-height 520px ⇒ desktop non concerné. Ne vise que #ateliermgr-modal :
+   #datapicker-modal, #riderchoose-modal et #rideredit-modal partagent la
+   classe mais pas la mise en page. */
+@media (orientation: landscape) and (max-height: 520px) {
+  #ateliermgr-modal.show {
+    display:grid; max-width:600px;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-rows:auto auto auto auto;
+    column-gap:1.1rem; row-gap:.7rem;
+    padding:1.1rem 1.2rem 1rem;
+  }
+  #ateliermgr-modal > .ateliermgr-header { grid-column:1/-1; grid-row:1 }
+  #atelier-fld-shop  { grid-column:1;    grid-row:2 }
+  #atelier-fld-email { grid-column:2;    grid-row:2 }
+  #atelier-fld-insta { grid-column:1/-1; grid-row:3 }
+  #atelier-save-btn  { grid-column:1;    grid-row:4; margin-top:0 }
+  #atelier-clear-btn { grid-column:2;    grid-row:4 }
+}
 .ateliermgr-header { display:flex; align-items:center; justify-content:space-between }
 .ateliermgr-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
 .ateliermgr-header-left { display:flex; align-items:center; gap:.5rem; min-width:0 }
@@ -217,7 +241,7 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 /* ── Save manager modal ── */
 .savemgr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
 .savemgr-overlay.show { display:block; opacity:1 }
-.savemgr-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:360px; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
+.savemgr-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:360px; max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
 .savemgr-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
 .savemgr-header { display:flex; align-items:center; justify-content:space-between }
 .savemgr-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
@@ -236,7 +260,7 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .bkp-exp-fname { font-family:'DM Mono',monospace; font-size:.62rem; font-weight:400; letter-spacing:0; text-transform:none; color:var(--text); margin-left:auto }
 .bkp-exp-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9982; opacity:0; transition:opacity .22s; display:none }
 .bkp-exp-overlay.show { display:block; opacity:1 }
-.bkp-exp-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9983; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:300px; display:none; flex-direction:column; gap:.55rem }
+.bkp-exp-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9983; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:300px; max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; display:none; flex-direction:column; gap:.55rem }
 .bkp-exp-modal.show { display:flex; animation:conv-in .2s ease both }
 
 /* ── Picker popup ── Seul porteur restant : le picker « chartes » du module
@@ -622,7 +646,7 @@ select option             { background:#161b27 }
 /* ── Modale options PDF tension ─────────────────────────────────────────────── */
 .pdfopt-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
 .pdfopt-overlay.show { display:block; opacity:1 }
-.pdfopt-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; display:none; flex-direction:column; gap:1rem; opacity:0; transition:opacity .2s, transform .2s }
+.pdfopt-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; display:none; flex-direction:column; gap:1rem; opacity:0; transition:opacity .2s, transform .2s }
 .pdfopt-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
 .pdfopt-header { display:flex; align-items:center; justify-content:space-between }
 .pdfopt-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
@@ -645,7 +669,7 @@ select option             { background:#161b27 }
 .pdfopt-generate:active { transform:scale(.98) }
 .screenshot-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9992; opacity:0; transition:opacity .22s; display:none }
 .screenshot-overlay.show { display:block; opacity:1 }
-.screenshot-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9993; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.4rem 1.4rem 1.1rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:88%; max-width:300px; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
+.screenshot-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9993; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.4rem 1.4rem 1.1rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:88%; max-width:300px; max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
 .screenshot-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
 /* toggle pill — remplace les anciens .screenshot-bg-btn */
 .bg-toggle-pill { display:flex; align-items:center; background:var(--inp); border:1px solid var(--border-s); border-radius:999px; padding:3px; gap:0; width:100% }
@@ -658,7 +682,7 @@ select option             { background:#161b27 }
 /* ── Modale Diagnostic ─────────────────────────────────────────────────────── */
 .diag-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
 .diag-overlay.show { display:block; opacity:1 }
-.diag-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; display:none; flex-direction:column; gap:1rem; opacity:0; transition:opacity .2s, transform .2s }
+.diag-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9991; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; display:none; flex-direction:column; gap:1rem; opacity:0; transition:opacity .2s, transform .2s }
 .diag-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
 .diag-header { display:flex; align-items:center; justify-content:space-between; gap:.5rem; flex-shrink:0 }
 .diag-header-left { display:flex; align-items:center; gap:.55rem }
@@ -778,7 +802,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 /* ── Modale saisie rayon ── */
 .slen-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(4px); z-index:9984; opacity:0; transition:opacity .2s; display:none }
 .slen-overlay.show { display:block; opacity:1 }
-.slen-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9985; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:88%; max-width:300px; display:none; flex-direction:column; gap:.85rem; opacity:0; transition:opacity .2s, transform .2s }
+.slen-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9985; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:88%; max-width:300px; max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; display:none; flex-direction:column; gap:.85rem; opacity:0; transition:opacity .2s, transform .2s }
 .slen-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
 .slen-header { display:flex; align-items:center; justify-content:space-between }
 .slen-title { font-size:.6rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase }
@@ -896,7 +920,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97);
   z-index:9996; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r);
   padding:1.5rem 1.4rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55);
-  width:92%; max-width:300px; display:none; flex-direction:column; gap:1rem;
+  width:92%; max-width:300px; max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; display:none; flex-direction:column; gap:1rem;
   opacity:0; transition:opacity .2s, transform .2s;
 }
 #confirm-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
@@ -1058,7 +1082,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-cv-select option { background:#161b27 }
 .outlier-overlay  { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
 .outlier-overlay.show { display:block; opacity:1 }
-.outlier-modal    { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
+.outlier-modal    { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
 .outlier-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
 .outlier-header   { display:flex; align-items:center; justify-content:space-between }
 .outlier-title    { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
@@ -1238,7 +1262,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   padding:1.4rem 1.3rem 1.2rem;
   box-shadow:0 20px 72px rgba(0,0,0,.6);
   width:92%; max-width:280px;
-  display:none; flex-direction:column; gap:.85rem;
+  max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; display:none; flex-direction:column; gap:.85rem;
   opacity:0; transition:opacity .2s, transform .2s;
 }
 .ef-mic-lang-modal.show {
@@ -1906,31 +1930,31 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
     </span>
     <button class="ateliermgr-close" onclick="closeAtelierMgr()">✕</button>
   </div>
-  <div class="ateliermgr-field">
+  <div class="ateliermgr-field" id="atelier-fld-shop">
     <span class="ateliermgr-label" id="atelier-shop-label" data-i18n="atelierName">Atelier</span>
     <div class="ateliermgr-inp-wrap">
       <input class="ateliermgr-inp" id="atelier-shop" aria-labelledby="atelier-shop-label" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       <button class="ateliermgr-clear" onclick="atelierClear('atelier-shop')">✕</button>
     </div>
   </div>
-  <div class="ateliermgr-field">
+  <div class="ateliermgr-field" id="atelier-fld-email">
     <span class="ateliermgr-label" id="atelier-email-label">Email</span>
     <div class="ateliermgr-inp-wrap">
       <input class="ateliermgr-inp" id="atelier-email" aria-labelledby="atelier-email-label" type="email" maxlength="80" autocomplete="off">
       <button class="ateliermgr-clear" onclick="atelierClear('atelier-email')">✕</button>
     </div>
   </div>
-  <div class="ateliermgr-field">
+  <div class="ateliermgr-field" id="atelier-fld-insta">
     <span class="ateliermgr-label" id="atelier-insta-label">Instagram</span>
     <div class="ateliermgr-inp-wrap">
       <input class="ateliermgr-inp" id="atelier-insta" aria-labelledby="atelier-insta-label" type="text" maxlength="60" autocomplete="off">
       <button class="ateliermgr-clear" onclick="atelierClear('atelier-insta')">✕</button>
     </div>
   </div>
-  <button class="ct-save-btn" onclick="saveAtelierInfo()" style="margin-top:1.28rem">
+  <button class="ct-save-btn" id="atelier-save-btn" onclick="saveAtelierInfo()">
     <span data-i18n="atelierSave">✓ Sauvegarder</span>
   </button>
-  <button class="ct-save-btn" onclick="atelierClearAll()">
+  <button class="ct-save-btn" id="atelier-clear-btn" onclick="atelierClearAll()">
     <span data-i18n="atelierClearBtn">✕ Effacer</span>
   </button>
 </div>
