@@ -405,7 +405,7 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
   #wi-row-b       { grid-column:1; grid-row:3 }
   #wi-row-a, #wi-row-b { grid-template-columns:minmax(0,1fr) minmax(0,1fr) }
   #wi-notes-field { grid-column:2; grid-row:2/4; min-height:0 }
-  #wi-notes-field .wi-note-list { max-height:6.5rem } /* plafond propre au paysage : en portrait la liste s'étire */
+  #wi-notes-field .wi-note-list { max-height:6.5rem; margin-top:.35rem } /* propres au paysage : en portrait la liste s'étire et respire davantage sous la saisie */
   #wi-save-btn    { grid-column:1; grid-row:4 }
   #wi-clear-btn   { grid-column:2; grid-row:4 }
 }
@@ -568,7 +568,7 @@ select option             { background:#161b27 }
 .wi-note-add:disabled { opacity:.35; cursor:not-allowed }
 /* Liste des notes : même grammaire visuelle que .snap-item — une note datée est
    un événement de l'historique de la roue, comme un snapshot. */
-.wi-note-list  { display:flex; flex-direction:column; gap:.35rem; margin-top:.35rem; flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain }
+.wi-note-list  { display:flex; flex-direction:column; gap:.35rem; margin-top:.9rem; flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain }
 .wi-note-item  { display:flex; align-items:flex-start; gap:.5rem; padding:.45rem .7rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs) }
 .wi-note-info  { flex:1; display:flex; flex-direction:column; gap:.12rem; min-width:0 }
 .wi-note-txt   { font-family:'DM Mono',monospace; font-size:.75rem; color:var(--accent2); overflow-wrap:anywhere }
