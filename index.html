@@ -321,7 +321,8 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 /* ── Hub/Rim save modal ─────────────────────────────────────────────────────── */
 .hr-save-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
 .hr-save-overlay.show { display:block; opacity:1 }
-.hr-save-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; display:none; flex-direction:column; gap:.85rem; opacity:0; transition:opacity .2s, transform .2s }
+.hr-save-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; max-height:92vh; max-height:92dvh; overflow-y:auto;
+  display:none; flex-direction:column; gap:.85rem; opacity:0; transition:opacity .2s, transform .2s }
 .hr-save-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
 .hr-save-header { display:flex; align-items:center; justify-content:space-between }
 .hr-save-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
@@ -355,9 +356,31 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 /* ── Wheel save/load modals ─────────────────────────────────────────────────── */
 .wheel-save-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
 .wheel-save-overlay.show { display:block; opacity:1 }
-.wheel-save-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; display:none; flex-direction:column; gap:.85rem; opacity:0; transition:opacity .2s, transform .2s }
+.wheel-save-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.2rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; max-height:92vh; max-height:92dvh; overflow-y:auto;
+  display:none; flex-direction:column; gap:.85rem; opacity:0; transition:opacity .2s, transform .2s }
 .wheel-save-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
 .wheel-save-header { display:flex; align-items:center; justify-content:space-between }
+/* Informations Roue : téléphone en paysage — hauteur écrasée, la colonne
+   unique (2 rangées de selects + notes 6 lignes + 2 boutons ≈ 28rem) ne tient
+   pas. On passe en grille 2 colonnes : selects à gauche, notes à droite qui
+   prend toute la hauteur disponible, boutons en pied de grille.
+   max-height 520px ⇒ desktop non concerné. Même schéma que #snapcompare-modal. */
+@media (orientation: landscape) and (max-height: 520px) {
+  #wheel-info-modal.show {
+    display:grid; max-width:640px;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-rows:auto auto auto auto;
+    column-gap:1.1rem; row-gap:.7rem;
+    padding:1.1rem 1.2rem 1rem;
+  }
+  #wheel-info-modal > .wheel-save-header { grid-column:1/-1; grid-row:1 }
+  #wi-row-a       { grid-column:1; grid-row:2 }
+  #wi-row-b       { grid-column:1; grid-row:3 }
+  #wi-notes-field { grid-column:2; grid-row:2/4; min-height:0 }
+  #wi-notes-field .wi-notes { height:auto; flex:1; min-height:3.5rem } /* 8.4rem fixes en portrait */
+  #wi-save-btn    { grid-column:1; grid-row:4 }
+  #wi-clear-btn   { grid-column:2; grid-row:4 }
+}
 .wheel-save-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
 .wheel-save-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .wheel-save-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
@@ -3508,7 +3531,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <div class="wheel-save-title" id="wheel-info-title">Informations Roue</div>
     <button class="wheel-save-close" onclick="closeWheelInfoModal()">✕</button>
   </div>
-  <div class="g2">
+  <div class="g2" id="wi-row-a">
     <div class="f">
       <label for="wi-discipline" data-i18n="wiDiscipline">Discipline</label>
       <select id="wi-discipline">
@@ -3537,7 +3560,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       </select>
     </div>
   </div>
-  <div class="g2">
+  <div class="g2" id="wi-row-b">
     <div class="f">
       <label for="wi-brake" data-i18n="wiBrake">Freinage</label>
       <select id="wi-brake">
@@ -3555,17 +3578,17 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       </select>
     </div>
   </div>
-  <div class="f">
+  <div class="f" id="wi-notes-field">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <label for="wi-notes" data-i18n="wiNotes">Notes</label>
       <button class="ateliermgr-clear" onclick="atelierClear('wi-notes')">✕</button>
     </div>
     <textarea class="wi-notes" id="wi-notes" rows="6" maxlength="500"></textarea>
   </div>
-  <button class="ct-save-btn" onclick="wheelInfoSave()">
+  <button class="ct-save-btn" id="wi-save-btn" onclick="wheelInfoSave()">
     <span data-i18n="atelierSave">✓ Sauvegarder</span>
   </button>
-  <button class="ct-save-btn" onclick="wheelInfoClearAll()">
+  <button class="ct-save-btn" id="wi-clear-btn" onclick="wheelInfoClearAll()">
     <span data-i18n="atelierClearBtn">✕ Effacer</span>
   </button>
 </div>
