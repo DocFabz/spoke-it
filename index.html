@@ -20776,9 +20776,9 @@ if ('serviceWorker' in navigator) {
 <script>
 // ── Toast « Nouvelle version installée » ─────────────────────────────────────
 // Détection passive de déploiement via l'ETag de GitHub Pages (empreinte du
-// contenu, recalculée serveur à chaque déploiement). Comparé à celui mémorisé
-// à la session précédente : différent = l'app qui vient de se charger est une
-// nouvelle version (network-first : en ligne, on sert toujours le frais).
+// contenu, recalculée serveur à chaque déploiement). Un ETag jamais rencontré
+// = l'app qui vient de se charger est une nouvelle version (network-first :
+// en ligne, on sert toujours le frais).
 // HEAD en cache par défaut : partage l'état du cache HTTP du document, donc
 // l'ETag lu correspond bien à la version réellement affichée. NE PAS passer en
 // cache:'no-store' : on lirait l'état du serveur, pas celui de la page à
