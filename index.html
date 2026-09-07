@@ -3889,6 +3889,15 @@ function wiNoteClamp(txt) {
   return String(txt).split('\n').slice(0, WI_NOTE_LINES).join('\n');
 }
 
+// Horodatage d'une note. Même règle que _importNormTs pour les entrées : un
+// nombre fini strictement positif, sinon pas de date. `typeof === 'number'`
+// seul laissait passer NaN (invisible, falsy) mais aussi Infinity et les
+// négatifs, qui franchissent le test `note.ts ?` et sortent « Invalid Date »
+// dans la liste comme dans les exports PDF/JPEG.
+function wiNoteTs(v) {
+  return (typeof v === 'number' && isFinite(v) && v > 0) ? v : null;
+}
+
 // Écrêtage du champ de saisie. Le geste normal est arrêté en amont (Entrée
 // bloquée au plafond, cf. plus bas) ; cette fonction rattrape le collage, seul
 // chemin qui peut faire entrer d'un coup plus de lignes qu'autorisé. Elle ne
@@ -3997,14 +4006,15 @@ window.wiNotesSet = function(log, legacy) {
       var txt = typeof note === 'string' ? note
               : (typeof note.txt === 'string' ? note.txt : '');
       if (!txt.trim()) return;
-      out.push({ ts: (note && typeof note.ts === 'number') ? note.ts : null,
+      out.push({ ts: wiNoteTs(note && note.ts),
                  txt: wiNoteClamp(txt.slice(0, WI_NOTE_LEN)) });
     });
   } else if (typeof legacy === 'string' && legacy.trim()) {
     out.push({ ts: null, txt: legacy.slice(0, 500) });
   }
-  // slice par la FIN : un fichier trafiqué ou venu d'une version future avec
-  // plus de 30 notes doit conserver les plus récentes, pas les plus anciennes.
+  // slice par la FIN : un fichier trafiqué ou venu d'une version future portant
+  // plus de WI_NOTES_MAX notes doit conserver les plus RÉCENTES, pas les plus
+  // anciennes. (Le commentaire nommait « 30 », un plafond qui n'a jamais existé.)
   window._wiNotes = out.slice(-WI_NOTES_MAX);
   var inp = document.getElementById('wi-notes');
   if (inp) inp.value = '';
@@ -8111,9 +8121,27 @@ function _ccTensioKnown(key, ctPool) {
 // Validité structurelle : au moins deux points, chacun [reading, kgf]. La
 // validation était stricte côté cshareImport et quasi absente côté
 // wshare/backup, qui acceptaient points:[] ou points:[1,2,3].
+// La forme ne suffit pas : interpolateFromPoints et tmGetRange lisent les
+// BORNES sur validPts[0] et validPts[n-1] et prennent le premier segment
+// encadrant — les deux supposent des lectures strictement croissantes.
+// ccSave garantit cet invariant (ccValidateGrid : pas de doublon de lecture,
+// monotonie ; puis points.sort sur la lecture) ; un fichier édité à la main ou
+// produit par un tiers, non. Points désordonnés ⇒ plage fausse ET segment
+// faux : une tension plausible et fausse, en silence. Lectures égales ⇒
+// division par zéro ⇒ Infinity. Non-nombres ⇒ NaN partout.
+// p[1] (kgf) peut valoir null : les tables partielles sont légitimes, les deux
+// lecteurs filtrent dessus (p[1] !== null). p[0] ne le peut pas.
 function _ccPointsValid(pts) {
-  return Array.isArray(pts) && pts.length >= 2 &&
-         pts.every(function(p) { return Array.isArray(p) && p.length >= 2; });
+  if (!Array.isArray(pts) || pts.length < 2) return false;
+  var prev = -Infinity;
+  return pts.every(function(p) {
+    if (!Array.isArray(p) || p.length < 2) return false;
+    if (typeof p[0] !== 'number' || !isFinite(p[0])) return false;
+    if (p[1] !== null && (typeof p[1] !== 'number' || !isFinite(p[1]))) return false;
+    if (p[0] <= prev) return false;
+    prev = p[0];
+    return true;
+  });
 }
 
 // ── Identité de contenu d'une charte ─────────────────────────────────────────
@@ -8193,7 +8221,7 @@ function _importNormWheelInfo(entry) {
   // convention que wiNotesPersist). Il vaut mieux ne pas normaliser que lever
   // une ReferenceError sur WI_NOTE_LEN : les deux imports enveloppent cet appel
   // dans un try, un fichier SAIN y serait rejeté comme invalide.
-  if (typeof wiNoteClamp !== 'function') return;
+  if (typeof wiNoteClamp !== 'function' || typeof wiNoteTs !== 'function') return;
   if (Array.isArray(wi.notesLog)) {
     var out = [];
     wi.notesLog.forEach(function(note) {
@@ -8201,8 +8229,8 @@ function _importNormWheelInfo(entry) {
       var txt = typeof note === 'string' ? note
               : (typeof note.txt === 'string' ? note.txt : '');
       if (!txt.trim()) return;
-      out.push({ ts: (typeof note.ts === 'number') ? note.ts : null,
-                 txt: wiNoteClamp(txt).slice(0, WI_NOTE_LEN) });
+      out.push({ ts: wiNoteTs(note.ts),
+                 txt: wiNoteClamp(txt.slice(0, WI_NOTE_LEN)) });
     });
     // slice par la FIN, comme wiNotesSet : au-delà du plafond ce sont les notes
     // les plus RÉCENTES qu'on garde.
@@ -8213,6 +8241,22 @@ function _importNormWheelInfo(entry) {
   if ('notes' in wi) {
     if (typeof wi.notes === 'string') wi.notes = wi.notes.slice(0, 500);
     else delete wi.notes;
+  }
+}
+
+// Historique de snapshots d'une roue reçue par fichier. Un champ snapshots
+// non-tableau (fichier trafiqué) fait échouer l'import APRÈS la persistance
+// des tensios et chartes — import partiel annoncé comme un échec ; et un
+// tableau d'éléments non-objets entre en stockage, où saveConfig le recopie
+// tel quel (existingSnapshots.length > 0 est vrai pour une chaîne).
+// Le partage de roue portait déjà cette garde, le backup pas : source unique.
+function _importNormSnaps(entry) {
+  if (!entry) return;
+  if (Array.isArray(entry.snapshots)) {
+    entry.snapshots = entry.snapshots.filter(function(s) { return s && typeof s === 'object'; });
+    if (!entry.snapshots.length) delete entry.snapshots;
+  } else if ('snapshots' in entry) {
+    delete entry.snapshots;
   }
 }
 
@@ -8241,6 +8285,14 @@ function _importApplyRen(entry, ren) {
 // réel sur iOS (Fichiers propose « Remplacer ») et via la boîte de dialogue
 // desktop ; les navigateurs qui téléchargent sans demander numérotent (1), (2).
 // setItem brut : une préférence ne doit pas ré-horodater lastModif (rappel).
+// Révoquer une blob URL dans la foulée de a.click() annule le téléchargement
+// sur certains moteurs (Safari, WebViews) : le blob disparaît avant que le
+// navigateur ne l'ait lu. Délai repris de l'export vidéo, seul chemin qui
+// appliquait déjà le bon motif. Source unique pour les quatre téléchargements
+// blob de l'app : les trois exports .json et la vidéo de l'Évolution.
+function _revokeLater(url) {
+  setTimeout(function() { URL.revokeObjectURL(url); }, 30000);
+}
 function bkpDatedPref() {
   try { return localStorage.getItem('spokeit_bkpDated') !== '0'; } catch(e) { return true; }
 }
@@ -8314,7 +8366,7 @@ function exportConfigs() {
   // Nom construit selon la préférence utilisateur (cf. bkpFileName) :
   // daté = un fichier par jour (historique) ; fixe = « Spokeit.json » écrasé.
   a.href = url; a.download = bkpFileName(); a.click();
-  URL.revokeObjectURL(url);
+  _revokeLater(url);
   // Sauvegarde réussie : on horodate et on éteint le rappel (bandeau + clignotements).
   try { localStorage.setItem('spokeit_lastBackup', String(Date.now())); } catch(e) {}
   if (typeof bkpSetPending === 'function') bkpSetPending(false);
@@ -8323,15 +8375,16 @@ function exportConfigs() {
 
 function showImportToast(msg, isError) {
   var toast = document.getElementById('import-toast');
+  if (!toast) return; // même garde que l'autre consommateur du toast (majCheck)
   toast.textContent = msg;
   toast.style.color  = isError ? '#f08080' : 'var(--success)';
   toast.style.borderColor = isError ? 'rgba(240,128,128,.35)' : 'rgba(126,207,168,.35)';
   toast.style.opacity = '1';
   clearTimeout(toast._hideTimer);
-  toast._hideTimer = setTimeout(function() {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateX(-50%) translateY(0)';
-  }, 2000);
+  // Le seul transform de l'élément est son centrage (translateX(-50%), posé en
+  // style inline) et la transition ne couvre que l'opacité : le translateY
+  // était un reliquat sans effet d'une animation de glissement abandonnée.
+  toast._hideTimer = setTimeout(function() { toast.style.opacity = '0'; }, 2000);
 }
 
 function importConfigs(event) {
@@ -8412,6 +8465,7 @@ function importConfigs(event) {
           if (!entry || typeof entry.name !== 'string' || !entry.state || typeof entry.state !== 'object') return;
           _importNormTs(entry);
           _importNormWheelInfo(entry);
+          _importNormSnaps(entry); // AVANT _importApplyRen, qui itère dessus
           _importApplyRen(entry, _bkpRen); // roues du fichier → chartes renommées
           const idx = existing.findIndex(c => c.name === entry.name && (c.state.wtype || 'avant') === (entry.state.wtype || 'avant'));
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
@@ -8517,6 +8571,14 @@ function importConfigs(event) {
     showImportToast(t('importSuccess'), false);
     event.target.value = '';
   };
+  // Échec de LECTURE (fichier déplacé, permission iOS, blob révoqué) : onload
+  // ne se déclenche jamais. Sans cette branche, aucun retour à l'utilisateur —
+  // et surtout aucun reset de l'input : resélectionner le MÊME fichier n'émet
+  // pas de change, l'import restait mort jusqu'à changer de fichier.
+  reader.onerror = function() {
+    showImportToast(t('importError'), true);
+    event.target.value = '';
+  };
   reader.readAsText(file);
 }
 
@@ -8541,6 +8603,9 @@ function closeWheelShareModal() {
   // Reset systématique : la modale ne doit jamais se rouvrir en état
   // confirmation. Le handler Escape passe aussi par ici.
   _wshareResetModal();
+  // Reset de l'input : symétrie avec closeChartShareModal. Sans lui, un fichier
+  // dont la LECTURE a échoué resterait la valeur courante de l'input.
+  var fi = $id('wshare-file-input'); if (fi) fi.value = '';
   $id('wshare-overlay').classList.remove('show');
   $id('wshare-modal').classList.remove('show');
 }
@@ -8685,7 +8750,7 @@ function _wshareDownload(payload) {
   var url  = URL.createObjectURL(blob);
   var a    = document.createElement('a');
   a.href = url; a.download = _wshareFileName(payload.name); a.click();
-  URL.revokeObjectURL(url);
+  _revokeLater(url);
   closeWheelShareModal();
 }
 
@@ -8787,15 +8852,9 @@ function wshareImport(event) {
       if (!data.spokeit || data.kind !== 'wheel' || !data.entry || typeof data.entry !== 'object' ||
           !data.entry.state || typeof data.entry.state !== 'object') throw new Error();
       var entry = data.entry;
-      // Normalisation défensive : un champ snapshots non-tableau (fichier
-      // trafiqué) ferait échouer l'import APRÈS la persistance des deps —
-      // import partiel silencieux. Assaini avant tout effet de bord.
-      if (Array.isArray(entry.snapshots)) {
-        entry.snapshots = entry.snapshots.filter(function(s) { return s && typeof s === 'object'; });
-        if (!entry.snapshots.length) delete entry.snapshots;
-      } else {
-        delete entry.snapshots;
-      }
+      // Assaini avant tout effet de bord : un snapshots non-tableau ferait
+      // échouer l'import APRÈS la persistance des deps (cf. _importNormSnaps).
+      _importNormSnaps(entry);
       // Re-strip défensif (fichier édité à la main ou version future).
       delete entry.riderId;
       entry.state.loadedHubName = null;
@@ -8848,6 +8907,10 @@ function wshareImport(event) {
     closeWheelShareModal();
     // split/join : String.replace interpréterait $& / $' dans un nom de roue.
     showImportToast(t('wshareImportSuccess').split('{name}').join(name), false);
+    event.target.value = '';
+  };
+  reader.onerror = function() { // cf. importConfigs : sans reset, l'input reste bloqué
+    showImportToast(t('wshareImportError'), true);
     event.target.value = '';
   };
   reader.readAsText(file);
@@ -8952,7 +9015,7 @@ function cshareExport() {
   var url  = URL.createObjectURL(blob);
   var a    = document.createElement('a');
   a.href = url; a.download = _cshareFileName(cc.name); a.click();
-  URL.revokeObjectURL(url);
+  _revokeLater(url);
   closeChartShareModal();
 }
 
@@ -9083,6 +9146,10 @@ function cshareImport(event) {
     closeChartShareModal();
     // split/join : String.replace interpréterait $& / $' dans un nom de charte.
     showImportToast(t(reused ? 'cshareImportExists' : 'cshareImportSuccess').split('{name}').join(finalName), false);
+    event.target.value = '';
+  };
+  reader.onerror = function() { // cf. importConfigs : sans reset, l'input reste bloqué
+    showImportToast(t('cshareImportError'), true);
     event.target.value = '';
   };
   reader.readAsText(file);
@@ -17222,7 +17289,7 @@ function efStopMic() {
     var url = URL.createObjectURL(recBlob);
     var a = document.createElement('a');
     a.href = url; a.download = recFile.name; a.click();
-    setTimeout(function() { URL.revokeObjectURL(url); }, 30000);
+    _revokeLater(url);
   };
 
 })();
