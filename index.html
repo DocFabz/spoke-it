@@ -7750,8 +7750,21 @@ function saveConfig(nameOverride, riderIdOverride, skipConfirm) {
     // 1..n, un snapshot n°1 est donc garanti, il n'y a rien à compléter.
     // Roue jamais snapshotée mais mesurée : snapshot n°1 créé à la volée.
     const existingSnapshots = ei2 >= 0 ? (configs2[ei2].snapshots || []) : [];
-    if (existingSnapshots.length > 0) entry.snapshots = existingSnapshots;
-    else if (tmHasData()) entry.snapshots = [_snapMakeEntry(1)];
+    if (existingSnapshots.length > 0) {
+      entry.snapshots = existingSnapshots;
+    } else if (tmHasData()) {
+      entry.snapshots = [_snapMakeEntry(1)];
+      // Les relevés affichés VIENNENT de devenir ce snapshot : même
+      // établissement que snapSave, donc même geste. Sans lui, le drapeau posé
+      // par la saisie survivait, et le snapRefreshBtn de flashWheelCard
+      // ci-dessous laissait l'en-tête muet devant un snapshot qui est
+      // exactement ce qu'on a à l'écran.
+      //
+      // Uniquement dans CETTE branche : une roue qui garde un historique et
+      // dont les relevés vifs n'ont pas été snapshotés reste sale, et son
+      // en-tête doit rester muet — c'est ce qui la fait rouvrir sur eux.
+      _snapMarkClean();
+    }
     if (ei2 >= 0) configs2.splice(ei2, 1, entry);
     else configs2.unshift(entry);
     persistConfigs(configs2);
