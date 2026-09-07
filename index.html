@@ -556,24 +556,39 @@ select option             { background:#161b27 }
 /* En-tête du champ Notes : libellé à gauche, « + » aligné sur le bord droit de
    la modale comme la croix de fermeture au-dessus. */
 .wi-note-head { display:flex; align-items:center; justify-content:space-between; gap:.5rem }
-.wi-note-row { display:flex; gap:.4rem }
+/* Champ de saisie d'une note : bloc et non ligne unique — la hauteur réservée
+   montre d'emblée la place des 140 caractères du plafond, au lieu de laisser
+   deviner ce qui reste en faisant défiler une ligne.
+   Le plancher vaut le plafond de saisie : 4 lignes, ce que wiNoteLimitLines
+   autorise. min-height et non height, parce qu'un repli de ligne long peut
+   occuper plus de 4 lignes À L'ÉCRAN sans dépasser 4 lignes SAISIES — les
+   sauts de ligne sont comptés, pas les replis. wiNoteAutoGrow allonge alors
+   la boîte : le plancher est ce qu'on réserve, jamais une limite. */
 .wi-notes {
   background:var(--inp); border:1px solid var(--border); border-radius:var(--rs);
   color:var(--text); font-family:'DM Mono',monospace; font-size:.85rem; font-weight:300; line-height:1.4;
-  padding:.55rem .9rem; flex:1; min-width:0; box-sizing:border-box;
+  padding:.55rem .9rem; width:100%; box-sizing:border-box;
+  display:block; resize:none; overflow-y:auto;
+  min-height:calc(4 * 1.4em + 1.1rem + 2px);
   transition:border-color .2s, background .2s;
 }
 .wi-notes:focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
 .wi-notes::placeholder { font-family:'DM Sans',sans-serif; font-weight:400; color:var(--text3); opacity:1 }
 /* Doublon WebKit : règle séparée, un pseudo-élément inconnu invaliderait toute la liste de sélecteurs. */
 .wi-notes::-webkit-input-placeholder { font-family:'DM Sans',sans-serif; font-weight:400; color:var(--text3); opacity:1 }
+/* iOS : police remontée à 16px pour empêcher le zoom automatique à la mise au
+   point. Le plancher reste à 4 lignes comme ailleurs — c'est le plafond de
+   saisie, pas une estimation de repli ; l'auto-croissance fait le reste. */
 @supports (-webkit-touch-callout: none) { .wi-notes { font-size:16px } }
 /* Liste des notes : même grammaire visuelle que .snap-item — une note datée est
    un événement de l'historique de la roue, comme un snapshot. */
 .wi-note-list  { display:flex; flex-direction:column; gap:.35rem; margin-top:.25rem; flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain }
 .wi-note-item  { display:flex; align-items:flex-start; gap:.5rem; padding:.45rem .7rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs) }
 .wi-note-info  { flex:1; display:flex; flex-direction:column; gap:.12rem; min-width:0 }
-.wi-note-txt   { font-family:'DM Mono',monospace; font-size:.75rem; color:var(--accent2); overflow-wrap:anywhere }
+/* pre-wrap et non pre : les retours à la ligne saisis sont rendus, et les
+   lignes trop longues continuent de se replier au lieu de déborder.
+   Le texte passe par escHtml, le rendu littéral n'ouvre donc rien. */
+.wi-note-txt   { font-family:'DM Mono',monospace; font-size:.75rem; color:var(--accent2); overflow-wrap:anywhere; white-space:pre-wrap }
 .wi-note-date  { font-size:.58rem; color:var(--text3) }
 .wi-note-del   { background:transparent; border:none; color:var(--text3); font-size:.95rem; cursor:pointer; touch-action:manipulation; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
 .wi-note-del:hover { color:#f08080 }
@@ -3661,9 +3676,9 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <div class="wheel-save-title" id="wi-note-title" data-i18n="wiNoteModalTitle">Nouvelle note</div>
     <button class="wheel-save-close" onclick="closeWiNoteModal()">✕</button>
   </div>
-  <div class="wi-note-row">
-    <input class="wi-notes" id="wi-notes" aria-labelledby="wi-note-title" type="text" maxlength="140" autocomplete="off" enterkeyhint="done">
-  </div>
+  <!-- rows : plancher de repli si la feuille de style ne s'applique pas ;
+       c'est min-height qui fixe la hauteur réservée en temps normal. -->
+  <textarea class="wi-notes" id="wi-notes" aria-labelledby="wi-note-title" rows="4" maxlength="140" autocomplete="off"></textarea>
   <button class="ct-save-btn" id="wi-note-ok-btn" onclick="wiNoteAdd()">
     <span data-i18n="wiNoteOk">✓ Ajouter</span>
   </button>
@@ -3767,8 +3782,9 @@ document.addEventListener('keydown', function(e) {
 });
 // Notes : journal daté, pas un bloc de texte libre — le « + » posé à côté du
 // libellé (même grammaire que le « + » Tensiomètre perso) ouvre une modale Note,
-// on y saisit une ligne, on valide, et la note rejoint la liste avec sa date,
-// sur le modèle de la liste des snapshots.
+// on y saisit le texte — retours à la ligne compris —, on valide avec ✓ Ajouter,
+// et la note rejoint la liste avec sa date, sur le modèle de la liste des
+// snapshots.
 //
 // La saisie a sa propre modale plutôt qu'une ligne dans celle-ci : le champ y
 // était le seul élément à écrire aussitôt en stockage au milieu de quatre
@@ -3796,6 +3812,7 @@ document.addEventListener('keydown', function(e) {
 window._wiNotes = [];
 var WI_NOTES_MAX = 10;   // borne la taille de la save ; 140 car. par note
 var WI_NOTE_LEN  = 140;
+var WI_NOTE_LINES = 4;   // sauts de ligne autorisés dans une note (replis non comptés)
 
 function wiNotesRender() {
   var inp = document.getElementById('wi-notes');
@@ -3807,7 +3824,8 @@ function wiNotesRender() {
   if (addBtn) {
     var full = window._wiNotes.length >= WI_NOTES_MAX;
     addBtn.disabled = full;
-    addBtn.title    = t(full ? 'wiNoteMaxTitle' : 'wiNoteAddTitle');
+    addBtn.title    = full ? t('wiNoteMaxTitle').replace('{n}', WI_NOTES_MAX)
+                           : t('wiNoteAddTitle');
     addBtn.setAttribute('aria-label', addBtn.title);
   }
   var list = document.getElementById('wi-note-list');
@@ -3864,6 +3882,48 @@ function wiNotesPersist() {
   return persistConfigs(configs);
 }
 
+// Le champ est dimensionné par min-height (cf. CSS) ; ces deux fonctions ne
+// servent qu'au cas où une note dépasse la place réservée — écran étroit, police
+// système agrandie. Réglage inline pour laisser min-height gagner tant que le
+// texte tient : la hauteur effective vaut max(plancher réservé, contenu).
+// Écrêtage d'une valeur : appliqué à l'entrée du journal ET à sa relecture, un
+// fichier de sauvegarde édité à la main ou venu d'une version future pouvant
+// porter plus de lignes que ce qu'on accepte d'afficher.
+function wiNoteClamp(txt) {
+  return String(txt).split('\n').slice(0, WI_NOTE_LINES).join('\n');
+}
+
+// Écrêtage du champ de saisie. Le geste normal est arrêté en amont (Entrée
+// bloquée au plafond, cf. plus bas) ; cette fonction rattrape le collage, seul
+// chemin qui peut faire entrer d'un coup plus de lignes qu'autorisé. Elle ne
+// réécrit le champ que s'il déborde, la position du curseur n'étant perdue que
+// dans ce cas.
+function wiNoteLimitLines() {
+  var inp = document.getElementById('wi-notes');
+  if (!inp) return;
+  var lines = inp.value.split('\n');
+  if (lines.length > WI_NOTE_LINES) inp.value = lines.slice(0, WI_NOTE_LINES).join('\n');
+}
+
+function wiNoteAutoGrow() {
+  var inp = document.getElementById('wi-notes');
+  if (!inp) return;
+  // Repli d'abord : sans lui scrollHeight garde la mesure précédente et la
+  // boîte ne redescend jamais quand on efface.
+  inp.style.height = 'auto';
+  // box-sizing:border-box : `height` inclut les bordures, que scrollHeight
+  // ignore. Sans ce rattrapage la boîte serait deux pixels trop courte et
+  // sortirait une barre de défilement dès la première ligne de trop.
+  inp.style.height = (inp.scrollHeight + (inp.offsetHeight - inp.clientHeight)) + 'px';
+}
+
+// Retour au plancher CSS : on retire la hauteur inline au lieu d'en calculer une
+// nouvelle, la mesure d'un champ encore masqué ne voulant rien dire.
+function wiNoteResetHeight() {
+  var inp = document.getElementById('wi-notes');
+  if (inp) inp.style.height = '';
+}
+
 // Modale Note : elle se superpose à Informations Roue sans toucher au verrou de
 // défilement du body, déjà posé par la modale parente et qu'elle doit lui rendre
 // intact.
@@ -3873,6 +3933,7 @@ window.openWiNoteModal = function() {
   if (window._wiNotes.length >= WI_NOTES_MAX) return;
   var inp = document.getElementById('wi-notes');
   if (inp) inp.value = '';
+  wiNoteResetHeight();
   document.getElementById('wi-note-overlay').classList.add('show');
   document.getElementById('wi-note-modal').classList.add('show');
   // Même délai que la modale de sauvegarde : focus après la transition, sinon
@@ -3885,6 +3946,7 @@ window.openWiNoteModal = function() {
 window.closeWiNoteModal = function() {
   var inp = document.getElementById('wi-notes');
   if (inp) inp.value = '';
+  wiNoteResetHeight();
   document.getElementById('wi-note-overlay').classList.remove('show');
   document.getElementById('wi-note-modal').classList.remove('show');
 };
@@ -3892,7 +3954,11 @@ window.closeWiNoteModal = function() {
 window.wiNoteAdd = function() {
   var inp = document.getElementById('wi-notes');
   if (!inp) return;
-  var txt = inp.value.trim();
+  // Les retours à la ligne sont conservés : ils sont désormais saisissables, et
+  // la liste les rend (white-space:pre-wrap sur .wi-note-txt). Seule la forme
+  // est normalisée — CRLF et CR isolés ramenés à \n — pour qu'une note collée
+  // depuis Windows ne soit pas stockée dans une autre convention que les autres.
+  var txt = wiNoteClamp(inp.value.replace(/\r\n?/g, '\n').trim());
   if (!txt || window._wiNotes.length >= WI_NOTES_MAX) return;
   window._wiNotes.push({ ts: Date.now(), txt: txt.slice(0, WI_NOTE_LEN) });
   closeWiNoteModal();
@@ -3931,7 +3997,7 @@ window.wiNotesSet = function(log, legacy) {
               : (typeof note.txt === 'string' ? note.txt : '');
       if (!txt.trim()) return;
       out.push({ ts: (note && typeof note.ts === 'number') ? note.ts : null,
-                 txt: txt.slice(0, WI_NOTE_LEN) });
+                 txt: wiNoteClamp(txt.slice(0, WI_NOTE_LEN)) });
     });
   } else if (typeof legacy === 'string' && legacy.trim()) {
     out.push({ ts: null, txt: legacy.slice(0, 500) });
@@ -3947,9 +4013,13 @@ window.wiNotesSet = function(log, legacy) {
 // Miroir texte du journal pour le champ notes historique (cf. en-tête).
 // Plafonné à 500 caractères, longueur que le textarea des versions antérieures
 // acceptait ; notesLog reste la version intégrale.
+// Les notes y sont séparées par des retours à la ligne : ceux qu'une note
+// contient elle-même sont donc aplatis ICI, sinon une note de trois lignes en
+// paraîtrait trois dans une version de l'app qui ne lit que ce champ. Le
+// journal, lui, garde la mise en forme intacte.
 window.wiNotesFlat = function() {
   var s = window._wiNotes.map(function(note) {
-    return (note.ts ? fmtDMYHM(note.ts) + ' — ' : '') + note.txt;
+    return (note.ts ? fmtDMYHM(note.ts) + ' — ' : '') + note.txt.replace(/\n/g, ' ');
   }).join('\n');
   return s.length > 500 ? s.slice(0, 499) + '…' : s;
 };
@@ -3958,9 +4028,15 @@ window.wiNotesFlat = function() {
   var inp = document.getElementById('wi-notes');
   if (!inp) return;
   inp.maxLength = WI_NOTE_LEN;
+  // Entrée insère un retour à la ligne, comme dans n'importe quel champ
+  // multiligne ; la validation revient au seul bouton ✓ Ajouter. Elle n'est
+  // interceptée qu'au plafond : refuser la 4e touche Entrée vaut mieux que
+  // laisser taper une 5e ligne pour l'effacer ensuite sous le curseur.
   inp.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); wiNoteAdd(); }
+    if (e.key !== 'Enter') return;
+    if (inp.value.split('\n').length >= WI_NOTE_LINES) e.preventDefault();
   });
+  inp.addEventListener('input', function() { wiNoteLimitLines(); wiNoteAutoGrow(); });
 })();
 </script>
 
@@ -4582,7 +4658,7 @@ const i18n = {
     wiSize:'Taille', wiSize275:'27,5"', wiBrake:'Freinage', wiPatins:'Patins', wiDisque:'Disque',
     wiMaterial:'Matériau', wiAlu:'Aluminium', wiCarbone:'Carbone', wiNotes:'Notes', wiInfoBtnTitle:'Informations roue',
     wiNotePlaceholder:'Ajouter une note…', wiNoteAddTitle:'Ajouter une note', wiNotesEmpty:'Aucune note.',
-    wiNoteModalTitle:'Nouvelle note', wiNoteOk:'✓ Ajouter', wiNoteMaxTitle:'Maximum de 10 notes atteint',
+    wiNoteModalTitle:'Nouvelle note', wiNoteOk:'✓ Ajouter', wiNoteMaxTitle:'Maximum de {n} notes atteint',
     wheelLoadBtnTitle:'Charger une roue', wheelSaveBtnTitle:'Enregistrer cette roue',
     hubLoadBtnTitle:'Charger un moyeu', hubSaveBtnTitle:'Enregistrer ce moyeu',
     rimLoadBtnTitle:'Charger une jante', rimSaveBtnTitle:'Enregistrer cette jante',
@@ -4860,7 +4936,7 @@ const i18n = {
     wiSize:'Size', wiSize275:'27.5"', wiBrake:'Braking', wiPatins:'Rim', wiDisque:'Disc',
     wiMaterial:'Material', wiAlu:'Alloy', wiCarbone:'Carbon', wiNotes:'Notes', wiInfoBtnTitle:'Wheel information',
     wiNotePlaceholder:'Add a note…', wiNoteAddTitle:'Add a note', wiNotesEmpty:'No notes yet.',
-    wiNoteModalTitle:'New note', wiNoteOk:'✓ Add', wiNoteMaxTitle:'Maximum of 10 notes reached',
+    wiNoteModalTitle:'New note', wiNoteOk:'✓ Add', wiNoteMaxTitle:'Maximum of {n} notes reached',
     wheelLoadBtnTitle:'Load a wheel', wheelSaveBtnTitle:'Save this wheel',
     hubLoadBtnTitle:'Load a hub', hubSaveBtnTitle:'Save this hub',
     rimLoadBtnTitle:'Load a rim', rimSaveBtnTitle:'Save this rim',
@@ -5588,8 +5664,8 @@ function applyLang() {
     el.setAttribute('aria-label', t(el.dataset.i18nAria));
   });
   // ── Modale Informations Roue ──
-  // Placeholder du champ de note, titre du bouton ↵ et état vide de la liste
-  // sont posés au rendu, pas par data-i18n : re-rendu inconditionnel pour
+  // Placeholder du champ de note, titre du bouton « + » et état vide de la
+  // liste sont posés au rendu, pas par data-i18n : re-rendu inconditionnel pour
   // qu'ils suivent la langue (même raison que snapRenderList plus bas).
   if (typeof wiNotesRender === 'function') wiNotesRender();
   // Titre "Déflections mesurées" / "Measured deflections" + suffixe roue
