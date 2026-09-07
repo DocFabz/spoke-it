@@ -385,6 +385,10 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
    liste scrolle seule : en-tête, saisie et boutons restent visibles.
    Le bloc paysage ci-dessous, plus spécifique, reprend la main sur ces réglages. */
 #wheel-info-modal { max-width:360px; max-height:80vh; max-height:80dvh }
+/* Modale Note : ouverte depuis Informations Roue, donc un étage au-dessus d'elle
+   (sinon son voile passerait SOUS la modale parente, qui resterait cliquable). */
+#wi-note-overlay { z-index:9982 }
+#wi-note-modal   { z-index:9983 }
 #wi-notes-field   { flex:1; min-height:0 }
 /* Informations Roue : téléphone en paysage — hauteur écrasée, la colonne
    unique (2 rangées de selects + notes + 2 boutons) ne tient
@@ -405,8 +409,8 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
   #wi-row-b       { grid-column:1; grid-row:3 }
   #wi-row-a, #wi-row-b { grid-template-columns:minmax(0,1fr) minmax(0,1fr) }
   #wi-notes-field { grid-column:2; grid-row:2/4; min-height:0 }
-  /* En portrait la liste s'étire et prend .9rem d'air sous la saisie ; ici, hauteur comptée. */
-  #wi-notes-field .wi-note-list { max-height:6.5rem; margin-top:.35rem }
+  /* En portrait la liste s'étire librement ; ici, hauteur comptée. */
+  #wi-notes-field .wi-note-list { max-height:6.5rem }
   #wi-save-btn    { grid-column:1; grid-row:4 }
   #wi-clear-btn   { grid-column:2; grid-row:4 }
 }
@@ -549,6 +553,9 @@ select.placeholder        { color:var(--text2) }
 select option             { background:#161b27 }
 .inp-readonly             { opacity:.55; cursor:not-allowed }
 .inp-disabled             { opacity:.35; cursor:not-allowed; pointer-events:none }
+/* En-tête du champ Notes : libellé à gauche, « + » aligné sur le bord droit de
+   la modale comme la croix de fermeture au-dessus. */
+.wi-note-head { display:flex; align-items:center; justify-content:space-between; gap:.5rem }
 .wi-note-row { display:flex; gap:.4rem }
 .wi-notes {
   background:var(--inp); border:1px solid var(--border); border-radius:var(--rs);
@@ -561,17 +568,9 @@ select option             { background:#161b27 }
 /* Doublon WebKit : règle séparée, un pseudo-élément inconnu invaliderait toute la liste de sélecteurs. */
 .wi-notes::-webkit-input-placeholder { font-family:'DM Sans',sans-serif; font-weight:400; color:var(--text3); opacity:1 }
 @supports (-webkit-touch-callout: none) { .wi-notes { font-size:16px } }
-.wi-note-add {
-  background:transparent; border:1px solid var(--border-s); border-radius:var(--rs);
-  color:var(--text2); font-size:.95rem; line-height:1; padding:0 .8rem; cursor:pointer;
-  touch-action:manipulation; flex-shrink:0;
-  transition:background .22s, border-color .22s, color .22s, opacity .22s;
-}
-@media (hover: hover) { .wi-note-add:hover:not(:disabled) { border-color:rgba(126,200,227,.5); color:var(--accent2); background:rgba(126,200,227,.05) } }
-.wi-note-add:disabled { opacity:.35; cursor:not-allowed }
 /* Liste des notes : même grammaire visuelle que .snap-item — une note datée est
    un événement de l'historique de la roue, comme un snapshot. */
-.wi-note-list  { display:flex; flex-direction:column; gap:.35rem; margin-top:.9rem; flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain }
+.wi-note-list  { display:flex; flex-direction:column; gap:.35rem; margin-top:.25rem; flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain }
 .wi-note-item  { display:flex; align-items:flex-start; gap:.5rem; padding:.45rem .7rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs) }
 .wi-note-info  { flex:1; display:flex; flex-direction:column; gap:.12rem; min-width:0 }
 .wi-note-txt   { font-family:'DM Mono',monospace; font-size:.75rem; color:var(--accent2); overflow-wrap:anywhere }
@@ -3634,10 +3633,16 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     </div>
   </div>
   <div class="f" id="wi-notes-field">
-    <label for="wi-notes" data-i18n="wiNotes">Notes</label>
-    <div class="wi-note-row">
-      <input class="wi-notes" id="wi-notes" type="text" maxlength="140" autocomplete="off" enterkeyhint="send">
-      <button class="wi-note-add" id="wi-note-add-btn" onclick="wiNoteAdd()" data-i18n-aria="wiNoteAddTitle">↵</button>
+    <div class="wi-note-head">
+      <!-- <span> et non <label> : le champ de saisie vit maintenant dans la
+           modale Note, un `for` pointerait sur un input masqué. -->
+      <span class="fld-label" data-i18n="wiNotes">Notes</span>
+      <button class="card-icon-btn active" id="wi-note-add-btn" onclick="openWiNoteModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
     </div>
     <div class="wi-note-list" id="wi-note-list"></div>
   </div>
@@ -3646,6 +3651,21 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
   </button>
   <button class="ct-save-btn" id="wi-clear-btn" onclick="wheelInfoClearAll()">
     <span data-i18n="atelierClearBtn">✕ Effacer</span>
+  </button>
+</div>
+
+<!-- ── Wheel note modal (saisie d'UNE note, par-dessus Informations Roue) ── -->
+<div class="wheel-save-overlay" id="wi-note-overlay" onclick="closeWiNoteModal()"></div>
+<div class="wheel-save-modal" id="wi-note-modal" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="wi-note-title">
+  <div class="wheel-save-header">
+    <div class="wheel-save-title" id="wi-note-title" data-i18n="wiNoteModalTitle">Nouvelle note</div>
+    <button class="wheel-save-close" onclick="closeWiNoteModal()">✕</button>
+  </div>
+  <div class="wi-note-row">
+    <input class="wi-notes" id="wi-notes" aria-labelledby="wi-note-title" type="text" maxlength="140" autocomplete="off" enterkeyhint="done">
+  </div>
+  <button class="ct-save-btn" id="wi-note-ok-btn" onclick="wiNoteAdd()">
+    <span data-i18n="wiNoteOk">✓ Ajouter</span>
   </button>
 </div>
 
@@ -3667,7 +3687,6 @@ window.openWheelInfoModal = function() {
   document.body.style.overflow = 'hidden';
 };
 window.closeWheelInfoModal = function() {
-  if (typeof wiNoteAdd === 'function') wiNoteAdd(true);
   document.getElementById('wheel-info-overlay').classList.remove('show');
   document.getElementById('wheel-info-modal').classList.remove('show');
   document.body.style.overflow = '';
@@ -3736,13 +3755,24 @@ window.wheelInfoSave = function() {
   else if (typeof openWheelSaveModal === 'function') openWheelSaveModal();
 };
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape' && document.getElementById('wheel-info-modal').classList.contains('show')) {
+  if (e.key !== 'Escape') return;
+  // La modale Note se ferme d'abord : elle est empilée au-dessus, fermer la
+  // parente sous elle laisserait une modale orpheline sans voile.
+  if (document.getElementById('wi-note-modal').classList.contains('show')) {
+    e.preventDefault(); closeWiNoteModal(); return;
+  }
+  if (document.getElementById('wheel-info-modal').classList.contains('show')) {
     e.preventDefault(); closeWheelInfoModal();
   }
 });
-// Notes : journal daté, pas un bloc de texte libre — on saisit une ligne, on
-// valide (Entrée ou ↵), le champ se vide et la note rejoint la liste avec sa
-// date, sur le modèle de la liste des snapshots.
+// Notes : journal daté, pas un bloc de texte libre — le « + » posé à côté du
+// libellé (même grammaire que le « + » Tensiomètre perso) ouvre une modale Note,
+// on y saisit une ligne, on valide, et la note rejoint la liste avec sa date,
+// sur le modèle de la liste des snapshots.
+//
+// La saisie a sa propre modale plutôt qu'une ligne dans celle-ci : le champ y
+// était le seul élément à écrire aussitôt en stockage au milieu de quatre
+// selects différés, et il volait la place de la liste sur écran court.
 //
 // window._wiNotes est la SOURCE DE VÉRITÉ ; le champ #wi-notes n'est plus qu'une
 // boîte de dépôt (il ne porte plus d'état, contrairement aux selects voisins).
@@ -3770,10 +3800,15 @@ var WI_NOTE_LEN  = 140;
 function wiNotesRender() {
   var inp = document.getElementById('wi-notes');
   if (inp) inp.placeholder = t('wiNotePlaceholder');
+  // Le « + » porte title ET aria-label ici (pas de data-i18n-aria) : les deux
+  // changent selon que le journal est plein ou non, un seul écrivain évite que
+  // applyLang et ce rendu se contredisent.
   var addBtn = document.getElementById('wi-note-add-btn');
   if (addBtn) {
-    addBtn.title    = t('wiNoteAddTitle');
-    addBtn.disabled = window._wiNotes.length >= WI_NOTES_MAX;
+    var full = window._wiNotes.length >= WI_NOTES_MAX;
+    addBtn.disabled = full;
+    addBtn.title    = t(full ? 'wiNoteMaxTitle' : 'wiNoteAddTitle');
+    addBtn.setAttribute('aria-label', addBtn.title);
   }
   var list = document.getElementById('wi-note-list');
   if (!list) return;
@@ -3829,26 +3864,47 @@ function wiNotesPersist() {
   return persistConfigs(configs);
 }
 
-// `silent` : appelé depuis closeWheelInfoModal pour valider une note tapée sans
-// Entrée. Il ne doit ni redemander le focus ni rouvrir une modale de nommage
-// par-dessus une fermeture en cours.
-window.wiNoteAdd = function(silent) {
+// Modale Note : elle se superpose à Informations Roue sans toucher au verrou de
+// défilement du body, déjà posé par la modale parente et qu'elle doit lui rendre
+// intact.
+// Le champ part toujours vide : c'est un journal, on ajoute une note, on ne
+// reprend pas la précédente.
+window.openWiNoteModal = function() {
+  if (window._wiNotes.length >= WI_NOTES_MAX) return;
+  var inp = document.getElementById('wi-notes');
+  if (inp) inp.value = '';
+  document.getElementById('wi-note-overlay').classList.add('show');
+  document.getElementById('wi-note-modal').classList.add('show');
+  // Même délai que la modale de sauvegarde : focus après la transition, sinon
+  // le clavier mobile s'ouvre sur une modale encore en train d'apparaître.
+  setTimeout(function() { if (inp) inp.focus(); }, 120);
+};
+
+// ✕, voile et Échap valent annulation : la modale a un bouton de validation
+// explicite, le texte tapé et abandonné n'est pas rattrapé au vol.
+window.closeWiNoteModal = function() {
+  var inp = document.getElementById('wi-notes');
+  if (inp) inp.value = '';
+  document.getElementById('wi-note-overlay').classList.remove('show');
+  document.getElementById('wi-note-modal').classList.remove('show');
+};
+
+window.wiNoteAdd = function() {
   var inp = document.getElementById('wi-notes');
   if (!inp) return;
   var txt = inp.value.trim();
   if (!txt || window._wiNotes.length >= WI_NOTES_MAX) return;
   window._wiNotes.push({ ts: Date.now(), txt: txt.slice(0, WI_NOTE_LEN) });
-  inp.value = '';
+  closeWiNoteModal();
   wiNotesRender();
   if (wiLoadedName()) {
     wiNotesPersist();
-    if (!silent) inp.focus();
     return;
   }
   // Roue sans nom : la note est retenue en mémoire et part avec le premier
   // enregistrement (readState la porte). On demande le nom tout de suite plutôt
   // que de laisser croire à une note acquise.
-  if (!silent && typeof openWheelSaveModal === 'function') {
+  if (typeof openWheelSaveModal === 'function') {
     closeWheelInfoModal();
     openWheelSaveModal();
   }
@@ -4525,7 +4581,8 @@ const i18n = {
     wiDiscipline:'Discipline', wiVtt:'VTT', wiRoute:'ROUTE', wiEVtt:'E-VTT', wiERoute:'E-ROUTE', wiAutre:'AUTRE',
     wiSize:'Taille', wiSize275:'27,5"', wiBrake:'Freinage', wiPatins:'Patins', wiDisque:'Disque',
     wiMaterial:'Matériau', wiAlu:'Aluminium', wiCarbone:'Carbone', wiNotes:'Notes', wiInfoBtnTitle:'Informations roue',
-    wiNotePlaceholder:'Ajouter une note…', wiNoteAddTitle:'Ajouter la note (Entrée)', wiNotesEmpty:'Aucune note.',
+    wiNotePlaceholder:'Ajouter une note…', wiNoteAddTitle:'Ajouter une note', wiNotesEmpty:'Aucune note.',
+    wiNoteModalTitle:'Nouvelle note', wiNoteOk:'✓ Ajouter', wiNoteMaxTitle:'Maximum de 10 notes atteint',
     wheelLoadBtnTitle:'Charger une roue', wheelSaveBtnTitle:'Enregistrer cette roue',
     hubLoadBtnTitle:'Charger un moyeu', hubSaveBtnTitle:'Enregistrer ce moyeu',
     rimLoadBtnTitle:'Charger une jante', rimSaveBtnTitle:'Enregistrer cette jante',
@@ -4802,7 +4859,8 @@ const i18n = {
     wiDiscipline:'Discipline', wiVtt:'MTB', wiRoute:'ROAD', wiEVtt:'E-MTB', wiERoute:'E-ROAD', wiAutre:'OTHER',
     wiSize:'Size', wiSize275:'27.5"', wiBrake:'Braking', wiPatins:'Rim', wiDisque:'Disc',
     wiMaterial:'Material', wiAlu:'Alloy', wiCarbone:'Carbon', wiNotes:'Notes', wiInfoBtnTitle:'Wheel information',
-    wiNotePlaceholder:'Add a note…', wiNoteAddTitle:'Add note (Enter)', wiNotesEmpty:'No notes yet.',
+    wiNotePlaceholder:'Add a note…', wiNoteAddTitle:'Add a note', wiNotesEmpty:'No notes yet.',
+    wiNoteModalTitle:'New note', wiNoteOk:'✓ Add', wiNoteMaxTitle:'Maximum of 10 notes reached',
     wheelLoadBtnTitle:'Load a wheel', wheelSaveBtnTitle:'Save this wheel',
     hubLoadBtnTitle:'Load a hub', hubSaveBtnTitle:'Save this hub',
     rimLoadBtnTitle:'Load a rim', rimSaveBtnTitle:'Save this rim',
