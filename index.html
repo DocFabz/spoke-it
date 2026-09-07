@@ -3882,10 +3882,6 @@ function wiNotesPersist() {
   return persistConfigs(configs);
 }
 
-// Le champ est dimensionné par min-height (cf. CSS) ; ces deux fonctions ne
-// servent qu'au cas où une note dépasse la place réservée — écran étroit, police
-// système agrandie. Réglage inline pour laisser min-height gagner tant que le
-// texte tient : la hauteur effective vaut max(plancher réservé, contenu).
 // Écrêtage d'une valeur : appliqué à l'entrée du journal ET à sa relecture, un
 // fichier de sauvegarde édité à la main ou venu d'une version future pouvant
 // porter plus de lignes que ce qu'on accepte d'afficher.
@@ -3905,6 +3901,11 @@ function wiNoteLimitLines() {
   if (lines.length > WI_NOTE_LINES) inp.value = lines.slice(0, WI_NOTE_LINES).join('\n');
 }
 
+// Le champ est dimensionné par min-height (cf. CSS) ; wiNoteAutoGrow et
+// wiNoteResetHeight ne servent qu'au cas où une note dépasse la place réservée —
+// écran étroit, police système agrandie. Réglage inline pour laisser min-height
+// gagner tant que le texte tient : la hauteur effective vaut
+// max(plancher réservé, contenu).
 function wiNoteAutoGrow() {
   var inp = document.getElementById('wi-notes');
   if (!inp) return;
