@@ -8170,6 +8170,52 @@ function _importNormTs(entry) {
   if (Number.isFinite(n) && n > 0) entry.ts = n; else delete entry.ts;
 }
 
+// Journal de notes d'une roue reçue par fichier. Les deux imports assainissent
+// déjà snapshots, riderId, noms de bibliothèque et horodatages ; le journal
+// manquait à l'appel, et un fichier édité à la main pouvait donc écrire en
+// stockage plus de notes, plus longues et plus hautes que ce que l'app accepte.
+// Rien d'exploitable — wiNotesSet borne à la lecture et le rendu échappe — mais
+// du stockage gonflé jusqu'au prochain enregistrement de la roue.
+//
+// Mêmes bornes que la branche tableau de wiNotesSet, à la virgule près : c'est
+// l'unique raison d'être de cette fonction, les deux doivent bouger ensemble.
+// notesLog non-tableau : supprimé plutôt que réparé, la lecture retombe alors
+// sur le champ historique — exactement ce que fait wiNotesSet.
+//
+// `notes` (miroir texte) est plafonné à 500 caractères et RIEN de plus : quand
+// notesLog manque, ce champ EST la note d'une save d'avant le journal, et lui
+// appliquer les bornes de 140 caractères ou 4 lignes amputerait le texte que la
+// migration doit justement préserver. wiNotesSet fait le même choix.
+function _importNormWheelInfo(entry) {
+  var wi = entry && entry.state && entry.state.wheelInfo;
+  if (!wi || typeof wi !== 'object') return;
+  // Un seul typeof suffit à prouver que le bloc du journal a été évalué (même
+  // convention que wiNotesPersist). Il vaut mieux ne pas normaliser que lever
+  // une ReferenceError sur WI_NOTE_LEN : les deux imports enveloppent cet appel
+  // dans un try, un fichier SAIN y serait rejeté comme invalide.
+  if (typeof wiNoteClamp !== 'function') return;
+  if (Array.isArray(wi.notesLog)) {
+    var out = [];
+    wi.notesLog.forEach(function(note) {
+      if (!note) return;
+      var txt = typeof note === 'string' ? note
+              : (typeof note.txt === 'string' ? note.txt : '');
+      if (!txt.trim()) return;
+      out.push({ ts: (typeof note.ts === 'number') ? note.ts : null,
+                 txt: wiNoteClamp(txt).slice(0, WI_NOTE_LEN) });
+    });
+    // slice par la FIN, comme wiNotesSet : au-delà du plafond ce sont les notes
+    // les plus RÉCENTES qu'on garde.
+    wi.notesLog = out.slice(-WI_NOTES_MAX);
+  } else if ('notesLog' in wi) {
+    delete wi.notesLog;
+  }
+  if ('notes' in wi) {
+    if (typeof wi.notes === 'string') wi.notes = wi.notes.slice(0, 500);
+    else delete wi.notes;
+  }
+}
+
 function _importApplyRen(entry, ren) {
   if (!Object.keys(ren).length) return;
   var apply = function(src) {
@@ -8365,6 +8411,7 @@ function importConfigs(event) {
         data.configs.forEach(entry => {
           if (!entry || typeof entry.name !== 'string' || !entry.state || typeof entry.state !== 'object') return;
           _importNormTs(entry);
+          _importNormWheelInfo(entry);
           _importApplyRen(entry, _bkpRen); // roues du fichier → chartes renommées
           const idx = existing.findIndex(c => c.name === entry.name && (c.state.wtype || 'avant') === (entry.state.wtype || 'avant'));
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
@@ -8753,6 +8800,7 @@ function wshareImport(event) {
       delete entry.riderId;
       entry.state.loadedHubName = null;
       entry.state.loadedRimName = null;
+      _importNormWheelInfo(entry);
       // Dépendances de mesure : insérées AVANT loadConfig(0), sinon
       // tmPopulateSpokeSelect ne trouverait toujours rien.
       var _allow = _wshareResolveDeps(data.deps, entry);
