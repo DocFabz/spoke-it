@@ -20258,7 +20258,7 @@ async function snapCompareJPEG() {
 // ── Animation morphing radar entre deux snapshots ─────────────────────────────
 var _snapAnimRAF = null;
 var _snapAnimGen = 0;    // jeton de génération : invalide les holdLoop périmés
-                         // (close ou nouvelle lecture pendant le hold 2 s)
+                         // (close ou nouvelle lecture pendant le hold final)
 
 function snapAnimClose() {
   _snapAnimGen++;
@@ -20280,9 +20280,14 @@ async function snapCompareAnim() {
   snapCompareClose();
   await document.fonts.ready;
 
-  var HOLD_MS  = 1500;
-  var MORPH_MS = 4000;
-  var HOLD2_MS = 1500;
+  // Timings de l'animation, tous regroupés ici (FADE_IN_MS et HOLD_END_MS
+  // étaient déclarés en dur ~250 lignes plus bas, dans play() et son callback).
+  // TOTAL_MS ne borne que drawFrame : le récap et le figé final vivent après.
+  var HOLD_MS     = 1500;
+  var MORPH_MS    = 4000;
+  var HOLD2_MS    = 1000;  // B seul ; B reste visible sous le récap ensuite
+  var FADE_IN_MS  = 400;   // = FADE_MS des crossfades de drawFrame
+  var HOLD_END_MS = 3200;  // 3 s de lecture + marge d'1 frame à la coupure
   var TOTAL_MS = HOLD_MS + MORPH_MS + HOLD2_MS;
 
   var canvasEl = document.getElementById('snapanim-canvas');
@@ -20486,7 +20491,6 @@ async function snapCompareAnim() {
   function play(onDone) {
     if (_snapAnimRAF) { cancelAnimationFrame(_snapAnimRAF); _snapAnimRAF = null; }
     var startTime = null;
-    var FADE_IN_MS = 600;
     function loop(ts) {
       if (!startTime) startTime = ts;
       var elapsed = ts - startTime;
@@ -20536,10 +20540,10 @@ async function snapCompareAnim() {
     if (!capturing && saveBtn) saveBtn.style.display = 'none';
     play(function() {
       if (!capturing) { snapAnimBtnsReady(); return; }
-      // Hold 2 s sur l'état final (récap affiché) avant de clore la capture.
-      // Repeindre à chaque frame est nécessaire : captureStream n'émet des
-      // frames que sur repaint, sans quoi le hold ne serait pas encodé.
-      var HOLD_END_MS = 2000;
+      // Hold HOLD_END_MS sur l'état final (récap affiché) avant de clore la
+      // capture. Repeindre à chaque frame est nécessaire : captureStream
+      // n'émet des frames que sur repaint, sans quoi le hold ne serait pas
+      // encodé.
       var t0 = performance.now();
       (function holdLoop() {
         // Jeton : close ou nouvelle lecture pendant le hold incrémente
