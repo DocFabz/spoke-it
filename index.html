@@ -20280,15 +20280,17 @@ async function snapCompareAnim() {
   snapCompareClose();
   await document.fonts.ready;
 
-  // Timings de l'animation, tous regroupés ici (FADE_IN_MS et HOLD_END_MS
-  // étaient déclarés en dur ~250 lignes plus bas, dans play() et son callback).
-  // TOTAL_MS ne borne que drawFrame : le récap et le figé final vivent après.
+  // Timings de l'animation, tous regroupés ici (ils étaient déclarés en dur
+  // dans drawFrame, play() et son callback).
+  // REVEAL_B_MS est l'instant unique où B apparaît PARTOUT : date de B (alphaB
+  // dans drawFrame) et récap montent ensemble, sur le même FADE_MS. Les deux
+  // endroits lisent la constante — ne pas réintroduire le calcul en dur.
   var HOLD_MS     = 1500;
   var MORPH_MS    = 4000;
-  var HOLD2_MS    = 1000;  // B seul ; B reste visible sous le récap ensuite
-  var FADE_IN_MS  = 400;   // = FADE_MS des crossfades de drawFrame
+  var FADE_MS     = 400;   // sortie date A, entrée date B, et fondu récap
   var HOLD_END_MS = 3200;  // 3 s de lecture + marge d'1 frame à la coupure
-  var TOTAL_MS = HOLD_MS + MORPH_MS + HOLD2_MS;
+  var TOTAL_MS    = HOLD_MS + MORPH_MS;   // fin du morph = état final
+  var REVEAL_B_MS = TOTAL_MS - FADE_MS;   // début du crossfade final
 
   var canvasEl = document.getElementById('snapanim-canvas');
   var dpr = window.devicePixelRatio || 1;
@@ -20310,26 +20312,26 @@ async function snapCompareAnim() {
   if (!allVals.length) return;
   var scaleMax = Math.ceil(Math.max.apply(null, allVals) / 20) * 20 || 20;
   function lerp(a, b, t) { if (a === null && b === null) return null; if (a === null) return b * t; if (b === null) return a * (1 - t); return a + (b - a) * t; }
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  // Easing du morph — extrait des deux branches de drawFrame qui le
+  // dupliquaient mot pour mot. Défini ici et non dans drawFrame : cette
+  // fonction tourne à chaque frame PENDANT l'encodage captureStream, inutile
+  // d'y recréer deux closures par frame.
+  function easeMorph(x) { return x < 0.5 ? 4*x*x*x : 1 - Math.pow(-2*x+2, 3)/2; }
   function drawFrame(elapsed) {
     var w = VW, h = VH, radarH = w; // zone radar = carré du haut
     var cx = w/2, cy = radarH/2, R = w*0.38, N = perSide*2, step = (2*Math.PI)/N;
-    var t, alphaA, alphaB;
-    var FADE_MS = 400;
-    if (elapsed < HOLD_MS) {
-      t = 0; alphaA = 1; alphaB = 0;
-    } else if (elapsed < HOLD_MS + FADE_MS) {
-      t = 0; alphaA = 1 - (elapsed - HOLD_MS) / FADE_MS; alphaB = 0;
-    } else if (elapsed < HOLD_MS + MORPH_MS - FADE_MS) {
-      var p = (elapsed - HOLD_MS) / MORPH_MS;
-      t = p < 0.5 ? 4*p*p*p : 1 - Math.pow(-2*p+2,3)/2;
-      alphaA = 0; alphaB = 0;
-    } else if (elapsed < HOLD_MS + MORPH_MS) {
-      var p2 = (elapsed - HOLD_MS) / MORPH_MS;
-      t = p2 < 0.5 ? 4*p2*p2*p2 : 1 - Math.pow(-2*p2+2,3)/2;
-      alphaA = 0; alphaB = (elapsed - (HOLD_MS + MORPH_MS - FADE_MS)) / FADE_MS;
-    } else {
-      t = 1; alphaA = 0; alphaB = 1;
-    }
+    // t : progression du morph des polygones (via lerp). Reste à 0 tant que la
+    // date de A s'efface, puis easing jusqu'à 1 atteint à TOTAL_MS.
+    // alphaA / alphaB : opacité des DATES seules — les polygones ne dépendent
+    // que de t. A sort sur FADE_MS après le hold ; B entre sur les FADE_MS qui
+    // précèdent TOTAL_MS, en même temps que le récap (cf. REVEAL_B_MS).
+    // Les clamps remplacent les cinq branches de l'ancienne cascade.
+    var t      = elapsed < HOLD_MS + FADE_MS
+               ? 0
+               : easeMorph(clamp01((elapsed - HOLD_MS) / MORPH_MS));
+    var alphaA = clamp01(1 - (elapsed - HOLD_MS) / FADE_MS);
+    var alphaB = clamp01((elapsed - REVEAL_B_MS) / FADE_MS);
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = '#0d1017'; ctx.fillRect(0, 0, w, h);
@@ -20496,16 +20498,17 @@ async function snapCompareAnim() {
       var elapsed = ts - startTime;
       var animElapsed = Math.min(elapsed, TOTAL_MS);
       drawFrame(animElapsed);
-      if (elapsed >= TOTAL_MS) {
-        var recapT = Math.min((elapsed - TOTAL_MS) / FADE_IN_MS, 1);
+      if (elapsed >= REVEAL_B_MS) {
+        var recapT = Math.min((elapsed - REVEAL_B_MS) / FADE_MS, 1);
         drawRecap(recapT);
       }
       drawBorder();
-      if (elapsed < TOTAL_MS + FADE_IN_MS) {
+      if (elapsed < TOTAL_MS) {
         _snapAnimRAF = requestAnimationFrame(loop);
       } else {
-        drawRecap(1);
-        drawBorder();
+        // Rien à repeindre ici : cette frame vient de sortir avec
+        // drawFrame(TOTAL_MS) + drawRecap(1) (recapT vaut forcément 1 dès
+        // elapsed >= TOTAL_MS) + drawBorder().
         _snapAnimRAF = null;
         // onDone : fin de capture vidéo. Le onclick replay passe l'event ici,
         // le typeof le neutralise.
