@@ -4894,6 +4894,7 @@ const i18n = {
     snapBtn:'Snapshots',
     snapSaveBtn:'✓ Nouveau snapshot',
     snapEmpty:'Aucun snapshot enregistré.',
+    snapDelConfirm:'Supprimer le <strong>SNAPSHOT {n}</strong> du {d} ?<br><span style="opacity:.75">Ses relevés de tension seront définitivement perdus.</span>',
     snapNamePlaceholder:'Ex : Ma roue',
     snapNameConfirm:'✓ Enregistrer & snapshot',
     snapCompareTitle:'Évolution Tension',
@@ -5153,6 +5154,7 @@ const i18n = {
     snapBtn:'Snapshots',
     snapSaveBtn:'✓ New snapshot',
     snapEmpty:'No snapshots saved yet.',
+    snapDelConfirm:'Delete <strong>SNAPSHOT {n}</strong> from {d}?<br><span style="opacity:.75">Its tension readings will be permanently lost.</span>',
     snapNamePlaceholder:'Ex: My wheel',
     snapNameConfirm:'✓ Save & snapshot',
     snapCompareTitle:'Tension Evolution',
@@ -19171,10 +19173,37 @@ function snapLoad(snapIdx) {
   tmUpdateInvertibleHeaders();
 }
 
+// ── Suppression d'un snapshot : confirmation, puis coupe ──────────────────────
+// Suppression définitive, sans corbeille, et d'une donnée non reproductible :
+// les relevés d'un snapshot ne se retrouvent qu'en remesurant la roue. Le × est
+// posé DANS une ligne dont toute la surface est un snapLoad() — le pouce y est
+// déjà, et la liste défile sous lui. Même geste de confirmation que le Data
+// manager et la modale de chargement, d'où le passage par confirmShow, qui
+// s'empile au-dessus de .snap-modal et dont l'Escape en phase de capture ne
+// ferme pas la modale Snapshots derrière.
 function snapDelete(snapIdx) {
+  const { cfg } = _snapFindCurrentConfig();
+  if (!cfg) return;
+  const snap = (cfg.snapshots || [])[snapIdx];
+  if (!snap) return;
+  const msg = t('snapDelConfirm')
+                .replace('{n}', snap.num)
+                .replace('{d}', fmtDMYHM(snap.ts));
+  const ts = snap.ts;
+  confirmShow(msg, function() { _snapDeleteNow(snapIdx, ts); });
+}
+
+// L'index est capturé au rendu, la coupe s'exécute après la confirmation : même
+// dérive possible que pour les roues (cf. wheelStillAt), et la case peut viser
+// un AUTRE snapshot entre-temps. L'identité vérifiée est le ts et non le num :
+// _snapRenum réattribue les numéros à chaque suppression, un num survit donc à
+// son snapshot. Décalage constaté ⇒ on ne coupe rien et on réaffiche la liste,
+// qui montre alors l'état réel du store.
+function _snapDeleteNow(snapIdx, ts) {
   const { cfg, idx, configs } = _snapFindCurrentConfig();
   if (!cfg) return;
   const snaps = cfg.snapshots || [];
+  if (!snaps[snapIdx] || snaps[snapIdx].ts !== ts) { snapRenderList(); return; }
   snaps.splice(snapIdx, 1);
   _snapRenum(snaps);
   cfg.snapshots = snaps;
