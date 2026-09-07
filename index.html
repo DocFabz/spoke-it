@@ -18045,7 +18045,17 @@ function hrIsHubComplete() {
 }
 
 // ── Check if rim is complete ─────────────────────────────────────────────────
+// Critère d'ENREGISTREMENT, pas de calculabilité. En mode NSD, la cote de la
+// jante est le NSD seul : l'ADDON dépend de l'écrou monté, pas de la jante, et
+// peut donc rester à choisir. Une jante NSD sans ADDON s'enregistre, se
+// recharge, et calc() continue de la refuser via errErd tant que l'écrou n'est
+// pas choisi — getERD() n'est volontairement pas touché.
 function hrIsRimComplete() {
+  if (typeof erdMode !== 'undefined' && erdMode === 'nsd') {
+    var el  = document.getElementById('nsd-val');
+    var nsd = el ? parseFloat(el.value) : NaN;
+    return !isNaN(nsd) && nsd > 0;
+  }
   var erd = typeof getERD === 'function' ? getERD() : NaN;
   return !isNaN(erd) && erd > 0;
 }
