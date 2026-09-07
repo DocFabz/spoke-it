@@ -5436,7 +5436,51 @@ const hubTypeByWheel = { avant: 'jbend', arriere: 'jbend' }; // hubType indépen
 let tmType = null;
 let tmData = { fo: [], fa: [] };
 let tmPrevFo = [], tmPrevFa = [];
-// Numéro du dernier snapshot chargé (pour le liseret bleu)
+
+// ── Filiation des relevés affichés ───────────────────────────────────────────
+// Les relevés affichés ont-ils été touchés depuis leur dernier ÉTABLISSEMENT ?
+// Établir = les poser depuis une source identifiée : un snapshot (snapLoad), la
+// création d'un snapshot à partir d'eux (snapSave), ou un état persisté
+// (applyState, clearFormSilent). Toucher = toute écriture dans tmData —
+// cellule du tableau, ✕ de colonne, inversion, dictée Easy Fill, effacement
+// (tmResetData), bascule de tensiomètre restaurant un vestiaire.
+//
+// Sans ce drapeau, _snapSyncLabel ne compare que les valeurs : une saisie
+// annulée à la main, une double inversion de colonne ou une valeur retapée à
+// l'identique feraient réapparaître « Snapshot N » sur des relevés que
+// l'utilisateur sait avoir manipulés. L'égalité des valeurs ne suffit pas à
+// rétablir la filiation — seul un établissement explicite la rétablit.
+//
+// Déclaré ICI, avec tmData qu'il qualifie, et non dans le module snapshot :
+// tmResetData() et applyState() le posent, or ils vivent dans ce bloc-ci et
+// peuvent courir avant que le bloc <script> du module snapshot ne soit évalué.
+// Même piège que _snapHasHistory (voir tmAnyReadings), traité de la même
+// façon : garde typeof sur _snapSetLabel, qui reste tardif.
+var _snapDirty = false;
+
+// Numéro affiché en en-tête, 0 = aucun — UNE CASE PAR ROUE. Écrit par
+// _snapSetLabel, lu par _snapSyncLabel, qui s'en sert pour trancher entre
+// plusieurs snapshots aux relevés identiques : la case porte le choix
+// explicite de l'utilisateur — avoir ouvert CE snapshot-là plutôt qu'un autre
+// de mêmes valeurs.
+//
+// Ce choix appartient à la roue sur laquelle il a été fait : il survit à un
+// aller-retour avant/arrière, et l'autre roue ne peut pas l'écraser. Un
+// registre à valeur unique n'y suffit pas — il suffit que les deux roues aient
+// chacune un snapshot de même rang aux relevés indiscernables pour que le
+// numéro de l'une soit retenu par l'autre, et l'en-tête recule alors d'un
+// snapshot sans que rien n'ait bougé.
+//
+// Indexé par `wtype`, jamais par le nom de la roue chargée : même clé que
+// tmStore, saved et _loadedConfigName. loadConfig remet la case à zéro — une
+// autre roue du même côté n'hérite d'aucun choix.
+var _snapShownNum = { avant: 0, arriere: 0 };
+
+function _snapMarkDirty() {
+  _snapDirty = true;
+  if (typeof _snapSetLabel === 'function') _snapSetLabel(0);
+}
+function _snapMarkClean() { _snapDirty = false; }
 
 // Multi-slot store: preserves data per tensiometer key (wf, pt, dt_standard, dt_aerolite2)
 const tmStore = {};       // { [storeKey]: { spokeKey, fo, fa, prevFo, prevFa } }
@@ -5556,6 +5600,7 @@ function tmAnyReadings() {
 function tmResetData() {
   tmData = { fo: [], fa: [] }; tmPrevFo = []; tmPrevFa = [];
   if (tmActiveKey) delete tmStore[tmActiveKey];
+  _snapMarkDirty();
 }
 // Le nb de rayons dimensionne les relevés : s'il change, TOUS les vestiaires
 // sont périmés, pas seulement celui du tensiomètre affiché. Écrivain unique de
@@ -6082,7 +6127,7 @@ function _applyStateBody(s) {
     // ne pas les restaurer (« un nom ne doit jamais pouvoir mentir sur un
     // contenu »). Guérit les states persistés avant que snapPurgeOrphans ne
     // purge aussi le state, et laisse tmHasData() faux pour que loadConfig
-    // repositionne sur l'historique survivant (_snapReposition).
+    // ouvre le dernier snapshot survivant (_snapOpenLatest).
     // Couple (tensiomètre, rayon) mort : la charte référencée n'existe plus.
     // En différentiel, la perte d'UNE des deux suffit — les relevés de la
     // colonne survivante ont été convertis contre une paire qui n'existe plus.
@@ -6143,6 +6188,13 @@ function _applyStateBody(s) {
       hrClearLoadedRim();
     }
   }
+
+  // Les relevés affichés viennent d'être posés depuis l'état persisté : rien
+  // n'a encore été touché. Sans cette remise à zéro, une saisie faite sur la
+  // roue PRÉCÉDENTE éteindrait le libellé de la suivante. En fin de fonction :
+  // la branche sans tensiomètre passe par tmClearTensio() → tmResetData(),
+  // qui salit.
+  _snapMarkClean();
 }
 
 // ── Clear form ────────────────────────────────────────────────────────────────
@@ -6211,6 +6263,7 @@ function clearFormSilent() {
   tmClearTensio();
   $id('tm-nb-select').value = '';
   diagClearData();
+  _snapMarkClean();
 }
 
 function clearForm() {
@@ -7751,6 +7804,9 @@ function wheelDelMsg(cfg) {
 function loadConfig(idx) {
   const configs = loadConfigs(), cfg = configs[idx]; if (!cfg) return;
   const wh = cfg.state.wtype || 'avant'; if (wh !== wtype) return;
+  // Roue différente sur le même côté : elle n'hérite d'aucun choix explicite,
+  // son en-tête doit repartir du balayage (snapshot le plus récent qui colle).
+  _snapShownNum[wh] = 0;
   $id('btn-avant').classList.toggle('active', wh==='avant'); $id('btn-avant').classList.toggle('c', wh==='avant');
   $id('btn-arriere').classList.toggle('active', wh==='arriere'); $id('btn-arriere').classList.toggle('w', wh==='arriere');
   applyState(cfg.state);
@@ -7761,11 +7817,23 @@ function loadConfig(idx) {
   resetScrollFlags();
   const top = document.querySelector('header').getBoundingClientRect().bottom + window.pageYOffset - 30; window.scrollTo({ top, behavior: 'smooth' });
   flashWheelCard(cfg.name);
-  // Snapshots accessibles meme si l'etat sauvegarde ne contient pas de
-  // donnees tension (roue enregistree avant la mesure) : meme geste que la
-  // suppression d'une table perso — source unique. flashWheelCard() a deja
-  // pose _loadedConfigName, requis par snapLoad().
-  _snapReposition();
+  // Ce qu'on ouvre. Une mesure enregistrée avec la roue sans avoir été
+  // snapshotée n'existe QUE dans cet état : la remplacer par le dernier
+  // snapshot la ferait disparaître de l'écran, et le prochain enregistrement
+  // l'écraserait pour de bon. Elle reste donc affichée, sans en-tête — elle
+  // n'est le snapshot de personne, et le libellé posé par flashWheelCard
+  // ci-dessus le dit déjà.
+  //
+  // Tout le reste ouvre sur le dernier snapshot : un état qui EST l'un d'eux
+  // (snapshoter puis enregistrer, ou enregistrer avant les snapshots suivants)
+  // ne perd rien à être remplacé par le plus récent, et un état sans relevé
+  // exploitable — roue enregistrée avant la mesure, charte de conversion
+  // supprimée depuis — n'a rien à montrer d'autre.
+  //
+  // cfg.snapshots plutôt que _snapFindCurrentConfig() : la config est déjà là,
+  // inutile de reparser localStorage. flashWheelCard() a déjà posé
+  // _loadedConfigName, requis par snapLoad().
+  if (!tmHasData() || _snapLiveIsSnapshotted(cfg.snapshots)) _snapOpenLatest();
 }
 
 function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
@@ -8555,6 +8623,13 @@ function importConfigs(event) {
       if (typeof ctRenderList === 'function') ctRenderList();
       if (typeof ccRenderExisting === 'function') ccRenderExisting();
       renderConfigsList();
+      // La roue chargée a pu voir son historique remplacé par celui du fichier
+      // (même clé d'unicité nom+wtype que saveConfig). Trois états en dépendent
+      // et vivent hors des collections rechargées ci-dessus : le bouton
+      // Snapshots, le cache _snapHasHistory — entrée du verrou du nb de rayons,
+      // cf. tmAnyReadings — et le libellé d'en-tête. snapRefreshBtn les repose
+      // tous les trois, et déclenche tmUpdateBadges si le cache bascule.
+      snapRefreshBtn();
       hrUpdateButtons();
     } catch(err) {}
 
@@ -10612,6 +10687,7 @@ function tmSwitchActiveKey(newKey) {
     tmData   = { fo: stored.fo.slice(), fa: stored.fa.slice() };
     tmPrevFo = stored.prevFo.slice();
     tmPrevFa = stored.prevFa.slice();
+    _snapMarkDirty();
   } else {
     tmSpokeFo = null; tmSpokeFa = null;
     tmResetData();
@@ -13125,8 +13201,8 @@ function tmBuildTable() {
         if (!oorShown) tmUpdateCell(idx, side); // hors plage : laisser la plage affichée, le timer OOR_DISPLAY_MS restaurera la cellule
         tmTryRenderRadar();
         tmSyncResultAfterEdit();
-        _snapSetLabel(0);
-        snapRefreshBtnFast(); // par-cellule : pas de reparse localStorage ; le label vient d'être remis par _snapSetLabel(0)
+        _snapMarkDirty();
+        snapRefreshBtnFast(); // par-cellule : pas de reparse localStorage ; le label vient d'être remis par _snapMarkDirty()
         tmUpdateInvertibleHeaders();
         // (Verrous : tmSyncResultAfterEdit() ci-dessus les repose tous. Ce
         //  rappel séparé ne couvrait que nb-rayons, et sa présence ici — mais
@@ -13235,7 +13311,7 @@ function tmResetSide(col) {
   // d'en-tête, le bouton Clear (tmClearAll) et le re-clic sur la nappe active
   // dans EF passent tous par ici — la règle n'est écrite qu'une fois.
   tmSyncResultAfterEdit();
-  _snapSetLabel(0);
+  _snapMarkDirty();
 }
 
 // ── Bouton Clear (rangée Easy Fill) : équivaut aux deux ✕ NDS + DS ───────────
@@ -15051,6 +15127,7 @@ function efCommitCurrent() {
     // Champ vide : effacer la valeur existante
     if (step.side === 'fo') tmData.fo[step.idx] = null;
     else                     tmData.fa[step.idx] = null;
+    _snapMarkDirty();
     efSyncTableCell(step);
     tmUpdateCell(step.idx, step.side);
     tmTryRenderRadar();
@@ -15117,6 +15194,7 @@ function efCommitCurrent() {
   efCommitPrev2 = efCommitPrev1; efCommitPrev1 = parsed;
   if (efMicActive && efCommitPrev1 === efCommitPrev2) setTimeout(efCycleSR, 250);
   inp.value = tmDisplayValue(parsed);
+  _snapMarkDirty();
   efSyncTableCell(step);
   tmUpdateCell(step.idx, step.side);
   snapRefreshBtnFast(); // par-rayon : pas de reparse localStorage (voir snapRefreshBtnFast)
@@ -16482,6 +16560,7 @@ function efStartMic(forceLang) {
         if (prevParsed !== null && tmInRange(prevParsed, efSide()) && !efDecTooPrecise(numFinal)) {
           if (prevStep.side === 'fo') tmData.fo[prevStep.idx] = prevParsed;
           else                        tmData.fa[prevStep.idx] = prevParsed;
+          _snapMarkDirty();
           efSyncTableCell(prevStep);
           tmUpdateCell(prevStep.idx, prevStep.side);
         }
@@ -18753,22 +18832,64 @@ function _snapTensioLabel(type, dtSub) {
   return map[key] || type.toUpperCase();
 }
 
-function _snapMakeEntry(num) {
+// Identité d'un jeu de relevés : les relevés eux-mêmes ET le couple
+// (tensiomètre, rayon) contre lequel ils se lisent. Source unique, partagée par
+// la création d'un snapshot et par la comparaison qui décide du libellé
+// d'en-tête — deux listes de champs divergentes feraient afficher
+// « Snapshot N » devant des relevés convertis contre une autre charte.
+function _snapLiveIdent() {
   return {
-    num, ts: Date.now(),
     fo: tmData.fo.slice(), fa: tmData.fa.slice(),
     tmType: tmType || null, tmSpokeKey: tmSpokeFo || null,
     tmSpokeFa: tmSpokeFa || null, spokeDiff: spokeDiff || false,
     tmDTSub: tmDTSub || 'standard',
-    tensioLabel: _snapTensioLabel(tmType, tmDTSub),
   };
+}
+
+function _snapMakeEntry(num) {
+  const e = _snapLiveIdent();
+  e.num = num;
+  e.ts = Date.now();
+  e.tensioLabel = _snapTensioLabel(tmType, tmDTSub);
+  return e;
+}
+
+// Deux jeux de relevés sont-ils le même ? Les tableaux sont comparés en
+// bourrant de null : une colonne vide peut être [] ici et [null,null] là,
+// selon que la table a été reconstruite depuis.
+function _snapSameReadings(a, b) {
+  if (!a || !b) return false;
+  const arrEq = function(x, y) {
+    x = x || []; y = y || [];
+    const n = Math.max(x.length, y.length);
+    for (let i = 0; i < n; i++) {
+      const u = (x[i] === undefined) ? null : x[i];
+      const v = (y[i] === undefined) ? null : y[i];
+      if (u !== v) return false;
+    }
+    return true;
+  };
+  // tmDTSub ne discrimine que chez DT Swiss : ailleurs il porte un résidu du
+  // dernier passage par DT et ne dit rien des relevés. Le comparer partout
+  // produisait un faux négatif — libellé éteint sur des relevés pourtant
+  // identiques. Même condition que _snapTensioLabel, qui ne le lit que là.
+  if ((a.tmType || null) !== (b.tmType || null)) return false;
+  if (a.tmType === 'dt'
+      && (a.tmDTSub || 'standard') !== (b.tmDTSub || 'standard')) return false;
+  return (a.tmSpokeKey || null) === (b.tmSpokeKey || null)
+      && (a.tmSpokeFa || null) === (b.tmSpokeFa || null)
+      && !!a.spokeDiff === !!b.spokeDiff
+      && arrEq(a.fo, b.fo) && arrEq(a.fa, b.fa);
 }
 
 function _snapRenum(snaps) {
   snaps.sort((a, b) => a.ts - b.ts).forEach((s, i) => { s.num = i + 1; });
 }
 
+// Écrivain unique du libellé ET de la case du registre : les deux disent la
+// même chose, un second écrivain les ferait diverger.
 function _snapSetLabel(num) {
+  _snapShownNum[wtype] = num >= 1 ? num : 0;
   const lbl = $id('tm-snap-label'), lblTxt = $id('tm-snap-label-text');
   if (!lbl || !lblTxt) return;
   if (num >= 1) { lblTxt.textContent = 'Snapshot ' + num; lbl.classList.add('show'); }
@@ -18888,8 +19009,9 @@ function snapPurgeOrphans(match) {
     // tmDTSub, tmSpokeKey) : s'il référence la table supprimée, ses
     // relevés sont tout aussi inconvertibles. Purge du bloc tension — même
     // geste que _wshareFilterDeps, appliqué à la source. Sans quoi applyState
-    // restaurerait des relevés orphelins au rechargement (tmHasData() vrai)
-    // et _snapReposition refuserait d'ouvrir sur l'historique survivant.
+    // restaurerait des relevés orphelins au rechargement (tmHasData() vrai),
+    // que loadConfig prendrait pour une mesure jamais snapshotée et garderait
+    // à l'écran au lieu d'ouvrir l'historique survivant.
     var st = cfg.state;
     if (st && st.tmType && match(st)) {
       _srcClearTension(st);
@@ -18910,17 +19032,45 @@ function snapPurgeOrphans(match) {
 
 // ── Repositionnement après purge ──────────────────────────────────────────────
 // Si la suppression d'une table perso a vidé les données vives alors que la
-// roue chargée conserve un historique, recharger le dernier snapshot survivant
-// — il porte son propre couple tensio/rayon et ses relevés — plutôt que de
-// laisser le module sans rayon par défaut. Source unique du geste : appelé par
-// loadConfig (roue enregistrée avant la mesure), ccDeleteDirect et ctDelete.
+// roue chargée conserve un historique, ouvrir le dernier snapshot survivant —
+// il porte son propre couple tensio/rayon et ses relevés — plutôt que de
+// laisser le module sans rayon par défaut. Deux appelants : ccDeleteDirect et
+// ctDelete.
+//
+// La garde tmHasData vit ICI et non dans _snapOpenLatest : loadConfig appelle
+// le même geste sous une condition à lui, qui n'est pas celle-là.
 function _snapReposition() {
   if (tmHasData()) return false;                 // données vives intactes : ne rien toucher
+  return _snapOpenLatest();
+}
+
+// ── Ouverture du dernier snapshot ────────────────────────────────────────────
+// Le dernier de la LISTE, pas le numéro le plus haut : l'ordre du tableau est
+// la source unique partout ailleurs (snapRenderList indexe dessus, _snapRenum
+// le renumérote après tri par ts).
+//
+// Deux appelants, deux raisons de faire le même geste : _snapReposition, dont
+// les données vives viennent d'être vidées et qui doit bien afficher quelque
+// chose ; loadConfig, pour qui reprendre une roue c'est la retrouver à son
+// dernier relevé enregistré. Rend false sans historique — l'état persisté
+// reste alors affiché.
+function _snapOpenLatest() {
   if (!_loadedConfigName[wtype]) return false;   // snapLoad exige une roue chargée
   const cfg = _snapFindCurrentConfig().cfg;
   if (!cfg || !cfg.snapshots || !cfg.snapshots.length) return false;
   snapLoad(cfg.snapshots.length - 1);
   return true;
+}
+
+// Les relevés affichés sont-ils DÉJÀ l'un des snapshots de la roue ?
+// C'est ce qui distingue, au chargement, un état qu'on peut remplacer par le
+// dernier snapshot d'une mesure qui n'existe que là. Même comparaison que le
+// libellé d'en-tête (_snapSameReadings) : un état qui ouvre sans en-tête est
+// exactement un état qu'il faut garder à l'écran.
+function _snapLiveIsSnapshotted(snaps) {
+  if (!tmHasData()) return false;
+  const live = _snapLiveIdent();
+  return (snaps || []).some(function(s) { return _snapSameReadings(s, live); });
 }
 
 function _snapFindCurrentConfig() {
@@ -18948,6 +19098,7 @@ function snapSave() {
   cfg.snapshots = snaps;
   configs.splice(idx, 1, cfg);
   persistConfigs(configs);
+  _snapMarkClean();          // les relevés vifs viennent de devenir ce snapshot
   _snapSetLabel(num);
   snapRenderList();
   snapClose();
@@ -19001,6 +19152,7 @@ function snapLoad(snapIdx) {
   tmBuildTable();
   tmShowDiagramIfData();
   if (tmHighlightOn) tmApplyHighlight();
+  _snapMarkClean();          // les relevés affichés SONT ceux du snapshot
   _snapSetLabel(snap.num);
   snapClose();
   tmUpdateInvertibleHeaders();
@@ -19016,7 +19168,7 @@ function snapDelete(snapIdx) {
   configs.splice(idx, 1, cfg);
   persistConfigs(configs);
   snapRenderList();
-  _snapSetLabel(snaps.length > 0 ? snaps[snaps.length - 1].num : 0);
+  _snapSyncLabel(snaps);
 }
 
 function snapRenderList() {
@@ -19043,6 +19195,40 @@ function snapRenderList() {
   }).reverse().join('');
 }
 
+// ── Libellé d'en-tête : dérivé des relevés affichés ───────────────────────────
+// « Snapshot N » est une affirmation sur ce que montre le diagramme, pas un
+// souvenir de la dernière action : toute écriture dans tmData le remet à zéro
+// ET pose _snapDirty (_snapMarkDirty). Restait un trou : le chargement d'une
+// roue. loadConfig → applyState restaure les relevés VIFS de l'état sauvegardé,
+// qui ne sont pas forcément ceux d'un snapshot, et setWheel bascule sur l'autre
+// roue avec son propre historique. Dans les deux cas le libellé de la roue
+// précédente survivait dès que la nouvelle roue avait au moins un snapshot,
+// seul le cas « zéro snapshot » étant remis à zéro.
+//
+// Le libellé est donc recalculé ici, seul chemin qui relit l'historique :
+//   - relevés affichés identiques à un snapshot → son numéro ;
+//   - sinon (relevés vifs postérieurs au dernier snapshot, roue vierge) → rien.
+// Le numéro retenu POUR CETTE ROUE (_snapShownNum[wtype]) l'emporte sur le
+// balayage tant qu'il colle : deux snapshots aux relevés identiques ne doivent
+// pas faire sauter l'en-tête de l'un à l'autre, et le choix explicite d'un
+// snapshot précis doit tenir. Retenu mais reposé quand même : le DOM peut
+// porter le texte de l'AUTRE roue, écrit pendant la bascule, et sortir sans
+// écrire laisserait ce texte-là à l'écran.
+function _snapSyncLabel(snaps) {
+  if (_snapDirty) { _snapSetLabel(0); return; }
+  if (!snaps || !snaps.length || !tmHasData()) { _snapSetLabel(0); return; }
+  const live = _snapLiveIdent();
+  const cur  = _snapShownNum[wtype] || 0;
+  if (cur >= 1 && snaps.some(function(s) {
+        return s.num === cur && _snapSameReadings(s, live);
+      })) { _snapSetLabel(cur); return; }
+  let match = 0;
+  for (let i = snaps.length - 1; i >= 0; i--) {
+    if (_snapSameReadings(snaps[i], live)) { match = snaps[i].num; break; }
+  }
+  _snapSetLabel(match);
+}
+
 function snapRefreshBtn() {
   const btn = $id('tm-snap-open-btn');
   const { cfg } = _snapFindCurrentConfig();
@@ -19055,7 +19241,7 @@ function snapRefreshBtn() {
   const _prevHist = _snapHasHistory;
   _snapHasHistory = snaps.length > 0;
   if (btn) btn.disabled = !tmHasData() && !_snapHasHistory;
-  if (!snaps.length) _snapSetLabel(0);
+  _snapSyncLabel(snaps);
   const cmpBtn = $id('tm-snapcompare-btn');
   if (cmpBtn) {
     const hasEnough = snaps.length >= 2;
@@ -19075,10 +19261,11 @@ function snapRefreshBtn() {
 // chaque rayon Easy Fill, blur d'une cellule du tableau) : snapRefreshBtn()
 // reparse TOUTES les configs depuis localStorage (_snapFindCurrentConfig →
 // loadConfigs → JSON.parse, N roues × 10 snapshots × arrays) pour des états
-// — nombre de snapshots, label — qui ne peuvent PAS changer pendant la
-// saisie d'une valeur (seuls snapSave/snapDelete/chargement les modifient,
-// et ces chemins appellent le snapRefreshBtn complet). Seul tmHasData()
-// bouge ici. Le parse complet coûtait plusieurs ms synchrones (vieil iPad)
+// que la saisie d'une valeur ne peut PAS changer : le nombre de snapshots
+// (seuls snapSave/snapDelete/chargement le modifient, et ces chemins appellent
+// le snapRefreshBtn complet), et le libellé — que _snapMarkDirty vient
+// d'éteindre juste avant chaque appel d'ici, sans rien relire. Seul
+// tmHasData() bouge ici. Le parse complet coûtait plusieurs ms synchrones (vieil iPad)
 // en plein rendu + beep, à CHAQUE rayon dicté.
 function snapRefreshBtnFast() {
   const btn = $id('tm-snap-open-btn');
@@ -19143,7 +19330,7 @@ function invColDirect(col) {
 
   tmTryRenderRadar();
   tmUpdateResultCardState();
-  _snapSetLabel(0);
+  _snapMarkDirty();
   snapRefreshBtn();
 }
 
