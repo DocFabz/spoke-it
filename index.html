@@ -21604,9 +21604,7 @@ if ('serviceWorker' in navigator) {
   var stamp = String(ms);
   var prev = null;
   try { prev = localStorage.getItem(KEY); } catch(e) {}
-  // Clé absente (première visite, ou migration depuis spokeit_appTag) : on
-  // amorce en silence plutôt que de toaster à tort.
-  if (prev && prev !== stamp) {
+  function majToast() {
     // Réutilise #import-toast (haut, centré) — même pattern que
     // showImportToast, en teinte accent (info) plutôt que succès/erreur.
     var el = document.getElementById('import-toast');
@@ -21620,6 +21618,17 @@ if ('serviceWorker' in navigator) {
     }
   }
   if (prev !== stamp) { try { localStorage.setItem(KEY, stamp); } catch(e) {} }
+  // Clé absente (première visite, ou migration depuis spokeit_appTag) : on
+  // amorce en silence plutôt que de toaster à tort.
+  // Affichage reporté hors chemin critique : déclenché à l'analyse du document,
+  // le toast paraîtrait avant le premier rendu et son minuteur de 3 s serait
+  // déjà entamé quand l'app devient visible.
+  if (prev && prev !== stamp) {
+    window.addEventListener('load', function() {
+      if ('requestIdleCallback' in window) { requestIdleCallback(majToast, { timeout: 3000 }); }
+      else { setTimeout(majToast, 3000); }
+    });
+  }
 })();
 </script>
 
