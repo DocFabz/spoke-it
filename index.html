@@ -3759,15 +3759,22 @@ function _wheelInfoClearNow() {
 // Sauvegarde depuis la modale : depuis que le journal de notes s'écrit seul, ce
 // bouton ne valide plus que les selects (discipline / taille / freinage /
 // matériau) — et sert de premier enregistrement à une roue encore sans nom.
-// Roue déjà chargée → resauvegarde directe sous le même nom (skipConfirm :
-// c'est une mise à jour volontaire, pas de popup « Remplacer ? » ; riderId
-// préservé par saveConfig). Sinon, pas de nom connu → flux normal via la modale
-// de sauvegarde (nom, rider, doublons).
+// Roue déjà chargée → écriture chirurgicale des seuls quatre champs
+// (wiFieldsPersist) : ni état vif commité, ni date de suivi déplacée, ni
+// snapshot créé. Sinon, pas de nom connu → flux normal via la modale de
+// sauvegarde (nom, rider, doublons), qui est un vrai enregistrement et date
+// donc la roue.
+// Le flash suit le retour de l'écriture, seul accusé de réception du geste :
+// sur un refus de lsSet (quota, stockage bloqué) le toast d'erreur dit déjà
+// non, clignoter par-dessus promettrait l'inverse.
 window.wheelInfoSave = function() {
   closeWheelInfoModal();
   var name = wiLoadedName();
-  if (name && typeof saveConfig === 'function') saveConfig(name, undefined, true);
-  else if (typeof openWheelSaveModal === 'function') openWheelSaveModal();
+  if (!name) {
+    if (typeof openWheelSaveModal === 'function') openWheelSaveModal();
+    return;
+  }
+  if (wiFieldsPersist() && typeof flashWheelCard === 'function') flashWheelCard(name);
 };
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Escape') return;
@@ -3855,6 +3862,20 @@ function wiLoadedName() {
     ? (_loadedConfigName[wtype] || null) : null;
 }
 
+// Position de la roue chargée dans une liste de configs, ou -1 (aucune roue
+// chargée, ou plus au store). Prédicat d'unicité nom + wtype, celui de
+// saveConfig. Source unique des deux écritures chirurgicales de la fiche :
+// dupliqué, il pouvait diverger de celui qui décide où la roue s'enregistre.
+function _wiStoreIdx(configs) {
+  var name = wiLoadedName();
+  if (!name) return -1;
+  for (var i = 0; i < configs.length; i++) {
+    var c = configs[i];
+    if (c && c.name === name && c.state && (c.state.wtype || 'avant') === wtype) return i;
+  }
+  return -1;
+}
+
 // Écriture chirurgicale : on relit la config stockée et on n'y remplace que le
 // journal. Passer par saveConfig y ferait entrer TOUT l'état vif — dont des
 // selects modifiés et pas encore validés — et ferait clignoter la card derrière
@@ -3863,22 +3884,41 @@ function wiLoadedName() {
 // crée, applyState relit les champs absents en chaîne vide.
 // Échec d'écriture : lsSet a déjà prévenu via le toast, on n'empile pas.
 function wiNotesPersist() {
-  var name = wiLoadedName();
   // loadConfigs / persistConfigs vivent dans le bloc <script> principal, plus
   // bas dans le document : un seul typeof suffit à prouver qu'il a été évalué.
-  if (!name || typeof loadConfigs !== 'function') return false;
+  // Garde de nom AVANT loadConfigs : sans roue chargée il n'y a rien à écrire,
+  // et _wheelInfoClearNow appelle ceci sans condition — inutile de reparser le
+  // stockage pour retomber sur -1.
+  if (!wiLoadedName() || typeof loadConfigs !== 'function') return false;
   var configs = loadConfigs();
-  var idx = -1;
-  for (var i = 0; i < configs.length; i++) {
-    var c = configs[i];
-    if (c && c.name === name && c.state && (c.state.wtype || 'avant') === wtype) { idx = i; break; }
-  }
+  var idx = _wiStoreIdx(configs);
   if (idx < 0) return false;
   if (!configs[idx].state.wheelInfo) configs[idx].state.wheelInfo = {};
   configs[idx].state.wheelInfo.notesLog = window._wiNotes.map(function(note) {
     return { ts: note.ts, txt: note.txt };
   });
   configs[idx].state.wheelInfo.notes = wiNotesFlat();
+  return persistConfigs(configs);
+}
+
+// Jumelle de wiNotesPersist pour l'autre moitié de la fiche : les quatre
+// selects, et rien d'autre. Passer par saveConfig faisait entrer TOUT l'état vif
+// dans la roue enregistrée (géométrie, relevés, moyeu/jante en cours), remettait
+// sa date de suivi à maintenant et pouvait créer le snapshot n°1 — trois effets
+// qu'une écriture documentaire n'a pas à produire. Le journal de notes n'est pas
+// réécrit ici : il s'est déjà persisté seul à chaque ajout.
+function wiFieldsPersist() {
+  if (!wiLoadedName() || typeof loadConfigs !== 'function') return false;
+  var configs = loadConfigs();
+  var idx = _wiStoreIdx(configs);
+  if (idx < 0) return false;
+  if (!configs[idx].state.wheelInfo) configs[idx].state.wheelInfo = {};
+  var wi = configs[idx].state.wheelInfo;
+  [['discipline', 'wi-discipline'], ['size', 'wi-size'],
+   ['brake', 'wi-brake'], ['material', 'wi-material']].forEach(function(p) {
+    var el = document.getElementById(p[1]);
+    if (el) wi[p[0]] = el.value;
+  });
   return persistConfigs(configs);
 }
 
@@ -7786,7 +7826,48 @@ function saveConfig(nameOverride, riderIdOverride, skipConfirm) {
   }
 }
 
-function deleteConfig(idx) { const configs = loadConfigs(); configs.splice(idx, 1); persistConfigs(configs); renderConfigsList(); }
+// Roue supprimée = roue disparue : la card ne doit plus la montrer. Rien ne
+// l'effaçait — la roue restait affichée ET badgée, et le prochain
+// enregistrement la recréait en silence, avec une date du jour.
+//
+// Côté affiché, c'est exactement le bouton Reset : clearForm efface les champs,
+// le module tension, les badges moyeu/jante et le nom chargé. Côté opposé, il
+// n'y a pas de champs à vider — seulement l'état mis de côté par switchTo, dont
+// l'annulation fait repartir la bascule sur une card vierge (cf. `saved[wh] ?
+// applyState : clearFormSilent`).
+//
+// Vérification contre le store plutôt que comparaison au nom supprimé : les
+// trois chemins de suppression (à l'unité, par période, totale) partagent ainsi
+// le même contrat, et un quatrième ajouté demain n'aura qu'à appeler ceci. Les
+// DEUX côtés sont examinés — wtype est le côté affiché, pas celui de ce qui
+// vient d'être effacé ; le Data manager, lui, liste les deux.
+function _cfgResetGone() {
+  const configs = loadConfigs();
+  ['avant', 'arriere'].forEach(function(wh) {
+    const name = _loadedConfigName[wh];
+    if (!name) return;
+    const still = configs.some(function(c) {
+      return c && c.name === name && (c.state && (c.state.wtype || 'avant')) === wh;
+    });
+    if (still) return;
+    // Numéro de snapshot affiché : propre à la roue, comme dans loadConfig.
+    // clearForm ne le repose pas, il doit tomber ici pour les deux côtés.
+    _snapShownNum[wh] = 0;
+    if (wh === wtype) { clearForm(); return; }
+    saved[wh] = null;
+    _loadedConfigName[wh] = null;
+    _cfgFillMode[wh] = false;
+    _loadedHubName[wh] = null;
+    _loadedRimName[wh] = null;
+    hubTypeByWheel[wh] = 'jbend';
+    // Diagnostic : diagClearData ne vide que le côté affiché. Sans cette
+    // ligne, la bascule y ramènerait le nom et les observations de la roue
+    // supprimée (diagRestoreWheel relit diagStore, pas les champs).
+    diagStore[wh] = { wheel: '', obs: '' };
+  });
+}
+
+function deleteConfig(idx) { const configs = loadConfigs(); configs.splice(idx, 1); persistConfigs(configs); _cfgResetGone(); renderConfigsList(); }
 
 // ── Suppression d'une roue : identité et message, source unique ───────────────
 // Un index de config capturé au rendu peut viser une AUTRE roue au moment où
@@ -10352,6 +10433,11 @@ function eraseMgrErasePeriod(per) {
   persistConfigs(cfgs);
   persistRiders(riders.filter(r => !doomed(r.ts)));
   renderConfigsList();
+  // La roue chargée peut être dans la période effacée : même remise à zéro qu'à
+  // la suppression à l'unité (cf. _cfgResetGone).
+  _cfgResetGone();
+  // Badges reposés dans tous les cas : le rider des roues CONSERVÉES vient
+  // d'être désaffecté juste au-dessus, la capsule de la roue chargée doit suivre.
   if (typeof _refreshLoadedBadges === 'function') _refreshLoadedBadges();
 
   // Moyeux / jantes (module hub/rim, bloc script ultérieur)
@@ -10385,6 +10471,9 @@ function eraseMgrEraseAll() {
     // Roues (snapshots inclus, portés par chaque config)
     persistConfigs([]);
     renderConfigsList();
+    // Plus aucune roue en stockage : les deux côtés repartent de zéro
+    // (cf. _cfgResetGone).
+    _cfgResetGone();
     if (typeof _refreshLoadedBadges === 'function') _refreshLoadedBadges();
     // Tensiomètres perso — ctDelete gère les effets de bord (tensio actif,
     // TM_TABLES, chartes custom associées, dropdowns)
