@@ -5219,7 +5219,7 @@ const LS_REGISTRY = [
   { key:'spokeit_bkpDated',       kind:'pref',      erase:false, exportField:null,            owner:'export backup (nom daté/fixe)' },
   { key:'spokeit_wlSort',         kind:'pref',      erase:false, exportField:null,            owner:'tri de la liste « Charger une roue »' },
   { key:'spokeit_hrSort',         kind:'pref',      erase:false, exportField:null,            owner:'tri des listes « Charger un moyeu / une jante »' },
-  { key:'spokeit_appTag',         kind:'meta',      erase:false, exportField:null,            owner:'toast nouvelle version (historique JSON des derniers ETags)' },
+  { key:'spokeit_appStamp',       kind:'meta',      erase:false, exportField:null,            owner:'toast nouvelle version (Last-Modified du document)' },
   { key:'spoke-it-lang',          kind:'pref',      erase:false, exportField:null,            owner:'i18n' },
   { key:'ef_restore',             kind:'transient', erase:true,  exportField:null,            owner:'EF Vocal (reprise crash iOS)' },
 ];
@@ -5235,6 +5235,8 @@ const LS_LEGACY_KEYS = [
   'spoke-it-theme',         // ancien toggle de thème
   'spoke-it-backup-remind', // ancien rappel de sauvegarde (avant le modèle à deux horloges)
   'spokeit_emSort',         // tri Nom/Date du Data manager, essai abandonné (remplacé par le filtre Période)
+  'spokeit_appTag',         // détection de version par ETag (remplacée par document.lastModified)
+  'ef_debug',               // drapeau de debug EF Vocal d'une build de test, jamais lu par l'app
 ];
 // Audit au démarrage (hors chemin critique) : purge des clés legacy, puis
 // signaler en console toute clé de notre espace de nommage absente du
@@ -8458,7 +8460,7 @@ function exportConfigs() {
 
 function showImportToast(msg, isError) {
   var toast = document.getElementById('import-toast');
-  if (!toast) return; // même garde que l'autre consommateur du toast (majCheck)
+  if (!toast) return; // même garde que l'autre consommateur du toast (toast de nouvelle version)
   toast.textContent = msg;
   toast.style.color  = isError ? '#f08080' : 'var(--success)';
   toast.style.borderColor = isError ? 'rgba(240,128,128,.35)' : 'rgba(126,207,168,.35)';
@@ -21582,73 +21584,42 @@ if ('serviceWorker' in navigator) {
 
 <script>
 // ── Toast « Nouvelle version installée » ─────────────────────────────────────
-// Détection passive de déploiement via l'ETag de GitHub Pages (empreinte du
-// contenu, recalculée serveur à chaque déploiement). Un ETag jamais rencontré
-// = l'app qui vient de se charger est une nouvelle version (network-first :
-// en ligne, on sert toujours le frais).
-// HEAD en cache par défaut : partage l'état du cache HTTP du document, donc
-// l'ETag lu correspond bien à la version réellement affichée. NE PAS passer en
-// cache:'no-store' : on lirait l'état du serveur, pas celui de la page à
-// l'écran, et le toast annoncerait une version qui n'est pas encore installée.
+// Empreinte lue sur le DOCUMENT CHARGÉ (en-tête Last-Modified exposé par le
+// navigateur), pas sur l'état du serveur : aucune requête séparée, donc aucun
+// décalage possible entre la version annoncée et celle réellement à l'écran.
+// C'est ce décalage qui rendait la détection par ETag muette sur desktop : un
+// HEAD pouvait rapporter l'empreinte neuve pendant que la page affichée sortait
+// encore du cache, consommant le signal avant la vraie mise à jour.
+// Valeur convertie en epoch : document.lastModified est rendu en heure LOCALE,
+// un changement de fuseau ferait varier la chaîne sans déploiement.
 // localStorage BRUT (pas lsSet) : clé méta, ne doit pas horodater
 // spokeit_lastModif ni réveiller le rappel de sauvegarde.
 //
-// La clé mémorise un HISTORIQUE des derniers ETags vus, pas seulement le
-// dernier. Un comparateur à un seul souvenir retoaste à chaque ALTERNANCE :
-// après plusieurs déploiements rapprochés, plusieurs empreintes coexistent
-// (edges CDN désynchronisés, variantes d'encodage, cache HTTP chaud/froid) et
-// deux lancements successifs peuvent lire A puis B puis A — chaque bascule
-// passant alors pour une nouvelle version. Avec l'historique, un ETag déjà
-// rencontré ne redéclenche jamais rien : un vrai déploiement, dont l'empreinte
-// est inédite, toaste une fois et une seule.
+// Limite connue : un déploiement ne touchant QUE des fichiers annexes (sw.js,
+// guide.html) ne change pas le Last-Modified d'index.html et reste silencieux.
 (function() {
-  var KEY  = 'spokeit_appTag';
-  var KEEP = 12;   // profondeur d'historique — absorbe toute alternance réaliste
-  function majCheck() {
-    fetch('./', { method: 'HEAD' }).then(function(resp) {
-      var tag = resp.headers.get('ETag');
-      if (!tag) return;
-      // Normalisation : Fastly/GitHub Pages sert W/"x" (compressé) ou "x"
-      // (non compressé) pour le MEME contenu. Le prefixe W/ ne porte aucune
-      // information de version -- on le retire avant comparaison/stockage,
-      // sinon l'alternance cache HTTP chaud/froid (frequente en PWA iOS)
-      // fait osciller la chaine et declenche le toast sans deploiement.
-      // Même raison pour le suffixe d'encodage (-gzip / -br / -deflate), que
-      // certains frontaux accolent à l'empreinte du contenu identique.
-      tag = tag.replace(/^W\//, '').replace(/-(?:gzip|br|deflate)("?)$/, '$1');
-      // Ancien format (chaîne nue) ou clé absente : on n'a pas d'historique
-      // exploitable, on amorce en silence plutôt que de toaster à tort.
-      var seen = [];
-      try {
-        var raw = localStorage.getItem(KEY);
-        if (raw) { var p = JSON.parse(raw); if (Array.isArray(p)) seen = p; }
-      } catch(e) {}
-      var known = seen.indexOf(tag) >= 0;
-      if (seen.length && !known) {
-        // Réutilise #import-toast (haut, centré) — même pattern que
-        // showImportToast, en teinte accent (info) plutôt que succès/erreur.
-        var el = document.getElementById('import-toast');
-        if (el) {
-          el.textContent = t('appUpdated');
-          el.style.color = 'var(--accent2)';
-          el.style.borderColor = 'rgba(126,200,227,.4)';
-          el.style.opacity = '1';
-          clearTimeout(el._hideTimer);
-          el._hideTimer = setTimeout(function() { el.style.opacity = '0'; }, 3000);
-        }
-      }
-      if (!known) {
-        seen.push(tag);
-        if (seen.length > KEEP) seen = seen.slice(-KEEP);
-        try { localStorage.setItem(KEY, JSON.stringify(seen)); } catch(e) {}
-      }
-    }).catch(function() {}); // hors-ligne : silence, on retentera au prochain lancement en ligne
+  var KEY = 'spokeit_appStamp';
+  var ms  = new Date(document.lastModified).getTime();
+  if (!isFinite(ms)) return;   // date illisible : on ne tente rien
+  var stamp = String(ms);
+  var prev = null;
+  try { prev = localStorage.getItem(KEY); } catch(e) {}
+  // Clé absente (première visite, ou migration depuis spokeit_appTag) : on
+  // amorce en silence plutôt que de toaster à tort.
+  if (prev && prev !== stamp) {
+    // Réutilise #import-toast (haut, centré) — même pattern que
+    // showImportToast, en teinte accent (info) plutôt que succès/erreur.
+    var el = document.getElementById('import-toast');
+    if (el) {
+      el.textContent = t('appUpdated');
+      el.style.color = 'var(--accent2)';
+      el.style.borderColor = 'rgba(126,200,227,.4)';
+      el.style.opacity = '1';
+      clearTimeout(el._hideTimer);
+      el._hideTimer = setTimeout(function() { el.style.opacity = '0'; }, 3000);
+    }
   }
-  // Hors chemin critique, même modèle que le chargement GA
-  window.addEventListener('load', function() {
-    if ('requestIdleCallback' in window) { requestIdleCallback(majCheck, { timeout: 3000 }); }
-    else { setTimeout(majCheck, 3000); }
-  });
+  if (prev !== stamp) { try { localStorage.setItem(KEY, stamp); } catch(e) {} }
 })();
 </script>
 
