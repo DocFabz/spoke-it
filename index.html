@@ -15293,12 +15293,9 @@ function efCommitCurrent() {
 
   if (step.side === 'fo') tmData.fo[step.idx] = parsed;
   else                     tmData.fa[step.idx] = parsed;
-  // Deux commits identiques consécutifs → recyclage de la session SR (efCycleSR).
-  // Chemin principal : dès la décision d'auto-avance (timer interim), plus tôt.
-  // Ici : repli pour un commit issu d'un final sans auto-avance. efCycling
-  // rend le double appel inoffensif.
+  // Mémoire des deux derniers commits : identiques → efResetContext() (filtre
+  // anti-répétition du moteur, voir efCueNext).
   efCommitPrev2 = efCommitPrev1; efCommitPrev1 = parsed;
-  if (efMicActive && efCommitPrev1 === efCommitPrev2) setTimeout(efCycleSR, 250);
   inp.value = tmDisplayValue(parsed);
   _snapMarkDirty();
   efSyncTableCell(step);
@@ -15791,12 +15788,11 @@ var efMicRecog       = null;
 //   5. efAutoAdvanced → correction éventuelle du step précédent + return
 //   6. Traitement normal → efNext()
 //
-// Chrome desktop (efIsChromeDesktop) — voir efCycleSR : quand la valeur
-// auto-avancée égale le dernier commit, la session SR est recyclée dès la
-// décision. Le final de l'énoncé en cours ne vient donc JAMAIS ; efCycleSR
-// solde lui-même efAutoAdvanced / efAutoStep / efLastInterimNum /
-// efStaleFinalGuard. Les bips sont différés à l'audiostart de la nouvelle
-// session (efCycleBeep + efCycleAudioReady).
+// Remise à zéro du contexte moteur (efResetContext, voir efCueNext) : après
+// deux commits identiques, la session est avortée et relancée sur une instance
+// neuve ; le final de la session avortée ne vient jamais, efResetContext solde
+// lui-même efAutoAdvanced / efAutoStep / efLastInterimNum / efStaleFinalGuard,
+// et le bip « parle » est différé à l'audiostart de la nouvelle session.
 //
 // NB final OOR tardif : un final hors-plage peut arriver APRÈS qu'efOorFired a été
 //   remis à false par l'intermédiaire de la valeur suivante ; il retombe alors en
@@ -15851,13 +15847,13 @@ var efStaleFinalGuard = null; // valeur (string) d'un final TARDIF à ignorer. A
                               // fenêtre de correction (efAutoAdvanced remis à false) ; sans garde ce final
                               // (typiquement un long "zéro virgule XX") écraserait le rayon courant. Armé dans
                               // la branche intermédiaire, consommé en tête du bloc isFinal.
-var efCommitPrev1    = null;  // deux dernières valeurs commitées (efCommitCurrent). Égales → efCycleSR :
-var efCommitPrev2    = null;  // le moteur cloud Chrome se tait au 3e énoncé identique d'une même session.
-var efCycling        = false; // recyclage de session SR en cours (efCycleSR) — anti-réentrance.
-var efCycleBeep      = false; // bips de validation différés jusqu'à l'audiostart de la session recyclée :
-                              // le bip signifie « tu peux parler », il ne doit pas précéder l'écoute.
-var efCycleAudioReady = false; // audiostart reçu depuis le dernier recyclage. Le bip différé exige les DEUX
-                              // (commit fait ET écoute rouverte), dans n'importe quel ordre d'arrivée.
+var efCommitPrev1    = null;  // deux dernières valeurs commitées (efCommitCurrent). Identiques →
+var efCommitPrev2    = null;  // efResetContext() : le moteur filtre la 3e répétition d'un même énoncé.
+var efLastTxt        = '';    // dernier transcript interim reçu (efHeardTwice : répétitions déjà entendues)
+var efCueOnAudio     = false; // bip « parle » différé à l'audiostart de la session relancée par efResetContext
+var efAutoAdvancedAt = 0;     // Date.now() de la dernière auto-avance (fenêtre de la dédup « écho moteur »)
+var efHoldStream     = null;  // flux micro getUserMedia maintenu pendant la saisie (hors iOS) : pas de
+                              // renégociation du périphérique aux relances, indicateur micro stable.
 var EF_MAX_ALTS      = 5;     // hypothèses demandées au moteur (finals seulement en pratique). Repêchage
                               // isFinal : « vingt » entendu "Va" (0.57) avec "20" (0.30) en 2e hypothèse.
 
@@ -15922,18 +15918,6 @@ function efIsIPad() {
   return /iPad/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 &&
      !/iPhone|iPod/.test(navigator.userAgent));
-}
-
-// Chrome desktop strict (Chromium hors Edge, ni iOS ni Android) : périmètre des
-// contournements du moteur cloud Google (efCycleSR, dedup ré-émission). Safari,
-// Edge (Azure), Firefox, Android : aucun de ces chemins ne s'exécute.
-var efChromeDesktop = null; // cache : l'UA ne change pas en cours de session
-function efIsChromeDesktop() {
-  if (efChromeDesktop === null) {
-    var ua = navigator.userAgent;
-    efChromeDesktop = !efIsIOS() && !/Android|Mobile/i.test(ua) && /Chrome\//.test(ua) && !/Edg\//.test(ua);
-  }
-  return efChromeDesktop;
 }
 
 async function efRequestWakeLock() {
@@ -16266,6 +16250,68 @@ function efPickMicLang(choice) {
   }
 }
 
+// ── Remise à zéro du contexte moteur après répétition ────────────────────────
+// Mesuré (traces Chrome 152, session continue) : le moteur applique un filtre
+// anti-répétition — deux énoncés identiques consécutifs passent, le troisième
+// dans une fenêtre de quelques secondes ne produit AUCUN événement (hypothèse
+// inchangée → pas d'onresult), et ce jusqu'à un mot différent. Or on égalise
+// souvent à une valeur cible répétée. Seul levier : un nouveau start(), qui
+// ouvre une session au contexte vierge. Ciblé (après deux commits identiques,
+// ou une valeur déjà entendue deux fois dans le segment — « 20 20 » fusionné
+// en un seul commit par la dédup) et générique (aucun test de navigateur ; no-op
+// sur iOS qui relance déjà à chaque onend). Instance NEUVE préchauffée plutôt
+// que start() sur l'ancienne (mesuré : 1,5-1,8 s vs ~300 ms). Le bip « parle »
+// est différé à l'audiostart de la nouvelle session (efCueOnAudio) : quand il
+// sonne, le moteur écoute vraiment.
+function efResetContext() {
+  if (!efMicActive || !efMicRecog || efIsIOS()) return false;
+  efCommitPrev1 = efCommitPrev2 = null;
+  efLastTxt = '';
+  // Le final de la session avortée ne viendra pas : solder l'auto-avance.
+  efAutoAdvanced = false; efAutoStep = null; efLastInterimNum = null; efStaleFinalGuard = null;
+  var old = efMicRecog; efMicRecog = null; // onend(old) → r !== efMicRecog → pas de relance auto
+  try { old.abort(); } catch(e) {}
+  try { efStartMic(); }
+  catch(e) { setTimeout(function() { if (efMicActive && !efMicRecog) { try { efStartMic(); } catch(e2) {} } }, 150); }
+  return true;
+}
+// Le moteur a-t-il déjà entendu cette valeur deux fois dans le segment courant ?
+function efHeardTwice(parsed) {
+  if (!efLastTxt || parsed === null) return false;
+  var n = 0, toks = efLastTxt.split(/\s+/);
+  for (var i = 0; i < toks.length; i++) {
+    var s = toks[i] && efVoiceToNumber(toks[i]);
+    if (s && tmParseInput(s) === parsed) n++;
+  }
+  return n >= 2;
+}
+// Bip « tu peux parler » après un commit : différé à l'audiostart si la session
+// est relancée, immédiat sinon. Mode TTS : la synthèse tient ce rôle.
+function efCueNext() {
+  if (efTtsMode) return;
+  var repeat = (efCommitPrev1 !== null && efCommitPrev1 === efCommitPrev2) || efHeardTwice(efCommitPrev1);
+  if (repeat && efResetContext()) { efCueOnAudio = true; return; }
+  efBeepNext();
+}
+
+// ── Flux micro maintenu ──────────────────────────────────────────────────────
+// getUserMedia audio gardé ouvert pendant toute la saisie (hors iOS : Safari
+// supporte mal getUserMedia + SpeechRecognition simultanés) : le navigateur ne
+// renégocie pas le périphérique à chaque start() et l'indicateur micro de
+// l'onglet reste stable lors des relances.
+function efHoldMic() {
+  if (efHoldStream || efIsIOS() || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(function(s) {
+    if (!efMicActive) { s.getTracks().forEach(function(t) { t.stop(); }); return; }
+    efHoldStream = s;
+  }).catch(function() {});
+}
+function efReleaseMic() {
+  if (!efHoldStream) return;
+  try { efHoldStream.getTracks().forEach(function(t) { t.stop(); }); } catch(e) {}
+  efHoldStream = null;
+}
+
 // Préchauffage SR (desktop uniquement) : crée l'objet SpeechRecognition à l'ouverture
 // de la modale EasyFill. Sur desktop Chrome/Edge, new SR() déclenche une négociation
 // getUserMedia à froid (~400-800ms). En préchauffant ici, le tap micro devient instantané.
@@ -16283,63 +16329,6 @@ function efWarmSR() {
   } catch(e) {}
 }
 
-// ── Recyclage de session SR (Chrome desktop) ─────────────────────────────────
-// Mesuré (traces Spokeit + banc d'essai autonome) : en session continue, le
-// moteur cloud Chrome n'émet plus rien — ni interim, ni final, ni onend, ni
-// onerror — au 3e énoncé identique consécutif (« 30 30 30 », « 24 24 24 »),
-// session vivante ; un mot différent débloque. Périmètre : efIsChromeDesktop.
-// Cas courant : on égalise à une valeur cible et on la répète. Remède :
-// contexte vierge dès que deux commits identiques se suivent — abort de
-// l'instance courante, relance de l'instance préchauffée (efWarmSR) après son
-// onend, filet 400ms. Trou mesuré ≈ 300ms (start → audiostart), pendant la
-// lecture du cadran. Démarrer la nouvelle instance AVANT onend(old) casse la
-// reco. NB : en file:// Chrome redemande la permission micro à chaque start()
-// — tester en http(s).
-
-// Bips de validation différés par efCycleSR (voir efCycleBeep) : joués quand
-// le commit est fait ET l'écoute rouverte (audiostart), dans n'importe quel
-// ordre ; force=true (filet 800ms de relaunch) bipe même sans audiostart.
-function efCycleBeepPlay(force) {
-  if (!efCycleBeep || !(force || efCycleAudioReady)) return;
-  efCycleBeep = false;
-  efBeep();
-  setTimeout(efBeepNext, 280);
-}
-
-function efCycleSR() {
-  if (!efIsChromeDesktop() || !efMicActive || !efMicRecog || efCycling) return;
-  var old = efMicRecog;
-  efCycling  = true;
-  efCycleAudioReady = false;
-  efMicRecog = null; // onend(old) → r !== efMicRecog → pas de relance auto
-  efCommitPrev1 = efCommitPrev2 = null;
-  // Le final de l'ancienne session ne viendra jamais : solder l'auto-avance,
-  // sinon le prochain interim armerait efStaleFinalGuard sur une valeur déjà
-  // écrite et le final de la NOUVELLE session (même valeur) serait jeté.
-  efAutoAdvanced    = false;
-  efAutoStep        = null;
-  efLastInterimNum  = null;
-  efStaleFinalGuard = null;
-  efWarmSR();
-  var done = false;
-  var relaunch = function() {
-    if (done) return;
-    done = true;
-    efCycling = false;
-    if (!efMicActive) return;
-    setTimeout(function() { efCycleBeepPlay(true); }, 800); // filet : biper même sans audiostart
-    try { efStartMic(); }
-    catch(err) {
-      efMicRecog = null;
-      setTimeout(function() { if (efMicActive && !efMicRecog) { try { efStartMic(); } catch(e2) {} } }, 150);
-    }
-  };
-  old.onresult = function() {};
-  old.onerror  = function() {};
-  old.onend    = relaunch;
-  setTimeout(relaunch, 400);
-  try { old.abort(); } catch(e) { relaunch(); }
-}
 
 function efStartMic(forceLang) {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -16370,8 +16359,9 @@ function efStartMic(forceLang) {
   // La capture audio démarre = la permission a été accordée pour cette session.
   r.onaudiostart = function() {
     efSessionGranted = true;
-    efCycleAudioReady = true;
-    efCycleBeepPlay(); // session recyclée : écoute rouverte → bips différés si le commit est fait
+    // Session relancée par efResetContext : l'écoute est rouverte, jouer le bip
+    // « parle » différé (60 ms de marge sur la première trame exploitable).
+    if (efCueOnAudio) { efCueOnAudio = false; setTimeout(efBeepNext, 60); }
   };
   r.onresult = function(e) {
     efSessionGranted = true;
@@ -16434,6 +16424,7 @@ function efStartMic(forceLang) {
         else                         efClose();
         return;
       }
+      efLastTxt = txt;
       var numInterim = efVoiceToNumber(txt);
       if (numInterim) {
         // DEDUP moteur : même nombre que le dernier interim ET timer de
@@ -16450,19 +16441,20 @@ function efStartMic(forceLang) {
         // aussi le timer OOR (efOorFired reste posé — cohérent : même
         // valeur, même verdict).
         if (efBeepTimer && numInterim === efLastInterimNum) return;
-        // DEDUP moteur, 2e forme — ré-émission STABILISÉE après le timer. Chrome
-        // desktop émet d'abord une partielle (confidence ≈ 0.01, segment en
-        // cours : " 30") puis, ~1s plus tard sans nouvelle parole, la version
-        // stabilisée de la séquence non finalisée (≈ 0.90 : " 29 30"). En
-        // dictée continue elle arrive APRÈS l'expiration du timer : efBeepTimer
-        // est null, la 1re forme ne s'applique plus, et elle était traitée en
-        // nouvel énoncé → 2e auto-avance, valeur écrite sur DEUX rayons
-        // (« 29, 30, 30 » dictés → 5 commits). Signature : même dernier nombre
-        // que la valeur déjà auto-avancée ET confiance haute. Une répétition
-        // volontaire arrive toujours d'abord en partielle à 0.01 → jamais
-        // avalée. Périmètre Chrome desktop (efIsChromeDesktop) : ailleurs inchangé.
-        if (efIsChromeDesktop() && !efBeepTimer && efAutoAdvanced &&
-            numInterim === efLastInterimNum && (result[0].confidence || 0) >= 0.5) return;
+        // DEDUP moteur, 2e forme — écho du moteur après le commit. Deux signatures
+        // mesurées (Chrome 152, session continue) : (a) ré-émission STABILISÉE du
+        // segment ~400-700 ms après l'auto-avance, confiance ≈ 0.9 (les partielles
+        // réelles sont à 0.01) ; (b) à la finalisation d'un segment, report de
+        // l'hypothèse finalisée dans le segment SUIVANT (nouvel index, conf 0.01,
+        // ~650 ms après le commit), remplacé ensuite par le vrai énoncé. Sans ce
+        // filtre : 2e auto-avance, valeur écrite sur DEUX rayons. Une répétition
+        // volontaire ne peut pas produire une partielle en moins de ~900 ms (bip
+        // entendu + mot dit + latence ; mesuré ≥ 1,5 s) → même nombre que la
+        // valeur venant d'être auto-avancée ET (conf ≥ 0.5 sous 1,5 s OU toute
+        // confiance sous 800 ms) = écho. Règle générique, tous moteurs.
+        var efSinceAdv = Date.now() - efAutoAdvancedAt;
+        if (!efBeepTimer && efAutoAdvanced && numInterim === efLastInterimNum &&
+            (((result[0].confidence || 0) >= 0.5 && efSinceAdv < 1500) || efSinceAdv < 800)) return;
         // Un nouvel énoncé démarre. Si une auto-avance est encore "en attente de final"
         // (efAutoAdvanced true), son final tardif arriverait après la fermeture de la
         // fenêtre de correction ci-dessous et écraserait le rayon courant : on mémorise
@@ -16506,10 +16498,8 @@ function efStartMic(forceLang) {
                              recogLang === 'sl' || recogLang === 'cs') &&
                             efDecPart === null && /^[1-9]$/.test(numInterim);
         // Rallonge 850ms calibrée sur les moteurs lents (iOS émet ses interims par
-        // paquets). Chrome desktop révise ses partielles en 100-300ms (mesuré :
-        // "2"→"29" 76-167ms, "0,3"→"0,30" 308ms) → 650ms suffisent, avec marge x2.
-        var efStableDelay = (efDecProlong || efIntProlong || efUnitProlong)
-                          ? (efIsChromeDesktop() ? 650 : 850) : 500;
+        // paquets) ; même valeur sur tous les moteurs.
+        var efStableDelay = (efDecProlong || efIntProlong || efUnitProlong) ? 850 : 500;
         if (parsedInterim !== null) {
           var kgfInterim = toKgf(parsedInterim, efSide());
           var efTooPrecise = efDecTooPrecise(numInterim);
@@ -16522,21 +16512,12 @@ function efStartMic(forceLang) {
             efBeepTimer = setTimeout(function() {
               efBeepTimer = null;
               efAutoAdvanced = true;
+              efAutoAdvancedAt = Date.now();
               efAutoStep = efSteps[efCurrent]; // step qui va être commité par efNext()
-              // Valeur identique au dernier commit → recycler la session SR ICI,
-              // dès la décision, et non après le commit (+200ms transition +250ms) :
-              // sur une dizaine ronde (délai long) le trou d'écoute s'ouvrait à
-              // ~1300ms après l'interim, précisément quand arrive le 3e énoncé.
-              // Ici il s'ouvre à efStableDelay (500/650ms) et se referme ~300ms après.
-              if (efCommitPrev1 !== null && efCommitPrev1 === parsedInterim) efCycleSR();
-              // Session en recyclage : différer les bips à l'audiostart de la
-              // nouvelle session (efStartMic), sinon l'utilisateur parle dans le
-              // trou d'écoute. En mode TTS la synthèse dure plus que le trou.
-              var efDeferBeep = efCycling && !efTtsMode;
               var inp = $id('ef-inp');
               inp.value = numInterim;
               efUpdateKgf();
-              if (!efDeferBeep) efFeedbackValue();
+              efFeedbackValue();
               // Auto-avance dès la valeur stabilisée, sans attendre le résultat final
               efPendingNext = true;
               setTimeout(function() {
@@ -16555,8 +16536,7 @@ function efStartMic(forceLang) {
                   efLastInterimNum = null;
                 }
                 var ok = efNext();
-                if (ok && efDeferBeep)      { efCycleBeep = true; efCycleBeepPlay(); } // joue si l'écoute est déjà rouverte
-                else if (ok && !efTtsMode)  { efBeepNext(); }
+                if (ok) efCueNext();
               }, 200);
             }, efStableDelay);
           } else if (efRangeNow !== null &&
@@ -16708,7 +16688,7 @@ function efStartMic(forceLang) {
             efSpeakValue(committedRaw);
           } else {
             efBeep();
-            setTimeout(efBeepNext, 280);
+            setTimeout(efCueNext, 280);
           }
         }
       }
@@ -16811,7 +16791,8 @@ function efStartMic(forceLang) {
     r.start();
     efSetMicActive(true);
     efRequestWakeLock();
-    if (efIsChromeDesktop()) setTimeout(efWarmSR, 0); // instance de rechange prête pour efCycleSR
+    efHoldMic();
+    setTimeout(efWarmSR, 0); // instance de rechange prête pour efResetContext (no-op sur iOS)
   };
   if (efAudioCtx.state === 'suspended') {
     efAudioCtx.resume().then(_startNow).catch(_startNow);
@@ -17052,6 +17033,7 @@ function efReset() {
 }
 
 function efStopMic() {
+  efReleaseMic();
   if (efMicRecog) { efMicRecog.abort(); efMicRecog = null; }
   // Réarmer le garde permission : si iOS ré-affiche l'alerte micro à la
   // PROCHAINE session (fréquent en PWA standalone), le 'hidden' qu'elle
@@ -17070,10 +17052,9 @@ function efStopMic() {
   efLastInterimNum = null;
   efStaleFinalGuard = null;
   efNavExecuted    = null;
-  efCycling        = false;
-  efCycleBeep      = false;
-  efCycleAudioReady = false;
   efCommitPrev1    = efCommitPrev2 = null;
+  efLastTxt        = '';
+  efCueOnAudio     = false;
   if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
   if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
   // Couper toute synthèse en cours et refermer la fenêtre sourde
