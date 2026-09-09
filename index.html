@@ -15989,8 +15989,10 @@ function efVoiceToNumber(txt) {
     // distinguer d'une vraie lecture en plage.
     var decMatches = s.match(/\d+\.\d+/g);
     if (decMatches) return decMatches[decMatches.length - 1];
-    // Sinon prendre le dernier entier (déduplication si répétition)
-    return numMatches[numMatches.length - 1];
+    // Sinon prendre le dernier entier (déduplication si répétition).
+    // Point de queue (« 30. », ou « 30, » normalisé) retiré : "30." !== "30"
+    // cassait la dédup par égalité de chaînes et la détection efIntProlong.
+    return numMatches[numMatches.length - 1].replace(/\.$/, '');
   }
 
   // ── Étape 3 : fallback sur dictionnaire fr/en (mots épelés)
@@ -16022,7 +16024,7 @@ function efVoiceToNumber(txt) {
     // c'est donc le '.' résiduel qu'il faut mapper en '§' (pas les mots, déjà consommés).
     // Sans digits dans s (étape 2 nulle), ce '.' ne peut venir que d'un séparateur parlé.
     .replace(/\./g, '§')
-    // Composés français AVANT le strip des tirets, sinon "quatre vingt dix" = 4+20+10 = 34.
+    // Composés français AVANT le strip des tirets, sinon "quatre vingt dix" serait sommé/scindé (≠ 90).
     // [ -] : couvre les transcripts avec tirets ET avec espaces. Ordre : le plus long d'abord.
     .replace(/quatre[ -]vingt[ -]dix/g, '90')
     .replace(/quatre[ -]vingts?/g, '80')
@@ -16035,20 +16037,22 @@ function efVoiceToNumber(txt) {
   var decPart = parts[1] ? parts[1].trim() : null;
   function parseWords(str) {
     var words = str.split(' ');
-    var digitTokens = words.filter(function(w) { return /^\d+$/.test(w); });
-    var wordTokens  = words.filter(function(w) { return !(/^\d+$/.test(w)) && units[w] !== undefined; });
-    if (digitTokens.length > 1 && wordTokens.length === 0) {
-      return parseInt(digitTokens[digitTokens.length - 1]);
-    }
     // 'matched' remplace l'ancien test 'total > 0' : zéro est un résultat
     // légitime ("zéro virgule trente-deux" → 0.32), pas un échec de parsing.
     var total = 0, current = 0, matched = false;
     for (var i = 0; i < words.length; i++) {
       var w = words[i];
-      if (/^\d+$/.test(w)) { current += parseInt(w); matched = true; continue; }
-      var v = units[w];
+      // Token chiffré = composé pré-remplacé ci-dessus (70/80/90), traité comme
+      // une dizaine ordinaire pour que la règle de répétition s'y applique aussi.
+      var v = /^\d+$/.test(w) ? parseInt(w) : units[w];
       if (v === undefined) continue;
       matched = true;
+      // Répétition d'énoncé (« trente trente », « quatre-vingt-deux quatre-vingt-deux ») :
+      // dans un nombre fr/en les tokens décroissent (trente → deux). Un token ≥
+      // à l'accumulé, ou une dizaine/unité arrivant après une unité déjà posée,
+      // ouvre un NOUVEAU nombre → on garde le dernier (symétrique de la dédup
+      // chiffres « 32 32 » de l'étape 2, que Chrome desktop émet en cumulé).
+      if (v < 100 && current > 0 && (v >= current || current % 10 !== 0)) { total = 0; current = 0; }
       if (v === 100) { current = (current === 0 ? 1 : current) * 100; }
       else if (v === 1000) { total += (current === 0 ? 1 : current) * 1000; current = 0; }
       else { current += v; }
