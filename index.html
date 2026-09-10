@@ -4285,8 +4285,9 @@ function ensureJsPDF() {
   return _jspdfPromise;
 }
 // ── Sanitisation PDF partagée ─────────────────────────────────────────────────
-// helvetica WinAnsi (jsPDF) n'a pas de glyphes →, Δ, ±, ★ : correspondances
-// ASCII. Source unique pour les quatre exports PDF (charte de conversion,
+// helvetica WinAnsi (jsPDF) n'a pas de glyphes →, Δ, ★ : correspondances
+// ASCII (→ et Δ sont dessinés en vectoriel par pdfTextRich là où ils portent
+// du sens ; ± est dans WinAnsi, 0xB1, et sort tel quel). Source unique pour les quatre exports PDF (charte de conversion,
 // tension, diagnostic, comparaison de snapshots) — toute nouvelle
 // correspondance s'ajoute ici, jamais dans les délégués locaux `sanitize`.
 // WinAnsi n'est PAS Latin-1. Sa plage 0x80–0x9F porte un jeu typographique dont
@@ -4310,11 +4311,120 @@ function pdfSanitize(s) {
   // ∅ → Ø : même sens (diamètre) et, lui, dans WinAnsi. Présent dans trois clés
   // de charte titane/alu ; les clés ne bougent pas, ce sont des identifiants
   // persistés — seule leur transcription PDF est corrigée.
-  var map = { '→':'->', 'Δ':'D', '±':'+/-', '★':'*', '∅':'Ø' };
+  var map = { '→':'->', 'Δ':'D', '★':'*', '∅':'Ø' };
   return String(s)
-    .replace(/[→Δ±★∅]/g, function(c) { return map[c] || c; })
+    .replace(/[→Δ★∅]/g, function(c) { return map[c] || c; })
     .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '?') // paire surrogate (emoji) -> un seul '?'
     .replace(PDF_OUT_OF_WINANSI, '?');
+}
+
+// ── Finitions PDF partagées (quatre exports) ─────────────────────────────────
+// Gris tertiaire : l'ancien [150,165,175] ne donnait que ~2,5:1 sur blanc pour
+// du 5–7 pt (date, pied de page, légendes) — trop pâle une fois imprimé.
+var PDF_C_TEXT3 = [120, 134, 146];
+
+// Métadonnées : titre, atelier en auteur, langue du document.
+function pdfSetMeta(doc, title, subject) {
+  var L  = typeof lang !== 'undefined' ? lang : 'fr';
+  var at = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
+  doc.setProperties({
+    title:    String(title || 'Spokeit'),
+    subject:  String(subject || ''),
+    author:   (at.name && at.name.trim()) ? at.name.trim() : 'Spokeit',
+    creator:  'Spokeit (spokeit.fr)',
+    keywords: 'spokeit, wheelbuilding'
+  });
+  if (typeof doc.setLanguage === 'function') doc.setLanguage(L === 'fr' ? 'fr-FR' : 'en-US');
+}
+
+// Chasse réellement rendue (mm). Les métriques embarquées dans jsPDF sont
+// arrondies au 1/100 d'em (556 -> 550) et getTextWidth() y retranche un
+// crénage que jsPDF n'écrit jamais dans le flux : des morceaux posés bout à
+// bout se resserraient (« 28H— Julie »). Tables Adobe AFM de Helvetica et
+// Helvetica-Bold, codes WinAnsi 32–255, deux chiffres base 36 par glyphe.
+var PDF_HELV_W = {
+  normal: '7q7q9vfgfgopij5b9999atg87q997q7qfgfgfgfgfgfgfgfgfgfg7q7qg8g8g8fgs7ijijk2k2ijgzlmk27qdwijfgn5k2lmijlmk2ijgzk2ijq8ijijgz7q7q7qd1fg99fgfgdwfgfg7qfgfg6666dw66n5fgfgfgfg99dw7qfgdwk2dwdwdw9a789ag89qfg9q66fg99rsfgfg99rsij99rs9qgz9q9q666699999qfgrs99rsdw99q89qdwij7q99fgfgfgfg78fg99khaafgg899kh99b4g8999999fgex7q9999a5fgn6n6n6gzijijijijijijrsk2ijijijij7q7q7q7qk2k2lmlmlmlmlmg8lmk2k2k2k2ijijgzfgfgfgfgfgfgopdwfgfgfgfg7q7q7q7qfgfgfgfgfgfgfgg8gzfgfgfgfgdwfgdw',
+  bold:   '7q99d6fgfgopk26m9999atg87q997q7qfgfgfgfgfgfgfgfgfgfg9999g8g8g8gzr3k2k2k2k2ijgzlmk27qfgk2gzn5k2lmijlmk2ijgzk2ijq8ijijgz997q99g8fg99fggzfggzfg99gzgz7q7qfg7qopgzgzgzgzatfg99gzfglmfgfgdwat7satg89qfg9q7qfgdwrsfgfg99rsij99rs9qgz9q9q7q7qdwdw9qfgrs99rsfg99q89qdwij7q99fgfgfgfg7sfg99khaafgg899kh99b4g8999999gzfg7q9999a5fgn6n6n6gzk2k2k2k2k2k2rsk2ijijijij7q7q7q7qk2k2lmlmlmlmlmg8lmk2k2k2k2ijijgzfgfgfgfgfgfgopfgfgfgfgfg7q7q7q7qgzgzgzgzgzgzgzg8gzgzgzgzgzfggzfg'
+};
+var PDF_WINANSI_CODES = [128,130,131,132,133,134,135,136,137,138,139,140,142,145,146,147,148,149,150,151,152,153,154,155,156,158,159]; // codes WinAnsi de PDF_WINANSI_EXTRA, même ordre
+function pdfTextWidth(doc, s) {
+  s = String(s);
+  var f = doc.getFont(), tbl = f.fontName === 'helvetica' ? PDF_HELV_W[f.fontStyle] : null;
+  if (!tbl) return doc.getStringUnitWidth(s, { doKerning: false }) * doc.getFontSize() / doc.internal.scaleFactor;
+  var u = 0;
+  for (var i = 0; i < s.length; i++) {
+    var c = s.charCodeAt(i);
+    if (c > 255) { var k = PDF_WINANSI_EXTRA.indexOf(s[i]); c = k >= 0 ? PDF_WINANSI_CODES[k] : 63; }
+    if (c >= 32) u += parseInt(tbl.substr((c - 32) * 2, 2), 36);
+  }
+  return u / 1000 * doc.getFontSize() / doc.internal.scaleFactor;
+}
+
+// Interlettrage des petites capitales (mm, unité du document) : k em du corps courant.
+function pdfCapsSp(doc, k) {
+  return doc.getFontSize() * 25.4 / 72 * (k == null ? 0.06 : k);
+}
+
+// Barre d'accent gauche d'une carte roundedRect(x, y, w, h, r) tracée avec un
+// filet lw : on remplit le contour EXTÉRIEUR de la carte (rayon r + lw/2),
+// découpé à la largeur de la barre. Ni bosse au coin (l'ancienne barre de
+// rayon 1 débordait d'une carte de rayon 2), ni liseré clair autour.
+function pdfCardBar(doc, x, y, w, h, r, barW, lw) {
+  var e = (lw || 0) / 2;
+  doc.saveGraphicsState();
+  doc.rect(x - e - 1, y - e - 1, barW + e + 1, h + 2 * e + 2, null);
+  doc.clip(); doc.discardPath();
+  doc.roundedRect(x - e, y - e, w + 2 * e, h + 2 * e, r + e, r + e, 'F');
+  doc.restoreGraphicsState();
+}
+
+// Décalage vertical qui centre un bloc de lignes dans une carte de hauteur h,
+// sans en changer la taille : de la hauteur de capitale de la première ligne
+// (Helvetica 0.718 em) à la ligne de base de la dernière. Positions relatives
+// au haut de la carte, corps en pt.
+function pdfVCenterOff(h, firstBase, firstPt, lastBase) {
+  var top = firstBase - 0.718 * firstPt * 25.4 / 72;
+  return (h - (lastBase - top)) / 2 - top;
+}
+
+// Texte court avec → et Δ dessinés en vectoriel (absents de WinAnsi) : « Min → Max »,
+// « Δ max », « 10.9 % → 4.1 % » comme à l'écran, au lieu de « -> » et « D ».
+// Le reste de chaque chaîne passe par pdfSanitize. opts : align, charSpace.
+function pdfTextRich(doc, s, x, y, opts) {
+  opts = opts || {};
+  var em = doc.getFontSize() * 25.4 / 72;
+  var cs = opts.charSpace || 0;
+  var adv = { '\u2192': 0.80, '\u0394': 0.66 };
+  var runs = String(s == null ? '' : s).split(/([\u2192\u0394])/).filter(Boolean).map(function(p) {
+    if (adv[p]) return { g: p, w: adv[p] * em + cs };
+    var t = pdfSanitize(p);
+    return { t: t, w: pdfTextWidth(doc, t) + cs * t.length };
+  });
+  if (!runs.length) return;
+  var total = runs.reduce(function(a, r) { return a + r.w; }, 0);
+  var cx = opts.align === 'right' ? x - total : opts.align === 'center' ? x - total / 2 : x;
+  var bold = /bold/.test(doc.getFont().fontStyle || '');
+  var sw = em * (bold ? 0.12 : 0.068);
+  var drawPrev = doc.getDrawColor(), lwPrev = doc.getLineWidth();
+  runs.forEach(function(r) {
+    if (r.t !== undefined) {
+      doc.text(r.t, cx, y, cs ? { charSpace: cs } : undefined);
+    } else {
+      doc.setDrawColor(doc.getTextColor());
+      doc.setLineWidth(sw);
+      if (r.g === '\u2192') {
+        var ay = y - 0.29 * em, x0 = cx + 0.07 * em, x1 = cx + 0.73 * em, hd = 0.23 * em;
+        doc.line(x0, ay, x1 - sw * 0.6, ay);
+        doc.lines([[hd, hd * 0.85], [-hd, hd * 0.85]], x1 - hd, ay - hd * 0.85, [1, 1], 'S', false);
+      } else {
+        var bx0 = cx + 0.04 * em + sw * 0.9, bx1 = cx + 0.62 * em - sw * 0.9;
+        var by = y - sw / 2, ty = y - 0.718 * em + sw * 1.35;
+        doc.lines([[bx1 - bx0, 0], [-(bx1 - bx0) / 2, ty - by]], bx0, by, [1, 1], 'S', true);
+      }
+    }
+    cx += r.w;
+  });
+  doc.setDrawColor(drawPrev); doc.setLineWidth(lwPrev);
 }
 </script>
 <!-- jsPDF 2.5.1 (UMD min) embarqué — anciennement chargé depuis cdnjs ; zéro dépendance réseau -->
@@ -11800,12 +11910,13 @@ async function tmConvExportPdf() {
   function sanitize(s) { return pdfSanitize(s); } // délégué → pdfSanitize (source unique)
 
   // A5 portrait : 148 × 210 mm
-  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a5', putOnlyUsedFonts:true });
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a5', putOnlyUsedFonts:true, compress:true });
+  pdfSetMeta(doc, t('tmConvTitle') + (_tmConvSpokeName ? ' \u2014 ' + _tmConvSpokeName : ''), _tmConvTensioLabel || '');
   const PW = 148, PH = 210, ML = 12, MR = 12, MT = 12, CW = PW - ML - MR;
 
   const C_TEXT   = [30,  40,  55];
   const C_TEXT2  = [90, 105, 120];
-  const C_TEXT3  = [150, 165, 175];
+  const C_TEXT3  = PDF_C_TEXT3;
   const C_ACCENT = [60, 160, 200];
   const C_BORDER = [220, 228, 235];
   const C_CARD   = [248, 250, 252];
@@ -11822,7 +11933,7 @@ async function tmConvExportPdf() {
 
   // Atelier + url
   doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...C_TEXT3);
-  doc.text(sanitize(workshop).toUpperCase(), ML, Y + 2);
+  doc.text(sanitize(workshop).toUpperCase(), ML, Y + 2, { charSpace: pdfCapsSp(doc) });
   doc.text('spokeit.fr', PW - MR, Y + 2, { align:'right' });
   Y += 6;
 
@@ -11839,8 +11950,9 @@ async function tmConvExportPdf() {
   // Tensiomètre
   doc.setFontSize(8.5);
   doc.setFont('helvetica', 'normal'); doc.setTextColor(...C_TEXT2);
-  let lbl = sanitize(t('tmConvTensio')) + ' :';
-  let lw  = doc.getTextWidth(lbl);
+  const colon = L === 'fr' ? '\u00a0:' : ':';
+  let lbl = sanitize(t('tmConvTensio')) + colon;
+  let lw  = pdfTextWidth(doc, lbl);
   doc.text(lbl, ML, Y);
   doc.setFont('helvetica', 'bold'); doc.setTextColor(...C_ACCENT);
   doc.text(sanitize(_tmConvTensioLabel || ''), ML + lw + 2, Y);
@@ -11848,8 +11960,8 @@ async function tmConvExportPdf() {
 
   // Rayon
   doc.setFont('helvetica', 'normal'); doc.setTextColor(...C_TEXT2);
-  lbl = sanitize(t('tmSpokeLabel')) + ' :';
-  lw  = doc.getTextWidth(lbl);
+  lbl = sanitize(t('tmSpokeLabel')) + colon;
+  lw  = pdfTextWidth(doc, lbl);
   doc.text(lbl, ML, Y);
   doc.setFont('helvetica', 'bold'); doc.setTextColor(...C_TEXT);
   doc.text(sanitize(_tmConvSpokeName || ''), ML + lw + 2, Y);
@@ -11861,7 +11973,7 @@ async function tmConvExportPdf() {
     : (L === 'fr' ? 'Données fabricant'   : 'Manufacturer data');
   doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
   const bPadX = 2.2, bH = 4.8;
-  const bW = doc.getTextWidth(srcLabel) + bPadX * 2;
+  const bW = pdfTextWidth(doc, srcLabel) + bPadX * 2;
   doc.setDrawColor(...C_ACCENT); doc.setFillColor(...C_CARD); doc.setLineWidth(0.3);
   doc.roundedRect(ML, Y, bW, bH, 1, 1, 'FD');
   doc.setTextColor(...C_ACCENT);
@@ -13870,14 +13982,12 @@ async function tmExportPdfWithOpts(opts) {
   const lib = window.jspdf;
   const jsPDF = lib.jsPDF;
 
-  const radar   = document.getElementById('tm-radar');
   const statsEl = document.getElementById('tm-stats');
-  if (!radar) return;
 
   // ── Collecte des données ──────────────────────────────────────────────────
   const dateStr    = fmtDMY(Date.now());
   const wheelName  = (_loadedConfigName[wtype]) || '';
-  const wheelLabel = wtype === 'arriere' ? t('rearLabel') : t('frontLabel');
+  const wheelLabel = (wtype === 'arriere' ? t('rearLabel') : t('frontLabel')).toUpperCase(); // capitales dans le PDF
   // `sumD` et non `sd` : la globale `sd` est le DIAMETRE du rayon. La masquer
   // ici rendrait fausse toute lecture de section dans cette fonction — qui en
   // fait desormais une (ligne Section rayon du bloc Configuration).
@@ -13906,7 +14016,7 @@ async function tmExportPdfWithOpts(opts) {
     const cl = sumD.diffMode
       ? diffPairStr(sumD.wtype, crossStr(sumD.crossFo), crossStr(sumD.crossFa))
       : crossStr(sumD.cross);
-    cfgRows.push([t('wheelLabel'), wheelLabel + (wheelName ? '  —  ' + sanitize(wheelName) : '')]);
+    cfgRows.push([t('wheelLabel'), wheelLabel + (wheelName ? ' — ' + sanitize(wheelName) : '')]);
     cfgRows.push(['ERD',           sumD.erd + ' mm']);
     cfgRows.push([t('spokeCount'), sumD.n + ' (' + sumD.h + t('perSide') + ')']);
     cfgRows.push([t('crossLabel'), cl]);
@@ -13933,7 +14043,9 @@ async function tmExportPdfWithOpts(opts) {
   });
 
   // ── Setup jsPDF ───────────────────────────────────────────────────────────
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', putOnlyUsedFonts: true });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', putOnlyUsedFonts: true, compress: true });
+  pdfSetMeta(doc, (lang === 'fr' ? 'Rapport de montage' : 'Wheel build report') + ' \u2014 ' + wheelLabel + (wheelName ? ' \u2014 ' + wheelName : ''),
+    lang === 'fr' ? 'Rapport de montage et de tension' : 'Wheel build and tension report');
 
   function sanitize(str) { return pdfSanitize(str); } // délégué → pdfSanitize (source unique)
 
@@ -13952,7 +14064,7 @@ async function tmExportPdfWithOpts(opts) {
 
   const C_TEXT    = [30,  40,  55];
   const C_TEXT2   = [90, 105, 120];
-  const C_TEXT3   = [150, 165, 175];
+  const C_TEXT3   = PDF_C_TEXT3;
   const C_ACCENT  = [60, 160, 200];
   const C_WARM    = [210, 110,  85];
   const C_BORDER  = [220, 228, 235];
@@ -13981,18 +14093,17 @@ async function tmExportPdfWithOpts(opts) {
   doc.setLineWidth(0.4);
   doc.roundedRect(ML, Y, CW, headerH, 2, 2, 'FD');
   doc.setFillColor(...C_TEXT2);
-  doc.roundedRect(ML, Y, brandBarW, headerH, 2, 2, 'F');
-  doc.rect(ML + 2, Y, brandBarW - 2, headerH, 'F');
+  pdfCardBar(doc, ML, Y, CW, headerH, 2, brandBarW, 0.4);
 
   const workshopNameMain = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(...C_TEXT3);
-  doc.text('WHEELBUILT BY', ML + headerPadL, Y + 7);
+  doc.text('WHEELBUILT BY', ML + headerPadL, Y + 7, { charSpace: pdfCapsSp(doc) });
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
   doc.setTextColor(...C_TEXT2);
-  doc.text(sanitize(workshopNameMain).toUpperCase(), ML + headerPadL, Y + 14);
+  doc.text(sanitize(workshopNameMain).toUpperCase(), ML + headerPadL, Y + 14, { charSpace: pdfCapsSp(doc, 0.02) });
 
   const coordLines = [];
   if (atelierInfo.email) coordLines.push({ type: 'email', text: sanitize(atelierInfo.email) });
@@ -14056,9 +14167,9 @@ async function tmExportPdfWithOpts(opts) {
   }
   // Sans données de calcul (roue créée via le module tension seul), la roue
   // n'apparaît pas dans le bloc Configuration : on compose alors la ligne
-  // "Type - Nom de roue - Rider" exactement comme le PDF diagnostic. Avec
+  // "Type — Nom de roue — Rider" exactement comme le PDF diagnostic. Avec
   // calcul, la roue figure déjà dans Configuration et seul le rider s'affiche.
-  const pdfWheelPart = (!sumD && wheelName) ? (sanitize(wheelLabel) + ' - ' + sanitize(wheelName)) : '';
+  const pdfWheelPart = (!sumD && wheelName) ? (sanitize(wheelLabel) + ' — ' + sanitize(wheelName)) : '';
   const pdfRiderPart = pdfRiderName ? sanitize(pdfRiderName) : '';
   if (pdfWheelPart || pdfRiderPart || pdfTensioCaption) {
     // _x suit la fin réelle du texte de gauche : il sert de borne au calcul
@@ -14069,13 +14180,13 @@ async function tmExportPdfWithOpts(opts) {
       if (pdfWheelPart) {
         doc.setTextColor(...C_TEXT2);
         doc.text(pdfWheelPart, _x, Y);
-        _x += doc.getTextWidth(pdfWheelPart);
+        _x += pdfTextWidth(doc, pdfWheelPart);
       }
       if (pdfRiderPart) {
-        if (pdfWheelPart) { doc.setTextColor(...C_TEXT2); doc.text(' - ', _x, Y); _x += doc.getTextWidth(' - '); }
+        if (pdfWheelPart) { doc.setTextColor(...C_TEXT2); doc.text(' — ', _x, Y); _x += pdfTextWidth(doc, ' — '); }
         doc.setTextColor(...C_WARM);
         doc.text(pdfRiderPart, _x, Y);
-        _x += doc.getTextWidth(pdfRiderPart);
+        _x += pdfTextWidth(doc, pdfRiderPart);
       }
     }
     if (pdfTensioCaption) {
@@ -14084,7 +14195,7 @@ async function tmExportPdfWithOpts(opts) {
       // Deux noms de charte en différentiel peuvent dépasser la place restante :
       // la légende descend d'une ligne plutôt que de s'écrire par-dessus la roue
       // ou le rider. 3 mm de garde — un chevauchement n'est jamais acceptable.
-      if (_x > ML && _x + 3 > PW - MR - doc.getTextWidth(_cap)) Y += 4;
+      if (_x > ML && _x + 3 > PW - MR - pdfTextWidth(doc, _cap)) Y += 4;
       doc.text(_cap, PW - MR, Y, { align: 'right' });
     }
     Y += 5;
@@ -14120,7 +14231,7 @@ async function tmExportPdfWithOpts(opts) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
   doc.setTextColor(...C_ACCENT);
-  doc.text(lang === 'fr' ? 'LONGUEURS DE RAYONS' : 'SPOKE LENGTHS', ML, Y);
+  doc.text(lang === 'fr' ? 'LONGUEURS DE RAYONS' : 'SPOKE LENGTHS', ML, Y, { charSpace: pdfCapsSp(doc) });
   Y += 4;
 
   const halfW = (CW - 4) / 2;
@@ -14136,26 +14247,27 @@ async function tmExportPdfWithOpts(opts) {
     doc.setLineWidth(0.4);
     doc.roundedRect(x, Y, halfW, cH, cardR, cardR, 'FD');
     doc.setFillColor(...C_COLOR);
-    doc.roundedRect(x, Y, 2, cH, 1, 1, 'F');
+    pdfCardBar(doc, x, Y, halfW, cH, cardR, 2, 0.4);
+    const vo = pdfVCenterOff(cH, 5, 7, elo ? 23 : 19);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
     doc.setTextColor(...C_COLOR);
-    doc.text(sanitize(label).toUpperCase(), x + 5, Y + 5);
+    doc.text(sanitize(label).toUpperCase(), x + 5, Y + vo + 5, { charSpace: pdfCapsSp(doc) });
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(...C_TEXT2);
-    doc.text(lang === 'fr' ? 'Calculée' : 'Calculated', x + 5, Y + 11);
+    doc.text(lang === 'fr' ? 'Calculée' : 'Calculated', x + 5, Y + vo + 11);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(...C_TEXT);
-    doc.text(calc + ' mm', x + halfW - 3, Y + 11, { align: 'right' });
+    doc.text(calc + ' mm', x + halfW - 3, Y + vo + 11, { align: 'right' });
     if (elo) {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.5);
       doc.setTextColor(...C_TEXT3);
-      doc.text((lang === 'fr' ? 'Elong. est.' : 'Est. stretch') + '  ' + elo, x + halfW - 3, Y + 17, { align: 'right' });
+      doc.text((lang === 'fr' ? 'Elong. est.' : 'Est. stretch') + '  ' + elo, x + halfW - 3, Y + vo + 17, { align: 'right' });
     }
-    const retY = elo ? Y + 23 : Y + 19;
+    const retY = Y + vo + (elo ? 23 : 19);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(...C_TEXT2);
@@ -14184,7 +14296,7 @@ async function tmExportPdfWithOpts(opts) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
     doc.setTextColor(...C_ACCENT);
-    doc.text(lang === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', ML, Y);
+    doc.text(lang === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', ML, Y, { charSpace: pdfCapsSp(doc) });
     Y += 3;
 
     const nb      = parseInt(document.getElementById('nb-rayons').value) || 0;
@@ -14225,13 +14337,15 @@ async function tmExportPdfWithOpts(opts) {
     // Si valeurs désactivées : radar prend toute la largeur
     const showValues = opts.values;
     const radarColW  = showValues ? Math.round(CW * 0.52) : CW;
-    const spokeColW  = showValues ? CW - radarColW - 3 : 0;
+    const spokeColW  = showValues ? CW - radarColW - 6 : 0; // 3 mm de marge intérieure à droite
     const spokeColX  = ML + radarColW + 3;
 
-    const radarDataUrl = radar.toDataURL('image/png');
-    const radarRatio   = radar.height / radar.width;
+    // Radar fond blanc (palette du JPEG blanc), géométrie fixe 440 px rendue ×2
+    // (~330 dpi à 68 mm) : même rendu quel que soit l'écran. null sans valeur :
+    // aucune image (le canvas affiché serait vide ou périmé).
+    const radarOff     = tmRenderRadarOffscreen(440, 440, true, tmHighlightOn ? tmOutliers : null, 2);
     const radarSize    = Math.min(radarColW - (showValues ? 10 : 20), 68);
-    const radarImgH    = radarSize * radarRatio;
+    const radarImgH    = radarSize; // rendu carré
     const legH         = 10;
     const radarMinH    = radarImgH + legH + 8;
     const spokeListH   = showValues ? spPadT + spHeaderH + perSide * spRowH + spPadB : radarMinH;
@@ -14250,7 +14364,7 @@ async function tmExportPdfWithOpts(opts) {
     // Radar + légende
     const radarX = ML + (radarColW - radarSize) / 2;
     const radarY = Y + (radarCardH - radarImgH - legH) / 2;
-    doc.addImage(radarDataUrl, 'PNG', radarX, radarY, radarSize, radarImgH);
+    if (radarOff) doc.addImage(radarOff.toDataURL('image/png'), 'PNG', radarX, radarY, radarSize, radarImgH, undefined, 'FAST');
 
     const legY2  = radarY + radarImgH + 5;
     const legMid = ML + radarColW / 2;
@@ -14282,21 +14396,21 @@ async function tmExportPdfWithOpts(opts) {
       doc.setFillColor(...C_NDS_BG);
       doc.roundedRect(xNDS, hY2 - 3, subW, spHeaderH, 1, 1, 'F');
       doc.setFillColor(...C_NDS);
-      doc.roundedRect(xNDS, hY2 - 3, 1.5, spHeaderH, 0.5, 0.5, 'F');
+      pdfCardBar(doc, xNDS, hY2 - 3, subW, spHeaderH, 1, 1.5, 0);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(6);
       doc.setTextColor(...C_NDS);
-      doc.text(ndsLabel, xNDS + subW / 2 + 1, hY2 + 1, { align: 'center' });
+      doc.text(ndsLabel, xNDS + subW / 2 + 1, hY2 + 1.26, { align: 'center' }); // centré : (7 mm + capitale 6 pt) / 2 - 3
 
       // En-tête DS
       doc.setFillColor(...C_DS_BG);
       doc.roundedRect(xDS, hY2 - 3, subW, spHeaderH, 1, 1, 'F');
       doc.setFillColor(...C_DS);
-      doc.roundedRect(xDS, hY2 - 3, 1.5, spHeaderH, 0.5, 0.5, 'F');
+      pdfCardBar(doc, xDS, hY2 - 3, subW, spHeaderH, 1, 1.5, 0);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(6);
       doc.setTextColor(...C_DS);
-      doc.text(dsLabel, xDS + subW / 2 + 1, hY2 + 1, { align: 'center' });
+      doc.text(dsLabel, xDS + subW / 2 + 1, hY2 + 1.26, { align: 'center' }); // centré : (7 mm + capitale 6 pt) / 2 - 3
 
       // Lignes de rayons
       let rowY = Y + spPadT + spHeaderH + 1;
@@ -14341,7 +14455,7 @@ async function tmExportPdfWithOpts(opts) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
     doc.setTextColor(...C_ACCENT);
-    doc.text(lang === 'fr' ? 'DONNÉES DE TENSION' : 'TENSION DATA', ML, Y);
+    doc.text(lang === 'fr' ? 'DONNÉES DE TENSION' : 'TENSION DATA', ML, Y, { charSpace: pdfCapsSp(doc) });
     Y += 4;
 
     const bGap  = STAT_GAP;
@@ -14357,20 +14471,21 @@ async function tmExportPdfWithOpts(opts) {
       doc.setLineWidth(0.35);
       doc.roundedRect(bx, Y, bW, bH, 2, 2, 'FD');
       doc.setFillColor(...(warm ? C_WARM : C_ACCENT));
-      doc.roundedRect(bx, Y, 2, bH, 1, 1, 'F');
+      pdfCardBar(doc, bx, Y, bW, bH, 2, 2, 0.35);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(6.5);
       doc.setTextColor(...(warm ? C_WARM : C_ACCENT));
-      doc.text(sanitize(block.label).toUpperCase(), bx + 5, Y + PAD_B + 1);
+      const vo = pdfVCenterOff(bH, PAD_B + 1, 6.5, PAD_B + 7 + (block.entries.length - 1) * rowH);
+      doc.text(sanitize(block.label).toUpperCase(), bx + 5, Y + vo + PAD_B + 1, { charSpace: pdfCapsSp(doc) });
       block.entries.forEach((row, ri) => {
-        const ry = Y + PAD_B + 7 + ri * rowH;
+        const ry = Y + vo + PAD_B + 7 + ri * rowH;
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
         doc.setTextColor(...C_TEXT2);
-        doc.text(sanitize(row.key), bx + 5, ry);
+        pdfTextRich(doc, row.key, bx + 5, ry);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(...C_TEXT);
-        doc.text(sanitize(row.val), bx + bW - 4, ry, { align: 'right' });
+        pdfTextRich(doc, row.val, bx + bW - 4, ry, { align: 'right' });
       });
       return bH;
     }
@@ -14406,8 +14521,9 @@ async function tmExportPdfWithOpts(opts) {
 }
 
 // ── Tracé d'une nappe sur radar (polygone + points, rendu off-screen) ────────
-// Géométrie partagée des trois rendus off-screen identiques : screenshot du
-// module tension, radar d'un snapshot, radar snapshot coloré (JPEG évolution).
+// Géométrie partagée des deux rendus off-screen identiques : module tension
+// (screenshot JPEG, PDF rapport et diagnostic) et snapshot coloré (JPEG et PDF
+// évolution).
 // Les deux autres drawPoly restent volontairement spécialisés et ne délèguent
 // pas ici : celui du radar à l'écran (halo des outliers, rayon variable) et
 // celui de l'animation (interpolation A→B recalculée à chaque frame).
@@ -14431,7 +14547,9 @@ function radarDrawPoly(ctx, g, vals, angleOff, stroke, fill) {
   });
 }
 
-function tmRenderRadarOffscreen(w, h, whiteBg) {
+// outliers / scale : optionnels, export PDF uniquement (halos d'outliers comme
+// à l'écran ; échelle de rendu fixe au lieu du dpr de l'appareil).
+function tmRenderRadarOffscreen(w, h, whiteBg, outliers, scale) {
   // Récupère les données kgf depuis le radar DOM existant
   const radar = $id('tm-radar');
   if (!radar) return null;
@@ -14442,7 +14560,7 @@ function tmRenderRadarOffscreen(w, h, whiteBg) {
   const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v, 'fo'));
   const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v, 'fa'));
 
-  const dpr = Math.max(window.devicePixelRatio || 1, 2);
+  const dpr = scale || Math.max(window.devicePixelRatio || 1, 2);
   const off  = document.createElement('canvas');
   off.width  = Math.round(w * dpr);
   off.height = Math.round(h * dpr);
@@ -14512,8 +14630,24 @@ function tmRenderRadarOffscreen(w, h, whiteBg) {
 
   const foFill = whiteBg ? 'rgba(232,146,124,0.18)' : 'rgba(232,146,124,0.06)';
   const faFill = whiteBg ? 'rgba(126,200,227,0.18)' : 'rgba(126,200,227,0.06)';
+  // Outliers : pastille 6 px + halo, mêmes cotes que tmDrawRadar à l'écran.
+  function drawOutliers(vals, angleOffset, stroke, set) {
+    if (!set) return;
+    vals.forEach((v, i) => {
+      if (v === null || !set.has(i)) return;
+      const a  = (i * 2 + angleOffset) * angleStep - Math.PI / 2;
+      const rp = (v / scaleMax) * R;
+      const px = cx + rp * Math.cos(a), py = cy + rp * Math.sin(a);
+      ctx.beginPath(); ctx.arc(px, py, 6, 0, 2 * Math.PI);
+      ctx.fillStyle = stroke; ctx.fill();
+      ctx.beginPath(); ctx.arc(px, py, 10, 0, 2 * Math.PI);
+      ctx.strokeStyle = stroke.replace(/[\d.]+\)$/, '0.45)'); ctx.lineWidth = 2; ctx.stroke();
+    });
+  }
   drawPoly(faKgfs, 1, 'rgba(126,200,227,0.8)', faFill);
+  drawOutliers(faKgfs, 1, 'rgba(126,200,227,0.8)', outliers && outliers.fa);
   drawPoly(foKgfs, 0, 'rgba(232,146,124,0.8)', foFill);
+  drawOutliers(foKgfs, 0, 'rgba(232,146,124,0.8)', outliers && outliers.fo);
 
   ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
   ctx.fillStyle = whiteBg ? 'rgba(100,120,140,0.4)' : 'rgba(150,170,190,0.35)'; ctx.fill();
@@ -17760,9 +17894,6 @@ async function diagGeneratePdf() {
   var L  = typeof lang !== 'undefined' ? lang : 'fr';
   var tr = typeof i18n !== 'undefined' && i18n[L] ? i18n[L] : {};
 
-  var radar = document.getElementById('tm-radar');
-  if (!radar) return;
-
   var obs      = (document.getElementById('diag-obs')   || {}).value || '';
   var wheelInp = document.getElementById('diag-wheel');
   var wheelName = wheelInp ? wheelInp.value.trim() : '';
@@ -17771,7 +17902,7 @@ async function diagGeneratePdf() {
 
   var leg = radarLegLabels(wtype);
 
-  var wheelLabel = (wtype === 'arriere') ? t('rearLabel') : t('frontLabel');
+  var wheelLabel = ((wtype === 'arriere') ? t('rearLabel') : t('frontLabel')).toUpperCase(); // capitales dans le PDF
 
   // Collecte des stats
   var statBlocks = [];
@@ -17796,7 +17927,7 @@ async function diagGeneratePdf() {
 
   var C_TEXT   = [30,  40,  55];
   var C_TEXT2  = [90, 105, 120];
-  var C_TEXT3  = [150, 165, 175];
+  var C_TEXT3  = PDF_C_TEXT3;
   var C_ACCENT = [60, 160, 200];
   var C_WARM   = [210, 110, 85];
   var C_BORDER = [220, 228, 235];
@@ -17804,7 +17935,9 @@ async function diagGeneratePdf() {
   var C_CARD_FO= [255, 248, 245];
   var C_CARD_FA= [245, 250, 255];
 
-  var doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4', putOnlyUsedFonts:true });
+  var doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4', putOnlyUsedFonts:true, compress:true });
+  pdfSetMeta(doc, 'Diagnostic \u2014 ' + wheelLabel + (wheelName ? ' \u2014 ' + wheelName : ''),
+    L === 'fr' ? 'Diagnostic de roue' : 'Wheel diagnostic');
 
   // Fond blanc
   doc.setFillColor(255,255,255);
@@ -17823,13 +17956,12 @@ async function diagGeneratePdf() {
   doc.setLineWidth(0.4);
   doc.roundedRect(ML, Y, CW, headerH, 2, 2, 'FD');
   doc.setFillColor(...C_TEXT2);
-  doc.roundedRect(ML, Y, brandBarW, headerH, 2, 2, 'F');
-  doc.rect(ML+2, Y, brandBarW-2, headerH, 'F');
+  pdfCardBar(doc, ML, Y, CW, headerH, 2, brandBarW, 0.4);
 
   doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C_TEXT3);
-  doc.text('WHEEL DIAGNOSTIC BY', ML+headerPadL, Y+7);
+  doc.text('WHEEL DIAGNOSTIC BY', ML+headerPadL, Y+7, { charSpace: pdfCapsSp(doc) });
   doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(...C_TEXT2);
-  doc.text(sanitize(workshopName).toUpperCase(), ML+headerPadL, Y+14);
+  doc.text(sanitize(workshopName).toUpperCase(), ML+headerPadL, Y+14, { charSpace: pdfCapsSp(doc, 0.02) });
 
   var coordLines = [];
   if (atelierInfo.email) coordLines.push({type:'email', text:sanitize(atelierInfo.email)});
@@ -17877,7 +18009,7 @@ async function diagGeneratePdf() {
     var _cfg = loadConfigs().find(c => c.name === _cfgN && (c.state && (c.state.wtype || 'avant')) === wtype);
     if (_cfg && _cfg.riderId) { var _rd = riderById(_cfg.riderId); if (_rd && _rd.name) pdfRiderName = _rd.name; }
   }
-  var pdfWheelPart = wheelName ? (sanitize(wheelLabel) + ' - ' + sanitize(wheelName)) : '';
+  var pdfWheelPart = wheelName ? (sanitize(wheelLabel) + ' — ' + sanitize(wheelName)) : '';
   var pdfRiderPart = pdfRiderName ? sanitize(pdfRiderName) : '';
   if (pdfWheelPart || pdfRiderPart || pdfTensioCaption) {
     if (pdfWheelPart || pdfRiderPart) {
@@ -17886,10 +18018,10 @@ async function diagGeneratePdf() {
       if (pdfWheelPart) {
         doc.setTextColor(...C_TEXT2);
         doc.text(pdfWheelPart, _x, Y);
-        _x += doc.getTextWidth(pdfWheelPart);
+        _x += pdfTextWidth(doc, pdfWheelPart);
       }
       if (pdfRiderPart) {
-        if (pdfWheelPart) { doc.setTextColor(...C_TEXT2); doc.text(' - ', _x, Y); _x += doc.getTextWidth(' - '); }
+        if (pdfWheelPart) { doc.setTextColor(...C_TEXT2); doc.text(' — ', _x, Y); _x += pdfTextWidth(doc, ' — '); }
         doc.setTextColor(...C_WARM);
         doc.text(pdfRiderPart, _x, Y);
       }
@@ -17906,7 +18038,7 @@ async function diagGeneratePdf() {
 
   // ── Diagramme de tension ──────────────────────────────────────────────────
   doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C_ACCENT);
-  doc.text(L === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', ML, Y);
+  doc.text(L === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', ML, Y, { charSpace: pdfCapsSp(doc) });
   Y += 4;
 
   // Gauche = NDS, droite = DS ; palettes PDF (triplets RGB jsPDF) indexées
@@ -17934,13 +18066,13 @@ async function diagGeneratePdf() {
 
   var spPadT = 8, spPadB = 4, spHeaderH = 7, spRowH = 5.2;
   var radarColW = Math.round(CW * 0.52);
-  var spokeColW = CW - radarColW - 3;
+  var spokeColW = CW - radarColW - 6; // 3 mm de marge intérieure à droite
   var spokeColX = ML + radarColW + 3;
 
-  var radarDataUrl = radar.toDataURL('image/png');
-  var radarRatio   = radar.height / radar.width;
+  // Radar fond blanc, géométrie fixe rendue ×2 — cf. tmExportPdfWithOpts.
+  var radarOff     = tmRenderRadarOffscreen(440, 440, true, tmHighlightOn ? tmOutliers : null, 2);
   var radarSize    = Math.min(radarColW - 10, 68);
-  var radarImgH    = radarSize * radarRatio;
+  var radarImgH    = radarSize; // rendu carré
   var legH2        = 10;
   var radarMinH    = radarImgH + legH2 + 8;
   var spokeListH   = spPadT + spHeaderH + perSide * spRowH + spPadB;
@@ -17959,7 +18091,7 @@ async function diagGeneratePdf() {
   // Radar
   var radarX2 = ML + (radarColW - radarSize)/2;
   var radarY2 = Y + (radarCardH - radarImgH - legH2)/2;
-  doc.addImage(radarDataUrl, 'PNG', radarX2, radarY2, radarSize, radarImgH);
+  if (radarOff) doc.addImage(radarOff.toDataURL('image/png'), 'PNG', radarX2, radarY2, radarSize, radarImgH, undefined, 'FAST');
 
   // Légende radar
   var legY2  = radarY2 + radarImgH + 5;
@@ -17981,15 +18113,15 @@ async function diagGeneratePdf() {
 
   // En-tête NDS
   doc.setFillColor(...C_NDS_BG); doc.roundedRect(xNDS, hY3-3, subW, spHeaderH, 1, 1, 'F');
-  doc.setFillColor(...C_NDS);    doc.roundedRect(xNDS, hY3-3, 1.5, spHeaderH, 0.5, 0.5, 'F');
+  doc.setFillColor(...C_NDS);    pdfCardBar(doc, xNDS, hY3-3, subW, spHeaderH, 1, 1.5, 0);
   doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(...C_NDS);
-  doc.text(ndsLabel, xNDS+subW/2+1, hY3+1, {align:'center'});
+  doc.text(ndsLabel, xNDS+subW/2+1, hY3+1.26, {align:'center'}); // centré : (7 mm + capitale 6 pt) / 2 - 3
 
   // En-tête DS
   doc.setFillColor(...C_DS_BG);  doc.roundedRect(xDS, hY3-3, subW, spHeaderH, 1, 1, 'F');
-  doc.setFillColor(...C_DS);     doc.roundedRect(xDS, hY3-3, 1.5, spHeaderH, 0.5, 0.5, 'F');
+  doc.setFillColor(...C_DS);     pdfCardBar(doc, xDS, hY3-3, subW, spHeaderH, 1, 1.5, 0);
   doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(...C_DS);
-  doc.text(dsLabel, xDS+subW/2+1, hY3+1, {align:'center'});
+  doc.text(dsLabel, xDS+subW/2+1, hY3+1.26, {align:'center'}); // centré : (7 mm + capitale 6 pt) / 2 - 3
 
   // Lignes de rayons
   var rowY2 = Y + spPadT + spHeaderH + 1;
@@ -18018,7 +18150,7 @@ async function diagGeneratePdf() {
     var STAT_ROW_H = 7, STAT_PAD = 5, STAT_GAP = 4;
     Y += 5;
     doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C_ACCENT);
-    doc.text(L === 'fr' ? 'DONNÉES DE TENSION' : 'TENSION DATA', ML, Y);
+    doc.text(L === 'fr' ? 'DONNÉES DE TENSION' : 'TENSION DATA', ML, Y, { charSpace: pdfCapsSp(doc) });
     Y += 4;
     var bW = (CW - STAT_GAP)/2;
     statBlocks.forEach(function(block, bi) {
@@ -18030,15 +18162,16 @@ async function diagGeneratePdf() {
       doc.setLineWidth(0.35);
       doc.roundedRect(bx, Y, bW, bH, 2, 2, 'FD');
       doc.setFillColor(...(warm ? C_WARM : C_ACCENT));
-      doc.roundedRect(bx, Y, 2, bH, 1, 1, 'F');
+      pdfCardBar(doc, bx, Y, bW, bH, 2, 2, 0.35);
       doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...(warm ? C_WARM : C_ACCENT));
-      doc.text(sanitize(block.label).toUpperCase(), bx+5, Y+STAT_PAD+1);
+      var vo = pdfVCenterOff(bH, STAT_PAD+1, 6.5, STAT_PAD+7+(block.entries.length-1)*STAT_ROW_H);
+      doc.text(sanitize(block.label).toUpperCase(), bx+5, Y+vo+STAT_PAD+1, { charSpace: pdfCapsSp(doc) });
       block.entries.forEach(function(row, ri) {
-        var ry = Y + STAT_PAD + 7 + ri*STAT_ROW_H;
+        var ry = Y + vo + STAT_PAD + 7 + ri*STAT_ROW_H;
         doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...C_TEXT2);
-        doc.text(sanitize(row.key), bx+5, ry);
+        pdfTextRich(doc, row.key, bx+5, ry);
         doc.setFont('helvetica','bold'); doc.setTextColor(...C_TEXT);
-        doc.text(sanitize(row.val), bx+bW-4, ry, {align:'right'});
+        pdfTextRich(doc, row.val, bx+bW-4, ry, {align:'right'});
       });
     });
     var maxBH = statBlocks.reduce(function(acc,b) {
@@ -18069,7 +18202,7 @@ async function diagGeneratePdf() {
     var textH = lines.length > 0 ? lines.length * lineHt : lineHt;
     var boxH  = padV*2 + textH + 2;
     doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C_ACCENT);
-    doc.text(sanitize(label).toUpperCase(), ML, startY);
+    doc.text(sanitize(label).toUpperCase(), ML, startY, { charSpace: pdfCapsSp(doc) });
     startY += 3.5;
     doc.setFillColor(...C_CARD); doc.setDrawColor(...C_BORDER); doc.setLineWidth(0.3);
     doc.roundedRect(ML, startY, CW, boxH, 2, 2, 'FD');
@@ -19773,14 +19906,10 @@ function _snapCompareUpdateUI() {
   });
 }
 
-// ── Rendu radar dans un canvas off-screen pour un snapshot ────────────────────
-function _snapRenderRadarCanvas(snap, size) {
-  size = size || 400;
-  var canvas = document.createElement('canvas');
-  canvas.width  = size;
-  canvas.height = size;
-  var ctx = canvas.getContext('2d');
-
+// ── kgf d'un snapshot, indexés par rangée ─────────────────────────────────────
+// Conversion seule : les radars de snapshot sont dessinés par
+// _snapRenderRadarCanvasColored (JPEG et PDF) et l'animation.
+function _snapKgfs(snap) {
   var perSide = Math.max(snap.fo.length, snap.fa.length);
 
   // Convertir raw → kgf en utilisant la table du snapshot
@@ -19806,66 +19935,18 @@ function _snapRenderRadarCanvas(snap, size) {
   var foKgfs = snap.fo.slice(0, perSide).map(function(v) { return snapToKgf(v, snap, 'fo'); });
   var faKgfs = snap.fa.slice(0, perSide).map(function(v) { return snapToKgf(v, snap, 'fa'); });
 
-  var cx = size/2, cy = size/2, R = size*0.38;
-  var N = perSide * 2;
-  var angleStep = (2 * Math.PI) / N;
-  var allVals = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
-  if (!allVals.length) return { canvas: canvas, foKgfs: foKgfs, faKgfs: faKgfs };
-  var maxVal   = Math.max.apply(null, allVals);
-  var scaleMax = Math.ceil(maxVal / 20) * 20 || 20;
-
-  // Rings
-  for (var r = 1; r <= 5; r++) {
-    var rr = (r/5)*R;
-    ctx.beginPath();
-    for (var i2 = 0; i2 < N; i2++) {
-      var a2 = i2*angleStep - Math.PI/2;
-      i2===0 ? ctx.moveTo(cx+rr*Math.cos(a2),cy+rr*Math.sin(a2)) : ctx.lineTo(cx+rr*Math.cos(a2),cy+rr*Math.sin(a2));
-    }
-    ctx.closePath();
-    ctx.strokeStyle='rgba(80,100,130,0.33)'; ctx.lineWidth=1; ctx.stroke();
-    if (r===2||r===4||r===5) {
-      ctx.fillStyle='rgba(100,120,150,0.8)';
-      ctx.font = Math.round(size*0.026)+'px DM Mono, monospace';
-      ctx.textAlign='center'; ctx.textBaseline='bottom';
-      ctx.fillText(Math.round((r/5)*scaleMax), cx, cy-rr-3);
-    }
-  }
-  // Axes
-  for (var i3=0;i3<N;i3++) {
-    var a3 = i3*angleStep-Math.PI/2;
-    var isFo3 = i3%2===0;
-    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+R*Math.cos(a3),cy+R*Math.sin(a3));
-    ctx.strokeStyle = isFo3?'rgba(232,146,124,0.25)':'rgba(126,200,227,0.25)'; ctx.lineWidth=1; ctx.stroke();
-    if (perSide<=16||i3%2===0) {
-      var spokeNum3 = Math.floor(i3/2)+1;
-      var labelR3 = R+Math.max(10,size*0.032);
-      ctx.fillStyle = isFo3?'rgba(232,146,124,0.8)':'rgba(126,200,227,0.7)';
-      ctx.font = Math.round(size*0.023)+'px DM Mono, monospace';
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(spokeNum3, cx+labelR3*Math.cos(a3), cy+labelR3*Math.sin(a3));
-    }
-  }
-  function drawPoly(vals, angleOff, stroke, fill) { // délégué → radarDrawPoly (géométrie partagée)
-    radarDrawPoly(ctx, { cx: cx, cy: cy, R: R, scaleMax: scaleMax, angleStep: angleStep }, vals, angleOff, stroke, fill);
-  }
-  drawPoly(faKgfs,1,'rgba(126,200,227,0.8)','rgba(126,200,227,0.06)');
-  drawPoly(foKgfs,0,'rgba(232,146,124,0.8)','rgba(232,146,124,0.06)');
-  ctx.beginPath(); ctx.arc(cx,cy,3,0,2*Math.PI);
-  ctx.fillStyle='rgba(150,170,190,0.35)'; ctx.fill();
-
-  return { canvas: canvas, foKgfs: foKgfs, faKgfs: faKgfs };
+  return { fo: foKgfs, fa: faKgfs };
 }
 
-// ── Radar off-screen coloré pour fond blanc/noir (évolution JPEG) ──────────────
-function _snapRenderRadarCanvasColored(snap, w, h, whiteBg) {
-  var rend    = _snapRenderRadarCanvas(snap, Math.max(w, h));
-  var foKgfs  = rend.foKgfs;
-  var faKgfs  = rend.faKgfs;
+// ── Radar off-screen coloré pour fond blanc/noir (évolution JPEG et PDF) ───────
+function _snapRenderRadarCanvasColored(snap, w, h, whiteBg, scale) {
+  var kgfs    = _snapKgfs(snap);
+  var foKgfs  = kgfs.fo;
+  var faKgfs  = kgfs.fa;
   var perSide = Math.max(foKgfs.length, faKgfs.length);
   if (!perSide) return null;
 
-  var dpr = Math.max(window.devicePixelRatio || 1, 2);
+  var dpr = scale || Math.max(window.devicePixelRatio || 1, 2);
   var off = document.createElement('canvas');
   off.width  = Math.round(w * dpr);
   off.height = Math.round(h * dpr);
@@ -20006,7 +20087,7 @@ async function snapComparePDF() {
 
   function sanitize(str) { return pdfSanitize(str); } // délégué → pdfSanitize (source unique)
   var PW=210, PH=297, ML=14, MR=14, MT=14, CW=PW-ML-MR;
-  var C_TEXT=[30,40,55], C_TEXT2=[90,105,120], C_TEXT3=[150,165,175];
+  var C_TEXT=[30,40,55], C_TEXT2=[90,105,120], C_TEXT3=PDF_C_TEXT3;
   var C_ACCENT=[60,160,200], C_WARM=[210,110,85], C_BORDER=[220,228,235];
   var C_CARD=[248,250,252], C_CARD_FO=[255,248,245], C_CARD_FA=[245,250,255];
 
@@ -20022,11 +20103,13 @@ async function snapComparePDF() {
   var ndsLabel = sanitize(leg[ord.nds]);
   var dsLabel  = sanitize(leg[ord.ds]);
 
-  // Rendu des deux radars
-  var rendA = _snapRenderRadarCanvas(snapA, 400);
-  var rendB = _snapRenderRadarCanvas(snapB, 400);
+  // kgf des deux snapshots, indexés par rangée
+  var kgfsA = _snapKgfs(snapA);
+  var kgfsB = _snapKgfs(snapB);
 
-  var doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4',putOnlyUsedFonts:true});
+  var doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4',putOnlyUsedFonts:true,compress:true});
+  pdfSetMeta(doc, (L==='fr'?'\u00c9volution de tension':'Tension evolution')+' S'+snapA.num+' / S'+snapB.num
+    + (wheelName ? ' \u2014 '+wheelName : ''), L==='fr'?'\u00c9volution de tension':'Tension evolution');
   doc.setFillColor(255,255,255); doc.rect(0,0,PW,PH,'F');
 
   // ── En-tête ────────────────────────────────────────────────────────────────
@@ -20037,12 +20120,11 @@ async function snapComparePDF() {
   doc.setFillColor.apply(doc,C_CARD); doc.setDrawColor.apply(doc,C_BORDER); doc.setLineWidth(0.4);
   doc.roundedRect(ML,Y,CW,headerH,2,2,'FD');
   doc.setFillColor.apply(doc,C_TEXT2);
-  doc.roundedRect(ML,Y,brandBarW,headerH,2,2,'F');
-  doc.rect(ML+2,Y,brandBarW-2,headerH,'F');
+  pdfCardBar(doc, ML, Y, CW, headerH, 2, brandBarW, 0.4);
   doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc,C_TEXT3);
-  doc.text(L==='fr'?'ÉVOLUTION DE TENSION BY':'TENSION EVOLUTION BY', ML+headerPadL, Y+7);
+  doc.text(L==='fr'?'ÉVOLUTION DE TENSION BY':'TENSION EVOLUTION BY', ML+headerPadL, Y+7, { charSpace: pdfCapsSp(doc) });
   doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor.apply(doc,C_TEXT2);
-  doc.text(sanitize(workshopName).toUpperCase(), ML+headerPadL, Y+14);
+  doc.text(sanitize(workshopName).toUpperCase(), ML+headerPadL, Y+14, { charSpace: pdfCapsSp(doc, 0.02) });
 
   var coordLines=[];
   if (atelierInfo.email) coordLines.push({type:'email',text:sanitize(atelierInfo.email)});
@@ -20069,20 +20151,20 @@ async function snapComparePDF() {
   }
   Y += headerH + 5;
 
-  // Nom de roue + rider + séparateur — rider en C_WARM après ' - ',
+  // Nom de roue + rider + séparateur — rider en C_WARM après ' — ',
   // comme le PDF simple (roue en C_TEXT2, rider seul possible si nom vide)
   if (wheelName || pdfRiderName) {
     doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
     var _wx = ML;
     if (wheelName) {
-      var wlabel = wtype === 'arriere' ? t('rearLabel') : t('frontLabel');
+      var wlabel = (wtype === 'arriere' ? t('rearLabel') : t('frontLabel')).toUpperCase(); // capitales dans le PDF
       var _wPart = sanitize(wlabel)+' — '+sanitize(wheelName);
       doc.setTextColor.apply(doc,C_TEXT2);
       doc.text(_wPart, _wx, Y);
-      _wx += doc.getTextWidth(_wPart);
+      _wx += pdfTextWidth(doc, _wPart);
     }
     if (pdfRiderName) {
-      if (wheelName) { doc.setTextColor.apply(doc,C_TEXT2); doc.text(' - ', _wx, Y); _wx += doc.getTextWidth(' - '); }
+      if (wheelName) { doc.setTextColor.apply(doc,C_TEXT2); doc.text(' — ', _wx, Y); _wx += pdfTextWidth(doc, ' — '); }
       doc.setTextColor.apply(doc,C_WARM);
       doc.text(sanitize(pdfRiderName), _wx, Y);
     }
@@ -20099,14 +20181,13 @@ async function snapComparePDF() {
   var legH    = 9;
   var cardH   = radarSz + legH + cardPad*2;
 
-  [rendA, rendB].forEach(function(rend, si) {
-    var snap   = si===0 ? snapA : snapB;
+  [snapA, snapB].forEach(function(snap, si) {
     var cardX  = ML + si*(colW+colGap);
     var dstr   = fmtDMY(snap.ts);
 
     // Label snapshot au-dessus de la card
     doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor.apply(doc,C_ACCENT);
-    doc.text('SNAPSHOT '+snap.num, cardX, Y-1);
+    doc.text('SNAPSHOT '+snap.num, cardX, Y-1, { charSpace: pdfCapsSp(doc) });
     doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor.apply(doc,C_TEXT3);
     doc.text(dstr, cardX+colW, Y-1, {align:'right'});
     if (_snapResolveTensio(snap) || _snapSpokeLabel(snap, wtype)) {
@@ -20119,16 +20200,16 @@ async function snapComparePDF() {
     doc.setFillColor.apply(doc,C_CARD); doc.setDrawColor.apply(doc,C_BORDER); doc.setLineWidth(0.3);
     doc.roundedRect(cardX, Y+5, colW, cardH, 2, 2, 'FD');
 
-    // Radar
-    var rUrl = rend.canvas.toDataURL('image/png');
-    doc.addImage(rUrl,'PNG', cardX+cardPad, Y+5+cardPad, radarSz, radarSz);
+    // Radar fond blanc (même palette que le rapport), rendu ×2,5 : ~300 dpi à 86 mm.
+    var rOff = _snapRenderRadarCanvasColored(snap, 400, 400, true, 2.5);
+    if (rOff) doc.addImage(rOff.toDataURL('image/png'),'PNG', cardX+cardPad, Y+5+cardPad, radarSz, radarSz, undefined, 'FAST');
 
     // Légende : NDS centré sur quart gauche, DS centré sur quart droit
     var lY   = Y+5+cardPad+radarSz+4;
     var dotR = 1.3;
     doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
-    var wNDS = doc.getTextWidth(ndsLabel);
-    var wDS  = doc.getTextWidth(dsLabel);
+    var wNDS = pdfTextWidth(doc, ndsLabel);
+    var wDS  = pdfTextWidth(doc, dsLabel);
     // Chaque item : ● + 1.5 + label, centré sur son quart
     var itemNDSW = dotR*2 + 1.5 + wNDS;
     var itemDSW  = dotR*2 + 1.5 + wDS;
@@ -20146,7 +20227,7 @@ async function snapComparePDF() {
 
   // ── Données de tension (stats comme PDF classique) ────────────────────────
   doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc,C_ACCENT);
-  doc.text(L==='fr'?'DONNÉES DE TENSION':'TENSION DATA', ML, Y);
+  doc.text(L==='fr'?'DONNÉES DE TENSION':'TENSION DATA', ML, Y, { charSpace: pdfCapsSp(doc) });
   Y += 5;
 
   // 4 blocs stats : S1-NDS | S1-DS | S2-NDS | S2-DS
@@ -20173,9 +20254,8 @@ async function snapComparePDF() {
   var STAT_ROW_H=6, STAT_PAD=4, STAT_GAP=3;
   // 4 blocs : [snap1-NDS, snap1-DS, snap2-NDS, snap2-DS]
   var blocks = [];
-  [rendA, rendB].forEach(function(rend, si) {
+  [kgfsA, kgfsB].forEach(function(kgfs, si) {
     // Tableaux indexés par rangée, même `ord` que la légende plus haut.
-    var kgfs = { fo: rend.foKgfs, fa: rend.faKgfs };
     var snap = si===0 ? snapA : snapB;
     var snapLbl = 'S'+snap.num+' ';
     blocks.push({label: snapLbl+ndsLabel, entries: snapStatsBlock(kgfs[ord.nds]), C_col: C_NDS, C_bg: C_NDS_BG});
@@ -20194,15 +20274,16 @@ async function snapComparePDF() {
     doc.setDrawColor.apply(doc, block.C_col); doc.setLineWidth(0.3);
     doc.roundedRect(bx, Y, bW2, bH2, 2, 2, 'FD');
     doc.setFillColor.apply(doc, block.C_col);
-    doc.roundedRect(bx, Y, 2, bH2, 1, 1, 'F');
+    pdfCardBar(doc, bx, Y, bW2, bH2, 2, 2, 0.3);
+    var vo = pdfVCenterOff(bH2, STAT_PAD+1, 5.5, STAT_PAD+6+(block.entries.length-1)*STAT_ROW_H);
     doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor.apply(doc, block.C_col);
-    doc.text(sanitize(block.label).toUpperCase(), bx+4, Y+STAT_PAD+1);
+    doc.text(sanitize(block.label).toUpperCase(), bx+4, Y+vo+STAT_PAD+1, { charSpace: pdfCapsSp(doc) });
     block.entries.forEach(function(row, ri) {
-      var ry = Y+STAT_PAD+6+ri*STAT_ROW_H;
+      var ry = Y+vo+STAT_PAD+6+ri*STAT_ROW_H;
       doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor.apply(doc, C_TEXT2);
-      doc.text(sanitize(row.key), bx+4, ry);
+      pdfTextRich(doc, row.key, bx+4, ry);
       doc.setFont('helvetica','bold'); doc.setTextColor.apply(doc, C_TEXT);
-      doc.text(sanitize(row.val), bx+bW2-3, ry, {align:'right'});
+      pdfTextRich(doc, row.val, bx+bW2-3, ry, {align:'right'});
     });
   });
 
@@ -20217,15 +20298,13 @@ async function snapComparePDF() {
     var pair = _snapEvoPctPair(sA, sB, aA, aB);
     return pair === null ? '—' : pair;
   }
-  var kgfsA = { fo: rendA.foKgfs, fa: rendA.faKgfs };
-  var kgfsB = { fo: rendB.foKgfs, fa: rendB.faKgfs };
   var ndsKgfA = kgfsA[ord.nds], ndsKgfB = kgfsB[ord.nds];
   var dsKgfA  = kgfsA[ord.ds],  dsKgfB  = kgfsB[ord.ds];
   var avgNdsA=_snapEvoAvg(ndsKgfA), avgNdsB=_snapEvoAvg(ndsKgfB);
   var avgDsA =_snapEvoAvg(dsKgfA),  avgDsB =_snapEvoAvg(dsKgfB);
 
   doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc,C_ACCENT);
-  doc.text(sanitize((L==='fr'?'ÉVOLUTION':'EVOLUTION')+' S'+snapA.num+' → S'+snapB.num), ML, Y);
+  pdfTextRich(doc, (L==='fr'?'ÉVOLUTION':'EVOLUTION')+' S'+snapA.num+' → S'+snapB.num, ML, Y, { charSpace: pdfCapsSp(doc) });
   Y += 5;
 
   var dAvgLabel = L==='fr' ? 'Δ Moyenne' : 'Δ Average';
@@ -20245,16 +20324,17 @@ async function snapComparePDF() {
     doc.setDrawColor.apply(doc, block.C_col); doc.setLineWidth(0.3);
     doc.roundedRect(bx, Y, evoW, evoH, 2, 2, 'FD');
     doc.setFillColor.apply(doc, block.C_col);
-    doc.roundedRect(bx, Y, 2, evoH, 1, 1, 'F');
+    pdfCardBar(doc, bx, Y, evoW, evoH, 2, 2, 0.3);
+    var vo = pdfVCenterOff(evoH, STAT_PAD+1, 5.5, STAT_PAD+6+STAT_ROW_H);
     doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor.apply(doc, block.C_col);
-    doc.text(sanitize(block.label).toUpperCase(), bx+4, Y+STAT_PAD+1);
+    doc.text(sanitize(block.label).toUpperCase(), bx+4, Y+vo+STAT_PAD+1, { charSpace: pdfCapsSp(doc) });
     [ {key: dAvgLabel, val: block.diff},
       {key: 'CV',      val: block.cv} ].forEach(function(row, ri) {
-      var ry = Y+STAT_PAD+6+ri*STAT_ROW_H;
+      var ry = Y+vo+STAT_PAD+6+ri*STAT_ROW_H;
       doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor.apply(doc, C_TEXT2);
-      doc.text(sanitize(row.key), bx+4, ry);
+      pdfTextRich(doc, row.key, bx+4, ry);
       doc.setFont('helvetica','bold'); doc.setTextColor.apply(doc, C_TEXT);
-      doc.text(sanitize(row.val), bx+evoW-3, ry, {align:'right'});
+      pdfTextRich(doc, row.val, bx+evoW-3, ry, {align:'right'});
     });
   });
   Y += evoH + 8;
@@ -20297,7 +20377,6 @@ async function snapCompareJPEG() {
   var BPADY   = 36;
   var LABELH  = 60;
   var STAT_GAP = 20;
-  var RADAR_SIZE = 700;
   function blockH(b) { return BPADY * 2 + LABELH + b.entries.length * LINE_H; }
 
   var wheelName = document.getElementById('tm-cfg-loaded-text')
@@ -20340,15 +20419,14 @@ async function snapCompareJPEG() {
 
 
   function buildSnapCanvas(snap) {
-    var rend = _snapRenderRadarCanvas(snap, RADAR_SIZE);
-    var radar = rend.canvas;
-    var foKgfs = rend.foKgfs;
-    var faKgfs = rend.faKgfs;
+    var kgfs = _snapKgfs(snap);
+    var foKgfs = kgfs.fo;
+    var faKgfs = kgfs.fa;
     var statBlocks = computeStatBlocks(foKgfs, faKgfs);
 
     var innerW  = W - PAD * 2;
     var rW      = Math.round(innerW * 0.88);
-    var rH      = Math.round(rW * (radar.height / radar.width));
+    var rH      = rW; // radar carré
     var rX      = PAD + Math.round((innerW - rW) / 2);
     var headerH = 150;
     var legendH = 128;
@@ -20403,7 +20481,7 @@ async function snapCompareJPEG() {
     // Radar — re-rendu off-screen adapté au fond
     var radarY = headerH + 10;
     var radarOff = _snapRenderRadarCanvasColored(snap, rW, rH, whiteBg);
-    ctx.drawImage(radarOff || radar, rX, radarY, rW, rH);
+    if (radarOff) ctx.drawImage(radarOff, rX, radarY, rW, rH);
 
     // Légende
     var leftColor  = PAL[ord.nds];
@@ -20613,8 +20691,7 @@ async function snapCompareAnim() {
   var ctx = canvasEl.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  function extractKgfs(snap) { var r = _snapRenderRadarCanvas(snap, 400); return { fo: r.foKgfs, fa: r.faKgfs }; }
-  var kgfA = extractKgfs(snapA), kgfB = extractKgfs(snapB);
+  var kgfA = _snapKgfs(snapA), kgfB = _snapKgfs(snapB);
   var perSide = Math.max(kgfA.fo.length, kgfA.fa.length, kgfB.fo.length, kgfB.fa.length);
   if (!perSide) return;
   function padArr(arr, len) { var o = arr.slice(0, len); while (o.length < len) o.push(null); return o; }
