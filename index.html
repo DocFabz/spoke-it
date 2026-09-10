@@ -478,11 +478,26 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .ridermgr-modal { gap:.8rem; max-height:88vh; max-height:88dvh; overflow-y:auto }
 .ridermgr-chooser { gap:.7rem }
 /* Les deux chooseurs à boutons empilés (Rider, et « Données » ouvert par la
-   disquette) partagent .ridermgr-chooser et ces règles de bouton. */
-#riderchoose-modal .ct-save-btn, #datapicker-modal .ct-save-btn { display:flex; align-items:center; justify-content:center; gap:.5rem }
-#riderchoose-modal .ct-save-btn svg, #datapicker-modal .ct-save-btn svg { flex-shrink:0; opacity:.85 }
+   disquette) partagent .ridermgr-chooser et ces règles de bouton. Le bouton
+   « Affecter roues » de la modale Rider les reprend : icône + libellé. */
+#riderchoose-modal .ct-save-btn, #datapicker-modal .ct-save-btn, #rideredit-modal .rider-assign-btn { display:flex; align-items:center; justify-content:center; gap:.5rem }
+#riderchoose-modal .ct-save-btn svg, #datapicker-modal .ct-save-btn svg, #rideredit-modal .rider-assign-btn svg { flex-shrink:0; opacity:.85 }
 .rider-wheels-list { max-height:30vh; max-height:30dvh }
 .rider-wheels-list .wheel-load-empty { padding:.3rem }
+/* Roue en attente dans « Roues affectées » (choisie via « Affecter roues »,
+   écrite au Save) : teinte .sel, pas de chargement au clic — elle
+   n'appartient pas encore au rider. */
+.rider-wheels-list .wheel-load-item.sel { cursor:default }
+/* « Affecter roues » : gabarit de « Charger une roue », au-dessus de la
+   modale Rider (9980/9981), au même étage que .wsr-modal. Surbrillance (.sel)
+   = roues choisies ; .locked = roue déjà enregistrée au rider : coche grise,
+   ni teinte ni survol, non cliquable (désaffectation : × de la modale Rider). */
+#riderassign-overlay { z-index:9990 }
+#riderassign-modal { z-index:9991 }
+#riderassign-modal .wheel-load-item.locked { cursor:default }
+#riderassign-modal .wheel-load-item.locked:hover { border-color:var(--border); background:var(--card-alt) }
+#riderassign-modal .wheel-load-item.locked .wheel-load-item-check { color:var(--text3) }
+#wa-validate:disabled { opacity:.3; cursor:default; pointer-events:none }
 /* Bouton "Affecter à un rider" (style Générer le PDF) dans la modale de sauvegarde de roue */
 .wheel-save-rider-trigger { flex:1; min-width:0; background:transparent; border:1px solid rgba(126,200,227,.4); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; padding:.65rem 1rem; cursor:pointer; touch-action:manipulation; transition:background .22s, border-color .22s, color .22s, opacity .22s, transform .22s, box-shadow .22s; display:flex; align-items:center; justify-content:center; gap:.45rem }
 .wheel-save-rider-trigger:hover { border-color:rgba(126,200,227,.75); background:rgba(126,200,227,.07) }
@@ -4152,7 +4167,11 @@ window.wiNotesFlat = function() {
     <span class="ateliermgr-label" data-i18n="riderWheels">Roues affectées</span>
     <div class="wheel-load-list rider-wheels-list" id="rider-wheels-list"></div>
   </div>
-  <button class="ct-save-btn" onclick="saveRider()" style="margin-top:.3rem">
+  <button class="ct-save-btn rider-assign-btn" onclick="openRiderAssign()" style="margin-top:.3rem">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"/><circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/><line x1="8" y1="1.5" x2="8" y2="4.5"/><line x1="13.1" y1="4.4" x2="10.9" y2="5.7"/><line x1="13.1" y1="11.6" x2="10.9" y2="10.3"/><line x1="8" y1="14.5" x2="8" y2="11.5"/><line x1="2.9" y1="11.6" x2="5.1" y2="10.3"/><line x1="2.9" y1="4.4" x2="5.1" y2="5.7"/></svg>
+    <span data-i18n="riderAssignWheels">Affecter roues</span>
+  </button>
+  <button class="ct-save-btn" onclick="saveRider()">
     <span data-i18n="atelierSave">✓ Sauvegarder</span>
   </button>
 </div>
@@ -4165,6 +4184,27 @@ window.wiNotesFlat = function() {
     <button class="wheel-load-close" onclick="closeRiderLoad()">✕</button>
   </div>
   <div class="wheel-load-list" id="riderload-list"></div>
+</div>
+
+<!-- ── Rider : modale « Affecter roues » (toutes les roues, avant et arrière) ── -->
+<div class="wheel-load-overlay" id="riderassign-overlay" onclick="closeRiderAssign()"></div>
+<div class="wheel-load-modal" id="riderassign-modal" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="riderassign-title">
+  <div class="wheel-load-header">
+    <div class="wheel-load-title" id="riderassign-title" data-i18n="riderAssignWheels">Affecter roues</div>
+    <button class="wheel-load-close" onclick="closeRiderAssign()">✕</button>
+  </div>
+  <div class="wl-period" id="wa-period">
+    <select class="wl-period-sel" id="wa-period-sel" data-i18n-aria="wlPeriod" aria-label="Période" onchange="riderAssignPeriodBy(this.value)"></select>
+  </div>
+  <div class="wl-sort" id="wa-sort" role="group" data-i18n-aria="wlSortBy" aria-label="Trier par">
+    <button class="wl-sort-btn" id="wa-sort-name"  onclick="riderAssignSortBy('name')"><span data-i18n="wlSortName">Nom</span><span class="wl-sort-arrow"></span></button>
+    <button class="wl-sort-btn" id="wa-sort-rider" onclick="riderAssignSortBy('rider')"><span data-i18n="wlSortRider">Rider</span><span class="wl-sort-arrow"></span></button>
+    <button class="wl-sort-btn" id="wa-sort-date"  onclick="riderAssignSortBy('date')"><span data-i18n="wlSortDate">Date</span><span class="wl-sort-arrow"></span></button>
+  </div>
+  <div class="wheel-load-list" id="riderassign-list"></div>
+  <button class="ct-save-btn" id="wa-validate" onclick="riderAssignValidate()" disabled>
+    <span data-i18n="riderAssignValidate">✓ Affecter</span><span id="wa-count"></span>
+  </button>
 </div>
 
 <!-- ── Sélection du rider depuis la modale d'enregistrement de roue ── -->
@@ -4802,6 +4842,7 @@ const i18n = {
     tmPlayBtnTitle:'Animer les points', tmSnapCompareBtnTitle:'Comparer deux snapshots',
     efDiagBtnTitle:'Diagramme', efMicBtnTitle:'Saisie vocale', efBtBtnTitle:'Clavier Bluetooth',
     wlSortName:'Nom', wlSortRider:'Rider', wlSortDate:'Date', wlSortBy:'Trier par',
+    wlNoWheels:'Aucune roue enregistrée.',
     wlPeriod:'Période', wlPeriodAll:'Tout', wlPeriodNone:'Sans date',
     snapAnimReplayTitle:'Rejouer',
     delTitle:'Supprimer', clearValuesTitle:'Effacer les valeurs', clearFieldTitle:'Effacer',
@@ -4881,6 +4922,8 @@ const i18n = {
     riderNoWheels:'Aucune roue affectée.',
     riderNone:'Aucun rider enregistré.',
     riderAssign:'Affecter à un rider',
+    riderAssignWheels:'Affecter roues',
+    riderAssignValidate:'✓ Affecter',
     riderAssignNone:'Aucun',
     riderUnassign:'Désaffecter',
     riderUnassignConfirm:'Désaffecter <strong>{name}</strong> de ce rider ? La roue et ses mesures sont conservées.',
@@ -5062,6 +5105,7 @@ const i18n = {
     tmPlayBtnTitle:'Animate points', tmSnapCompareBtnTitle:'Compare two snapshots',
     efDiagBtnTitle:'Diagram', efMicBtnTitle:'Voice input', efBtBtnTitle:'Bluetooth keyboard',
     wlSortName:'Name', wlSortRider:'Rider', wlSortDate:'Date', wlSortBy:'Sort by',
+    wlNoWheels:'No saved wheels.',
     wlPeriod:'Period', wlPeriodAll:'All', wlPeriodNone:'Undated',
     snapAnimReplayTitle:'Replay',
     delTitle:'Delete', clearValuesTitle:'Clear values', clearFieldTitle:'Clear',
@@ -5141,6 +5185,8 @@ const i18n = {
     riderNoWheels:'No assigned wheels.',
     riderNone:'No saved riders.',
     riderAssign:'Assign to a rider',
+    riderAssignWheels:'Assign wheels',
+    riderAssignValidate:'✓ Assign',
     riderAssignNone:'None',
     riderUnassign:'Unassign',
     riderUnassignConfirm:'Unassign <strong>{name}</strong> from this rider? The wheel and its measurements are kept.',
@@ -5257,7 +5303,7 @@ const LS_REGISTRY = [
   { key:'spokeit_bkpClock',       kind:'meta',      erase:false, exportField:null,            owner:'rappel de sauvegarde (amorçage)' },
   { key:'spokeit_lastSnooze',     kind:'meta',      erase:false, exportField:null,            owner:'rappel de sauvegarde (snooze 24h)' },
   { key:'spokeit_bkpDated',       kind:'pref',      erase:false, exportField:null,            owner:'export backup (nom daté/fixe)' },
-  { key:'spokeit_wlSort',         kind:'pref',      erase:false, exportField:null,            owner:'tri de la liste « Charger une roue »' },
+  { key:'spokeit_wlSort',         kind:'pref',      erase:false, exportField:null,            owner:'tri des listes « Charger une roue » et « Affecter roues »' },
   { key:'spokeit_hrSort',         kind:'pref',      erase:false, exportField:null,            owner:'tri des listes « Charger un moyeu / une jante »' },
   { key:'spokeit_appStamp',       kind:'meta',      erase:false, exportField:null,            owner:'toast nouvelle version (Last-Modified du document)' },
   { key:'spoke-it-lang',          kind:'pref',      erase:false, exportField:null,            owner:'i18n' },
@@ -21326,9 +21372,14 @@ document.addEventListener('keydown', function(e) {
     return { key: WL_SORT_DEF.key, dir: WL_SORT_DEF.dir };
   })();
 
-  function _wlSortKey(cfg, key) {
+  // `o` = { cfg, i } ; `o.riderName`, s'il est présent, remplace le rider
+  // enregistré pour le tri « Rider » (modale « Affecter roues » : roue en
+  // attente d'affectation, ou rider en cours de renommage).
+  function _wlSortKey(o, key) {
+    var cfg = o.cfg;
     if (key === 'date') return cfg.ts || null;
     if (key === 'name') return cfg.name || null;
+    if ('riderName' in o) return o.riderName || null;
     var rd = (cfg.riderId && typeof riderById === 'function') ? riderById(cfg.riderId) : null;
     return (rd && rd.name) ? rd.name : null;
   }
@@ -21337,7 +21388,7 @@ document.addEventListener('keydown', function(e) {
     var key = _wlSort.key, dir = _wlSort.dir;
     var loc = (lang === 'fr') ? 'fr' : 'en';
     return arr.sort(function(a, b) {
-      var av = _wlSortKey(a.cfg, key), bv = _wlSortKey(b.cfg, key);
+      var av = _wlSortKey(a, key), bv = _wlSortKey(b, key);
       if (av === null || bv === null) {
         if (av === null && bv === null) return a.i - b.i;
         return (av === null) ? 1 : -1;          // vides en fin, dans les 2 sens
@@ -21350,9 +21401,11 @@ document.addEventListener('keydown', function(e) {
     });
   }
 
-  function _wlSortRefreshBtns() {
+  // `prefix` : 'wl-sort-' (Charger une roue, défaut) ou 'wa-sort-' (Affecter roues).
+  function _wlSortRefreshBtns(prefix) {
+    prefix = prefix || 'wl-sort-';
     ['name','rider','date'].forEach(function(k) {
-      var b = document.getElementById('wl-sort-' + k);
+      var b = document.getElementById(prefix + k);
       if (!b) return;
       var on = (_wlSort.key === k);
       b.classList.toggle('active', on);
@@ -21364,12 +21417,20 @@ document.addEventListener('keydown', function(e) {
 
   // Clic sur la colonne active = inversion du sens ; sinon on bascule dessus
   // avec son sens par défaut.
-  window.wheelSortBy = function(key) {
+  function _wlSortToggle(key) {
     if (_wlSort.key === key) _wlSort.dir = (_wlSort.dir === 'asc') ? 'desc' : 'asc';
     else _wlSort = { key: key, dir: (key === 'date') ? 'desc' : 'asc' };
     try { lsSet(WL_SORT_LS, JSON.stringify(_wlSort)); } catch(e) {}
+  }
+  window.wheelSortBy = function(key) {
+    _wlSortToggle(key);
     wheelRenderLoadList();
   };
+  // Exposés pour « Affecter roues » (module Riders) : même tri, même
+  // préférence mémorisée — trier par rider là-bas trie aussi ici.
+  window.wlSortToggle      = _wlSortToggle;
+  window.wlSortApply       = _wlSortApply;
+  window.wlSortRefreshBtns = _wlSortRefreshBtns;
 
   // ── Render load list (filtre par wtype courant) ───────────────────────────
   function wheelRenderLoadList() {
@@ -21403,8 +21464,7 @@ document.addEventListener('keydown', function(e) {
     if (sortBar) sortBar.style.display = (filtered.length > 1) ? '' : 'none';
 
     if (filtered.length === 0) {
-      list.innerHTML = '<div class="wheel-load-empty">' +
-        (lang === 'fr' ? 'Aucune roue enregistrée.' : 'No saved wheels.') + '</div>';
+      list.innerHTML = '<div class="wheel-load-empty">' + t('wlNoWheels') + '</div>';
       return;
     }
 
@@ -21510,6 +21570,20 @@ document.addEventListener('keydown', function(e) {
   // rider en cours d'édition (id existant) ou null si création
   var _editingRiderId = null;
 
+  // Affectations en attente (modale « Affecter roues ») : écrites au Save
+  // du rider, abandonnées à la fermeture sans Save — même contrat que les
+  // champs Nom / Email / Téléphone. Ensemble de clés _waKey : côté + nom, la
+  // clé d'unicité de saveConfig (un index localStorage ne survit pas à une
+  // suppression). Le côté ne contient jamais de saut de ligne : le premier
+  // sépare sans ambiguïté, quel que soit le nom.
+  var _waPending = {};
+  function _waSide(cfg) { return (cfg.state && cfg.state.wtype) || 'avant'; }
+  function _waKey(cfg)  { return _waSide(cfg) + '\n' + cfg.name; }
+  function _waSideTag(cfg) {
+    return _waSide(cfg) === 'arriere' ? (lang === 'fr' ? 'AR' : 'R') : (lang === 'fr' ? 'AV' : 'F');
+  }
+  function _waIsPending(cfg) { return !!_waPending[_waKey(cfg)]; }
+
   // ── Modale intermédiaire (Charger / Créer) ─────────────────────────────────
   window.openRiderChoose = function() {
     document.getElementById('riderchoose-overlay').classList.add('show');
@@ -21533,6 +21607,7 @@ document.addEventListener('keydown', function(e) {
   // ── Modale édition / création ───────────────────────────────────────────────
   window.openRiderEdit = function(riderId) {
     _editingRiderId = riderId || null;
+    _waPending = {};
     var r = _editingRiderId ? riderById(_editingRiderId) : null;
     document.getElementById('rider-name').value  = r ? (r.name  || '') : '';
     document.getElementById('rider-email').value = r ? (r.email || '') : '';
@@ -21545,6 +21620,7 @@ document.addEventListener('keydown', function(e) {
     document.body.style.overflow = 'hidden';
   };
   window.closeRiderEdit = function() {
+    _waPending = {};
     document.getElementById('rideredit-overlay').classList.remove('show');
     document.getElementById('rideredit-modal').classList.remove('show');
     document.body.style.overflow = '';
@@ -21575,8 +21651,20 @@ document.addEventListener('keydown', function(e) {
       _editingRiderId = newRiderId();
       riders.unshift({ id: _editingRiderId, name: name, email: email, phone: phone, ts: Date.now() });
     }
-    persistRiders(riders);
-    // Mettre à jour la capsule rider de la card Roue (renommage)
+    var ridersOk = persistRiders(riders);
+    // Affectations en attente : seul riderId change, `ts` reste intact — la
+    // date d'une roue est celle de son enregistrement, pas de son affectation.
+    // Une roue affectée à un autre rider change simplement de rider. Rien
+    // n'est écrit si le rider lui-même n'a pas pu l'être : les roues
+    // pointeraient vers un id absent.
+    if (ridersOk && Object.keys(_waPending).length) {
+      var cfgs = loadConfigs(), changed = false;
+      cfgs.forEach(function(c) {
+        if (_waIsPending(c) && c.riderId !== _editingRiderId) { c.riderId = _editingRiderId; changed = true; }
+      });
+      if (changed) persistConfigs(cfgs);
+    }
+    // Mettre à jour la capsule rider de la card Roue (renommage, affectation)
     if (typeof _refreshLoadedBadges === 'function') _refreshLoadedBadges();
     closeRiderEdit();
   };
@@ -21589,7 +21677,7 @@ document.addEventListener('keydown', function(e) {
     var configs = (typeof loadConfigs === 'function') ? loadConfigs() : [];
     var assigned = configs
       .map(function(cfg, i) { return { cfg: cfg, i: i }; })
-      .filter(function(o) { return riderId && o.cfg.riderId === riderId; });
+      .filter(function(o) { return (riderId && o.cfg.riderId === riderId) || _waIsPending(o.cfg); });
 
     if (assigned.length === 0) {
       list.innerHTML = '<div class="wheel-load-empty">' + t('riderNoWheels') + '</div>';
@@ -21598,14 +21686,14 @@ document.addEventListener('keydown', function(e) {
 
     assigned.forEach(function(o) {
       var cfg = o.cfg, i = o.i;
+      // En attente : pas encore écrite, teintée, retirée sans confirmation.
+      var pending = !(riderId && cfg.riderId === riderId);
       var item = document.createElement('div');
-      item.className = 'wheel-load-item';
+      item.className = 'wheel-load-item' + (pending ? ' sel' : '');
 
       var nameEl = document.createElement('div');
       nameEl.className = 'wheel-load-item-name';
-      var sideTag = (cfg.state && (cfg.state.wtype || 'avant') === 'arriere')
-        ? (lang === 'fr' ? 'AR' : 'R') : (lang === 'fr' ? 'AV' : 'F');
-      nameEl.textContent = cfg.name + '  · ' + sideTag;
+      nameEl.textContent = cfg.name + '  · ' + _waSideTag(cfg);
 
       var dateStr = cfg.ts ? fmtDMY(cfg.ts) : '';
       var metaEl = document.createElement('div');
@@ -21618,6 +21706,12 @@ document.addEventListener('keydown', function(e) {
       delBtn.title = t('riderUnassign');
       delBtn.addEventListener('click', function(e) {
         e.stopPropagation();
+        // Affectation en attente : rien d'écrit, rien à confirmer.
+        if (pending) {
+          delete _waPending[_waKey(cfg)];
+          riderRenderWheels(riderId);
+          return;
+        }
         // Le × est visuellement identique à celui de « Charger une roue », qui,
         // lui, supprime : sans confirmation, le geste est ambigu. Le message
         // rappelle que rien n'est perdu — l'inverse du message de suppression.
@@ -21642,6 +21736,7 @@ document.addEventListener('keydown', function(e) {
       item.appendChild(delBtn);
 
       item.addEventListener('click', function() {
+        if (pending) return;
         riderLoadWheel(i);
       });
 
@@ -21659,6 +21754,157 @@ document.addEventListener('keydown', function(e) {
     // (module tardif), pas sur wtype.
     if (wh !== wtype && typeof setWheel === 'function') setWheel(wh);
     if (typeof loadConfig === 'function') loadConfig(idx);
+  }
+
+  // ── Modale « Affecter roues » ───────────────────────────────────────────────
+  // Toutes les roues, avant ET arrière (un rider en a souvent une de chaque),
+  // côté rappelé dans le nom comme dans la liste du rider. Tri partagé avec
+  // « Charger une roue » ; période non mémorisée, remise à « Tout » à chaque
+  // ouverture, comme là-bas.
+  // Sélection multiple : un clic met une roue en surbrillance ou l'en retire,
+  // « ✓ Affecter » remplace les affectations en attente par la sélection
+  // (écrites ensuite au Save du rider). Fermer sans valider abandonne la
+  // sélection, les affectations en attente restent telles quelles. La
+  // sélection part des roues déjà en attente : on peut donc aussi en retirer.
+  // Roues déjà enregistrées au rider : coche grise, non cliquables.
+  var _waPeriod = 'all';
+  var _waSel = {};   // sélection en cours : ensemble de clés _waKey
+
+  window.openRiderAssign = function() {
+    _waPeriod = 'all';
+    _waSel = Object.assign({}, _waPending);
+    riderAssignRender();
+    document.getElementById('riderassign-overlay').classList.add('show');
+    document.getElementById('riderassign-modal').classList.add('show');
+    // body.overflow : déjà 'hidden' par la modale Rider ouverte dessous.
+  };
+  window.closeRiderAssign = function() {
+    document.getElementById('riderassign-overlay').classList.remove('show');
+    document.getElementById('riderassign-modal').classList.remove('show');
+  };
+  window.riderAssignPeriodBy = function(val) {
+    _waPeriod = val;
+    riderAssignRender();
+  };
+  window.riderAssignSortBy = function(key) {
+    if (typeof wlSortToggle === 'function') wlSortToggle(key);
+    riderAssignRender();
+  };
+  window.riderAssignValidate = function() {
+    _waPending = Object.assign({}, _waSel);
+    riderRenderWheels(_editingRiderId);
+    closeRiderAssign();
+  };
+
+  // Bouton actif seulement si la sélection diffère des affectations en
+  // attente : valider sans changement ne ferait rien. Le compte (sélection
+  // entière, lignes masquées par la période comprises) vit dans son propre
+  // span, que applyLang ne réécrit pas.
+  function _waRefreshBtn() {
+    var btn = document.getElementById('wa-validate');
+    var cnt = document.getElementById('wa-count');
+    var sel = Object.keys(_waSel), pend = Object.keys(_waPending);
+    var changed = sel.length !== pend.length ||
+      pend.some(function(k) { return !_waSel[k]; });
+    if (cnt) cnt.textContent = sel.length ? ' (' + sel.length + ')' : '';
+    if (btn) btn.disabled = !changed;
+  }
+
+  function riderAssignRender() {
+    var list = document.getElementById('riderassign-list');
+    if (!list) return;
+    if (typeof wlSortRefreshBtns === 'function') wlSortRefreshBtns('wa-sort-');
+    var me = _editingRiderId;
+    // Nom du rider pour le tri « Rider » : celui du champ (renommage ou rider
+    // pas encore créé), sinon celui enregistré.
+    var myName = (document.getElementById('rider-name').value || '').trim();
+    if (!myName && me) { var rdMe = riderById(me); myName = rdMe ? rdMe.name : ''; }
+    var configs = (typeof loadConfigs === 'function') ? loadConfigs() : [];
+    // Clé de tri « Rider » sur l'état enregistré + en attente, PAS sur la
+    // sélection en cours : une ligne ne doit pas sauter ailleurs au clic.
+    var items = configs.map(function(cfg, i) {
+      var o = { cfg: cfg, i: i, locked: !!(me && cfg.riderId === me) };
+      if (o.locked || _waIsPending(cfg)) o.riderName = myName || null;
+      return o;
+    });
+
+    var btn = document.getElementById('wa-validate');
+    if (btn) btn.style.display = configs.length ? '' : 'none';
+    _waRefreshBtn();
+
+    // Période : options sur la liste complète, puis filtrage, puis tri.
+    var psel  = document.getElementById('wa-period-sel');
+    var prow  = document.getElementById('wa-period');
+    var pscan = _perScan(items.map(function(o) { return o.cfg.ts; }));
+    if (psel) _waPeriod = _perFill(psel, pscan, _waPeriod);
+    if (prow) prow.style.display =
+      ((pscan.years.length + (pscan.none ? 1 : 0)) > 1) ? '' : 'none';
+    if (_waPeriod !== 'all') {
+      items = items.filter(function(o) { return _perKey(o.cfg.ts) === _waPeriod; });
+    }
+
+    if (typeof wlSortApply === 'function') wlSortApply(items);
+
+    var sortBar = document.getElementById('wa-sort');
+    if (sortBar) sortBar.style.display = (items.length > 1) ? '' : 'none';
+
+    if (items.length === 0) {
+      list.innerHTML = '<div class="wheel-load-empty">' + t('wlNoWheels') + '</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    items.forEach(function(o) {
+      var cfg = o.cfg;
+      var key = _waKey(cfg);
+      var chosen = !o.locked && !!_waSel[key];
+      var item = document.createElement('div');
+      item.className = 'wheel-load-item' + (o.locked ? ' locked' : (chosen ? ' sel' : ''));
+
+      var nameEl = document.createElement('div');
+      nameEl.className = 'wheel-load-item-name';
+      nameEl.textContent = cfg.name + '  · ' + _waSideTag(cfg);
+      item.appendChild(nameEl);
+
+      // Capsule du rider enregistré s'il en a un autre : sélectionnée ou non,
+      // la ligne montre à qui la roue sera retirée.
+      if (cfg.riderId && cfg.riderId !== me) {
+        var riderEl = (typeof riderChipEl === 'function') ? riderChipEl(cfg.riderId) : null;
+        if (riderEl) item.appendChild(riderEl);
+      }
+
+      if (cfg.ts) {
+        var metaEl = document.createElement('div');
+        metaEl.className = 'wheel-load-item-meta';
+        metaEl.textContent = fmtDMY(cfg.ts);
+        item.appendChild(metaEl);
+      }
+
+      // Coche toujours présente, masquée hors sélection : les dates restent
+      // alignées d'une ligne à l'autre.
+      var chk = document.createElement('span');
+      chk.className = 'wheel-load-item-check';
+      chk.textContent = '✓';
+      function setChk(on) {
+        chk.style.visibility = on ? '' : 'hidden';
+        if (on) chk.removeAttribute('aria-hidden'); else chk.setAttribute('aria-hidden', 'true');
+      }
+      setChk(o.locked || chosen);
+      item.appendChild(chk);
+
+      // Bascule sur place, sans re-rendu : la position de l'ascenseur tient.
+      item.addEventListener('click', function() {
+        if (o.locked) return;
+        chosen = !chosen;
+        if (chosen) _waSel[key] = true;
+        else delete _waSel[key];
+        item.classList.toggle('sel', chosen);
+        setChk(chosen);
+        _waRefreshBtn();
+      });
+
+      list.appendChild(item);
+    });
   }
 
   // ── Modale chargement (liste des riders) ────────────────────────────────────
@@ -21722,6 +21968,7 @@ document.addEventListener('keydown', function(e) {
     // sans ce garde, un seul appui fermerait AUSSI la modale sous-jacente.
     var _cf = document.getElementById('confirm-modal');
     if (_cf && _cf.classList.contains('show')) return;
+    if (document.getElementById('riderassign-modal').classList.contains('show')) { e.preventDefault(); closeRiderAssign(); return; }
     if (document.getElementById('rideredit-modal').classList.contains('show'))   { e.preventDefault(); closeRiderEdit(); return; }
     if (document.getElementById('riderload-modal').classList.contains('show'))   { e.preventDefault(); closeRiderLoad(); return; }
     if (document.getElementById('riderchoose-modal').classList.contains('show')) { e.preventDefault(); closeRiderChoose(); return; }
