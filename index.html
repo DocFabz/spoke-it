@@ -490,8 +490,9 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .rider-wheels-list .wheel-load-item.sel { cursor:default }
 /* « Affecter roues » : gabarit de « Charger une roue », au-dessus de la
    modale Rider (9980/9981), au même étage que .wsr-modal. Surbrillance (.sel)
-   = roues choisies ; .locked = roue déjà enregistrée au rider : coche grise,
-   ni teinte ni survol, non cliquable (désaffectation : × de la modale Rider). */
+   = roues choisies ; .locked = roue déjà enregistrée au rider : capsule du
+   rider, coche grise, ni teinte ni survol, non cliquable (désaffectation : ×
+   de la modale Rider). */
 #riderassign-overlay { z-index:9990 }
 #riderassign-modal { z-index:9991 }
 #riderassign-modal .wheel-load-item.locked { cursor:default }
@@ -4168,7 +4169,17 @@ window.wiNotesFlat = function() {
     <div class="wheel-load-list rider-wheels-list" id="rider-wheels-list"></div>
   </div>
   <button class="ct-save-btn rider-assign-btn" onclick="openRiderAssign()" style="margin-top:.3rem">
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"/><circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/><line x1="8" y1="1.5" x2="8" y2="4.5"/><line x1="13.1" y1="4.4" x2="10.9" y2="5.7"/><line x1="13.1" y1="11.6" x2="10.9" y2="10.3"/><line x1="8" y1="14.5" x2="8" y2="11.5"/><line x1="2.9" y1="11.6" x2="5.1" y2="10.3"/><line x1="2.9" y1="4.4" x2="5.1" y2="5.7"/></svg>
+    <!-- Même dessin que l'icône de la card Roue (.cicon), taille du bouton (14px). -->
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+      <circle cx="12" cy="12" r="10.5"/>
+      <circle cx="12" cy="12" r="8" stroke-width="2" stroke-opacity=".35"/>
+      <circle cx="12" cy="12" r="2"/>
+      <circle cx="12" cy="12" r=".7" fill="currentColor" stroke="none"/>
+      <line x1="12" y1="2.5"  x2="12" y2="10"/>  <line x1="12"   y1="14"  x2="12"  y2="21.5"/>
+      <line x1="21.5" y1="12" x2="14" y2="12"/>  <line x1="10"   y1="12"  x2="2.5" y2="12"/>
+      <line x1="19.1" y1="5.1"  x2="13.4" y2="10.6"/>  <line x1="10.6" y1="13.4" x2="4.9"  y2="18.9"/>
+      <line x1="4.9"  y1="5.1"  x2="10.6" y2="10.6"/>  <line x1="13.4" y1="13.4" x2="19.1" y2="18.9"/>
+    </svg>
     <span data-i18n="riderAssignWheels">Affecter roues</span>
   </button>
   <button class="ct-save-btn" onclick="saveRider()">
@@ -5475,11 +5486,13 @@ function clearLoadedConfigName() {
 }
 
 // ── Capsule rider (icône user + nom, jamais l'ID) ──────────────────────────────
-// Source unique du markup : card Roue, Data manager, modale de chargement.
-// Dimensionnement de l'icône par le CSS (.wheel-load-item-rider svg).
-function riderChipEl(riderId) {
+// Source unique du markup : card Roue, Data manager, « Charger une roue »,
+// « Affecter roues ». Dimensionnement de l'icône par le CSS
+// (.wheel-load-item-rider svg). `nameOverride` (optionnel) remplace le nom
+// enregistré : « Affecter roues », où le rider en cours peut être renommé.
+function riderChipEl(riderId, nameOverride) {
   if (!riderId || typeof riderById !== 'function') return null;
-  const rd = riderById(riderId);
+  const rd = nameOverride ? { name: nameOverride } : riderById(riderId);
   if (!rd || !rd.name) return null;
   const chip = document.createElement('span');
   chip.className = 'wheel-load-item-rider';
@@ -21443,9 +21456,10 @@ document.addEventListener('keydown', function(e) {
 
   // ── Tri de la liste (nom / rider / date), mémorisé entre deux ouvertures ──
   // Sens par défaut : alphabétique croissant pour le texte, plus récent d'abord
-  // pour la date. Les entrées sans clé (roue non affectée, enregistrement
-  // ancien sans ts) restent TOUJOURS en fin de liste, quel que soit le sens :
-  // elles n'ont pas de rang, les intercaler ferait sauter la lecture.
+  // pour la date. Les entrées sans clé restent groupées, jamais intercalées.
+  // Nom / Date : groupe TOUJOURS en fin (enregistrement ancien sans ts : aucun
+  // rang). Rider : « non affectée » se range après Z, donc en fin sur A→Z et
+  // en TÊTE sur Z→A — l'inversion retourne la liste entière.
   var WL_SORT_LS  = 'spokeit_wlSort';
   var WL_SORT_DEF = { key:'date', dir:'desc' };
   var _wlSort = (function() {
@@ -21476,7 +21490,8 @@ document.addEventListener('keydown', function(e) {
       var av = _wlSortKey(a, key), bv = _wlSortKey(b, key);
       if (av === null || bv === null) {
         if (av === null && bv === null) return a.i - b.i;
-        return (av === null) ? 1 : -1;          // vides en fin, dans les 2 sens
+        var nl = (key === 'rider' && dir === 'desc') ? -1 : 1;
+        return (av === null) ? nl : -nl;        // vides en fin (tête : Rider Z→A)
       }
       var r = (key === 'date')
         ? (av - bv)
@@ -21900,8 +21915,9 @@ document.addEventListener('keydown', function(e) {
     if (!list) return;
     if (typeof wlSortRefreshBtns === 'function') wlSortRefreshBtns('wa-sort-');
     var me = _editingRiderId;
-    // Nom du rider pour le tri « Rider » : celui du champ (renommage ou rider
-    // pas encore créé), sinon celui enregistré.
+    // Nom du rider en cours, pour le tri « Rider » ET la capsule de ses roues
+    // verrouillées : celui du champ (renommage ou rider pas encore créé),
+    // sinon celui enregistré.
     var myName = (document.getElementById('rider-name').value || '').trim();
     if (!myName && me) { var rdMe = riderById(me); myName = rdMe ? rdMe.name : ''; }
     var configs = (typeof loadConfigs === 'function') ? loadConfigs() : [];
@@ -21951,12 +21967,16 @@ document.addEventListener('keydown', function(e) {
       nameEl.textContent = cfg.name + '  · ' + _waSideTag(cfg);
       item.appendChild(nameEl);
 
-      // Capsule du rider enregistré s'il en a un autre : sélectionnée ou non,
-      // la ligne montre à qui la roue sera retirée.
-      if (cfg.riderId && cfg.riderId !== me) {
-        var riderEl = (typeof riderChipEl === 'function') ? riderChipEl(cfg.riderId) : null;
-        if (riderEl) item.appendChild(riderEl);
+      // Capsule rider. Roue verrouillée : rider en cours, nom `myName` —
+      // capsule et ordre concordent pendant un renommage. Autre rider
+      // enregistré : sélectionnée ou non, la ligne montre à qui la roue
+      // sera retirée.
+      var riderEl = null;
+      if (typeof riderChipEl === 'function') {
+        if (o.locked) riderEl = riderChipEl(me, myName);
+        else if (cfg.riderId && cfg.riderId !== me) riderEl = riderChipEl(cfg.riderId);
       }
+      if (riderEl) item.appendChild(riderEl);
 
       if (cfg.ts) {
         var metaEl = document.createElement('div');
