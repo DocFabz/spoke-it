@@ -6099,7 +6099,14 @@ function _applyStateBody(s) {
       if (html.indexOf('rincluant') === -1) html = '<div class="rincluant">' + t('including') + '</div>' + html;
       return html;
     }
-    $id('m-fo').innerHTML = injectIncluant(s.mFo); $id('m-fa').innerHTML = injectIncluant(s.mFa);
+    // Jamais par innerHTML : ce HTML vient du stockage ou d'un fichier reçu
+    // (cf. _safeSavedHtml). Non-chaîne (fichier altéré) → bloc vide, là où
+    // innerHTML aurait écrit le texte « undefined ».
+    [['m-fo', s.mFo], ['m-fa', s.mFa]].forEach(([id, html]) => {
+      const el = $id(id);
+      el.textContent = '';
+      el.appendChild(_safeSavedHtml(injectIncluant(typeof html === 'string' ? html : '')));
+    });
     // Le label "Incluant/Including" est figé dans le HTML sauvegardé (langue de
     // la save) ; on le retraduit dans la langue courante, comme applyLang au
     // toggle — sinon il reste figé jusqu'au prochain changement de langue.
@@ -7517,13 +7524,16 @@ function renderSummary() {
     : crossStr(d.cross);
   const ratioColor = d.ratio >= 0.7 ? 'var(--success)' : d.ratio >= 0.6 ? '#e8a040' : '#e06060';
   function item(lbl, val, color) {
-    return `<div class="sum-row"><span class="sum-lbl">${lbl}</span><span class="sum-val"${color ? ' style="color:'+color+'"' : ''}>${val}</span></div>`;
+    // val est échappée : summaryData est restauré tel quel depuis l'état
+    // sauvegardé (saves, backups, roues partagées). Valeurs légitimes sans
+    // caractère spécial : rendu identique. lbl et color sont internes.
+    return `<div class="sum-row"><span class="sum-lbl">${lbl}</span><span class="sum-val"${color ? ' style="color:'+color+'"' : ''}>${escHtml(String(val))}</span></div>`;
   }
   function itemClickable(lbl, id, val, colorVar, side) {
     const pencil = `<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
     const display = (val !== undefined && val !== null) ? val + ' mm' : '— mm';
     const blinkCls = (val === undefined || val === null) ? ' blink' : '';
-    return `<div class="sum-row"><span class="sum-lbl">${lbl}</span><button class="sum-val-btn${blinkCls}" style="color:${colorVar}" onclick="slenOpen('${side}')">${display} ${pencil}</button></div>`;
+    return `<div class="sum-row"><span class="sum-lbl">${lbl}</span><button class="sum-val-btn${blinkCls}" style="color:${colorVar}" onclick="slenOpen('${side}')">${escHtml(display)} ${pencil}</button></div>`;
   }
   // Orange toujours au-dessus, bleu en dessous
   // fo=orange : gauche (avant) / droite (arrière)
@@ -7981,6 +7991,45 @@ function loadConfig(idx) {
 }
 
 function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+// ── Réinjection d'un fragment HTML persisté ──────────────────────────────────
+// m-fo / m-fa voyagent en HTML dans l'état sauvegardé (readState) : saves,
+// backups et roues partagées. Un fichier reçu est éditable à la main ; réinjecté
+// par innerHTML, il exécutait tout gestionnaire qu'il portait (XSS persistante :
+// à l'import, puis à chaque ouverture de la roue).
+// Analyse dans un <template> — contenu inerte : rien ne s'exécute, rien ne se
+// charge — puis reconstruction nœud par nœud en LISTE BLANCHE : balises de mise
+// en forme, attributs class / title, style sans url() ni expression. Balise hors
+// liste : déballée, son texte reste. Conteneurs actifs : supprimés avec leur
+// contenu. Les nœuds produits sont neufs (createElement) : aucun attribut ne
+// traverse sans avoir été copié explicitement. Le HTML de calc() ressort à
+// l'identique, formats antérieurs compris. Tables locales à la fonction : pas
+// de const de haut de bloc, donc aucune zone morte si applyState court au boot.
+function _safeSavedHtml(html) {
+  const out = document.createDocumentFragment();
+  if (typeof html !== 'string' || !html) return out;
+  const KEEP = { DIV:1, SPAN:1, STRONG:1, B:1, EM:1, I:1, SMALL:1, P:1, BR:1, SUP:1, SUB:1 };
+  const DROP = { SCRIPT:1, STYLE:1, TEMPLATE:1, NOSCRIPT:1, IFRAME:1, OBJECT:1, EMBED:1,
+                 SVG:1, MATH:1, TEXTAREA:1, TITLE:1, SELECT:1, NOEMBED:1, NOFRAMES:1, XMP:1 };
+  const tpl = document.createElement('template');
+  tpl.innerHTML = html;
+  (function copy(src, dst) {
+    for (let n = src.firstChild; n; n = n.nextSibling) {
+      if (n.nodeType === 3) { dst.appendChild(document.createTextNode(n.nodeValue)); continue; }
+      if (n.nodeType !== 1) continue;                    // commentaires, etc.
+      const tag = n.nodeName.toUpperCase();
+      if (DROP[tag]) continue;
+      if (!KEEP[tag]) { copy(n, dst); continue; }        // déballée : le texte reste
+      const el = document.createElement(tag.toLowerCase());
+      ['class', 'title'].forEach(a => { const v = n.getAttribute(a); if (v !== null) el.setAttribute(a, v); });
+      const st = n.getAttribute('style');
+      if (st !== null && !/url\s*\(|expression|javascript:|@import|\\/i.test(st)) el.setAttribute('style', st);
+      copy(n, el);
+      dst.appendChild(el);
+    }
+  })(tpl.content, out);
+  return out;
+}
 // ── Dates ───────────────────────────────────────────────────────────────────
 // Deux formats, un seul point d'écriture chacun, tous deux suivant `lang`.
 //
@@ -10617,14 +10666,45 @@ function tmInRange(reading, side) {
   return reading >= range.min && reading <= range.max;
 }
 
+// ── Tensiomètre à graduation ─────────────────────────────────────────────────
+// Lecture = numéro de repère (Park Tool, UNIOR), pas une déflexion en mm : la
+// saisie se prend telle quelle, sans le raccourci « 165 → 1.65 ».
+// Un tensiomètre perso ne déclare pas son type : il se déduit de ses chartes.
+// Gradué si une lecture atteint 10 — aucun tensiomètre à déflexion n'y arrive
+// (DT, P&K, Pillar, WF plafonnent sous 5 mm) — ou si toutes les lectures sont
+// entières, ce qui couvre une charte de lames fines restée sous le repère 10.
+// Sans charte, rien à saisir : repli décimal, comportement antérieur.
+// Lu à chaque appel dans TM_TABLES, que ccInjectAll tient à jour à toute
+// création, suppression ou import de charte : aucun cache à invalider. Les
+// types fixes sortent avant tout accès à TM_TABLES.
+function tmIsGraduated() {
+  if (tmType === 'pt' || tmType === 'un') return true;
+  if (!tmType || tmType.indexOf('ct_') !== 0) return false;
+  const tbl = TM_TABLES[tmType];
+  if (!tbl) return false;
+  let count = 0, high = false, allInt = true;
+  Object.keys(tbl).forEach(k => {
+    const pts = tbl[k];
+    if (!Array.isArray(pts)) return;
+    pts.forEach(p => {
+      const r = Array.isArray(p) ? p[0] : null;
+      if (typeof r !== 'number' || !isFinite(r)) return;
+      count++;
+      if (r >= 10) high = true;
+      if (r % 1 !== 0) allInt = false;
+    });
+  });
+  return high || (count > 0 && allInt);
+}
+
 // ── Parse input selon le tensiomètre ─────────────────────────────────────────
 // WF & DT : décimal (0.55 ou ,55 ou 55 → 0.55)
-// PT      : entier (numéro de graduation)
+// Gradué  : tel quel (Park Tool, UNIOR, perso gradué — cf. tmIsGraduated)
 function tmParseInput(raw) {
   if (!raw || raw.trim() === '') return null;
   let s = raw.trim().replace(',', '.');
-  if (tmType === 'pt' || tmType === 'un') {
-    // Park Tool / UNIOR : entier ou décimal (numéro de graduation)
+  if (tmIsGraduated()) {
+    // Park Tool / UNIOR / perso gradué : entier ou décimal (numéro de graduation)
     const n = parseFloat(s);
     return isNaN(n) ? null : n;
   } else if (tmType === 'wf' || tmType === 'wfm') {
@@ -10640,7 +10720,7 @@ function tmParseInput(raw) {
     if (!s.includes('.') && Number.isInteger(n)) return Math.round((n / 100) * 10000) / 10000;
     return Math.round(n * 10000) / 10000;
   } else {
-    // DT Swiss, PK, tensiomètre perso : raccourci "165" → 1.65, "035" → 0.35
+    // DT Swiss, PK, tensiomètre perso à déflexion : raccourci "165" → 1.65, "035" → 0.35
     // Si la saisie ne contient pas de virgule/point, on divise par 100
     const n = parseFloat(s);
     if (isNaN(n)) return null;
@@ -10652,7 +10732,7 @@ function tmParseInput(raw) {
 // ── Affichage valeur dans l'input ─────────────────────────────────────────────
 function tmDisplayValue(val) {
   if (val === null) return '';
-  if (tmType === 'pt' || tmType === 'un') return val % 1 === 0 ? String(val) : val.toFixed(1);
+  if (tmIsGraduated()) return val % 1 === 0 ? String(val) : val.toFixed(1);
   return val.toFixed(2);
 }
 
@@ -15251,14 +15331,16 @@ function efUpdatePrevKgf() {
 
 // ── Garde de précision métier ────────────────────────────────────────────────
 // Une lecture de tensiomètre est au CENTIÈME au plus (déflection à deux
-// décimales ; Park Tool/UNIOR au dixième). Une décimale à 3+ chiffres
+// décimales ; tensiomètre gradué — Park Tool, UNIOR, perso gradué — au
+// dixième). Une décimale à 3+ chiffres
 // significatifs ne peut pas sortir d'un cadran : c'est la signature d'une
 // FUSION du formateur numérique du moteur vocal (hésitation « zéro virgule
 // quatre… quatre-vingt-dix-huit » → "0,498"), sémantiquement fausse mais
 // syntaxiquement propre et souvent EN PLAGE — indétectable par la garde
 // min–max. Les zéros de queue sont ignorés ("0,980" = 0,98 légitime).
-// Ne touche PAS au raccourci entier ("123" → 1.23) : la chaîne dictée n'a
-// pas de partie décimale, le /100 de tmParseInput s'applique après.
+// Ne touche PAS à une dictée entière : sans partie décimale, elle est
+// interprétée ensuite par tmParseInput selon le tensiomètre — raccourci
+// "123" → 1.23 à déflexion, repère 123 tel quel si gradué (tmIsGraduated).
 function efDecTooPrecise(numStr) {
   if (!numStr) return false;
   var s = String(numStr).replace(',', '.');
@@ -19404,7 +19486,7 @@ function snapDelete(snapIdx) {
   const snap = (cfg.snapshots || [])[snapIdx];
   if (!snap) return;
   const msg = t('snapDelConfirm')
-                .replace('{n}', snap.num)
+                .split('{n}').join(escHtml(String(snap.num))) // split/join : pas de motif $ interprété
                 .replace('{d}', fmtDMYHM(snap.ts));
   const ts = snap.ts;
   confirmShow(msg, function() { _snapDeleteNow(snapIdx, ts); });
@@ -19444,7 +19526,7 @@ function snapRenderList() {
     const infoStr = escHtml([_snapResolveTensio(snap), _snapSpokeLabel(snap, wtype)].filter(Boolean).join(' · '));
     return '<div class="snap-item" onclick="snapLoad(' + i + ')">'
       + '<div class="snap-item-info">'
-      + '<span class="snap-item-label">SNAPSHOT ' + snap.num + '</span>'
+      + '<span class="snap-item-label">SNAPSHOT ' + escHtml(String(snap.num)) + '</span>'
       + '<span class="snap-item-meta">' + dateStr + '</span>'
       + (infoStr ? '<span class="snap-item-meta">' + infoStr + '</span>' : '')
       + '</div>'
@@ -19632,7 +19714,7 @@ function _snapCompareRenderList(snaps) {
     var infoStr = escHtml([_snapResolveTensio(snap), _snapSpokeLabel(snap, wtype)].filter(Boolean).join(' · '));
     return '<div class="snap-item" id="snapcmp-item-' + i + '" onclick="_snapCompareToggle(' + i + ')" style="cursor:pointer">'
       + '<div class="snap-item-info">'
-      + '<span class="snap-item-label">SNAPSHOT ' + snap.num + '</span>'
+      + '<span class="snap-item-label">SNAPSHOT ' + escHtml(String(snap.num)) + '</span>'
       + '<span class="snap-item-meta">' + dateStr + '</span>'
       + (infoStr ? '<span class="snap-item-meta">' + infoStr + '</span>' : '')
       + '</div>'
@@ -21000,7 +21082,8 @@ document.addEventListener('keydown', function(e) {
         ? diffPairStr(wtype, spokeSectionStr({ d: sdFo, a: saFo }), spokeSectionStr({ d: sdFa, a: saFa }))
         : spokeSectionStr({ d: sd, a: sa });
       var youngLabel = (typeof lang !== 'undefined' && lang === 'en') ? 'Young\'s modulus' : 'Module de Young';
-      subEl.innerHTML = t('hookeSectionLabel') + ' : ' + sectionVal + '<br>' + youngLabel + ' : 200 GPa';
+      // sectionVal échappée : sd/sa sont restaurés tels quels depuis l'état.
+      subEl.innerHTML = t('hookeSectionLabel') + ' : ' + escHtml(sectionVal) + '<br>' + youngLabel + ' : 200 GPa';
     }
 
     // Cards légende : deux cards côte à côte, donc NDS à gauche et DS à droite
@@ -21018,7 +21101,9 @@ document.addEventListener('keydown', function(e) {
         card.className = 'hooke-leg-card';
         card.style.borderColor = d.color + '44';
         card.innerHTML =
-          '<div class="hooke-leg-label" style="color:'+d.color+'">'+d.label+'</div>' +
+          // label échappé : texte de rtag-*, dont la clé i18n vient de l'état
+          // (t() renvoie la clé elle-même quand elle est inconnue).
+          '<div class="hooke-leg-label" style="color:'+d.color+'">'+escHtml(d.label)+'</div>' +
           '<div class="hooke-leg-val">'+d.T.toFixed(1)+' kgf</div>' +
           '<div class="hooke-leg-val">+'+(Math.round(d.eTotal * 100) / 100).toFixed(2)+' mm</div>';
         legEl.appendChild(card);
