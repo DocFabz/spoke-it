@@ -2373,7 +2373,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         </div>
         <div class="f" id="field-sp-so-left" style="display:none">
           <label class="tip-wrap" for="sp-so-left"><span data-i18n="soLeft">SO G</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Spoke Offset</span></label>
-          <input type="number" id="sp-so-left" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—">
+          <input type="number" id="sp-so-left" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—" oninput="syncRadialLock()">
           <!-- Radial : SO = 0 imposé. Clone affiché à la place de l'input, qui garde la valeur saisie -->
           <input type="number" id="sp-so-left-rad" class="inp-disabled" value="0" disabled aria-label="Spoke Offset" style="display:none">
         </div>
@@ -2391,7 +2391,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         </div>
         <div class="f" id="field-sp-so-right" style="display:none">
           <label class="tip-wrap" for="sp-so-right"><span data-i18n="soRight">SO D</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Spoke Offset</span></label>
-          <input type="number" id="sp-so-right" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—">
+          <input type="number" id="sp-so-right" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—" oninput="syncRadialLock()">
           <!-- Radial : SO = 0 imposé. Clone affiché à la place de l'input, qui garde la valeur saisie -->
           <input type="number" id="sp-so-right-rad" class="inp-disabled" value="0" disabled aria-label="Spoke Offset" style="display:none">
         </div>
@@ -6603,6 +6603,7 @@ function updateRadialWarn() {
   if (w) w.style.display = hasRadial ? 'block' : 'none';
   updateCrossGeomWarn();
   syncSoRadial();
+  syncRadialLock();
 }
 
 function updateCrossGeomWarn() {
@@ -6639,15 +6640,17 @@ function updateCrossForHubType() {
 
   // Radial interdit côté DS roue arrière uniquement
   // En mode diff : cp-fo = DS arrière, cp-fa = jamais bloqué
+  // Seule la DÉSÉLECTION est faite ici (écriture de cross / crossFo). L'état
+  // grisé des boutons Radial appartient à syncRadialLock(), qui le recalcule
+  // en entier — règle arrière comprise — à la dernière ligne de cette
+  // fonction, via updateRadialWarn().
   const radialSingle = document.querySelector('#cross-row-single .cp[data-cross="0"]');
-  if (radialSingle) {
-    radialSingle.classList.toggle('sp-disabled', isArriere);
-    if (isArriere && radialSingle.classList.contains('active')) { radialSingle.classList.remove('active'); cross = null; }
+  if (radialSingle && isArriere && radialSingle.classList.contains('active')) {
+    radialSingle.classList.remove('active'); cross = null;
   }
   const radialFo = document.querySelector('.cp-fo[data-cross="0"]');
-  if (radialFo) {
-    radialFo.classList.toggle('sp-disabled', isArriere);
-    if (isArriere && radialFo.classList.contains('active')) { radialFo.classList.remove('active'); crossFo = null; }
+  if (radialFo && isArriere && radialFo.classList.contains('active')) {
+    radialFo.classList.remove('active'); crossFo = null;
   }
   updateRadialWarn();
 }
@@ -7427,6 +7430,47 @@ function crossBySide() {
     R: diffMode ? (isArriere ? crossFo : crossFa) : cross,
     L: diffMode ? (isArriere ? crossFa : crossFo) : cross
   };
+}
+
+// ── Radial straightpull : verrou par le SO ──────────────────────────────────
+// Un SO non nul décrit un moyeu à oreilles appairées : deux rayons partent en
+// sens opposés d'une même oreille et se croisent. Ce côté ne peut donc PAS
+// être lacé radial, et le bouton Radial correspondant devient non
+// sélectionnable.
+//
+// Règle volontairement asymétrique : un côté DÉJÀ radial n'est jamais bloqué.
+// Sans cela, charger une roue, un partage ou un moyeu enregistré portant les
+// deux (c'est possible, et c'était le comportement d'avant) obligerait à
+// changer le laçage de l'utilisateur — plus intrusif que d'ignorer le SO. Ce
+// cas reste donc traité comme avant : SO grisé à 0 et ignoré du calcul
+// (cf. slenSP). Le chemin « Radial d'abord, cotes du moyeu ensuite » est
+// préservé pour la même raison, et y saisir un SO est de toute façon
+// impossible puisque le champ est grisé.
+function radialLockedBySO(side) {
+  if (hubType !== 'straightpull') return false;
+  if (crossBySide()[side] === 0) return false;
+  const v = parseFloat($id(side === 'L' ? 'sp-so-left' : 'sp-so-right').value);
+  return !isNaN(v) && v !== 0;
+}
+
+// Seul auteur de l'état grisé des boutons Radial : union de ce verrou et de la
+// règle historique (radial interdit côté DS d'une roue arrière, dont
+// updateCrossForHubType ne garde que la désélection). Mode simple : un seul
+// croisement pour les deux côtés,
+// donc un SO non nul d'un seul côté suffit à bloquer. Mode différentiel :
+// rangée orange = NDS (gauche) à l'avant, DS (droite) à l'arrière, comme dans
+// crossBySide().
+function syncRadialLock() {
+  const isArriere = wtype === 'arriere', isAvant = !isArriere;
+  const lockFo = radialLockedBySO(isAvant ? 'L' : 'R');
+  const lockFa = radialLockedBySO(isAvant ? 'R' : 'L');
+  const lockSingle = radialLockedBySO('L') || radialLockedBySO('R');
+  const single = document.querySelector('#cross-row-single .cp[data-cross="0"]');
+  const fo     = document.querySelector('.cp-fo[data-cross="0"]');
+  const fa     = document.querySelector('.cp-fa[data-cross="0"]');
+  if (single) single.classList.toggle('sp-disabled', isArriere || lockSingle);
+  if (fo)     fo.classList.toggle('sp-disabled', isArriere || lockFo);
+  if (fa)     fa.classList.toggle('sp-disabled', lockFa);
 }
 
 // ── Spoke Offset straightpull en radial ─────────────────────────────────────
