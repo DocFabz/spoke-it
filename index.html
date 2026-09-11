@@ -2374,6 +2374,8 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         <div class="f" id="field-sp-so-left" style="display:none">
           <label class="tip-wrap" for="sp-so-left"><span data-i18n="soLeft">SO G</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Spoke Offset</span></label>
           <input type="number" id="sp-so-left" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—">
+          <!-- Radial : SO = 0 imposé. Clone affiché à la place de l'input, qui garde la valeur saisie -->
+          <input type="number" id="sp-so-left-rad" class="inp-disabled" value="0" disabled aria-label="Spoke Offset" style="display:none">
         </div>
       </div>
       <div class="hub-divider"></div>
@@ -2390,6 +2392,8 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         <div class="f" id="field-sp-so-right" style="display:none">
           <label class="tip-wrap" for="sp-so-right"><span data-i18n="soRight">SO D</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Spoke Offset</span></label>
           <input type="number" id="sp-so-right" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—">
+          <!-- Radial : SO = 0 imposé. Clone affiché à la place de l'input, qui garde la valeur saisie -->
+          <input type="number" id="sp-so-right-rad" class="inp-disabled" value="0" disabled aria-label="Spoke Offset" style="display:none">
         </div>
       </div>
     </div>
@@ -4899,7 +4903,7 @@ const i18n = {
     errPcd:'Veuillez renseigner PCD et déport pour les deux côtés.',
     errErd:'ERD invalide ou non renseigné.', errCross:'Veuillez choisir un croisement.',
     errOffset:'Les déports doivent être positifs.',
-    errSO:'Veuillez renseigner le Spoke Offset (SO) pour les deux côtés.',
+    errSO:'Veuillez renseigner le Spoke Offset (SO).',
     arbitrage:'Arrondi suggéré', arbPickHint:'Cliquez sur la valeur souhaitée pour le montage.', gapTarget:'écart cible',
     spokeThread:'⚠ La suggestion d\'arrondi propose la taille de rayon ayant le moins d\'écart avec la cible, en prenant en compte l\'élongation estimée. Vérifiez toujours la base de calcul de votre ERD et le positionnement du rayon dans l\'écrou qui a servi à le définir.',
     saveWarning:'⚠︎ Sauvegarde locale dans le cache navigateur. Vider le cache effacera les données.',
@@ -5162,7 +5166,7 @@ const i18n = {
     errPcd:'Please enter PCD and offset for both sides.',
     errErd:'ERD is invalid or missing.', errCross:'Please select a lacing pattern.',
     errOffset:'Offsets must be positive values.',
-    errSO:'Please enter Spoke Offset (SO) for both sides.',
+    errSO:'Please enter the Spoke Offset (SO).',
     arbitrage:'Suggested rounding', arbPickHint:'Click the desired value for the build.', gapTarget:'gap to target',
     spokeThread:'⚠ The rounding suggestion finds the spoke length with the smallest gap from target, accounting for estimated elongation. Always verify the calculation basis of your ERD and the spoke positioning in the nipple used to define it.',
     saveWarning:'⚠︎ Locally stored in browser cache. Clearing the cache will erase all data.',
@@ -6586,29 +6590,17 @@ function setErdMode(m) {
 }
 
 function updateRadialWarn() {
-  // Roue avant : fo = NDS gauche (interdit), fa = DS droit (autorisé)
-  // Roue arrière : fo = DS droit (interdit), fa = NDS gauche (autorisé)
-  // En mode simple, le radial est toujours interdit (bloqué par updateCrossForHubType pour l'arrière)
-  // Le warning disque ne concerne que le côté NDS (= fo pour avant, fa pour arrière) = côté bloqué
-  const isAvant = wtype === 'avant';
-  const isDiff = typeof diffMode !== 'undefined' ? diffMode : ($id('cross-row-diff') && $id('cross-row-diff').style.display !== 'none');
-
-  let hasRadial = false;
-  if (isDiff) {
-    if (isAvant) {
-      // Avant diff : NDS = cp-fo (gauche) → warning si radial NDS
-      hasRadial = !!document.querySelector('.cp-fo[data-cross="0"].active');
-    } else {
-      // Arrière diff : NDS = cp-fa (gauche) → warning si radial NDS
-      hasRadial = !!document.querySelector('.cp-fa[data-cross="0"].active');
-    }
-  } else {
-    hasRadial = !!document.querySelector('#cross-row-single .cp[data-cross="0"].active');
-  }
-
+  // Avertissement disque : radial côté NDS (Gauche, côté disque) sur les deux
+  // roues. En mode simple le croisement vaut pour les deux côtés — radial
+  // possible à l'avant seulement, updateCrossForHubType le bloque à l'arrière.
+  // Côté lu dans crossBySide(), comme la géométrie et le SO, et non déduit des
+  // boutons actifs. Point de passage de tout changement de laçage : enchaîne
+  // aussi le croisement impossible (J-Bend) et le SO straightpull en radial.
+  const hasRadial = crossBySide().L === 0;
   const w = $id('radial-disc-warn');
   if (w) w.style.display = hasRadial ? 'block' : 'none';
   updateCrossGeomWarn();
+  syncSoRadial();
 }
 
 function updateCrossGeomWarn() {
@@ -7016,7 +7008,7 @@ function checkReady() {
   if ([pL,pR,oL,oR].some(isNaN) || pL <= 0 || pR <= 0) return false;
   const erd = getERD(); if (isNaN(erd) || erd <= 0) return false;
   if (diffMode ? (crossFo === null || crossFa === null) : cross === null) return false;
-  if (hubType === 'straightpull' && ($id('sp-so-left').value === '' || $id('sp-so-right').value === '')) return false;
+  if (soMissingIds().length) return false;
   const sign = wtype === 'arriere' ? -1 : 1, asym = parseFloat($id('asym').value) || 0;
   if ((oL + sign * asym) <= 0 || (oR - sign * asym) <= 0) return false;
   return true;
@@ -7029,7 +7021,7 @@ function clearResults() {
 }
 
 function updateCardStatus() {
-  // ── Hub : nb-rayons, pcd L/R, offset L/R, diam-trou (si j-bend), sp-so L/R (si straightpull)
+  // ── Hub : nb-rayons, pcd L/R, offset L/R, diam-trou (si j-bend), sp-so L/R (si straightpull, côtés non radiaux)
   const nbR  = parseInt($id('nb-rayons').value);
   const pL   = parseFloat($id('pcd-left').value);
   const pR   = parseFloat($id('pcd-right').value);
@@ -7037,8 +7029,7 @@ function updateCardStatus() {
   const oR   = parseFloat($id('offset-right').value);
   const dtOk = hubType === 'straightpull' ||
                (!isNaN(parseFloat($id('diam-trou').value)));
-  const soOk = hubType !== 'straightpull' ||
-               ($id('sp-so-left').value !== '' && $id('sp-so-right').value !== '');
+  const soOk = !soMissingIds().length;
   const hubDone = !!nbR && !isNaN(pL) && pL > 0 && !isNaN(pR) && pR > 0 &&
                   !isNaN(oL) && !isNaN(oR) && dtOk && soOk;
   setCardDone('card-hub', hubDone);
@@ -7091,7 +7082,12 @@ function slen(pcd, off, cr, n, erd, trou) {
 function slenSP(pcd, off, cr, n, erd, so) {
   const R = pcd / 2, Rj = erd / 2;
   const theta = cr === 0 ? 0 : (cr + 0.5) * (2 * Math.PI) / (n / 2);
-  return Math.sqrt((R * Math.sin(theta)) ** 2 + (Rj - R * Math.cos(theta)) ** 2 + off * off) + so;
+  // SO n'existe que sur un moyeu à oreilles appairées : distance du croisement
+  // virtuel des deux rayons d'une oreille à l'assise de tête. En radial, ni
+  // paire ni croisement : le PCD se prend à l'assise, SO = 0 par définition —
+  // même raison que theta = 0 ci-dessus. Imposé ici, dans la primitive :
+  // aucun appelant ne peut réintroduire un SO relevé pour un laçage croisé.
+  return Math.sqrt((R * Math.sin(theta)) ** 2 + (Rj - R * Math.cos(theta)) ** 2 + off * off) + (cr === 0 ? 0 : so);
 }
 // Section du rayon pour un côté GÉOMÉTRIQUE ('ds' | 'nds'). Point de traduction
 // unique rangée UI → côté : hors différentiel, les deux côtés partagent sd/sa.
@@ -7403,6 +7399,63 @@ function updateElongHint(isSteel, hasSec, hasTen) {
   hint.textContent = t(key); hint.dataset.i18nKey = key; hint.style.display = '';
 }
 
+// ── Croisement par côté physique (source unique) ────────────────────────────
+// R = Droit = DS, L = Gauche = NDS. En mode différentiel, crossFo = rangée
+// orange (UI), crossFa = rangée bleue (UI) :
+//   Roue arrière : rangée orange = DS  → crossFo alimente R
+//   Roue avant   : rangée orange = NDS → crossFo alimente L, il faut swapper
+// Lu par lateralGeometry(), soRadialSides() et updateRadialWarn() : longueur
+// calculée, champ SO grisé et avertissement disque ne peuvent pas diverger.
+function crossBySide() {
+  const isArriere = wtype === 'arriere';
+  return {
+    R: diffMode ? (isArriere ? crossFo : crossFa) : cross,
+    L: diffMode ? (isArriere ? crossFa : crossFo) : cross
+  };
+}
+
+// ── Spoke Offset straightpull en radial ─────────────────────────────────────
+// Côté straightpull lacé radial : SO = 0 par définition (cf. slenSP). Le champ
+// n'est jamais écrasé — un clone grisé « 0 » (#sp-so-*-rad) prend sa place à
+// l'écran. La valeur réelle reste dans l'input : readState, hrReadHub et les
+// partages l'enregistrent telle quelle, et un retour en croisé la retrouve.
+function soRadialSides() {
+  if (hubType !== 'straightpull') return { L: false, R: false };
+  const c = crossBySide();
+  return { L: c.L === 0, R: c.R === 0 };
+}
+
+// Ids des SO exigés ET vides — un côté radial n'est jamais exigé. Source unique
+// pour checkReady, calc (errSO), updateCardStatus, checkHubComplete et
+// hrIsHubComplete. Lit l'état JS, pas le DOM : fiable même appelé avant
+// syncSoRadial() — setCross* passe par updateCalcBtn avant updateRadialWarn.
+function soMissingIds() {
+  if (hubType !== 'straightpull') return [];
+  const rad = soRadialSides(), out = [];
+  if (!rad.L && $id('sp-so-left').value  === '') out.push('sp-so-left');
+  if (!rad.R && $id('sp-so-right').value === '') out.push('sp-so-right');
+  return out;
+}
+
+// Affichage — appelé en fin d'updateRadialWarn(), point de passage commun des
+// changements de croisement, de différentiel, de type de moyeu et de roue
+// (setCross*, toggleDiff, updateCrossForHubType, applyState).
+function syncSoRadial() {
+  const rad = soRadialSides();
+  [['sp-so-left', rad.L], ['sp-so-right', rad.R]].forEach(([id, on]) => {
+    const inp = $id(id), clone = $id(id + '-rad');
+    if (!inp || !clone) return;
+    inp.style.display   = on ? 'none' : '';
+    clone.style.display = on ? '' : 'none';
+    // Un rouge errSO posé avant le passage en radial ne doit pas survivre,
+    // invisible, sur l'input masqué — ni maintenir #err affiché.
+    if (on && inp.classList.contains('invalid')) {
+      inp.classList.remove('invalid');
+      if (!document.querySelector('.invalid')) $id('err').classList.remove('show');
+    }
+  });
+}
+
 // ── Calc ──────────────────────────────────────────────────────────────────────
 // ── Géométrie latérale (source unique, partagée calc() / migration saves) ───
 // Calcule offsets effectifs et longueurs des deux nappes depuis l'état courant
@@ -7428,12 +7481,10 @@ function lateralGeometry() {
 
   // fo = Drive Side (Côté Droit), fa = Non-Drive Side (Côté Gauche)
   const foOff = effR, faOff = effL;
-  const isArriere = wtype === 'arriere';
-  // En mode différentiel, crossFo = croisement de la rangée orange (UI), crossFa = rangée bleue (UI)
-  // Roue arrière : rangée orange = DS → crFo doit alimenter Lfo (DS) ✓
-  // Roue avant   : rangée orange = NDS → crFo alimente en réalité NDS = Lfa ; il faut swapper
-  const crFo = diffMode ? (isArriere ? crossFo : crossFa) : cross;
-  const crFa = diffMode ? (isArriere ? crossFa : crossFo) : cross;
+  // Croisement par côté physique : table rangée UI → côté dans crossBySide(),
+  // partagée avec la neutralisation du SO en radial.
+  const _cs  = crossBySide();
+  const crFo = _cs.R, crFa = _cs.L;
   if (crFo === null || crFo === undefined || crFa === null || crFa === undefined) return null;
   const lFo = isSP ? slenSP(pR, foOff, crFo, n, erd, soR) : slen(pR, foOff, crFo, n, erd, trou);
   const lFa = isSP ? slenSP(pL, faOff, crFa, n, erd, soL) : slen(pL, faOff, crFa, n, erd, trou);
@@ -7506,9 +7557,10 @@ function calc() {
   }
 
   const isSP = hubType === 'straightpull';
-  const soLraw = $id('sp-so-left').value, soRraw = $id('sp-so-right').value;
-  if (isSP && (soLraw === '' || soRraw === '')) {
-    if (soLraw === '') setInvalid('sp-so-left'); if (soRraw === '') setInvalid('sp-so-right');
+  // SO exigé côté croisé seulement : un côté radial vaut 0 (slenSP).
+  const soMissing = soMissingIds();
+  if (soMissing.length) {
+    soMissing.forEach(id => setInvalid(id));
     return showErr('errSO');
   }
   const tF = parseFloat($id('tension-forte').value);
@@ -9674,8 +9726,7 @@ function checkHubComplete() {
   if (_hubScrolled) return;
   const nb  = $id('nb-rayons').value, pL = $id('pcd-left').value, oL = $id('offset-left').value;
   const pR  = $id('pcd-right').value, oR = $id('offset-right').value;
-  const soL = $id('sp-so-left').value, soR = $id('sp-so-right').value;
-  if (nb && pL && oL && pR && oR && (hubType !== 'straightpull' || (soL !== '' && soR !== ''))) {
+  if (nb && pL && oL && pR && oR && !soMissingIds().length) {
     _hubScrolled = true; scrollToCard(getCards()[2]);
   }
 }
@@ -18473,8 +18524,9 @@ function hrIsHubComplete() {
   var oL  = parseFloat(document.getElementById('offset-left').value);
   var oR  = parseFloat(document.getElementById('offset-right').value);
   var dtOk = hubType === 'straightpull' || !isNaN(parseFloat(document.getElementById('diam-trou').value));
-  var soOk = hubType !== 'straightpull' ||
-             (document.getElementById('sp-so-left').value !== '' && document.getElementById('sp-so-right').value !== '');
+  // SO exigé côté croisé seulement : un moyeu SP radial s'enregistre sans SO
+  // sur son côté radial — avec la valeur masquée s'il y en a une (hrReadHub).
+  var soOk = soMissingIds().length === 0;
   return !!nbR && !isNaN(pL) && pL > 0 && !isNaN(pR) && pR > 0 &&
          !isNaN(oL) && !isNaN(oR) && dtOk && soOk;
 }
