@@ -6152,7 +6152,7 @@ function applyState(s) {
 function _applyStateBody(s) {
   $id('err').classList.remove('show'); currentErrKey = null; clearInvalids();
   $id('nb-rayons').value      = s.nbRayons;
-  $id('diam-trou').value      = s.diamTrou;
+  $id('diam-trou').value      = s.diamTrou || '2.55';
   $id('pcd-left').value       = s.pcdLeft;
   $id('offset-left').value    = s.offsetLeft;
   $id('pcd-right').value      = s.pcdRight;
@@ -6960,8 +6960,21 @@ function checkDiamTrou() {
   if (w) w.style.display = (!isNaN(v) && (v < 2 || v > 2.7)) ? 'block' : 'none';
 }
 function resetDiamTrouIfInvalid() {
-  const v = parseFloat($id('diam-trou').value);
-  if (!isNaN(v) && (v < 2 || v > 2.7)) { $id('diam-trou').value = '2.55'; hideDiamTrouWarn(); }
+  const el = $id('diam-trou');
+  const v = parseFloat(el.value);
+  if (isNaN(v)) {
+    // Champ laissé vide : le calcul retombe déjà sur 2.55 (lateralGeometry) —
+    // le champ le réaffiche, ce qu'on voit est ce qui est calculé. Remise en
+    // place sans événement : rafraîchir ce qui dépend de la présence d'une
+    // valeur (pastille carte Moyeu, boutons d'enregistrement moyeu/roue). Pas
+    // updateCalcBtn : un résultat affiché a été calculé avec 2.55, il reste
+    // valable — clearResults() l'effacerait sur un simple passage de focus.
+    el.value = '2.55'; hideDiamTrouWarn();
+    updateCardStatus();
+    if (typeof hrUpdateButtons === 'function') hrUpdateButtons();
+    return;
+  }
+  if (v < 2 || v > 2.7) { el.value = '2.55'; hideDiamTrouWarn(); }
 }
 
 // ── Offset coherence check ────────────────────────────────────────────────────
