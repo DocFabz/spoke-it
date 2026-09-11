@@ -4956,6 +4956,7 @@ const i18n = {
     tmDishCheck:'Écart significatif. Vérifier avec un outil de centrage.',
     tmDishMinor:'Écart faible — probablement dans la marge du tensiomètre. Vérifier avec un outil de centrage.',
     tmDishUnreliable:'Dispersion élevée — estimation non fiable',
+    tmDishRadial:'Non estimé en laçage radial J-Bend : le déport effectif dépend du sens de montage des têtes. Vérifier avec un outil de centrage.',
     // Tooltips (title figé FR dans le HTML statique ou généré, retraduit par
     // la map id→clé d'applyLang ou au rendu — cf. delTitle/clearValuesTitle)
     hookeBtnTitle:'Courbe de Hooke',
@@ -5219,6 +5220,7 @@ const i18n = {
     tmDishCheck:'Significant deviation. Check with a dishing tool.',
     tmDishMinor:'Small deviation — likely within tensiometer margin. Check with a dishing tool.',
     tmDishUnreliable:'High spread — estimate unreliable',
+    tmDishRadial:'Not estimated with radial J-Bend lacing: the effective flange offset depends on which way the heads are fitted. Check with a dishing tool.',
     // Tooltips (FR-hardcoded title attributes, retranslated via applyLang's
     // id→key map or at render time — cf. delTitle/clearValuesTitle)
     hookeBtnTitle:'Hooke curve',
@@ -15050,6 +15052,28 @@ function tmRenderStats(foKgfs, faKgfs) {
   tmRenderDish(fo, fa, container);
 }
 
+// ── Radial J-Bend : centrage estimé suspendu ────────────────────────────────
+// Laçage radial sur un moyeu J-Bend, d'après le calcul figé dans summaryData
+// (et non l'état courant du formulaire : le centrage estimé s'appuie sur la
+// géométrie qui a produit les longueurs affichées).
+//
+// Pourquoi cela invalide l'estimation : en croisé, l'alternance têtes dedans /
+// têtes dehors est imposée par le premier croisement au flasque, et le plan
+// médian — où se mesure le déport — est la bonne moyenne. En radial, rien ne
+// l'impose : toute la nappe longe la même face, et l'axe des rayons part d'une
+// demi-épaisseur de flasque plus un demi-diamètre de rayon plus près du centre
+// (têtes dehors) ou plus loin (têtes dedans), soit environ 2,5 mm. Sur un
+// demi-radial arrière courant, le ratio théorique est alors faux de 3 à 4
+// points, ce qui vaut un δ d'environ 1 mm : le seuil exact du verdict orange.
+// Une roue parfaitement centrée serait donc dénoncée comme décentrée.
+//
+// Straightpull exclu : la position de la tête y est fixée par le moyeu et déjà
+// portée par le SO, la géométrie reste exacte.
+function tmDishRadialJbend(d) {
+  if (!d || d.isSP) return false;
+  return d.diffMode ? (d.crossFo === 0 || d.crossFa === 0) : d.cross === 0;
+}
+
 // ── Estimation du décentrage à partir de l'écart ratio mesuré / théorique ───
 // Équilibre latéral par paire : T_fa·(faOff/lFa) = T_fo·(foOff/lFo).
 // k  = ratio mesuré (nappe faible / nappe forte, moyennes converties en kgf)
@@ -15067,6 +15091,20 @@ function tmRenderDish(fo, fa, container) {
   if (sumD.wtype !== wtype) return;
   if (!(sumD.foOff > 0 && sumD.faOff > 0 && sumD.lFo > 0 && sumD.lFa > 0)) return;
   if (!(fo.avgNum > 0 && fa.avgNum > 0)) return;
+
+  // Radial J-Bend : la carte reste affichée — sa disparition passerait pour un
+  // bug — mais sans ratio théorique ni verdict, les deux choses qui seraient
+  // fausses. Seule la raison est donnée, en gris comme le cas « dispersion
+  // élevée » : même registre, une estimation qu'on renonce à faire.
+  if (tmDishRadialJbend(sumD)) {
+    const div = document.createElement('div');
+    div.className = 'tm-dish';
+    div.innerHTML = `
+    <div class="tm-stat-label">${t('tmDishTitle')}</div>
+    <div class="tm-dish-hint" style="color:var(--text3)">${t('tmDishRadial')}</div>`;
+    container.appendChild(div);
+    return;
+  }
 
   // Correspondance colonnes tension ↔ géométrie : la géométrie est en côtés
   // physiques (fo = droit/DS, fa = gauche/NDS) alors que les colonnes du
