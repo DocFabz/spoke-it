@@ -628,7 +628,6 @@ select option             { background:#161b27 }
 .prow        { display:flex; gap:.38rem; margin-bottom:1.1rem }
 .pill        { padding:.28rem .85rem; border:1px solid var(--border); border-radius:7px; background:transparent; color:var(--text2); font-family:'DM Sans',sans-serif; font-size:.73rem; font-weight:500; cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .pill.active { border-color:rgba(126,200,227,.4); color:var(--accent2); background:rgba(126,200,227,.07) }
-.pill.locked { opacity:.35; pointer-events:none; cursor:not-allowed }
 .pill-icon   { display:inline-flex; align-items:center; gap:.3rem; padding:.18rem .65rem; font-size:.65rem }
 
 /* ── Cross buttons ─────────────────────────────────────────────────────────── */
@@ -5870,6 +5869,9 @@ function _spokeDiffLocked() { return _cfgFilling() && tmAnyReadings(); }
 let _switchingHub = false;
 let _applyingState = false;
 let _toastTimer = null;
+// Rouvre les trois drapeaux : réservé au formulaire qui repart VIDE (clearForm,
+// bascule d'onglet vers une roue jamais remplie). Un formulaire rempli sans
+// frappe passe par syncScrollFlags(), qui ferme ce qui est déjà là.
 function resetScrollFlags() { _hubScrolled = false; _rimScrolled = false; _tensionScrolled = false; }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -6078,7 +6080,9 @@ function showErr(key) {
   e.classList.add('show');
   e.style.cursor = 'pointer';
   e.onclick = function() {
-    resetScrollFlags();
+    // Les drapeaux sont reposés sur l'état réel, pas rouverts : aller corriger
+    // un champ invalide ne doit pas re-annoncer des cards déjà complètes.
+    syncScrollFlags();
     const first = document.querySelector('.invalid');
     if (first) {
       const rect   = first.getBoundingClientRect();
@@ -6179,6 +6183,14 @@ function _applyStateBody(s) {
     if (typeof syncSelectPlaceholder === 'function')
       ['wi-discipline','wi-size','wi-brake','wi-material'].forEach(id => syncSelectPlaceholder($id(id)));
   }
+  // L'état restauré porte son propre moyeu : les DEUX mémoires par type tombent,
+  // et elles tombent ICI, avant toute écriture. Purger le nom en fin de fonction
+  // laissait l'invariant rompu pendant la restauration : setHubType() (appelé
+  // quelques lignes plus bas) trouvait une case pleine du côté affiché, ce que
+  // hubStashAudit() signalait à juste titre.
+  // switchTo() est le seul à les faire traverser, en les reposant APRÈS l'appel.
+  crossForgetStash();
+  if (typeof hrForgetHubNameStash === 'function') hrForgetHubNameStash();
   sd = s.sd; sa = s.sa; cross = s.cross;
   // Saves antérieures au différentiel de section : spokeDiff absent ⇒ false,
   // les quatre valeurs restent nulles et spokeSection() retombe sur sd/sa.
@@ -6415,6 +6427,14 @@ function _applyStateBody(s) {
     }
   }
 
+  // Auto-scroll : le formulaire arrive REMPLI, sans qu'aucune frappe ne l'ait
+  // rempli. Laisser les drapeaux ouverts faisait sauter checkAllScroll() à la
+  // card suivante dès le premier blur, sur une card que l'utilisateur n'avait
+  // pas complétée. Point de passage unique de tout état restauré — bascule
+  // d'onglet, chargement de roue, partage reçu, snapshot — donc le seul endroit
+  // où poser la règle.
+  if (typeof syncScrollFlags === 'function') syncScrollFlags();
+
   // Les relevés affichés viennent d'être posés depuis l'état persisté : rien
   // n'a encore été touché. Sans cette remise à zéro, une saisie faite sur la
   // roue PRÉCÉDENTE éteindrait le libellé de la suivante. En fin de fonction :
@@ -6424,7 +6444,9 @@ function _applyStateBody(s) {
 }
 
 // ── Clear form ────────────────────────────────────────────────────────────────
-// Resets all input fields, state variables and UI — shared by clearFormSilent and setHubType
+// Resets all input fields, state variables and UI. Seul clearFormSilent
+// l'emprunte désormais : setHubType() ne réinitialise plus rien, la bascule de
+// type de moyeu conserve les données communes et masque les autres.
 function resetFields() {
   ['nb-rayons','pcd-left','offset-left','pcd-right','offset-right',
    'erd-direct','nsd-val','erd-nsd-result','tension-forte'].forEach(id => { $id(id).value = ''; });
@@ -6458,14 +6480,12 @@ function resetFields() {
 function clearFormSilent() {
   tmCloseConvTable();
   resetFields();
-  // Reset complet : le différentiel tombe ici, PAS dans resetFields — que
-  // setHubType() appelle au changement de type de moyeu, lequel doit le
-  // préserver.
+  // Reset complet : le différentiel tombe ici, PAS dans resetFields.
   resetSpokeDiffFields();
   // Infos roue : effacées uniquement au reset complet (bouton Reset, roue
-  // vierge) — PAS dans resetFields, que setHubType appelle au toggle
-  // J-Bend/Straightpull : changer le type de moyeu ne doit pas perdre
-  // discipline / taille / freinage / matériau / notes.
+  // vierge). Une bascule de type de moyeu peut aussi les effacer, mais par un
+  // autre chemin et pour une autre raison : markModified() y désaffecte la
+  // roue chargée, et les infos appartiennent à la roue, pas au formulaire.
   ['wi-discipline','wi-size','wi-brake','wi-material'].forEach(id => { $id(id).value = ''; syncSelectPlaceholder($id(id)); });
   if (typeof wiNotesSet === 'function') wiNotesSet(null, '');
   hubType = hubTypeByWheel[wtype];
@@ -6494,9 +6514,10 @@ function clearFormSilent() {
 
 function clearForm() {
   hubTypeByWheel[wtype] = 'jbend'; // reset explicite du hub au reset du formulaire
+  crossForgetStash();
   clearFormSilent();
   clearLoadedConfigName();
-  hrClearLoadedHub();
+  hrForgetHubNames();
   hrClearLoadedRim();
   resetScrollFlags();
   setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 120);
@@ -6513,7 +6534,19 @@ function switchTo(wh) {
   $id('btn-avant').classList.toggle('c', wh === 'avant');
   $id('btn-arriere').classList.toggle('active', wh === 'arriere');
   $id('btn-arriere').classList.toggle('w', wh === 'arriere');
-  saved[wh] ? applyState(saved[wh]) : clearFormSilent();
+  if (saved[wh]) {
+    // L'état reposé est celui que CETTE roue avait en la quittant : les mémoires
+    // par type de moyeu restent vraies et traversent la purge d'applyState().
+    const _mem = hubMemSnapshot(wh);
+    applyState(saved[wh]);
+    hubMemRestore(wh, _mem);
+  } else {
+    // Roue jamais remplie : le formulaire repart vide, les mémoires ne
+    // décrivent plus rien.
+    clearFormSilent();
+    if (typeof hrForgetHubNameStash === 'function') hrForgetHubNameStash(wh);
+    crossForgetStash(wh);
+  }
 }
 
 function setWheel(wh) {
@@ -6623,6 +6656,78 @@ function updateCrossGeomWarn() {
   w.style.display = 'block';
 }
 
+// ── Croisement : mémoire par type de moyeu ─────────────────────────────
+// Le croisement est une donnée COMMUNE : il traverse la bascule tel quel, et
+// cette mémoire ne sert qu'au seul cas où le type de moyeu le détruit, le 4×
+// impossible en straightpull (cf. updateCrossForHubType).
+// On note ce qu'on avait en quittant un type ; au retour on ne le rend que si
+// la case est restée VIDE. Un croisement choisi entre-temps est un choix
+// délibéré de l'utilisateur et prime sur la mémoire : c'est cette garde, et
+// non une invalidation dispersée dans setCross / setCrossFo / setCrossFa, qui
+// empêche la mémoire d'écraser une saisie. Un seul endroit à maintenir.
+// Le mode différentiel fait partie de la clé : toggleDiff() vide la rangée
+// qu'il abandonne, rendre une valeur capturée dans l'autre mode n'aurait aucun
+// sens. Une seule case occupée à la fois, par roue, comme _hubNameByType.
+const _crossByHubType = { avant:   { jbend: null, straightpull: null },
+                          arriere: { jbend: null, straightpull: null } };
+
+// Écrit le global ET la pastille active : updateCrossForHubType() ne sait que
+// retirer la classe, personne d'autre ne la repose sur ce chemin.
+function _crossRestore(val, row) {
+  if (val === null || val === undefined) return;
+  const sel = row === 'single' ? '#cross-row-single .cp' : '.cp-' + row;
+  document.querySelectorAll(sel).forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.cross) === val);
+  });
+  if (row === 'single')   cross   = val;
+  else if (row === 'fo')  crossFo = val;
+  else                    crossFa = val;
+}
+
+function crossSwapForHubType(prevType, nextType) {
+  const st = _crossByHubType[wtype];
+  if (!st || prevType === nextType) return;
+  st[prevType] = { cross, crossFo, crossFa, diffMode };
+  const back = st[nextType];
+  st[nextType] = null;
+  if (!back || back.diffMode !== diffMode) return;
+  if (cross   === null) _crossRestore(back.cross,   'single');
+  if (crossFo === null) _crossRestore(back.crossFo, 'fo');
+  if (crossFa === null) _crossRestore(back.crossFa, 'fa');
+}
+
+// Tout chemin qui réécrit le croisement de fond en comble (état restauré, reset,
+// roue supprimée) périme la mémoire : sans ça elle ressusciterait le croisement
+// d'une AUTRE roue à la première bascule.
+function crossForgetStash(wh) {
+  const st = _crossByHubType[wh || wtype];
+  if (st) { st.jbend = null; st.straightpull = null; }
+}
+
+// ── Traversée des deux mémoires par type de moyeu ─────────────────────
+// applyState() purge les mémoires par type (nom de moyeu, croisement) parce
+// qu'il sert aux états NEUFS : roue chargée, partage reçu, snapshot. Juste là.
+// Mais switchTo() l'emprunte aussi pour reposer l'état qu'une roue avait en la
+// quittant : mêmes champs, même roue, rien de neuf. Les mémoires décrivent
+// encore exactement ce qui revient à l'écran, elles doivent traverser.
+// Sans ça, un simple détour par l'autre roue coûtait la veille du nom de moyeu
+// et la mémoire du croisement, alors qu'aucun champ n'avait bougé.
+function hubMemSnapshot(wh) {
+  const hn = (typeof _hubNameByType !== 'undefined') ? _hubNameByType[wh] : null;
+  const cr = _crossByHubType[wh];
+  return {
+    name:  hn ? { jbend: hn.jbend, straightpull: hn.straightpull } : null,
+    cross: cr ? { jbend: cr.jbend, straightpull: cr.straightpull } : null,
+  };
+}
+function hubMemRestore(wh, snap) {
+  if (!snap) return;
+  const hn = (typeof _hubNameByType !== 'undefined') ? _hubNameByType[wh] : null;
+  if (hn && snap.name)  { hn.jbend = snap.name.jbend;  hn.straightpull = snap.name.straightpull; }
+  const cr = _crossByHubType[wh];
+  if (cr && snap.cross) { cr.jbend = snap.cross.jbend; cr.straightpull = snap.cross.straightpull; }
+}
+
 function updateCrossForHubType() {
   const isSP      = hubType === 'straightpull';
   const isArriere = wtype === 'arriere';
@@ -6656,9 +6761,10 @@ function updateCrossForHubType() {
 }
 
 function setHubType(htype, skipClearSO) {
-  // Verrouillé quand une config est chargée — sauf roue incomplète en
-  // cours de complétion (le type de moyeu fait partie des champs à remplir)
-  if (!skipClearSO && _loadedConfigName[wtype] && !_cfgFilling()) return;
+  const _prevHubType = hubType;
+  // Avant toute écriture : entre deux bascules, la case du type affiché doit
+  // être restée vide. C'est le seul instant où la question a un sens.
+  if (typeof hubStashAudit === 'function') hubStashAudit(_prevHubType);
   hubType = htype;
   hubTypeByWheel[wtype] = htype;
   $id('btn-hub-jbend').classList.toggle('active', htype === 'jbend');
@@ -6667,18 +6773,40 @@ function setHubType(htype, skipClearSO) {
   $id('field-sp-so-left').style.display  = htype === 'straightpull' ? '' : 'none';
   $id('field-sp-so-right').style.display = htype === 'straightpull' ? '' : 'none';
   if (!skipClearSO) {
-    // Complétion a posteriori : préserver le nb de rayons à travers le
-    // reset (synchronisé avec le module tension, jamais réinitialisé ici)
-    const _keepNb = _cfgFilling() ? $id('nb-rayons').value : null;
+    // La pastille est un champ du moyeu comme un autre : elle MODIFIE, donc
+    // elle désaffecte la roue chargée (markModified purge le module tension
+    // et les infos roue, exactement comme une saisie de PCD). Revenir au type
+    // précédent ne réaffecte pas : la roue enregistrée est intacte dans
+    // localStorage, un « Charger une roue » la ramène entière.
+    // Elle n'EFFACE en revanche plus rien : les données communes (nb de
+    // rayons, PCD, offsets, ERD, croisement, sections, matière, tension)
+    // survivent, et les champs propres au type quitté sont masqués sans être
+    // écrasés — même règle que le SO d'un côté radial.
     markModified();
-    resetFields();
-    if (_keepNb !== null) $id('nb-rayons').value = _keepNb;
-    _hubScrolled = false;
+    // Nom de moyeu : mise en veille du type quitté, réveil du type rejoint.
+    if (typeof hrSwapHubName === 'function') hrSwapHubName(_prevHubType, htype);
+    // Croisement : même principe. Avant updateCrossForHubType(), qui validera
+    // ce qui vient d'être rendu (un 4× restauré en J-Bend passe, l'inverse non).
+    crossSwapForHubType(_prevHubType, htype);
+    // Le diam de trou survit à la bascule : son avertissement est REPOSé sur la
+    // valeur conservée, pas masqué d'office. En pratique le blur de la pastille
+    // a déjà borné la valeur via resetDiamTrouIfInvalid() et checkDiamTrou()
+    // masque ; mais si ce blur manque à l'appel, masquer d'office laisserait une
+    // valeur hors bornes sans son avertissement au retour en J-Bend.
+    checkDiamTrou();
+    // Auto-scroll : les données survivent à la bascule, donc les drapeaux doivent
+    // suivre ce qui est réellement à l'écran, les TROIS et pas le seul moyeu.
+    // Un scroll ne doit annoncer que ce que l'utilisateur vient de compléter.
+    if (typeof syncScrollFlags === 'function') syncScrollFlags();
     _switchingHub = true;
     setTimeout(() => { _switchingHub = false; }, 100);
   }
-  updateCalcBtn();
+  // Ordre inversé : updateCrossForHubType() peut désélectionner le croisement
+  // (4× impossible en straightpull). Les données n'étant plus rasées, ce qui
+  // reste à l'écran dépend de cette désélection : updateCalcBtn() doit lire
+  // l'état d'après, sinon bouton Calculer et pastille de card mentent.
   updateCrossForHubType();
+  updateCalcBtn();
 }
 
 function calcNsd() {
@@ -6708,10 +6836,9 @@ function setSpokeFromSelectSide(sel, row) {
 
 function toggleSpokeDiff() { setSpokeDiff(!spokeDiff); }
 
-// Sections seules — appelé par resetFields(), que setHubType() emprunte aussi
-// au basculement J-Bend / Straightpull. Ce changement invalide la géométrie,
-// donc les sections choisies, mais PAS le fait que la roue ait deux rayons
-// différents : ni le différentiel lui-même, ni le module tension n'y touchent.
+// Sections seules : appelé par resetFields(), donc par le reset complet et lui
+// seul. setHubType() ne l'emprunte plus — une section de rayon ne dépend pas du
+// type de moyeu et survit à la bascule, comme le reste des données communes.
 function resetSpokeSectionValues() {
   sd = null; sa = null; sdFo = null; saFo = null; sdFa = null; saFa = null;
   ['spoke-select', 'spoke-select-fo', 'spoke-select-fa'].forEach(id => {
@@ -7038,19 +7165,30 @@ function clearResults() {
   clearTensionFaible();
 }
 
-function updateCardStatus() {
-  // ── Hub : nb-rayons, pcd L/R, offset L/R, diam-trou (si j-bend), sp-so L/R (si straightpull, côtés non radiaux)
+// « Le moyeu est renseigné » : nb-rayons, PCD G/D, offsets G/D, diam de trou en
+// J-Bend, SO G/D en straightpull (côtés non radiaux exemptés par soMissingIds).
+// Source UNIQUE : la pastille de la card Moyeu et l'activation du bouton
+// d'enregistrement du moyeu répondaient à ce même fait par deux calculs
+// recopiés l'un sur l'autre, dans deux blocs de script différents. (Éviter le
+// mot-balise littéral ici : un jour quelqu'un écrira la fermante par réflexe et
+// coupera le bloc en deux.)
+// À ne pas confondre avec _hubScrollReady(), qui pose une autre question —
+// « l'utilisateur vient-il de finir de saisir ? » — et ignore délibérément le
+// diam de trou, toujours prérempli à 2.55 donc jamais attendu de personne.
+function hubDataComplete() {
   const nbR  = parseInt($id('nb-rayons').value);
   const pL   = parseFloat($id('pcd-left').value);
   const pR   = parseFloat($id('pcd-right').value);
   const oL   = parseFloat($id('offset-left').value);
   const oR   = parseFloat($id('offset-right').value);
-  const dtOk = hubType === 'straightpull' ||
-               (!isNaN(parseFloat($id('diam-trou').value)));
+  const dtOk = hubType === 'straightpull' || !isNaN(parseFloat($id('diam-trou').value));
   const soOk = !soMissingIds().length;
-  const hubDone = !!nbR && !isNaN(pL) && pL > 0 && !isNaN(pR) && pR > 0 &&
-                  !isNaN(oL) && !isNaN(oR) && dtOk && soOk;
-  setCardDone('card-hub', hubDone);
+  return !!nbR && !isNaN(pL) && pL > 0 && !isNaN(pR) && pR > 0 &&
+         !isNaN(oL) && !isNaN(oR) && dtOk && soOk;
+}
+
+function updateCardStatus() {
+  setCardDone('card-hub', hubDataComplete());
 
   // ── Rim : ERD valide (direct ou calculé via NSD)
   const erd = getERD();
@@ -7486,7 +7624,7 @@ function soRadialSides() {
 
 // Ids des SO exigés ET vides — un côté radial n'est jamais exigé. Source unique
 // pour checkReady, calc (errSO), updateCardStatus, checkHubComplete et
-// hrIsHubComplete. Lit l'état JS, pas le DOM : fiable même appelé avant
+// hubDataComplete. Lit l'état JS, pas le DOM : fiable même appelé avant
 // syncSoRadial() — setCross* passe par updateCalcBtn avant updateRadialWarn.
 function soMissingIds() {
   if (hubType !== 'straightpull') return [];
@@ -8148,6 +8286,8 @@ function _cfgResetGone() {
     _loadedConfigName[wh] = null;
     _cfgFillMode[wh] = false;
     _loadedHubName[wh] = null;
+    if (typeof hrForgetHubNameStash === 'function') hrForgetHubNameStash(wh);
+    crossForgetStash(wh);
     _loadedRimName[wh] = null;
     hubTypeByWheel[wh] = 'jbend';
     // Diagnostic : diagClearData ne vide que le côté affiché. Sans cette
@@ -8202,7 +8342,9 @@ function loadConfig(idx) {
   diagClearData();
   ['arb-card-body','sum-card-body'].forEach(id => { $id(id).style.display = 'none'; });
   ['arb-card-chevron','sum-card-chevron'].forEach(id => { $id(id).style.transform = ''; });
-  resetScrollFlags();
+  // syncScrollFlags et non resetScrollFlags : applyState() vient de poser les
+  // drapeaux sur l'état chargé, les rouvrir ici les déferait aussitôt.
+  syncScrollFlags();
   const top = document.querySelector('header').getBoundingClientRect().bottom + window.pageYOffset - 30; window.scrollTo({ top, behavior: 'smooth' });
   flashWheelCard(cfg.name);
   // Ce qu'on ouvre. Une mesure enregistrée avec la roue sans avoir été
@@ -9781,30 +9923,51 @@ function scrollToCard(cardEl) {
   }, 120);
 }
 
-function checkHubComplete() {
-  if (_hubScrolled) return;
+// Critère « card remplie » de chaque groupe, sorti des check*Complete() pour que
+// syncScrollFlags() réponde exactement la même chose qu'eux. Deux définitions
+// du même fait finissaient toujours par diverger.
+// Moyeu : les deux SO comptent, via soMissingIds() qui exempte déjà un côté
+// radial. Jante en NSD : NSD ET écrou.
+function _hubScrollReady() {
   const nb  = $id('nb-rayons').value, pL = $id('pcd-left').value, oL = $id('offset-left').value;
   const pR  = $id('pcd-right').value, oR = $id('offset-right').value;
-  if (nb && pL && oL && pR && oR && !soMissingIds().length) {
+  return !!(nb && pL && oL && pR && oR) && !soMissingIds().length;
+}
+function _rimScrollReady() {
+  if (erdMode === 'direct') return !!$id('erd-direct').value;
+  return !!$id('nsd-val').value && !!$id('ecrou-type').value;
+}
+function _tensionScrollReady() { return !!$id('tension-forte').value; }
+
+// Repose les trois drapeaux sur ce qui est à l'écran. resetScrollFlags() les
+// ROUVRE tous, pour un formulaire qui repart de zéro ; ici on ferme ce qui est
+// déjà rempli et on ne rouvre que ce qui est redevenu incomplet.
+// Nécessaire depuis que la bascule de type de moyeu conserve les données : le
+// moyeu redevient incomplet (SO à saisir) alors que jante et tension, elles,
+// restent remplies. Le premier blur dans le moyeu appelait checkAllScroll(),
+// qui les trouvait prêtes et sautait à la card suivante dès le PREMIER SO,
+// avant même que le moyeu soit complet.
+function syncScrollFlags() {
+  _hubScrolled     = _hubScrollReady();
+  _rimScrolled     = _rimScrollReady();
+  _tensionScrolled = _tensionScrollReady();
+}
+
+function checkHubComplete() {
+  if (_hubScrolled) return;
+  if (_hubScrollReady()) {
     _hubScrolled = true; scrollToCard(getCards()[2]);
   }
 }
 
 function checkRimComplete() {
   if (_rimScrolled) return;
-  let erdOk = false;
-  if (erdMode === 'direct') {
-    erdOk = !!$id('erd-direct').value;
-  } else {
-    // NSD : scroller uniquement si NSD et ADDON sont tous deux renseignés
-    erdOk = !!$id('nsd-val').value && !!$id('ecrou-type').value;
-  }
-  if (erdOk) { _rimScrolled = true; scrollToCard(getCards()[3]); }
+  if (_rimScrollReady()) { _rimScrolled = true; scrollToCard(getCards()[3]); }
 }
 
 function checkTensionComplete() {
   if (_tensionScrolled) return;
-  if ($id('tension-forte').value) {
+  if (_tensionScrollReady()) {
     _tensionScrolled = true;
     setTimeout(() => $id('err').nextElementSibling.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
   }
@@ -9828,6 +9991,10 @@ const FIELD_GROUPS = {
 // etaient a false (config chargee, changement d'onglet, clearForm, clic sur le
 // message d'erreur). Meme cause pour tous les selects hors formulaire (module
 // tension, tensiometres, chartes).
+// Ce filtre dit QUI peut declencher un scroll ; syncScrollFlags() dit QUAND les
+// drapeaux ont le droit d'etre ouverts. Les cas listes ci-dessus passent
+// desormais par lui : un formulaire rempli sans frappe arrive drapeaux fermes,
+// donc plus rien a rescroller meme si un champ echappait a la liste blanche.
 const SCROLL_GROUPS = ['hub', 'rim', 'tension'];
 
 function _scrollGroupOwns(id) {
@@ -11280,7 +11447,7 @@ function tmSpokeLocked(side) {
   if (!_loadedConfigName[wtype]) return false;
   return spokeDiff ? tmSideHasData(side) : tmHasData();
 }
-// Reflet pur de l'état vers TOUS les verrous du module tension : le nb de
+// Reflet pur de l'état vers TOUS les verrous restants : le nb de
 // rayons (les deux sélecteurs) et le rayon (les trois — n'en figer qu'un
 // laissait le verrou contournable en différentiel), plus les ✕ associés.
 // Le nb vivait ailleurs (tmUpdateBadges pour tm-nb-select, _refreshLoadedBadges
@@ -11328,10 +11495,9 @@ function tmSyncLocks() {
   // Verrous côté calculateur — même fait, même instant, même fonction. Aucun
   // accès au stockage ici : cet appel tourne à chaque valeur saisie.
   const name = _loadedConfigName[wtype];
-  // Boutons hub type
-  const _lockHub = !!name && !_cfgFillMode[wtype];
-  $id('btn-hub-jbend').classList.toggle('locked', _lockHub && hubType !== 'jbend');
-  $id('btn-hub-sp').classList.toggle('locked', _lockHub && hubType !== 'straightpull');
+  // Les pastilles de type de moyeu ne sont plus verrouillées ici : changer de
+  // type désaffecte la roue (markModified dans setHubType) au lieu d'être
+  // interdit, comme n'importe quelle saisie du moyeu.
   // Roue incomplète : nb rayons figé si des relevés en dépendent — vifs,
   // parqués sur un autre tensiomètre, ou déjà en snapshot.
   $id('nb-rayons').classList.toggle('locked', !!name && _cfgFillMode[wtype] && tmAnyReadings());
@@ -18577,6 +18743,9 @@ function hrReadRim() {
 function hrApplyHub(d) {
   if (!d) return;
   _hrApplying = true;
+  // Charger un moyeu réécrit les champs COMMUNS : aucune veille de nom ne peut
+  // lui survivre. Le nom du moyeu chargé est posé par l'appelant, après.
+  if (typeof hrForgetHubNameStash === 'function') hrForgetHubNameStash();
   if (d.hubType) { hubType = d.hubType; hubTypeByWheel[wtype] = d.hubType; setHubType(d.hubType, true); }
   document.getElementById('nb-rayons').value    = d.nbRayons    || '';
   document.getElementById('diam-trou').value    = d.diamTrou    || '2.55';
@@ -18591,6 +18760,8 @@ function hrApplyHub(d) {
   checkOffsetCoherence();
   updateCalcBtn();
   refreshInvalids(); // les champs remplis par l'import ne doivent plus être rouges
+  // Card remplie sans frappe : même règle que l'état restauré (cf. applyState).
+  if (typeof syncScrollFlags === 'function') syncScrollFlags();
   _hrApplying = false;
 }
 
@@ -18608,22 +18779,9 @@ function hrApplyRim(d) {
   if (mode === 'nsd' && typeof calcNsd === 'function') calcNsd();
   updateCalcBtn();
   refreshInvalids(); // les champs remplis par l'import ne doivent plus être rouges
+  // Card remplie sans frappe : même règle que l'état restauré (cf. applyState).
+  if (typeof syncScrollFlags === 'function') syncScrollFlags();
   _hrApplying = false;
-}
-
-// ── Check if hub is complete ──────────────────────────────────────────────────
-function hrIsHubComplete() {
-  var nbR = parseInt(document.getElementById('nb-rayons').value);
-  var pL  = parseFloat(document.getElementById('pcd-left').value);
-  var pR  = parseFloat(document.getElementById('pcd-right').value);
-  var oL  = parseFloat(document.getElementById('offset-left').value);
-  var oR  = parseFloat(document.getElementById('offset-right').value);
-  var dtOk = hubType === 'straightpull' || !isNaN(parseFloat(document.getElementById('diam-trou').value));
-  // SO exigé côté croisé seulement : un moyeu SP radial s'enregistre sans SO
-  // sur son côté radial — avec la valeur masquée s'il y en a une (hrReadHub).
-  var soOk = soMissingIds().length === 0;
-  return !!nbR && !isNaN(pL) && pL > 0 && !isNaN(pR) && pR > 0 &&
-         !isNaN(oL) && !isNaN(oR) && dtOk && soOk;
 }
 
 // ── Check if rim is complete ─────────────────────────────────────────────────
@@ -18670,7 +18828,10 @@ function _wheelOk() {
 }
 
 function hrUpdateButtons() {
-  var hubOk  = hrIsHubComplete();
+  // Le SO n'est exigé que côté croisé : un moyeu SP radial s'enregistre sans SO
+  // sur son côté radial, avec la valeur masquée s'il y en a une (cf. hrReadHub).
+  // C'est soMissingIds(), dans hubDataComplete(), qui porte cette exemption.
+  var hubOk  = hubDataComplete();
   var rimOk  = hrIsRimComplete();
   var hubs   = _hrBtnRead(_hrBtnMemo.hub, LS_HUBS).filter(function(e) { return (e.data && e.data.wtype ? e.data.wtype : 'avant') === wtype; });
   var rims   = _hrBtnRead(_hrBtnMemo.rim, LS_RIMS);
@@ -18711,27 +18872,34 @@ window.updateCalcBtn = function() {
 
 // Listeners ciblés : effacer badge hub si modif hub, badge rim si modif rim
 (function() {
-  var hubIds = ['nb-rayons','pcd-left','pcd-right','offset-left','offset-right','diam-trou','sp-so-left','sp-so-right'];
+  // Champs COMMUNS aux deux types : les éditer périme le badge affiché ET la
+  // veille de l'autre type. Champs PROPRES à un type : le badge affiché seul,
+  // cf. hrForgetHubNameStash.
+  var hubCommonIds = ['nb-rayons','pcd-left','pcd-right','offset-left','offset-right'];
+  var hubTypedIds  = ['diam-trou','sp-so-left','sp-so-right'];
   var rimIds = ['erd-direct','nsd-val','ecrou-type','asym'];
 
-  function onHubEdit() { if (!_hrApplying) hrClearLoadedHub(); }
+  function onHubEditCommon() { if (!_hrApplying) hrForgetHubNames(); }
+  function onHubEditTyped()  { if (!_hrApplying) hrClearLoadedHub(); }
   function onRimEdit()  { if (!_hrApplying) hrClearLoadedRim(); }
 
   function init() {
     hrUpdateButtons();
-    hubIds.forEach(function(id) {
+    hubCommonIds.forEach(function(id) {
       var el = document.getElementById(id);
-      if (el) { el.addEventListener('input', onHubEdit); el.addEventListener('change', onHubEdit); }
+      if (el) { el.addEventListener('input', onHubEditCommon); el.addEventListener('change', onHubEditCommon); }
+    });
+    hubTypedIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) { el.addEventListener('input', onHubEditTyped); el.addEventListener('change', onHubEditTyped); }
     });
     rimIds.forEach(function(id) {
       var el = document.getElementById(id);
       if (el) { el.addEventListener('input', onRimEdit); el.addEventListener('change', onRimEdit); }
     });
-    // Boutons hub type (j-bend / straightpull)
-    ['btn-hub-jbend','btn-hub-sp'].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) el.addEventListener('click', function() { if (!_hrApplying) hrClearLoadedHub(); });
-    });
+    // Pas de listener sur les pastilles de type de moyeu : setHubType() traite
+    // le nom via hrSwapHubName() (veille, pas effacement). Un hrClearLoadedHub()
+    // sur clic tuerait la veille avant même qu'elle soit posée.
     // Boutons mode ERD
     ['btn-erd-direct','btn-erd-nsd'].forEach(function(id) {
       var el = document.getElementById(id);
@@ -19316,6 +19484,63 @@ function hrSetLoadedHub(name) {
 function hrClearLoadedHub() {
   _loadedHubName[wtype] = null;
   hrRefreshBadges();
+}
+
+// ── Nom de moyeu en veille par type de moyeu ──────────────────────────
+// Un moyeu enregistré est TYPÉ, là où une roue porte le type dans son identité :
+// c'est pourquoi le nom de moyeu revient après un aller-retour de pastille et
+// pas le nom de roue. Basculer ne touche pas aux champs du type quitté (ils
+// sont masqués, jamais écrasés), donc l'affirmation du badge — « ces champs
+// décrivent le moyeu X » — reste vraie mot pour mot pour ce type : on la met
+// en veille et on la rallume au retour, sans rien recharger.
+// Une seule case occupée à la fois : le type AFFICHÉ porte son nom dans
+// _loadedHubName, l'autre dort ici. Par roue, comme _loadedHubName lui-même.
+var _hubNameByType = { avant:   { jbend: null, straightpull: null },
+                       arriere: { jbend: null, straightpull: null } };
+
+function hrSwapHubName(prevType, nextType) {
+  var st = _hubNameByType[wtype];
+  if (!st || prevType === nextType) return;
+  st[prevType] = _loadedHubName[wtype] || null;
+  hrSetLoadedHub(st[nextType]);
+  st[nextType] = null;
+}
+
+// Toute réécriture des champs COMMUNS périme les deux types d'un coup : sans
+// ça, un aller-retour ressusciterait un nom qui ne décrit plus ce qui est à
+// l'écran. Les champs PROPRES à un type (diam de trou, SO) n'ont pas besoin de
+// ce traitement : ils ne sont éditables que pendant que leur type est affiché,
+// donc éteindre le badge actif suffit et la veille de l'autre reste juste.
+function hrForgetHubNameStash(wh) {
+  var st = _hubNameByType[wh || wtype];
+  if (st) { st.jbend = null; st.straightpull = null; }
+}
+function hrForgetHubNames() {
+  hrForgetHubNameStash();
+  hrClearLoadedHub();
+}
+
+// Contrôle d'intégrité des deux mémoires par type de moyeu (nom de moyeu et
+// croisement). Elles tiennent sur un invariant unique : la case du type
+// AFFICHÉ est toujours vide, puisque la bascule la vide en la réveillant.
+// Une case pleine du côté affiché signifierait qu'un chemin a écrit la mémoire
+// sans passer par le réveil : silencieux sur le moment, mais le prochain
+// aller-retour rendrait une valeur périmée par-dessus la saisie en cours.
+// Alerte en console seulement, comme spokeGeomAudit : garde-fou de
+// développement, jamais une erreur utilisateur. Aucun accès au stockage, donc
+// appelable depuis la bascule sans coût.
+// À appeler AVANT la bascule, sur le type encore affiché : après, la question
+// n'a plus de sens puisque le réveil vient de vider la case du type rejoint.
+function hubStashAudit(shown) {
+  var t = shown || hubType;
+  var hn = _hubNameByType[wtype];
+  if (hn && hn[t] !== null)
+    console.warn('[Spokeit] Nom de moyeu en veille sur le type affiché ('
+      + t + ') : ' + hn[t]);
+  var cr = (typeof _crossByHubType !== 'undefined') ? _crossByHubType[wtype] : null;
+  if (cr && cr[t] !== null)
+    console.warn('[Spokeit] Croisement en mémoire sur le type affiché ('
+      + t + ').');
 }
 
 function hrSetLoadedRim(name) {
