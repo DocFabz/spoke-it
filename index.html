@@ -6189,8 +6189,7 @@ function _applyStateBody(s) {
   // quelques lignes plus bas) trouvait une case pleine du côté affiché, ce que
   // hubStashAudit() signalait à juste titre.
   // switchTo() est le seul à les faire traverser, en les reposant APRÈS l'appel.
-  crossForgetStash();
-  if (typeof hrForgetHubNameStash === 'function') hrForgetHubNameStash();
+  hubStashForget();
   sd = s.sd; sa = s.sa; cross = s.cross;
   // Saves antérieures au différentiel de section : spokeDiff absent ⇒ false,
   // les quatre valeurs restent nulles et spokeSection() retombe sur sd/sa.
@@ -6479,6 +6478,10 @@ function resetFields() {
 
 function clearFormSilent() {
   tmCloseConvTable();
+  // Les champs du moyeu partent : les mémoires par type ne décrivent plus rien.
+  // Ici plutôt que chez les deux appelants (clearForm, switchTo sur roue
+  // vierge) — un troisième appelant en hériterait sans y penser.
+  hubStashForget();
   resetFields();
   // Reset complet : le différentiel tombe ici, PAS dans resetFields.
   resetSpokeDiffFields();
@@ -6514,10 +6517,9 @@ function clearFormSilent() {
 
 function clearForm() {
   hubTypeByWheel[wtype] = 'jbend'; // reset explicite du hub au reset du formulaire
-  crossForgetStash();
-  clearFormSilent();
+  clearFormSilent();          // purge les deux mémoires par type
   clearLoadedConfigName();
-  hrForgetHubNames();
+  hrForgetHubNames();         // + éteint le badge moyeu affiché
   hrClearLoadedRim();
   resetScrollFlags();
   setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 120);
@@ -6537,15 +6539,13 @@ function switchTo(wh) {
   if (saved[wh]) {
     // L'état reposé est celui que CETTE roue avait en la quittant : les mémoires
     // par type de moyeu restent vraies et traversent la purge d'applyState().
-    const _mem = hubMemSnapshot(wh);
+    const _stash = hubStashSnapshot(wh);
     applyState(saved[wh]);
-    hubMemRestore(wh, _mem);
+    hubStashRestore(wh, _stash);
   } else {
-    // Roue jamais remplie : le formulaire repart vide, les mémoires ne
-    // décrivent plus rien.
+    // Roue jamais remplie : le formulaire repart vide. La purge vit dans
+    // clearFormSilent(), qui est le moment où les champs se vident.
     clearFormSilent();
-    if (typeof hrForgetHubNameStash === 'function') hrForgetHubNameStash(wh);
-    crossForgetStash(wh);
   }
 }
 
@@ -6696,23 +6696,36 @@ function crossSwapForHubType(prevType, nextType) {
   if (crossFa === null) _crossRestore(back.crossFa, 'fa');
 }
 
-// Tout chemin qui réécrit le croisement de fond en comble (état restauré, reset,
-// roue supprimée) périme la mémoire : sans ça elle ressusciterait le croisement
-// d'une AUTRE roue à la première bascule.
+// Bas niveau : ne purge que la mémoire du croisement. Les appelants passent par
+// hubStashForget(), qui purge aussi celle du nom — sans quoi la mémoire
+// ressusciterait le croisement d'une AUTRE roue à la première bascule.
 function crossForgetStash(wh) {
   const st = _crossByHubType[wh || wtype];
   if (st) { st.jbend = null; st.straightpull = null; }
 }
 
-// ── Traversée des deux mémoires par type de moyeu ─────────────────────
-// applyState() purge les mémoires par type (nom de moyeu, croisement) parce
-// qu'il sert aux états NEUFS : roue chargée, partage reçu, snapshot. Juste là.
-// Mais switchTo() l'emprunte aussi pour reposer l'état qu'une roue avait en la
-// quittant : mêmes champs, même roue, rien de neuf. Les mémoires décrivent
-// encore exactement ce qui revient à l'écran, elles doivent traverser.
-// Sans ça, un simple détour par l'autre roue coûtait la veille du nom de moyeu
-// et la mémoire du croisement, alors qu'aucun champ n'avait bougé.
-function hubMemSnapshot(wh) {
+// ── Purge des deux mémoires par type de moyeu ────────────────────────
+// Écrivain unique. Les deux mémoires répondent au même fait — « les champs du
+// moyeu ne sont plus ceux qu'elles décrivent » — et n'en purger qu'une laisse
+// une entrée périmée du côté affiché. C'est exactement ce qui manquait à
+// hrApplyHub(), et que hubStashAudit() a dénoncé : charger un moyeu J-Bend
+// depuis un affichage straightpull arrive en J-Bend sans passer par le réveil,
+// donc en laissant la mémoire du croisement en place.
+// Tout chemin qui réécrit les champs du moyeu passe par ici : applyState(),
+// clearFormSilent(), hrApplyHub(), _cfgResetGone().
+function hubStashForget(wh) {
+  if (typeof hrForgetHubNameStash === 'function') hrForgetHubNameStash(wh);
+  crossForgetStash(wh);
+}
+
+// ── Traversée des deux mémoires ──────────────────────────────────
+// applyState() purge parce qu'il sert aux états NEUFS : roue chargée, partage
+// reçu, snapshot. Juste là. Mais switchTo() l'emprunte aussi pour reposer
+// l'état qu'une roue avait en la quittant : mêmes champs, même roue, rien de
+// neuf. Les mémoires décrivent encore ce qui revient à l'écran, elles doivent
+// traverser. Sans ça, un simple détour par l'autre roue coûtait la veille du
+// nom de moyeu et la mémoire du croisement, alors qu'aucun champ n'avait bougé.
+function hubStashSnapshot(wh) {
   const hn = (typeof _hubNameByType !== 'undefined') ? _hubNameByType[wh] : null;
   const cr = _crossByHubType[wh];
   return {
@@ -6720,7 +6733,7 @@ function hubMemSnapshot(wh) {
     cross: cr ? { jbend: cr.jbend, straightpull: cr.straightpull } : null,
   };
 }
-function hubMemRestore(wh, snap) {
+function hubStashRestore(wh, snap) {
   if (!snap) return;
   const hn = (typeof _hubNameByType !== 'undefined') ? _hubNameByType[wh] : null;
   if (hn && snap.name)  { hn.jbend = snap.name.jbend;  hn.straightpull = snap.name.straightpull; }
@@ -8286,8 +8299,7 @@ function _cfgResetGone() {
     _loadedConfigName[wh] = null;
     _cfgFillMode[wh] = false;
     _loadedHubName[wh] = null;
-    if (typeof hrForgetHubNameStash === 'function') hrForgetHubNameStash(wh);
-    crossForgetStash(wh);
+    hubStashForget(wh);
     _loadedRimName[wh] = null;
     hubTypeByWheel[wh] = 'jbend';
     // Diagnostic : diagClearData ne vide que le côté affiché. Sans cette
@@ -18743,9 +18755,10 @@ function hrReadRim() {
 function hrApplyHub(d) {
   if (!d) return;
   _hrApplying = true;
-  // Charger un moyeu réécrit les champs COMMUNS : aucune veille de nom ne peut
-  // lui survivre. Le nom du moyeu chargé est posé par l'appelant, après.
-  if (typeof hrForgetHubNameStash === 'function') hrForgetHubNameStash();
+  // Charger un moyeu réécrit les champs du moyeu ET peut changer le type affiché
+  // sans passer par le réveil (setHubType(type, true)) : les DEUX mémoires
+  // tombent. Le nom du moyeu chargé est posé par l'appelant, après.
+  if (typeof hubStashForget === 'function') hubStashForget();
   if (d.hubType) { hubType = d.hubType; hubTypeByWheel[wtype] = d.hubType; setHubType(d.hubType, true); }
   document.getElementById('nb-rayons').value    = d.nbRayons    || '';
   document.getElementById('diam-trou').value    = d.diamTrou    || '2.55';
