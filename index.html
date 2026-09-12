@@ -2638,32 +2638,32 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <div class="f">
       <!-- Mode normal : une seule rangée -->
       <div id="cross-row-single" class="crow">
-        <button class="cp" data-cross="0" onclick="setCross(this)">Radial</button>
-        <button class="cp" data-cross="1" onclick="setCross(this)">1×</button>
-        <button class="cp" data-cross="2" onclick="setCross(this)">2×</button>
-        <button class="cp" data-cross="3" onclick="setCross(this)">3×</button>
-        <button class="cp" data-cross="4" onclick="setCross(this)">4×</button>
+        <button class="cp" aria-pressed="false" data-cross="0" onclick="setCross(this)">Radial</button>
+        <button class="cp" aria-pressed="false" data-cross="1" onclick="setCross(this)">1×</button>
+        <button class="cp" aria-pressed="false" data-cross="2" onclick="setCross(this)">2×</button>
+        <button class="cp" aria-pressed="false" data-cross="3" onclick="setCross(this)">3×</button>
+        <button class="cp" aria-pressed="false" data-cross="4" onclick="setCross(this)">4×</button>
       </div>
       <!-- Mode différentiel : deux rangées DS / NDS -->
       <div id="cross-row-diff" style="display:none">
         <div style="display:flex;align-items:center;gap:.5rem">
           <span class="diff-side-label diff-side-fo" id="diff-label-fo">DS</span>
           <div class="crow" style="flex:1">
-            <button class="cp cp-fo" data-cross="0" onclick="setCrossFo(this)">Radial</button>
-            <button class="cp cp-fo" data-cross="1" onclick="setCrossFo(this)">1×</button>
-            <button class="cp cp-fo" data-cross="2" onclick="setCrossFo(this)">2×</button>
-            <button class="cp cp-fo" data-cross="3" onclick="setCrossFo(this)">3×</button>
-            <button class="cp cp-fo" data-cross="4" onclick="setCrossFo(this)">4×</button>
+            <button class="cp cp-fo" aria-pressed="false" data-cross="0" onclick="setCrossFo(this)">Radial</button>
+            <button class="cp cp-fo" aria-pressed="false" data-cross="1" onclick="setCrossFo(this)">1×</button>
+            <button class="cp cp-fo" aria-pressed="false" data-cross="2" onclick="setCrossFo(this)">2×</button>
+            <button class="cp cp-fo" aria-pressed="false" data-cross="3" onclick="setCrossFo(this)">3×</button>
+            <button class="cp cp-fo" aria-pressed="false" data-cross="4" onclick="setCrossFo(this)">4×</button>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:.5rem">
           <span class="diff-side-label diff-side-fa" id="diff-label-fa">NDS</span>
           <div class="crow" style="flex:1">
-            <button class="cp cp-fa" data-cross="0" onclick="setCrossFa(this)">Radial</button>
-            <button class="cp cp-fa" data-cross="1" onclick="setCrossFa(this)">1×</button>
-            <button class="cp cp-fa" data-cross="2" onclick="setCrossFa(this)">2×</button>
-            <button class="cp cp-fa" data-cross="3" onclick="setCrossFa(this)">3×</button>
-            <button class="cp cp-fa" data-cross="4" onclick="setCrossFa(this)">4×</button>
+            <button class="cp cp-fa" aria-pressed="false" data-cross="0" onclick="setCrossFa(this)">Radial</button>
+            <button class="cp cp-fa" aria-pressed="false" data-cross="1" onclick="setCrossFa(this)">1×</button>
+            <button class="cp cp-fa" aria-pressed="false" data-cross="2" onclick="setCrossFa(this)">2×</button>
+            <button class="cp cp-fa" aria-pressed="false" data-cross="3" onclick="setCrossFa(this)">3×</button>
+            <button class="cp cp-fa" aria-pressed="false" data-cross="4" onclick="setCrossFa(this)">4×</button>
           </div>
         </div>
       </div>
@@ -6216,19 +6216,7 @@ function _applyStateBody(s) {
   $id('erd-nsd-result-field').style.display= erdMode === 'nsd'    ? '' : 'none';
 
   // Restore cross UI
-  const diffBtn = $id('diff-toggle');
-  if (diffBtn) diffBtn.setAttribute('aria-checked', diffMode ? 'true' : 'false');
-  const rowSingle = $id('cross-row-single'), rowDiff = $id('cross-row-diff');
-  if (rowSingle) rowSingle.style.display = diffMode ? 'none' : '';
-  if (rowDiff)   rowDiff.style.display   = diffMode ? 'flex' : 'none';
-  if (diffMode) {
-    document.querySelectorAll('.cp-fo').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cross) === crossFo));
-    document.querySelectorAll('.cp-fa').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cross) === crossFa));
-    document.querySelectorAll('#cross-row-single .cp').forEach(b => b.classList.remove('active'));
-  } else {
-    document.querySelectorAll('#cross-row-single .cp').forEach(b => b.classList.toggle('active', parseInt(b.dataset.cross) === cross));
-    document.querySelectorAll('.cp-fo,.cp-fa').forEach(b => b.classList.remove('active'));
-  }
+  syncCrossDiffUI();
   updateDiffSideLabels();
   updateRadialWarn();
 
@@ -6457,12 +6445,7 @@ function resetFields() {
   cross = null; crossFo = null; crossFa = null;
   setSpokeMatType('steel');
   diffMode = false;
-  const diffBtn = $id('diff-toggle');
-  if (diffBtn) diffBtn.setAttribute('aria-checked', 'false');
-  const rowSingle = $id('cross-row-single'), rowDiff = $id('cross-row-diff');
-  if (rowSingle) rowSingle.style.display = '';
-  if (rowDiff)   rowDiff.style.display   = 'none';
-  document.querySelectorAll('.cp').forEach(b => b.classList.remove('active', 'invalid'));
+  syncCrossDiffUI();
   erdMode = 'direct';
   $id('btn-erd-direct').classList.add('active'); $id('btn-erd-nsd').classList.remove('active');
   $id('erd-direct-section').style.display  = ''; $id('erd-nsd-section').style.display = 'none';
@@ -6656,6 +6639,73 @@ function updateCrossGeomWarn() {
   w.style.display = 'block';
 }
 
+// ── Croisement : écriture, peinture, reflet du différentiel ────────────
+// Trois rangées de pastilles, trois globals, cinq chemins qui les bougent : le
+// clic, la bascule du différentiel, la mémoire par type de moyeu, applyState et
+// resetFields. La rangée et le global doivent avancer ENSEMBLE — une pastille
+// active qui ne correspond à aucun global ressort telle quelle à la bascule
+// suivante. Tout passe donc par ces quatre primitives, et la correspondance
+// rangée → global n'est écrite qu'ici.
+function _crossRowOf(b) {
+  return b.classList.contains('cp-fo') ? 'fo'
+       : b.classList.contains('cp-fa') ? 'fa'
+       : 'single';
+}
+
+// Écrivain unique du couple (classe active, aria-pressed) sur UNE pastille.
+// Depuis que le re-clic désélectionne, ce sont de vrais boutons à bascule : leur
+// état doit être ANNONCÉ autant que peint, et les deux ne peuvent pas diverger
+// s'ils ne bougent qu'ici. L'attribut est aussi posé en dur dans le HTML, pour
+// que le premier rendu soit correct avant toute peinture.
+function _crossPress(b, on) {
+  b.classList.toggle('active', on);
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+}
+
+// Écrivain unique du couple (classe sp-disabled, aria-disabled) sur UNE
+// pastille. `pointer-events:none` ne parle qu'à la souris : sans l'attribut, un
+// lecteur d'écran annonce un bouton ordinaire là où le clavier ne fait plus
+// rien (cf. la garde de _crossPick). aria-disabled plutôt que l'attribut
+// `disabled` natif : la pastille reste atteignable au Tab, donc lisible et
+// explicable, au lieu de disparaître du parcours.
+function _crossDisable(b, on) {
+  b.classList.toggle('sp-disabled', on);
+  b.setAttribute('aria-disabled', on ? 'true' : 'false');
+}
+
+function _crossWrite(row, val) {
+  if (row === 'single')   cross   = val;
+  else if (row === 'fo')  crossFo = val;
+  else                    crossFa = val;
+}
+
+// Pose l'état visuel d'UNE rangée depuis une valeur (null = rangée vide).
+// Purge aussi le rouge d'un errCross précédent : une rangée qu'on vient de
+// remplir ou de vider ne décrit plus l'erreur qui l'avait marquée.
+function _crossPaintRow(val, row) {
+  const sel = row === 'single' ? '#cross-row-single .cp' : '.cp-' + row;
+  document.querySelectorAll(sel).forEach(b => {
+    b.classList.remove('invalid');
+    _crossPress(b, val !== null && parseInt(b.dataset.cross) === val);
+  });
+}
+
+// Reflet pur de diffMode vers l'UI — aucune valeur écrite, même contrat que
+// syncSpokeDiffUI() pour le différentiel de sections. Repeint les TROIS
+// rangées depuis les globals : celle qui est masquée part vide, sans quoi une
+// pastille active hors écran survivrait à un aller-retour et contredirait
+// l'état. Appelé par la bascule, par applyState et par resetFields.
+function syncCrossDiffUI() {
+  const btn = $id('diff-toggle');
+  if (btn) btn.setAttribute('aria-checked', diffMode ? 'true' : 'false');
+  const rowSingle = $id('cross-row-single'), rowDiff = $id('cross-row-diff');
+  if (rowSingle) rowSingle.style.display = diffMode ? 'none' : '';
+  if (rowDiff)   rowDiff.style.display   = diffMode ? 'flex' : 'none';
+  _crossPaintRow(diffMode ? null : cross, 'single');
+  _crossPaintRow(diffMode ? crossFo : null, 'fo');
+  _crossPaintRow(diffMode ? crossFa : null, 'fa');
+}
+
 // ── Croisement : mémoire par type de moyeu ─────────────────────────────
 // Le croisement est une donnée COMMUNE : il traverse la bascule tel quel, et
 // cette mémoire ne sert qu'au seul cas où le type de moyeu le détruit, le 4×
@@ -6663,25 +6713,22 @@ function updateCrossGeomWarn() {
 // On note ce qu'on avait en quittant un type ; au retour on ne le rend que si
 // la case est restée VIDE. Un croisement choisi entre-temps est un choix
 // délibéré de l'utilisateur et prime sur la mémoire : c'est cette garde, et
-// non une invalidation dispersée dans setCross / setCrossFo / setCrossFa, qui
-// empêche la mémoire d'écraser une saisie. Un seul endroit à maintenir.
-// Le mode différentiel fait partie de la clé : toggleDiff() vide la rangée
-// qu'il abandonne, rendre une valeur capturée dans l'autre mode n'aurait aucun
-// sens. Une seule case occupée à la fois, par roue, comme _hubNameByType.
+// non une invalidation posée dans _crossPick(), qui empêche la mémoire
+// d'écraser une saisie. Un seul endroit à maintenir.
+// Le mode différentiel fait partie de la clé : une mémoire capturée en deux
+// rangées n'a rien à rendre à une rangée unique, ni l'inverse — ce sont deux
+// découpages du laçage, pas deux valeurs comparables.
+// Une seule case occupée à la fois, par roue, comme _hubNameByType.
 const _crossByHubType = { avant:   { jbend: null, straightpull: null },
                           arriere: { jbend: null, straightpull: null } };
 
-// Écrit le global ET la pastille active : updateCrossForHubType() ne sait que
-// retirer la classe, personne d'autre ne la repose sur ce chemin.
+// Rend une valeur mise en veille : rangée repeinte ET global réécrit. La garde
+// sur null appartient à la mémoire — une case vide n'a rien à rendre, et la
+// rangée courante ne doit pas être effacée pour autant.
 function _crossRestore(val, row) {
   if (val === null || val === undefined) return;
-  const sel = row === 'single' ? '#cross-row-single .cp' : '.cp-' + row;
-  document.querySelectorAll(sel).forEach(b => {
-    b.classList.toggle('active', parseInt(b.dataset.cross) === val);
-  });
-  if (row === 'single')   cross   = val;
-  else if (row === 'fo')  crossFo = val;
-  else                    crossFa = val;
+  _crossPaintRow(val, row);
+  _crossWrite(row, val);
 }
 
 function crossSwapForHubType(prevType, nextType) {
@@ -6747,12 +6794,13 @@ function updateCrossForHubType() {
 
   // 4× interdit en Straightpull
   document.querySelectorAll('.cp[data-cross="4"]').forEach(b => {
-    b.classList.toggle('sp-disabled', isSP);
+    _crossDisable(b, isSP);
     if (isSP && b.classList.contains('active')) {
-      b.classList.remove('active');
-      if (b.classList.contains('cp-fo')) crossFo = null;
-      else if (b.classList.contains('cp-fa')) crossFa = null;
-      else cross = null;
+      // Destruction, pas remplissage : le rouge d'un errCross reste, car
+      // « choisir un croisement » redevient vrai. C'est la raison pour laquelle
+      // ce chemin s'arrête à _crossPress() et ne passe pas par _crossPaintRow().
+      _crossPress(b, false);
+      _crossWrite(_crossRowOf(b), null);
     }
   });
 
@@ -6764,11 +6812,11 @@ function updateCrossForHubType() {
   // fonction, via updateRadialWarn().
   const radialSingle = document.querySelector('#cross-row-single .cp[data-cross="0"]');
   if (radialSingle && isArriere && radialSingle.classList.contains('active')) {
-    radialSingle.classList.remove('active'); cross = null;
+    _crossPress(radialSingle, false); _crossWrite('single', null);
   }
   const radialFo = document.querySelector('.cp-fo[data-cross="0"]');
   if (radialFo && isArriere && radialFo.classList.contains('active')) {
-    radialFo.classList.remove('active'); crossFo = null;
+    _crossPress(radialFo, false); _crossWrite('fo', null);
   }
   updateRadialWarn();
 }
@@ -6972,10 +7020,27 @@ function setSpokeMatType(type) {
   updateCalcBtn();
 }
 
-function setCross(b) {
-  document.querySelectorAll('#cross-row-single .cp').forEach(x => x.classList.remove('active','invalid'));
-  b.classList.add('active');
-  cross = parseInt(b.dataset.cross);
+// Clic sur une pastille, rangée unique ou rangées du différentiel : même geste,
+// même corps. Re-cliquer la pastille ACTIVE la désélectionne — l'état « aucun
+// croisement » n'a rien de neuf, c'est celui d'un formulaire vierge et celui
+// qu'updateCrossForHubType() produit déjà en détruisant un 4× straightpull ou
+// un radial DS arrière, et tout l'aval le gère sans changement
+// (updateCardStatus, updateCalcBtn, calc → errCross, crossBySide).
+// La classe se lit AVANT la repeinture, qui l'efface.
+// Un clic est toujours une modification : markModified() sans condition, à la
+// différence de la bascule du différentiel, qui ne fait que changer de vue.
+function _crossPick(b, row) {
+  // Garde autoritaire, même contrat que setSpokeDiff() : `pointer-events:none`
+  // ne retient que la souris, une pastille grisée reste atteignable au clavier
+  // (Tab + Entrée). Sans ce filtre, un 4× straightpull ou un radial DS arrière
+  // rentrait par ce chemin sans que rien en aval ne le détruise —
+  // updateCrossForHubType() ne repasse qu'aux changements de moyeu ou de roue.
+  if (b.classList.contains('sp-disabled')) return;
+  const val = b.classList.contains('active') ? null : parseInt(b.dataset.cross);
+  _crossPaintRow(val, row);
+  _crossWrite(row, val);
+  // #err ne se referme que si plus AUCUN champ n'est rouge : en différentiel,
+  // remplir une rangée laisse l'autre marquée, et le message avec elle.
   if (!document.querySelector('.invalid')) $id('err').classList.remove('show');
   markModified();
   updateCalcBtn();
@@ -6983,41 +7048,42 @@ function setCross(b) {
   updateRadialWarn();
 }
 
-function setCrossFo(b) {
-  document.querySelectorAll('.cp-fo').forEach(x => x.classList.remove('active','invalid'));
-  b.classList.add('active');
-  crossFo = parseInt(b.dataset.cross);
-  if (!document.querySelector('.invalid')) $id('err').classList.remove('show');
-  markModified();
-  updateCalcBtn();
-  checkRimComplete();
-  updateRadialWarn();
-}
+function setCross(b)   { _crossPick(b, 'single'); }
+function setCrossFo(b) { _crossPick(b, 'fo'); }
+function setCrossFa(b) { _crossPick(b, 'fa'); }
 
-function setCrossFa(b) {
-  document.querySelectorAll('.cp-fa').forEach(x => x.classList.remove('active','invalid'));
-  b.classList.add('active');
-  crossFa = parseInt(b.dataset.cross);
-  if (!document.querySelector('.invalid')) $id('err').classList.remove('show');
-  markModified();
-  updateCalcBtn();
-  checkRimComplete();
-  updateRadialWarn();
-}
-
+// Le différentiel est une VUE sur le laçage, pas une donnée de plus : deux
+// rangées à la même valeur décrivent exactement la roue qu'une rangée unique
+// décrivait. La bascule reporte donc la valeur au lieu de vider — à l'ouverture
+// les deux rangées héritent du croisement simple, au repli un différentiel
+// resté symétrique le rend à la rangée unique — et elle NE DÉSAFFECTE PAS : la
+// roue chargée garde son nom, ses relevés et ses infos tant que le laçage n'a
+// pas bougé. Aller-retour sur le toggle sans toucher une pastille = zéro trace.
+// Un seul cas modifie vraiment : replier deux rangées DIVERGENTES, qui perd
+// l'une des deux valeurs (la rangée unique repart vide). markModified() y est
+// dû — _crossPick() l'a de toute façon déjà appelé au clic qui a fait diverger
+// les rangées, il ne fait ici que le redire sur un état déjà détaché.
+// Fin de course : updateCrossForHubType() plutôt qu'updateRadialWarn() seul.
+// Maintenant qu'une valeur traverse la bascule, elle doit être reconfrontée aux
+// deux interdits qui ne valent que d'un côté (4× straightpull, radial DS
+// arrière) ; il enchaîne updateRadialWarn() lui-même. Et il passe AVANT
+// updateCalcBtn(), parce qu'il peut encore vider une pastille : l'état des
+// cartes et du bouton Calculer doit se lire sur le laçage définitif.
 function toggleDiff() {
   diffMode = !diffMode;
-  const btn = $id('diff-toggle');
-  btn.setAttribute('aria-checked', diffMode ? 'true' : 'false');
-  $id('cross-row-single').style.display = diffMode ? 'none' : '';
-  $id('cross-row-diff').style.display   = diffMode ? 'flex' : 'none';
-  // Reset croisements différentiels quand on active
-  if (diffMode) { crossFo = null; crossFa = null; document.querySelectorAll('.cp-fo,.cp-fa').forEach(x => x.classList.remove('active','invalid')); }
-  else          { cross = null;   document.querySelectorAll('#cross-row-single .cp').forEach(x => x.classList.remove('active','invalid')); }
+  let lacingChanged = false;
+  if (diffMode) {
+    crossFo = crossFa = cross;
+  } else {
+    const symmetric = crossFo === crossFa;   // null === null compris
+    cross = symmetric ? crossFo : null;
+    lacingChanged = !symmetric;
+  }
+  syncCrossDiffUI();
   updateDiffSideLabels();
-  markModified();
+  if (lacingChanged) markModified();
+  updateCrossForHubType();
   updateCalcBtn();
-  updateRadialWarn();
 }
 
 // Les deux sections sont côte à côte : leur ordre à l'écran doit être l'ordre
@@ -7619,9 +7685,9 @@ function syncRadialLock() {
   const single = document.querySelector('#cross-row-single .cp[data-cross="0"]');
   const fo     = document.querySelector('.cp-fo[data-cross="0"]');
   const fa     = document.querySelector('.cp-fa[data-cross="0"]');
-  if (single) single.classList.toggle('sp-disabled', isArriere || lockSingle);
-  if (fo)     fo.classList.toggle('sp-disabled', isArriere || lockFo);
-  if (fa)     fa.classList.toggle('sp-disabled', lockFa);
+  if (single) _crossDisable(single, isArriere || lockSingle);
+  if (fo)     _crossDisable(fo, isArriere || lockFo);
+  if (fa)     _crossDisable(fa, lockFa);
 }
 
 // ── Spoke Offset straightpull en radial ─────────────────────────────────────
@@ -7638,7 +7704,7 @@ function soRadialSides() {
 // Ids des SO exigés ET vides — un côté radial n'est jamais exigé. Source unique
 // pour checkReady, calc (errSO), updateCardStatus, checkHubComplete et
 // hubDataComplete. Lit l'état JS, pas le DOM : fiable même appelé avant
-// syncSoRadial() — setCross* passe par updateCalcBtn avant updateRadialWarn.
+// syncSoRadial() — _crossPick() passe par updateCalcBtn avant updateRadialWarn.
 function soMissingIds() {
   if (hubType !== 'straightpull') return [];
   const rad = soRadialSides(), out = [];
@@ -7649,7 +7715,7 @@ function soMissingIds() {
 
 // Affichage — appelé en fin d'updateRadialWarn(), point de passage commun des
 // changements de croisement, de différentiel, de type de moyeu et de roue
-// (setCross*, toggleDiff, updateCrossForHubType, applyState).
+// (_crossPick, updateCrossForHubType — qu'appellent toggleDiff et applyState).
 function syncSoRadial() {
   const rad = soRadialSides();
   [['sp-so-left', rad.L], ['sp-so-right', rad.R]].forEach(([id, on]) => {
