@@ -14527,7 +14527,9 @@ async function tmExportPdfWithOpts(opts) {
   // Ligne "Type — Nom de roue — Rider", identique aux PDF diagnostic et
   // évolution : elle s'affiche sous le nom de l'atelier, dans la card
   // d'en-tête. La roue ne figure donc plus dans le bloc Configuration.
-  const pdfWheelPart = wheelName ? (sanitize(wheelLabel) + ' — ' + sanitize(wheelName)) : '';
+  const pdfWheelHead = wheelName ? (sanitize(wheelLabel) + ' — ') : '';
+  const pdfWheelName = wheelName ? sanitize(wheelName) : '';
+  const pdfWheelPart = pdfWheelHead + pdfWheelName;
   const pdfRiderPart = pdfRiderName ? sanitize(pdfRiderName) : '';
 
   // ── Header ────────────────────────────────────────────────────────────────
@@ -14591,29 +14593,41 @@ async function tmExportPdfWithOpts(opts) {
     });
   }
 
-  // Ligne d'identité sous le nom de l'atelier, calée sur lui. Elle se réduit
-  // jusqu'à 5.5 pt plutôt que d'aller mordre sur la colonne de coordonnées.
+  // Ligne d'identité sous le nom de l'atelier, calée sur lui. Deux paliers :
+  // le corps se réduit de 7.5 à 6 pt, puis c'est le NOM DE ROUE qui est amputé.
+  // Le type de roue et le rider restent entiers, et la ligne ne peut jamais
+  // mordre sur la colonne de coordonnées de l'atelier.
   if (pdfWheelPart || pdfRiderPart) {
     const idMaxW = (coordLines.length ? colSplit - HP : ML + CW - HP) - (ML + headerPadL);
     const idSep  = (pdfWheelPart && pdfRiderPart) ? ' — ' : '';
-    let   idSize = 7.5;
+    let   idName  = pdfWheelName;
+    let   idRider = pdfRiderPart;
+    let   idSize  = 7.5;
     doc.setFont('helvetica', 'normal');
-    const idW = () => {
-      doc.setFontSize(idSize);
-      return pdfTextWidth(doc, pdfWheelPart) + pdfTextWidth(doc, idSep) + pdfTextWidth(doc, pdfRiderPart);
+    const idClip = (str, room) => {
+      let k = str.length;
+      while (k > 0 && pdfTextWidth(doc, str.slice(0, k)) > room) k--;
+      return str.slice(0, k).replace(/\s+$/, '') + '\u2026';
     };
-    while (idW() > idMaxW && idSize > 5.5) idSize -= 0.25;
+    const idFixedW = () => pdfTextWidth(doc, pdfWheelHead) + pdfTextWidth(doc, idSep) + pdfTextWidth(doc, idRider);
+    const idW = () => { doc.setFontSize(idSize); return idFixedW() + pdfTextWidth(doc, idName); };
+    while (idW() > idMaxW && idSize > 6) idSize -= 0.25;
+    // Le nom de roue cède en premier ; le rider ne cède qu'en dernier recours,
+    // quand il est seul en cause — cas d'un nom très long tout en capitales.
+    if (idW() > idMaxW && idName)  idName  = idClip(idName,  idMaxW - idFixedW() - pdfTextWidth(doc, '\u2026'));
+    if (idW() > idMaxW && idRider) idRider = idClip(idRider, idMaxW - pdfTextWidth(doc, pdfWheelHead + idName) - pdfTextWidth(doc, idSep) - pdfTextWidth(doc, '\u2026'));
+    const idWheel = pdfWheelHead + idName;
     let _ix = ML + headerPadL;
     const _iy = Y + 19.5;
-    if (pdfWheelPart) {
+    if (idWheel) {
       doc.setTextColor(...C_TEXT2);
-      doc.text(pdfWheelPart, _ix, _iy);
-      _ix += pdfTextWidth(doc, pdfWheelPart);
+      doc.text(idWheel, _ix, _iy);
+      _ix += pdfTextWidth(doc, idWheel);
     }
     if (idSep) { doc.setTextColor(...C_TEXT2); doc.text(idSep, _ix, _iy); _ix += pdfTextWidth(doc, idSep); }
-    if (pdfRiderPart) {
+    if (idRider) {
       doc.setTextColor(...C_TEXT2);
-      doc.text(pdfRiderPart, _ix, _iy);
+      doc.text(idRider, _ix, _iy);
     }
   }
 
@@ -18417,7 +18431,9 @@ async function diagGeneratePdf() {
     var _cfg = loadConfigs().find(c => c.name === _cfgN && (c.state && (c.state.wtype || 'avant')) === wtype);
     if (_cfg && _cfg.riderId) { var _rd = riderById(_cfg.riderId); if (_rd && _rd.name) pdfRiderName = _rd.name; }
   }
-  var pdfWheelPart = wheelName ? (sanitize(wheelLabel) + ' — ' + sanitize(wheelName)) : '';
+  var pdfWheelHead = wheelName ? (sanitize(wheelLabel) + ' — ') : '';
+  var pdfWheelName = wheelName ? sanitize(wheelName) : '';
+  var pdfWheelPart = pdfWheelHead + pdfWheelName;
   var pdfRiderPart = pdfRiderName ? sanitize(pdfRiderName) : '';
 
   // ── Header ────────────────────────────────────────────────────────────────
@@ -18466,28 +18482,40 @@ async function diagGeneratePdf() {
     });
   }
 
-  // Ligne d'identité sous le nom de l'atelier, calée sur lui. Elle se réduit
-  // jusqu'à 5.5 pt plutôt que d'aller mordre sur la colonne de coordonnées.
+  // Ligne d'identité sous le nom de l'atelier, calée sur lui. Deux paliers :
+  // le corps se réduit de 7.5 à 6 pt, puis c'est le NOM DE ROUE qui est amputé.
+  // Le type de roue et le rider restent entiers, et la ligne ne peut jamais
+  // mordre sur la colonne de coordonnées de l'atelier.
   if (pdfWheelPart || pdfRiderPart) {
     var idMaxW = (coordLines.length ? colSplit - HP : ML + CW - HP) - (ML + headerPadL);
     var idSep  = (pdfWheelPart && pdfRiderPart) ? ' — ' : '';
-    var idSize = 7.5;
+    var idName  = pdfWheelName;
+    var idRider = pdfRiderPart;
+    var idSize  = 7.5;
     doc.setFont('helvetica','normal');
-    var idW = function() {
-      doc.setFontSize(idSize);
-      return pdfTextWidth(doc, pdfWheelPart) + pdfTextWidth(doc, idSep) + pdfTextWidth(doc, pdfRiderPart);
+    var idClip = function(str, room) {
+      var k = str.length;
+      while (k > 0 && pdfTextWidth(doc, str.slice(0, k)) > room) k--;
+      return str.slice(0, k).replace(/\s+$/, '') + '\u2026';
     };
-    while (idW() > idMaxW && idSize > 5.5) idSize -= 0.25;
+    var idFixedW = function() { return pdfTextWidth(doc, pdfWheelHead) + pdfTextWidth(doc, idSep) + pdfTextWidth(doc, idRider); };
+    var idW = function() { doc.setFontSize(idSize); return idFixedW() + pdfTextWidth(doc, idName); };
+    while (idW() > idMaxW && idSize > 6) idSize -= 0.25;
+    // Le nom de roue cède en premier ; le rider ne cède qu'en dernier recours,
+    // quand il est seul en cause — cas d'un nom très long tout en capitales.
+    if (idW() > idMaxW && idName)  idName  = idClip(idName,  idMaxW - idFixedW() - pdfTextWidth(doc, '\u2026'));
+    if (idW() > idMaxW && idRider) idRider = idClip(idRider, idMaxW - pdfTextWidth(doc, pdfWheelHead + idName) - pdfTextWidth(doc, idSep) - pdfTextWidth(doc, '\u2026'));
+    var idWheel = pdfWheelHead + idName;
     var _ix = ML + headerPadL, _iy = Y + 19.5;
-    if (pdfWheelPart) {
+    if (idWheel) {
       doc.setTextColor(...C_TEXT2);
-      doc.text(pdfWheelPart, _ix, _iy);
-      _ix += pdfTextWidth(doc, pdfWheelPart);
+      doc.text(idWheel, _ix, _iy);
+      _ix += pdfTextWidth(doc, idWheel);
     }
     if (idSep) { doc.setTextColor(...C_TEXT2); doc.text(idSep, _ix, _iy); _ix += pdfTextWidth(doc, idSep); }
-    if (pdfRiderPart) {
+    if (idRider) {
       doc.setTextColor(...C_TEXT2);
-      doc.text(pdfRiderPart, _ix, _iy);
+      doc.text(idRider, _ix, _iy);
     }
   }
 
@@ -20639,7 +20667,9 @@ async function snapComparePDF() {
   var Y = MT;
   // Identité de la roue — même ligne que les PDF récapitulatif et diagnostic.
   var wheelLabel = (wtype === 'arriere' ? t('rearLabel') : t('frontLabel')).toUpperCase(); // capitales dans le PDF
-  var pdfWheelPart = wheelName ? (sanitize(wheelLabel)+' — '+sanitize(wheelName)) : '';
+  var pdfWheelHead = wheelName ? (sanitize(wheelLabel)+' — ') : '';
+  var pdfWheelName = wheelName ? sanitize(wheelName) : '';
+  var pdfWheelPart = pdfWheelHead + pdfWheelName;
   var pdfRiderPart = pdfRiderName ? sanitize(pdfRiderName) : '';
   var HP=5, headerH=(pdfWheelPart||pdfRiderPart)?26:22, colSplit=ML+CW*0.52;
   var iconS=3.0, lineH=6.5, brandBarW=4, headerPadL=brandBarW+7;
@@ -20677,28 +20707,40 @@ async function snapComparePDF() {
     });
   }
 
-  // Ligne d'identité sous le nom de l'atelier, calée sur lui. Elle se réduit
-  // jusqu'à 5.5 pt plutôt que d'aller mordre sur la colonne de coordonnées.
+  // Ligne d'identité sous le nom de l'atelier, calée sur lui. Deux paliers :
+  // le corps se réduit de 7.5 à 6 pt, puis c'est le NOM DE ROUE qui est amputé.
+  // Le type de roue et le rider restent entiers, et la ligne ne peut jamais
+  // mordre sur la colonne de coordonnées de l'atelier.
   if (pdfWheelPart || pdfRiderPart) {
     var idMaxW = (coordLines.length ? colSplit - HP : ML + CW - HP) - (ML + headerPadL);
     var idSep  = (pdfWheelPart && pdfRiderPart) ? ' — ' : '';
-    var idSize = 7.5;
+    var idName  = pdfWheelName;
+    var idRider = pdfRiderPart;
+    var idSize  = 7.5;
     doc.setFont('helvetica','normal');
-    var idW = function() {
-      doc.setFontSize(idSize);
-      return pdfTextWidth(doc, pdfWheelPart) + pdfTextWidth(doc, idSep) + pdfTextWidth(doc, pdfRiderPart);
+    var idClip = function(str, room) {
+      var k = str.length;
+      while (k > 0 && pdfTextWidth(doc, str.slice(0, k)) > room) k--;
+      return str.slice(0, k).replace(/\s+$/, '') + '\u2026';
     };
-    while (idW() > idMaxW && idSize > 5.5) idSize -= 0.25;
+    var idFixedW = function() { return pdfTextWidth(doc, pdfWheelHead) + pdfTextWidth(doc, idSep) + pdfTextWidth(doc, idRider); };
+    var idW = function() { doc.setFontSize(idSize); return idFixedW() + pdfTextWidth(doc, idName); };
+    while (idW() > idMaxW && idSize > 6) idSize -= 0.25;
+    // Le nom de roue cède en premier ; le rider ne cède qu'en dernier recours,
+    // quand il est seul en cause — cas d'un nom très long tout en capitales.
+    if (idW() > idMaxW && idName)  idName  = idClip(idName,  idMaxW - idFixedW() - pdfTextWidth(doc, '\u2026'));
+    if (idW() > idMaxW && idRider) idRider = idClip(idRider, idMaxW - pdfTextWidth(doc, pdfWheelHead + idName) - pdfTextWidth(doc, idSep) - pdfTextWidth(doc, '\u2026'));
+    var idWheel = pdfWheelHead + idName;
     var _ix = ML + headerPadL, _iy = Y + 19.5;
-    if (pdfWheelPart) {
+    if (idWheel) {
       doc.setTextColor.apply(doc,C_TEXT2);
-      doc.text(pdfWheelPart, _ix, _iy);
-      _ix += pdfTextWidth(doc, pdfWheelPart);
+      doc.text(idWheel, _ix, _iy);
+      _ix += pdfTextWidth(doc, idWheel);
     }
     if (idSep) { doc.setTextColor.apply(doc,C_TEXT2); doc.text(idSep, _ix, _iy); _ix += pdfTextWidth(doc, idSep); }
-    if (pdfRiderPart) {
+    if (idRider) {
       doc.setTextColor.apply(doc,C_TEXT2);
-      doc.text(pdfRiderPart, _ix, _iy);
+      doc.text(idRider, _ix, _iy);
     }
   }
 
