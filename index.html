@@ -1567,6 +1567,38 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 /* La capsule rider (info secondaire) se tronque 3x plus vite que le nom. */
 .cfg-loaded-name .wheel-load-item-rider { max-width:110px; min-width:0; flex:0 3 auto }
 
+/* ── Pastille « complétion » (ligne Reset, card Roue du calculateur) ───────── */
+/* Purement informative : elle nomme le mode dont les verrous visibles sont la
+   conséquence (nb de rayons et différentiel figés quand des relevés en
+   dépendent). Ni capsule ni bordure, qui diraient « bouton » ; ni le gris de
+   .locked, qui dit « interdit », alors que ce mode est au contraire permissif.
+   Typographie alignée sur .wheel-reset-btn pour que la ligne se lise d'un seul
+   tenant. Le padding latéral tient lieu de gouttière : porté par la pastille et
+   non par la grille, il disparaît avec elle et laisse la ligne au pixel près
+   identique à celle du module tension quand aucune roue n'est en complétion. */
+.cfg-fill-badge {
+  display:none;
+  /* Centrée sur l'axe de la card, et non sur l'espace laissé libre : les deux
+     groupes de la ligne n'ont pas la même largeur (icônes ~58px, Reset ~90px),
+     tout centrage en flux serait décalé d'une quinzaine de pixels. En absolu,
+     la pastille ne participe plus au flux : les voisins gardent exactement la
+     mise en page qu'ils avaient sans elle. */
+  position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);
+  /* 170px = les deux groupes (~148px) plus une respiration. Le bornage garantit
+     qu'elle ne peut ni les chevaucher ni intercepter un clic, jusqu'au plus
+     petit écran visé : ligne de 250px à 320px de viewport, donc 80px pour la
+     pastille, « MODIFIABLE » en occupant 70. */
+  max-width:calc(100% - 170px);
+  font-family:'DM Mono',monospace; font-size:.58rem; font-weight:400;
+  letter-spacing:.15em; text-transform:uppercase;
+  color:var(--text3); opacity:.55;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  /* Préfixe webkit comme .ateliermgr-prefix, l'autre élément en surimpression du
+     fichier : sans lui, un appui long iOS sélectionne le libellé. */
+  -webkit-user-select:none; user-select:none;
+}
+.cfg-fill-badge.show { display:block }
+
 /* ── Conversion table modal ────────────────────────────────────────────────── */
 .tm-conv-overlay  { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
 .tm-conv-overlay.show { display:block; opacity:1 }
@@ -2260,7 +2292,11 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <button class="sb active" id="btn-avant"   onclick="setWheel('avant')"   data-i18n="frontWheel">ROUE AVANT</button>
       <button class="sb"        id="btn-arriere" onclick="setWheel('arriere')" data-i18n="rearWheel">ROUE ARRIÈRE</button>
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.75rem">
+    <!-- position:relative : ancre de la pastille « modifiable », qui se centre
+         en absolu sur l'axe de la card. Les deux groupes gardent exactement la
+         mise en page d'origine (flex space-between), d'où un code identique à
+         celui de la ligne jumelle du module tension. -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.75rem;position:relative">
       <div style="display:flex;gap:.35rem">
         <button class="card-icon-btn" id="wheel-info-btn" onclick="openWheelInfoModal()" title="Informations roue" disabled>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -2279,6 +2315,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
           </svg>
         </button>
       </div>
+      <span class="cfg-fill-badge" id="cfg-fill-badge" data-i18n="cfgFillBadge">Modifiable</span>
       <button class="wheel-reset-btn" onclick="clearForm()"><svg class="reset-icon" width="9" height="9" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.5 5a3.5 3.5 0 1 0 .7-2.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><polyline points="1.5,1.5 1.5,3 3,3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>Reset</button>
     </div>
   </div>
@@ -4911,6 +4948,8 @@ const i18n = {
     wshareTitle:'Partage de Roue',
     wshareDesc:'Vous pouvez partager, recevoir ou archiver spécifiquement une roue.',
     wshareBtnTitle:'Partage de roue',
+    cfgFillBadge:'Modifiable',
+    cfgFillHint:'Roue incomplète : vous pouvez la modifier sans la détacher.',
     wshareExportEmpty:'Aucune roue à partager.',
     wshareImportSuccess:'✓ Roue « {name} » importée.',
     wshareImportError:'Fichier invalide : ce n\'est pas une roue Spokeit.',
@@ -5175,6 +5214,8 @@ const i18n = {
     wshareTitle:'Wheel Sharing',
     wshareDesc:'You can share, receive or archive a specific wheel.',
     wshareBtnTitle:'Wheel sharing',
+    cfgFillBadge:'Editable',
+    cfgFillHint:'Incomplete wheel: you can edit it without detaching it.',
     wshareExportEmpty:'No wheel to share.',
     wshareImportSuccess:'✓ Wheel "{name}" imported.',
     wshareImportError:'Invalid file: not a Spokeit wheel.',
@@ -5577,6 +5618,17 @@ function _refreshLoadedBadges() {
   _setBadge('cfg-loaded-name', 'cfg-loaded-text', name);
   _setBadge('tm-cfg-loaded-name', 'tm-cfg-loaded-text', name);
   _refreshLoadedRiderChip(name);
+  // Pastille « complétion » : CALCULATEUR uniquement, là où le mode a un effet
+  // observable (une saisie complète la roue au lieu de la désaffecter). Le
+  // module tension ne la porte pas : ses relevés ne désaffectent jamais, la
+  // pastille y annoncerait un mode sans contrepartie.
+  // Posée ici parce que les cinq écritures de _cfgFillMode passent toutes par
+  // cette fonction, et parce que _cfgFilling() ne lit que l'état mémoire (aucun
+  // loadConfigs) : le coût reste nul au rythme des badges. Surtout pas dans
+  // tmSyncLocks() malgré la parenté apparente — le fait ne change pas au rythme
+  // du relevé.
+  { const fb = $id('cfg-fill-badge');
+    if (fb) fb.classList.toggle('show', _cfgFilling()); }
   // Verrous : flashWheelCard() pose _loadedConfigName APRÈS applyState — donc
   // après que le module tension a déjà calculé ses verrous sur une roue encore
   // non affectée. C'est ici, et seulement ici, qu'ils deviennent justes.
@@ -5960,6 +6012,7 @@ function applyLang() {
   $id('lang-btn').textContent = lang === 'fr' ? 'EN' : 'FR';
   var bkpSn = $id('bkp-snooze'); if (bkpSn) { bkpSn.title = t('backupSnoozeTitle'); bkpSn.setAttribute('aria-label', t('backupSnoozeTitle')); }
   var pkBtn = $id('save-mgr-btn'); if (pkBtn) { pkBtn.title = t('pickerMenuBtn'); pkBtn.setAttribute('aria-label', t('pickerMenuBtn')); }
+  var cfgFb = $id('cfg-fill-badge'); if (cfgFb) cfgFb.title = t('cfgFillHint');
   if (typeof helpSync === 'function') helpSync();
   // Tooltips des boutons d'icône de card (load/save/info) : title figé FR dans
   // le HTML, retraduit ici — même mécanisme que bkp-snooze / save-mgr-btn.
