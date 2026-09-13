@@ -2022,7 +2022,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
   <div class="ateliermgr-field">
     <span class="ateliermgr-label" id="atelier-shop-label" data-i18n="atelierName">Atelier</span>
     <div class="ateliermgr-inp-wrap">
-      <input class="ateliermgr-inp" id="atelier-shop" aria-labelledby="atelier-shop-label" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <input class="ateliermgr-inp" id="atelier-shop" aria-labelledby="atelier-shop-label" type="text" maxlength="50" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       <button class="ateliermgr-clear" onclick="atelierClear('atelier-shop')">✕</button>
     </div>
   </div>
@@ -3432,7 +3432,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         <div class="f" style="flex:1">
           <label data-i18n="ccStepName" for="cc-name">Nom du rayon</label>
           <div style="display:flex;gap:.35rem">
-            <input type="text" id="cc-name" class="cc-input" placeholder="Ex : Mon Rayon Custom 2.0" maxlength="60" autocomplete="off" oninput="ccToggleNameClear()">
+            <input type="text" id="cc-name" class="cc-input" placeholder="Ex : Mon Rayon Custom 2.0" maxlength="50" autocomplete="off" oninput="ccToggleNameClear()">
             <button class="tm-clear-tensio" id="cc-clear-name" onclick="ccClearName()" style="display:none" title="Reset">✕</button>
           </div>
         </div>
@@ -3584,7 +3584,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <button class="hr-save-close" onclick="closeHrSaveModal()">✕</button>
   </div>
   <div class="hr-save-inp-row">
-    <input class="hr-save-inp" id="hr-save-inp" aria-labelledby="hr-save-title" type="text" placeholder="Nom…" maxlength="60" autocomplete="off" autocapitalize="characters"
+    <input class="hr-save-inp" id="hr-save-inp" aria-labelledby="hr-save-title" type="text" placeholder="Nom…" maxlength="50" autocomplete="off" autocapitalize="characters"
       onkeydown="if(event.key==='Enter'){event.preventDefault();confirmHrSave()}">
     <button class="hr-save-btn" onclick="confirmHrSave()">OK</button>
   </div>
@@ -3616,7 +3616,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <button class="wheel-save-close" onclick="closeWheelSaveModal()">✕</button>
   </div>
   <div class="wheel-save-inp-row">
-    <input class="wheel-save-inp" id="wheel-save-inp" aria-labelledby="wheel-save-title" type="text" placeholder="Nom…" maxlength="60" autocomplete="off" autocapitalize="characters"
+    <input class="wheel-save-inp" id="wheel-save-inp" aria-labelledby="wheel-save-title" type="text" placeholder="Nom…" maxlength="50" autocomplete="off" autocapitalize="characters"
       onkeydown="if(event.key==='Enter') confirmWheelSave()">
     <button class="wheel-save-btn" onclick="confirmWheelSave()">OK</button>
   </div>
@@ -4186,7 +4186,7 @@ window.wiNotesFlat = function() {
   <div class="ateliermgr-field">
     <span class="ateliermgr-label" id="rider-name-label" data-i18n="riderName">Nom</span>
     <div class="ateliermgr-inp-wrap">
-      <input class="ateliermgr-inp" id="rider-name" aria-labelledby="rider-name-label" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+      <input class="ateliermgr-inp" id="rider-name" aria-labelledby="rider-name-label" type="text" maxlength="50" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
       <button class="ateliermgr-clear" onclick="riderClear('rider-name')">✕</button>
     </div>
   </div>
@@ -8334,8 +8334,21 @@ function openArbCard() {
 function toggleSummaryCard() { toggleCard('sum-card-body',  'sum-card-chevron'); }
 // ── Configs (localStorage) ────────────────────────────────────────────────────
 const LS_KEY = 'spokeit_configs';
-function loadConfigs()        { try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch(e) { return []; } }
-function persistConfigs(cfg)  { return lsSet(LS_KEY, JSON.stringify(cfg)); }
+// Plafond des noms de roue, identique au maxlength des champs de saisie.
+// Appliqué en lecture ET en écriture : un nom plus long, enregistré avant ce
+// plafond ou restauré d'une sauvegarde ancienne, est ramené à 50 dès la
+// première réécriture de la collection. Tronquer des deux côtés évite le
+// doublon : la clé d'unicité (nom + côté) est déjà courte partout en mémoire,
+// une roue héritée se réécrit donc sur elle-même.
+const NAME_MAX = 50;
+function clampNames(arr) {
+  if (Array.isArray(arr)) arr.forEach(function(o) {
+    if (o && typeof o.name === 'string' && o.name.length > NAME_MAX) o.name = o.name.slice(0, NAME_MAX);
+  });
+  return arr;
+}
+function loadConfigs()        { try { return clampNames(JSON.parse(localStorage.getItem(LS_KEY)) || []); } catch(e) { return []; } }
+function persistConfigs(cfg)  { return lsSet(LS_KEY, JSON.stringify(clampNames(cfg))); }
 
 function saveConfig(nameOverride, riderIdOverride, skipConfirm) {
   const name = (nameOverride || '').trim();
@@ -9647,7 +9660,10 @@ function wshareImport(event) {
       var wh = entry.state.wtype || 'avant';
       // Collision de nom à (nom, wtype) égal — même clé d'unicité que
       // saveConfig — → suffixe incrémental (1), (2)…
-      var base = (typeof entry.name === 'string' && entry.name.trim()) ? entry.name.trim() : 'Wheel';
+      // Nom plafonné AVANT la déduplication : un fichier partagé ne doit pas
+      // introduire un nom plus long, et le suffixe de collision doit se
+      // calculer sur le nom déjà court. Même plafond que clampNames().
+      var base = (typeof entry.name === 'string' && entry.name.trim()) ? entry.name.trim().slice(0, NAME_MAX) : 'Wheel';
       var configs = loadConfigs();
       var name = _importDedupName(base, function(cand) {
         return configs.some(function(c) { return c.name === cand && (c.state.wtype || 'avant') === wh; });
@@ -14423,7 +14439,6 @@ async function tmExportPdfWithOpts(opts) {
     const cl = sumD.diffMode
       ? diffPairStr(sumD.wtype, crossStr(sumD.crossFo), crossStr(sumD.crossFa))
       : crossStr(sumD.cross);
-    cfgRows.push([t('wheelLabel'), wheelLabel + (wheelName ? ' — ' + sanitize(wheelName) : '')]);
     cfgRows.push(['ERD',           sumD.erd + ' mm']);
     cfgRows.push([t('spokeCount'), sumD.n + ' (' + sumD.h + t('perSide') + ')']);
     cfgRows.push([t('crossLabel'), cl]);
@@ -14483,11 +14498,43 @@ async function tmExportPdfWithOpts(opts) {
   doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, PW, PH, 'F');
 
+  // ── Identité de la roue + légende tensiomètre ────────────────────────────
+  let pdfTensioName = null;
+  if (tmType && tmType.startsWith('ct_')) {
+    const _ct = (typeof ctLoadAll === 'function') ? ctLoadAll().find(c => 'ct_' + c.id === tmType) : null;
+    pdfTensioName = _ct ? _ct.name : null;
+  } else if (typeof _snapTensioLabel === 'function') {
+    pdfTensioName = _snapTensioLabel(tmType, tmDTSub);
+  }
+  // Charte(s) de conversion. _snapSpokeLabel() est la source unique du libellé
+  // (une charte, ou « A / B » en différentiel) : on lui présente l'état vif
+  // sous la forme d'un porteur, exactement comme il reçoit un snapshot. Les
+  // deux exports ne peuvent donc pas décrire la même roue différemment.
+  const pdfSpokeName = (typeof _snapSpokeLabel === 'function')
+    ? _snapSpokeLabel({ tmSpokeKey: tmSpokeFo, tmSpokeFa: tmSpokeFa, spokeDiff: spokeDiff }, wtype)
+    : null;
+  const pdfTensioCaption = pdfTensioName
+    ? (lang === 'fr' ? 'Tensiomètre\u00a0: ' : 'Tensiometer: ') + pdfTensioName
+        + (pdfSpokeName ? '  \u00b7  ' + pdfSpokeName : '')
+    : null;
+  // Rider de la roue chargée : nom de la config -> riderId -> riderById().name (jamais l'ID)
+  let pdfRiderName = null;
+  const _cfgN = (typeof _loadedConfigName !== 'undefined' && _loadedConfigName) ? _loadedConfigName[wtype] : null;
+  if (_cfgN && typeof loadConfigs === 'function' && typeof riderById === 'function') {
+    const _cfg = loadConfigs().find(c => c.name === _cfgN && (c.state && (c.state.wtype || 'avant')) === wtype);
+    if (_cfg && _cfg.riderId) { const _rd = riderById(_cfg.riderId); if (_rd && _rd.name) pdfRiderName = _rd.name; }
+  }
+  // Ligne "Type — Nom de roue — Rider", identique aux PDF diagnostic et
+  // évolution : elle s'affiche sous le nom de l'atelier, dans la card
+  // d'en-tête. La roue ne figure donc plus dans le bloc Configuration.
+  const pdfWheelPart = wheelName ? (sanitize(wheelLabel) + ' — ' + sanitize(wheelName)) : '';
+  const pdfRiderPart = pdfRiderName ? sanitize(pdfRiderName) : '';
+
   // ── Header ────────────────────────────────────────────────────────────────
   const atelierInfo = loadAtelierInfo();
 
   const HP      = 5;
-  const headerH = 22;
+  const headerH = (pdfWheelPart || pdfRiderPart) ? 26 : 22;
   const colSplit = ML + CW * 0.52;
   const iconS   = 3.0;
   const lineH   = 6.5;
@@ -14544,71 +14591,39 @@ async function tmExportPdfWithOpts(opts) {
     });
   }
 
+  // Ligne d'identité sous le nom de l'atelier, calée sur lui. Elle se réduit
+  // jusqu'à 5.5 pt plutôt que d'aller mordre sur la colonne de coordonnées.
+  if (pdfWheelPart || pdfRiderPart) {
+    const idMaxW = (coordLines.length ? colSplit - HP : ML + CW - HP) - (ML + headerPadL);
+    const idSep  = (pdfWheelPart && pdfRiderPart) ? ' — ' : '';
+    let   idSize = 7.5;
+    doc.setFont('helvetica', 'normal');
+    const idW = () => {
+      doc.setFontSize(idSize);
+      return pdfTextWidth(doc, pdfWheelPart) + pdfTextWidth(doc, idSep) + pdfTextWidth(doc, pdfRiderPart);
+    };
+    while (idW() > idMaxW && idSize > 5.5) idSize -= 0.25;
+    let _ix = ML + headerPadL;
+    const _iy = Y + 19.5;
+    if (pdfWheelPart) {
+      doc.setTextColor(...C_TEXT2);
+      doc.text(pdfWheelPart, _ix, _iy);
+      _ix += pdfTextWidth(doc, pdfWheelPart);
+    }
+    if (idSep) { doc.setTextColor(...C_TEXT2); doc.text(idSep, _ix, _iy); _ix += pdfTextWidth(doc, idSep); }
+    if (pdfRiderPart) {
+      doc.setTextColor(...C_TEXT2);
+      doc.text(pdfRiderPart, _ix, _iy);
+    }
+  }
+
   Y += headerH + 5;
 
-  // ── Nom de roue + séparateur (comme diagnostic et évolution) ─────────────
-  let pdfTensioName = null;
-  if (tmType && tmType.startsWith('ct_')) {
-    const _ct = (typeof ctLoadAll === 'function') ? ctLoadAll().find(c => 'ct_' + c.id === tmType) : null;
-    pdfTensioName = _ct ? _ct.name : null;
-  } else if (typeof _snapTensioLabel === 'function') {
-    pdfTensioName = _snapTensioLabel(tmType, tmDTSub);
-  }
-  // Charte(s) de conversion. _snapSpokeLabel() est la source unique du libellé
-  // (une charte, ou « A / B » en différentiel) : on lui présente l'état vif
-  // sous la forme d'un porteur, exactement comme il reçoit un snapshot. Les
-  // deux exports ne peuvent donc pas décrire la même roue différemment.
-  const pdfSpokeName = (typeof _snapSpokeLabel === 'function')
-    ? _snapSpokeLabel({ tmSpokeKey: tmSpokeFo, tmSpokeFa: tmSpokeFa, spokeDiff: spokeDiff }, wtype)
-    : null;
-  const pdfTensioCaption = pdfTensioName
-    ? (lang === 'fr' ? 'Tensiomètre\u00a0: ' : 'Tensiometer: ') + pdfTensioName
-        + (pdfSpokeName ? '  \u00b7  ' + pdfSpokeName : '')
-    : null;
-  // Rider de la roue chargée : nom de la config -> riderId -> riderById().name (jamais l'ID)
-  let pdfRiderName = null;
-  const _cfgN = (typeof _loadedConfigName !== 'undefined' && _loadedConfigName) ? _loadedConfigName[wtype] : null;
-  if (_cfgN && typeof loadConfigs === 'function' && typeof riderById === 'function') {
-    const _cfg = loadConfigs().find(c => c.name === _cfgN && (c.state && (c.state.wtype || 'avant')) === wtype);
-    if (_cfg && _cfg.riderId) { const _rd = riderById(_cfg.riderId); if (_rd && _rd.name) pdfRiderName = _rd.name; }
-  }
-  // Sans données de calcul (roue créée via le module tension seul), la roue
-  // n'apparaît pas dans le bloc Configuration : on compose alors la ligne
-  // "Type — Nom de roue — Rider" exactement comme le PDF diagnostic. Avec
-  // calcul, la roue figure déjà dans Configuration et seul le rider s'affiche.
-  const pdfWheelPart = (!sumD && wheelName) ? (sanitize(wheelLabel) + ' — ' + sanitize(wheelName)) : '';
-  const pdfRiderPart = pdfRiderName ? sanitize(pdfRiderName) : '';
-  if (pdfWheelPart || pdfRiderPart || pdfTensioCaption) {
-    // _x suit la fin réelle du texte de gauche : il sert de borne au calcul
-    // de chevauchement avec la légende de droite.
-    let _x = ML;
-    if (pdfWheelPart || pdfRiderPart) {
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
-      if (pdfWheelPart) {
-        doc.setTextColor(...C_TEXT2);
-        doc.text(pdfWheelPart, _x, Y);
-        _x += pdfTextWidth(doc, pdfWheelPart);
-      }
-      if (pdfRiderPart) {
-        if (pdfWheelPart) { doc.setTextColor(...C_TEXT2); doc.text(' — ', _x, Y); _x += pdfTextWidth(doc, ' — '); }
-        doc.setTextColor(...C_WARM);
-        doc.text(pdfRiderPart, _x, Y);
-        _x += pdfTextWidth(doc, pdfRiderPart);
-      }
-    }
-    if (pdfTensioCaption) {
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...C_TEXT3);
-      const _cap = sanitize(pdfTensioCaption);
-      // Deux noms de charte en différentiel peuvent dépasser la place restante :
-      // la légende descend d'une ligne plutôt que de s'écrire par-dessus la roue
-      // ou le rider. 3 mm de garde — un chevauchement n'est jamais acceptable.
-      if (_x > ML && _x + 3 > PW - MR - pdfTextWidth(doc, _cap)) Y += 4;
-      doc.text(_cap, PW - MR, Y, { align: 'right' });
-    }
+  if (pdfTensioCaption) {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...C_TEXT3);
+    doc.text(sanitize(pdfTensioCaption), PW - MR, Y, { align: 'right' });
     Y += 5;
   }
-  doc.setDrawColor(...C_ACCENT); doc.setLineWidth(0.3);
-  doc.line(ML, Y, PW - MR, Y);
   Y += 7;
 
   // ── Configuration ─────────────────────────────────────────────────────────
@@ -14637,7 +14652,7 @@ async function tmExportPdfWithOpts(opts) {
   Y += 5;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
-  doc.setTextColor(...C_ACCENT);
+  doc.setTextColor(...C_TEXT);
   doc.text(lang === 'fr' ? 'LONGUEURS DE RAYONS' : 'SPOKE LENGTHS', ML, Y, { charSpace: pdfCapsSp(doc) });
   Y += 4;
 
@@ -14702,7 +14717,7 @@ async function tmExportPdfWithOpts(opts) {
     Y += 5;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
-    doc.setTextColor(...C_ACCENT);
+    doc.setTextColor(...C_TEXT);
     doc.text(lang === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', ML, Y, { charSpace: pdfCapsSp(doc) });
     Y += 3;
 
@@ -14720,8 +14735,6 @@ async function tmExportPdfWithOpts(opts) {
     const C_DS      = PAL[ord.ds];
     const C_NDS_BG  = PAL_BG[ord.nds];
     const C_DS_BG   = PAL_BG[ord.ds];
-    const C_NDS_VAL = C_NDS.map((v, i) => Math.min(255, Math.max(0, v + (i === 2 ? 10 : -20))));
-    const C_DS_VAL  = C_DS.map((v, i)  => Math.min(255, Math.max(0, v + (i === 0 ? 10 : -10))));
     const ndsLabel  = sanitize(leg[ord.nds]);
     const dsLabel   = sanitize(leg[ord.ds]);
 
@@ -14841,9 +14854,9 @@ async function tmExportPdfWithOpts(opts) {
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(dynFontS);
-        doc.setTextColor(...(kgfNDS !== null ? C_NDS_VAL : C_TEXT3));
+        doc.setTextColor(...(kgfNDS !== null ? C_TEXT : C_TEXT3));
         doc.text(ndsStr, xNDS + subW - 1.5, rowY, { align: 'right' });
-        doc.setTextColor(...(kgfDS !== null ? C_DS_VAL : C_TEXT3));
+        doc.setTextColor(...(kgfDS !== null ? C_TEXT : C_TEXT3));
         doc.text(dsStr,  xDS  + subW - 1.5, rowY, { align: 'right' });
 
         rowY += dynRowH;
@@ -14861,7 +14874,7 @@ async function tmExportPdfWithOpts(opts) {
     Y += 5;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
-    doc.setTextColor(...C_ACCENT);
+    doc.setTextColor(...C_TEXT);
     doc.text(lang === 'fr' ? 'DONNÉES DE TENSION' : 'TENSION DATA', ML, Y, { charSpace: pdfCapsSp(doc) });
     Y += 4;
 
@@ -18288,7 +18301,7 @@ function efStopMic() {
     <div class="diag-field">
       <div class="diag-field-label" id="diag-wheel-label">Roue</div>
       <div class="diag-inp-wrap">
-        <input class="diag-inp" type="text" id="diag-wheel" aria-labelledby="diag-wheel-label" autocomplete="off" oninput="diagSaveWheel(wtype)">
+        <input class="diag-inp" type="text" id="diag-wheel" aria-labelledby="diag-wheel-label" maxlength="50" autocomplete="off" oninput="diagSaveWheel(wtype)">
         <button class="diag-clear-btn" onclick="diagClearField('diag-wheel')" title="Effacer">✕</button>
       </div>
     </div>
@@ -18386,11 +18399,32 @@ async function diagGeneratePdf() {
   doc.setFillColor(255,255,255);
   doc.rect(0,0,PW,PH,'F');
 
+  // ── Identité de la roue + légende tensiomètre ────────────────────────────
+  var pdfTensioName = null;
+  if (tmType && tmType.startsWith('ct_')) {
+    var _ct = (typeof ctLoadAll === 'function') ? ctLoadAll().find(c => 'ct_' + c.id === tmType) : null;
+    pdfTensioName = _ct ? _ct.name : null;
+  } else if (typeof _snapTensioLabel === 'function') {
+    pdfTensioName = _snapTensioLabel(tmType, tmDTSub);
+  }
+  var pdfTensioCaption = pdfTensioName
+    ? (L === 'fr' ? 'Tensiomètre\u00a0: ' : 'Tensiometer: ') + pdfTensioName
+    : null;
+  // Rider de la roue chargée : nom de la config -> riderId -> riderById().name (jamais l'ID)
+  var pdfRiderName = null;
+  var _cfgN = (typeof _loadedConfigName !== 'undefined' && _loadedConfigName) ? _loadedConfigName[wtype] : null;
+  if (_cfgN && typeof loadConfigs === 'function' && typeof riderById === 'function') {
+    var _cfg = loadConfigs().find(c => c.name === _cfgN && (c.state && (c.state.wtype || 'avant')) === wtype);
+    if (_cfg && _cfg.riderId) { var _rd = riderById(_cfg.riderId); if (_rd && _rd.name) pdfRiderName = _rd.name; }
+  }
+  var pdfWheelPart = wheelName ? (sanitize(wheelLabel) + ' — ' + sanitize(wheelName)) : '';
+  var pdfRiderPart = pdfRiderName ? sanitize(pdfRiderName) : '';
+
   // ── Header ────────────────────────────────────────────────────────────────
   var atelierInfo = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
   var workshopName = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
 
-  var HP = 5, headerH = 22, colSplit = ML + CW * 0.52;
+  var HP = 5, headerH = (pdfWheelPart || pdfRiderPart) ? 26 : 22, colSplit = ML + CW * 0.52;
   var iconS = 3.0, lineH = 6.5;
   var brandBarW = 4, headerPadL = brandBarW + 7;
 
@@ -18432,55 +18466,42 @@ async function diagGeneratePdf() {
     });
   }
 
-  Y += headerH + 6;
+  // Ligne d'identité sous le nom de l'atelier, calée sur lui. Elle se réduit
+  // jusqu'à 5.5 pt plutôt que d'aller mordre sur la colonne de coordonnées.
+  if (pdfWheelPart || pdfRiderPart) {
+    var idMaxW = (coordLines.length ? colSplit - HP : ML + CW - HP) - (ML + headerPadL);
+    var idSep  = (pdfWheelPart && pdfRiderPart) ? ' — ' : '';
+    var idSize = 7.5;
+    doc.setFont('helvetica','normal');
+    var idW = function() {
+      doc.setFontSize(idSize);
+      return pdfTextWidth(doc, pdfWheelPart) + pdfTextWidth(doc, idSep) + pdfTextWidth(doc, pdfRiderPart);
+    };
+    while (idW() > idMaxW && idSize > 5.5) idSize -= 0.25;
+    var _ix = ML + headerPadL, _iy = Y + 19.5;
+    if (pdfWheelPart) {
+      doc.setTextColor(...C_TEXT2);
+      doc.text(pdfWheelPart, _ix, _iy);
+      _ix += pdfTextWidth(doc, pdfWheelPart);
+    }
+    if (idSep) { doc.setTextColor(...C_TEXT2); doc.text(idSep, _ix, _iy); _ix += pdfTextWidth(doc, idSep); }
+    if (pdfRiderPart) {
+      doc.setTextColor(...C_TEXT2);
+      doc.text(pdfRiderPart, _ix, _iy);
+    }
+  }
 
-  // ── Ligne séparatrice + nom de roue ───────────────────────────────────────
-  var pdfTensioName = null;
-  if (tmType && tmType.startsWith('ct_')) {
-    var _ct = (typeof ctLoadAll === 'function') ? ctLoadAll().find(c => 'ct_' + c.id === tmType) : null;
-    pdfTensioName = _ct ? _ct.name : null;
-  } else if (typeof _snapTensioLabel === 'function') {
-    pdfTensioName = _snapTensioLabel(tmType, tmDTSub);
-  }
-  var pdfTensioCaption = pdfTensioName
-    ? (L === 'fr' ? 'Tensiomètre\u00a0: ' : 'Tensiometer: ') + pdfTensioName
-    : null;
-  // Rider de la roue chargée : nom de la config -> riderId -> riderById().name (jamais l'ID)
-  var pdfRiderName = null;
-  var _cfgN = (typeof _loadedConfigName !== 'undefined' && _loadedConfigName) ? _loadedConfigName[wtype] : null;
-  if (_cfgN && typeof loadConfigs === 'function' && typeof riderById === 'function') {
-    var _cfg = loadConfigs().find(c => c.name === _cfgN && (c.state && (c.state.wtype || 'avant')) === wtype);
-    if (_cfg && _cfg.riderId) { var _rd = riderById(_cfg.riderId); if (_rd && _rd.name) pdfRiderName = _rd.name; }
-  }
-  var pdfWheelPart = wheelName ? (sanitize(wheelLabel) + ' — ' + sanitize(wheelName)) : '';
-  var pdfRiderPart = pdfRiderName ? sanitize(pdfRiderName) : '';
-  if (pdfWheelPart || pdfRiderPart || pdfTensioCaption) {
-    if (pdfWheelPart || pdfRiderPart) {
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
-      var _x = ML;
-      if (pdfWheelPart) {
-        doc.setTextColor(...C_TEXT2);
-        doc.text(pdfWheelPart, _x, Y);
-        _x += pdfTextWidth(doc, pdfWheelPart);
-      }
-      if (pdfRiderPart) {
-        if (pdfWheelPart) { doc.setTextColor(...C_TEXT2); doc.text(' — ', _x, Y); _x += pdfTextWidth(doc, ' — '); }
-        doc.setTextColor(...C_WARM);
-        doc.text(pdfRiderPart, _x, Y);
-      }
-    }
-    if (pdfTensioCaption) {
-      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...C_TEXT3);
-      doc.text(sanitize(pdfTensioCaption), PW-MR, Y, { align:'right' });
-    }
+  Y += headerH + 5;
+
+  if (pdfTensioCaption) {
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...C_TEXT3);
+    doc.text(sanitize(pdfTensioCaption), PW-MR, Y, { align:'right' });
     Y += 5;
   }
-  doc.setDrawColor(...C_ACCENT); doc.setLineWidth(0.3);
-  doc.line(ML, Y, PW-MR, Y);
   Y += 7;
 
   // ── Diagramme de tension ──────────────────────────────────────────────────
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C_ACCENT);
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C_TEXT);
   doc.text(L === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', ML, Y, { charSpace: pdfCapsSp(doc) });
   Y += 4;
 
@@ -18501,8 +18522,6 @@ async function diagGeneratePdf() {
   var rightSide = ord.ds;
   var C_NDS_BG = PAL_BG[ord.nds];
   var C_DS_BG  = PAL_BG[ord.ds];
-  var C_NDS_VAL = C_NDS.map(function(v,i) { return Math.min(255,Math.max(0,v+(i===2?10:-20))); });
-  var C_DS_VAL  = C_DS.map(function(v,i)  { return Math.min(255,Math.max(0,v+(i===0?10:-10))); });
 
   var leftKgfs  = (typeof tmData !== 'undefined') ? tmData[leftSide].slice(0, perSide).map(function(v) { return (typeof toKgf === 'function') ? toKgf(v, leftSide) : v; }) : [];
   var rightKgfs = (typeof tmData !== 'undefined') ? tmData[rightSide].slice(0, perSide).map(function(v) { return (typeof toKgf === 'function') ? toKgf(v, rightSide) : v; }) : [];
@@ -18581,8 +18600,8 @@ async function diagGeneratePdf() {
     doc.text(String(i+1), xNDS+2.5, rowY2);
     doc.text(String(i+1), xDS+2.5,  rowY2);
     doc.setFont('helvetica','bold'); doc.setFontSize(dynFontS);
-    doc.setTextColor(...(kgfNDS != null ? C_NDS_VAL : C_TEXT3)); doc.text(ndsStr, xNDS+subW-1.5, rowY2, {align:'right'});
-    doc.setTextColor(...(kgfDS  != null ? C_DS_VAL  : C_TEXT3)); doc.text(dsStr,  xDS+subW-1.5,  rowY2, {align:'right'});
+    doc.setTextColor(...(kgfNDS != null ? C_TEXT : C_TEXT3)); doc.text(ndsStr, xNDS+subW-1.5, rowY2, {align:'right'});
+    doc.setTextColor(...(kgfDS  != null ? C_TEXT : C_TEXT3)); doc.text(dsStr,  xDS+subW-1.5,  rowY2, {align:'right'});
     rowY2 += dynRowH;
   }
 
@@ -18592,7 +18611,7 @@ async function diagGeneratePdf() {
   if (statBlocks.length) {
     var STAT_ROW_H = 7, STAT_PAD = 5, STAT_GAP = 4;
     Y += 5;
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C_ACCENT);
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C_TEXT);
     doc.text(L === 'fr' ? 'DONNÉES DE TENSION' : 'TENSION DATA', ML, Y, { charSpace: pdfCapsSp(doc) });
     Y += 4;
     var bW = (CW - STAT_GAP)/2;
@@ -18644,7 +18663,7 @@ async function diagGeneratePdf() {
     var lines = allLines.slice(0, maxLines);
     var textH = lines.length > 0 ? lines.length * lineHt : lineHt;
     var boxH  = padV*2 + textH + 2;
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C_ACCENT);
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C_TEXT);
     doc.text(sanitize(label).toUpperCase(), ML, startY, { charSpace: pdfCapsSp(doc) });
     startY += 3.5;
     doc.setFillColor(...C_CARD); doc.setDrawColor(...C_BORDER); doc.setLineWidth(0.3);
@@ -19724,7 +19743,7 @@ function hrClearLoadedRim() {
   <!-- Panneau de nommage (affiché si pas de config chargée) -->
   <div id="snap-name-panel" style="display:none;flex-direction:column;gap:.6rem">
     <div style="display:flex;flex-direction:column;gap:.4rem">
-      <input id="snap-name-inp" class="ct-input" type="text" maxlength="60" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="Ex : Ma roue" onkeydown="if(event.key==='Enter')snapRegisterAndSave()">
+      <input id="snap-name-inp" class="ct-input" type="text" maxlength="50" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="Ex : Ma roue" onkeydown="if(event.key==='Enter')snapRegisterAndSave()">
       <button id="snap-name-confirm-btn" class="ct-save-btn" onclick="snapRegisterAndSave()">✓ Enregistrer & snapshot</button>
     </div>
     <div id="snap-name-feedback" style="font-size:.67rem;color:#f08080;min-height:.85rem"></div>
@@ -20618,7 +20637,11 @@ async function snapComparePDF() {
 
   // ── En-tête ────────────────────────────────────────────────────────────────
   var Y = MT;
-  var HP=5, headerH=22, colSplit=ML+CW*0.52;
+  // Identité de la roue — même ligne que les PDF récapitulatif et diagnostic.
+  var wheelLabel = (wtype === 'arriere' ? t('rearLabel') : t('frontLabel')).toUpperCase(); // capitales dans le PDF
+  var pdfWheelPart = wheelName ? (sanitize(wheelLabel)+' — '+sanitize(wheelName)) : '';
+  var pdfRiderPart = pdfRiderName ? sanitize(pdfRiderName) : '';
+  var HP=5, headerH=(pdfWheelPart||pdfRiderPart)?26:22, colSplit=ML+CW*0.52;
   var iconS=3.0, lineH=6.5, brandBarW=4, headerPadL=brandBarW+7;
 
   doc.setFillColor.apply(doc,C_CARD); doc.setDrawColor.apply(doc,C_BORDER); doc.setLineWidth(0.4);
@@ -20653,29 +20676,33 @@ async function snapComparePDF() {
       cy2+=lineH;
     });
   }
-  Y += headerH + 5;
 
-  // Nom de roue + rider + séparateur — rider en C_WARM après ' — ',
-  // comme le PDF simple (roue en C_TEXT2, rider seul possible si nom vide)
-  if (wheelName || pdfRiderName) {
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
-    var _wx = ML;
-    if (wheelName) {
-      var wlabel = (wtype === 'arriere' ? t('rearLabel') : t('frontLabel')).toUpperCase(); // capitales dans le PDF
-      var _wPart = sanitize(wlabel)+' — '+sanitize(wheelName);
+  // Ligne d'identité sous le nom de l'atelier, calée sur lui. Elle se réduit
+  // jusqu'à 5.5 pt plutôt que d'aller mordre sur la colonne de coordonnées.
+  if (pdfWheelPart || pdfRiderPart) {
+    var idMaxW = (coordLines.length ? colSplit - HP : ML + CW - HP) - (ML + headerPadL);
+    var idSep  = (pdfWheelPart && pdfRiderPart) ? ' — ' : '';
+    var idSize = 7.5;
+    doc.setFont('helvetica','normal');
+    var idW = function() {
+      doc.setFontSize(idSize);
+      return pdfTextWidth(doc, pdfWheelPart) + pdfTextWidth(doc, idSep) + pdfTextWidth(doc, pdfRiderPart);
+    };
+    while (idW() > idMaxW && idSize > 5.5) idSize -= 0.25;
+    var _ix = ML + headerPadL, _iy = Y + 19.5;
+    if (pdfWheelPart) {
       doc.setTextColor.apply(doc,C_TEXT2);
-      doc.text(_wPart, _wx, Y);
-      _wx += pdfTextWidth(doc, _wPart);
+      doc.text(pdfWheelPart, _ix, _iy);
+      _ix += pdfTextWidth(doc, pdfWheelPart);
     }
-    if (pdfRiderName) {
-      if (wheelName) { doc.setTextColor.apply(doc,C_TEXT2); doc.text(' — ', _wx, Y); _wx += pdfTextWidth(doc, ' — '); }
-      doc.setTextColor.apply(doc,C_WARM);
-      doc.text(sanitize(pdfRiderName), _wx, Y);
+    if (idSep) { doc.setTextColor.apply(doc,C_TEXT2); doc.text(idSep, _ix, _iy); _ix += pdfTextWidth(doc, idSep); }
+    if (pdfRiderPart) {
+      doc.setTextColor.apply(doc,C_TEXT2);
+      doc.text(pdfRiderPart, _ix, _iy);
     }
-    Y += 5;
   }
-  doc.setDrawColor.apply(doc,C_ACCENT); doc.setLineWidth(0.3);
-  doc.line(ML,Y,PW-MR,Y); Y += 7;
+
+  Y += headerH + 12;
 
   // ── Deux radars côte à côte ────────────────────────────────────────────────
   var colGap  = 5;
@@ -20690,7 +20717,7 @@ async function snapComparePDF() {
     var dstr   = fmtDMY(snap.ts);
 
     // Label snapshot au-dessus de la card
-    doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor.apply(doc,C_ACCENT);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor.apply(doc,C_TEXT);
     doc.text('SNAPSHOT '+snap.num, cardX, Y-1, { charSpace: pdfCapsSp(doc) });
     doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor.apply(doc,C_TEXT3);
     doc.text(dstr, cardX+colW, Y-1, {align:'right'});
@@ -20730,7 +20757,7 @@ async function snapComparePDF() {
   Y += cardH + 12;
 
   // ── Données de tension (stats comme PDF classique) ────────────────────────
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc,C_ACCENT);
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc,C_TEXT);
   doc.text(L==='fr'?'DONNÉES DE TENSION':'TENSION DATA', ML, Y, { charSpace: pdfCapsSp(doc) });
   Y += 5;
 
@@ -20807,7 +20834,7 @@ async function snapComparePDF() {
   var avgNdsA=_snapEvoAvg(ndsKgfA), avgNdsB=_snapEvoAvg(ndsKgfB);
   var avgDsA =_snapEvoAvg(dsKgfA),  avgDsB =_snapEvoAvg(dsKgfB);
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc,C_ACCENT);
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc,C_TEXT);
   pdfTextRich(doc, (L==='fr'?'ÉVOLUTION':'EVOLUTION')+' S'+snapA.num+' → S'+snapB.num, ML, Y, { charSpace: pdfCapsSp(doc) });
   Y += 5;
 
@@ -22231,10 +22258,14 @@ document.addEventListener('keydown', function(e) {
   var LS_RIDERS = 'spokeit_riders';
 
   // ── Couche données ──────────────────────────────────────────────────────────
+  // Noms de riders plafonnés à 50 comme les noms de roue : clampNames() est
+  // la source unique, en lecture comme en écriture.
+  function riderClamp(arr) { return (typeof clampNames === 'function') ? clampNames(arr) : arr; }
   window.loadRiders = function() {
-    try { return JSON.parse(localStorage.getItem(LS_RIDERS)) || []; } catch(e) { return []; }
+    try { return riderClamp(JSON.parse(localStorage.getItem(LS_RIDERS)) || []); } catch(e) { return []; }
   };
   function persistRiders(arr) {
+    riderClamp(arr);
     if (typeof lsSet === 'function') return lsSet(LS_RIDERS, JSON.stringify(arr));
     try { localStorage.setItem(LS_RIDERS, JSON.stringify(arr)); return true; }
     catch(e) { return false; }
