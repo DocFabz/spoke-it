@@ -229,9 +229,13 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .ateliermgr-clear:hover { color:var(--warm) }
 .ateliermgr-affix { position:relative; flex:1; min-width:0; display:flex }
 .ateliermgr-affix .ateliermgr-inp { padding-left:calc(.75rem + 1ch) }
-/* Logo : l'aperçu est posé sur un damier discret, sinon un fond détouré ne se
-   distingue pas d'un fond blanc conservé — c'est justement ce que l'import
-   doit laisser vérifier d'un coup d'œil. */
+/* Logo : l'aperçu est posé sur un damier, sinon un fond détouré ne se
+   distingue pas d'un fond blanc conservé, et c'est justement ce que l'import
+   doit laisser vérifier d'un coup d'œil. Le champ vide reste sur le fond
+   sombre des autres saisies ; dès qu'un logo est posé, la vignette bascule sur
+   la plaque claire (#f8fafc, la couleur exacte de la carte d'en-tête des PDF)
+   et son damier gris : le détourage sort l'encre dans les tons sombres, calés
+   pour le papier, qui se lisaient mal sur le fond sombre du champ. */
 .ateliermgr-logo-wrap { flex:1; min-width:0; height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.3rem; padding:.4rem; font-family:inherit; border:1px solid var(--border-s); border-radius:var(--rs); background-color:var(--inp); background-image:linear-gradient(45deg,rgba(255,255,255,.04) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.04) 75%),linear-gradient(45deg,rgba(255,255,255,.04) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.04) 75%); background-size:14px 14px; background-position:0 0,7px 7px; cursor:pointer; transition:border-color .2s; -webkit-tap-highlight-color:transparent }
 .ateliermgr-logo-wrap:hover, .ateliermgr-logo-wrap:focus-visible { border-color:rgba(126,200,227,.4); outline:none }
 .ateliermgr-logo-img { max-width:100%; max-height:100%; object-fit:contain; display:none }
@@ -242,6 +246,8 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .ateliermgr-logo-wrap.has-logo .ateliermgr-logo-img { display:block }
 .ateliermgr-logo-wrap.has-logo .ateliermgr-logo-hint,
 .ateliermgr-logo-wrap.has-logo .ateliermgr-logo-plus { display:none }
+.ateliermgr-logo-wrap.has-logo { background-color:#f8fafc; background-image:linear-gradient(45deg,rgba(15,23,42,.10) 25%,transparent 25%,transparent 75%,rgba(15,23,42,.10) 75%),linear-gradient(45deg,rgba(15,23,42,.10) 25%,transparent 25%,transparent 75%,rgba(15,23,42,.10) 75%); border-color:rgba(15,23,42,.22) }
+.ateliermgr-logo-wrap.has-logo:hover, .ateliermgr-logo-wrap.has-logo:focus-visible { border-color:rgba(38,122,153,.55) }
 .ateliermgr-logo-msg { display:none; font-size:.62rem; line-height:1.45; color:var(--warm) }
 .ateliermgr-logo-msg.show { display:block }
 .ateliermgr-logo-msg.note { color:var(--text3) }
@@ -8551,6 +8557,16 @@ function _logoBg(d, w, h) {
 // rester un peu plus appuyé que le nom d'atelier voisin (luma 103) sans
 // devenir l'élément le plus foncé de la page.
 //
+// Les deux bouts de l'échelle sont bornés de la même façon : ce qui tombe sous
+// la coupe basse revient au ton sombre, ce qui dépasse la coupe haute revient
+// au ton clair. Le plancher avait son filet depuis le début, le plafond non :
+// les 2 % écrêtés en haut suivaient la droite au-delà de LOGO_INK_HI, jusqu'au
+// blanc pur sur une plage étroite, puisque le gain plafonné à 1,4 continue de
+// grimper bien après la coupe. Cette frange, surtout l'anticrénelage du côté
+// clair du tracé, s'effaçait alors sur la carte presque blanche des PDF, où un
+// ton à 230 ne pèse que 1,2:1. La vignette de la modale, posée sur la même
+// plaque claire, le montre désormais à l'écran.
+//
 // La normalisation n'est tentée que si le fond est TRANSPARENT, c'est-à-dire
 // si l'image a été détourée ou arrivait déjà détourée. Sur une image au fond
 // opaque, rien ne distingue l'encre du fond : l'étirement y prenait le blanc
@@ -8594,7 +8610,7 @@ function _logoGray(d, norm, bgDark) {
     if (d[i + 3] <= 8) continue;
     u = inv ? 255 - d[i] : d[i];
     v = flat ? LOGO_INK_LO : LOGO_INK_LO + (u - lo) * k;
-    d[i] = d[i + 1] = d[i + 2] = v < LOGO_INK_LO ? LOGO_INK_LO : (v > 255 ? 255 : v);
+    d[i] = d[i + 1] = d[i + 2] = v < LOGO_INK_LO ? LOGO_INK_LO : (v > LOGO_INK_HI ? LOGO_INK_HI : v);
   }
 }
 
