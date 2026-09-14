@@ -14963,9 +14963,11 @@ async function tmExportPdfWithOpts(opts) {
   doc.setTextColor(...C_TEXT3);
   doc.text('WHEELBUILT BY', ML + headerPadL, Y + 7, { charSpace: pdfCapsSp(doc) });
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(12);
   doc.setTextColor(...C_TEXT2);
-  doc.text(sanitize(workshopNameMain).toUpperCase(), ML + headerPadL, Y + 14, { charSpace: pdfCapsSp(doc, 0.02) });
+  // Ligne de base à 13.75 et non 14 : le corps réduit rend 0,5 mm de hauteur
+  // de capitale, répartie de part et d'autre pour garder le rythme du bloc.
+  doc.text(sanitize(workshopNameMain).toUpperCase(), ML + headerPadL, Y + 13.75, { charSpace: pdfCapsSp(doc, 0.02) });
 
   const coordLines = [];
   if (atelierInfo.email) coordLines.push({ type: 'email', text: sanitize(atelierInfo.email) });
@@ -18861,8 +18863,9 @@ async function diagGeneratePdf() {
 
   doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C_TEXT3);
   doc.text('WHEEL DIAGNOSTIC BY', ML+headerPadL, Y+7, { charSpace: pdfCapsSp(doc) });
-  doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(...C_TEXT2);
-  doc.text(sanitize(workshopName).toUpperCase(), ML+headerPadL, Y+14, { charSpace: pdfCapsSp(doc, 0.02) });
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(...C_TEXT2);
+  // Ligne de base à 13.75 : voir la note du PDF de montage.
+  doc.text(sanitize(workshopName).toUpperCase(), ML+headerPadL, Y+13.75, { charSpace: pdfCapsSp(doc, 0.02) });
 
   var coordLines = [];
   if (atelierInfo.email) coordLines.push({type:'email', text:sanitize(atelierInfo.email)});
@@ -21090,8 +21093,9 @@ async function snapComparePDF() {
   pdfCardBar(doc, ML, Y, CW, headerH, 2, brandBarW, 0.4);
   doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor.apply(doc,C_TEXT3);
   doc.text(L==='fr'?'ÉVOLUTION DE TENSION BY':'TENSION EVOLUTION BY', ML+headerPadL, Y+7, { charSpace: pdfCapsSp(doc) });
-  doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor.apply(doc,C_TEXT2);
-  doc.text(sanitize(workshopName).toUpperCase(), ML+headerPadL, Y+14, { charSpace: pdfCapsSp(doc, 0.02) });
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor.apply(doc,C_TEXT2);
+  // Ligne de base à 13.75 : voir la note du PDF de montage.
+  doc.text(sanitize(workshopName).toUpperCase(), ML+headerPadL, Y+13.75, { charSpace: pdfCapsSp(doc, 0.02) });
 
   var coordLines=[];
   if (atelierInfo.email) coordLines.push({type:'email',text:sanitize(atelierInfo.email)});
