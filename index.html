@@ -229,6 +229,22 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .ateliermgr-clear:hover { color:var(--warm) }
 .ateliermgr-affix { position:relative; flex:1; min-width:0; display:flex }
 .ateliermgr-affix .ateliermgr-inp { padding-left:calc(.75rem + 1ch) }
+/* Logo : l'aperçu est posé sur un damier discret, sinon un fond détouré ne se
+   distingue pas d'un fond blanc conservé — c'est justement ce que l'import
+   doit laisser vérifier d'un coup d'œil. */
+.ateliermgr-logo-wrap { flex:1; min-width:0; height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.3rem; padding:.4rem; font-family:inherit; border:1px solid var(--border-s); border-radius:var(--rs); background-color:var(--inp); background-image:linear-gradient(45deg,rgba(255,255,255,.04) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.04) 75%),linear-gradient(45deg,rgba(255,255,255,.04) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.04) 75%); background-size:14px 14px; background-position:0 0,7px 7px; cursor:pointer; transition:border-color .2s; -webkit-tap-highlight-color:transparent }
+.ateliermgr-logo-wrap:hover, .ateliermgr-logo-wrap:focus-visible { border-color:rgba(126,200,227,.4); outline:none }
+.ateliermgr-logo-img { max-width:100%; max-height:100%; object-fit:contain; display:none }
+.ateliermgr-logo-hint { font-size:.58rem; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--text3); opacity:.6; transition:opacity .2s }
+.ateliermgr-logo-plus { font-size:1.05rem; line-height:1; color:var(--text3); opacity:.6; transition:opacity .2s }
+.ateliermgr-logo-wrap:hover .ateliermgr-logo-hint, .ateliermgr-logo-wrap:hover .ateliermgr-logo-plus,
+.ateliermgr-logo-wrap:focus-visible .ateliermgr-logo-hint, .ateliermgr-logo-wrap:focus-visible .ateliermgr-logo-plus { opacity:.9 }
+.ateliermgr-logo-wrap.has-logo .ateliermgr-logo-img { display:block }
+.ateliermgr-logo-wrap.has-logo .ateliermgr-logo-hint,
+.ateliermgr-logo-wrap.has-logo .ateliermgr-logo-plus { display:none }
+.ateliermgr-logo-msg { display:none; font-size:.62rem; line-height:1.45; color:var(--warm) }
+.ateliermgr-logo-msg.show { display:block }
+.ateliermgr-logo-msg.note { color:var(--text3) }
 .ateliermgr-prefix { position:absolute; left:0; top:0; padding:.5rem .75rem; border:1px solid transparent; font-family:'DM Mono',monospace; font-size:.85rem; line-height:normal; color:var(--text3); pointer-events:none; -webkit-user-select:none; user-select:none }
 
 /* ── Save manager modal ── */
@@ -2048,6 +2064,19 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
       </div>
       <button class="ateliermgr-clear" onclick="atelierClear('atelier-insta')">✕</button>
     </div>
+  </div>
+  <div class="ateliermgr-field">
+    <span class="ateliermgr-label" id="atelier-logo-label" data-i18n="atelierLogo">Logo</span>
+    <div class="ateliermgr-inp-wrap">
+      <button type="button" class="ateliermgr-logo-wrap" id="atelier-logo-wrap" onclick="atelierLogoPick()" aria-labelledby="atelier-logo-label">
+        <img class="ateliermgr-logo-img" id="atelier-logo-img" alt="">
+        <span class="ateliermgr-logo-hint" data-i18n="atelierLogoHint">Importer une image</span>
+        <span class="ateliermgr-logo-plus" aria-hidden="true">+</span>
+      </button>
+      <button class="ateliermgr-clear" onclick="atelierLogoClear()">✕</button>
+    </div>
+    <span class="ateliermgr-logo-msg" id="atelier-logo-msg"></span>
+    <input type="file" id="atelier-logo-file" accept="image/png,image/jpeg,image/webp" hidden onchange="atelierLogoFile(this)">
   </div>
   <button class="ct-save-btn" id="atelier-save-btn" onclick="saveAtelierInfo()">
     <span data-i18n="atelierSave">✓ Sauvegarder</span>
@@ -4424,6 +4453,47 @@ function pdfCardBar(doc, x, y, w, h, r, barW, lw) {
   doc.restoreGraphicsState();
 }
 
+// Logo de l'atelier dans la carte d'en-tête des PDF : bord intérieur droit,
+// centré verticalement, au-delà de la colonne de coordonnées dont on mesure la
+// largeur réelle — jamais de chevauchement avec l'email ou le pseudo. Sans
+// coordonnées, le logo ouvre seul la colonne de droite et hérite du filet de
+// séparation. Trop peu de place (email très long) : on renonce plutôt que de
+// poser une vignette illisible. Renvoie true si le logo a été posé, ce qui
+// borne aussi la ligne d'identité sous le nom d'atelier.
+function pdfAtelierLogo(doc, logo, g) {
+  if (!logo || typeof logo !== 'string') return false;
+  var coord = g.coordLines || [], used = 0, i;
+  if (coord.length) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    for (i = 0; i < coord.length; i++) {
+      var cw = g.iconS + 2.5 + pdfTextWidth(doc, coord[i].text);
+      if (cw > used) used = cw;
+    }
+    used += 5;                                   // gouttière
+  }
+  var x0    = g.colSplit + g.HP + used;
+  var right = g.ML + g.CW - g.HP;
+  var maxW  = Math.min(right - x0, 22);
+  var maxH  = Math.min(g.headerH - 2 * g.HP, 12);
+  if (maxW < 14 || maxH < 6) return false;
+  var props;
+  try { props = doc.getImageProperties(logo); } catch(e) { return false; }
+  if (!props || !props.width || !props.height) return false;
+  var ratio = props.width / props.height;
+  var h = maxH, w = h * ratio;
+  if (w > maxW) { w = maxW; h = w / ratio; }     // bannières très larges
+  if (!coord.length && g.border) {
+    doc.setDrawColor(g.border[0], g.border[1], g.border[2]);
+    doc.setLineWidth(0.3);
+    doc.line(g.colSplit, g.Y + g.HP, g.colSplit, g.Y + g.headerH - g.HP);
+  }
+  try {
+    doc.addImage(logo, 'PNG', right - w, g.Y + (g.headerH - h) / 2, w, h, undefined, 'FAST');
+  } catch(e) { return false; }
+  return true;
+}
+
 // Décalage vertical qui centre un bloc de lignes dans une carte de hauteur h,
 // sans en changer la taille : de la hauteur de capitale de la première ligne
 // (Helvetica 0.718 em) à la ligne de base de la dernière. Positions relatives
@@ -5080,6 +5150,13 @@ const i18n = {
     pickerTitle:'Données',
     atelierTitle:'Atelier',
     atelierName:'Atelier',
+    atelierLogo:'Logo',
+    atelierLogoHint:'Importer une image',
+    atelierLogoErrType:'Format non pris en charge : choisissez un PNG, un JPEG ou un WebP.',
+    atelierLogoErrSize:'Image trop lourde : 8 Mo au maximum.',
+    atelierLogoErrRead:'Image illisible.',
+    atelierLogoKept:'Fond conservé : les coins de l\'image ne sont pas d\'une seule couleur.',
+    atelierLogoLowRes:'Définition faible : le logo sera flou à l\'impression.',
     atelierSave:'✓ Sauvegarder',
     atelierClearBtn:'✕ Effacer',
     riderTitle:'Rider',
@@ -5346,6 +5423,13 @@ const i18n = {
     pickerTitle:'Data',
     atelierTitle:'Workshop',
     atelierName:'Workshop',
+    atelierLogo:'Logo',
+    atelierLogoHint:'Import an image',
+    atelierLogoErrType:'Unsupported format: choose a PNG, JPEG or WebP file.',
+    atelierLogoErrSize:'Image too large: 8 MB maximum.',
+    atelierLogoErrRead:'Unreadable image.',
+    atelierLogoKept:'Background kept: the image corners are not a single colour.',
+    atelierLogoLowRes:'Low resolution: the logo will look blurry in print.',
     atelierSave:'✓ Save',
     atelierClearBtn:'✕ Clear',
     riderTitle:'Rider',
@@ -8244,6 +8328,11 @@ function loadAtelierInfo() {
     // « @ » de tête pour couvrir d'un coup la modale, les trois exports et
     // les sauvegardes importées antérieures à ce format.
     if (o.insta) o.insta = String(o.insta).trim().replace(/^@+/, '');
+    // Le logo n'est accepté que sous sa forme canonique : PNG en data URL,
+    // telle que l'import la produit. Un backup trafiqué ou un champ hérité
+    // d'un autre format est ignoré ici plutôt que de faire échouer addImage
+    // au moment de l'export.
+    if (o.logo && !/^data:image\/png;base64,/.test(String(o.logo))) delete o.logo;
     return o;
   } catch(e) { return {}; }
 }
@@ -8253,6 +8342,8 @@ function openAtelierMgr() {
   $id('atelier-shop').value  = info.name  || '';
   $id('atelier-email').value = info.email || '';
   $id('atelier-insta').value = info.insta || '';
+  atelierLogoSet(info.logo || '');
+  atelierLogoMsg('');
   $id('ateliermgr-overlay').classList.add('show');
   $id('ateliermgr-modal').classList.add('show');
   setTimeout(() => $id('atelier-shop').focus(), 80);
@@ -8286,6 +8377,7 @@ function atelierClear(id) {
 // et la modale reste ouverte.
 function atelierClearAll() {
   ['atelier-shop', 'atelier-email', 'atelier-insta'].forEach(id => { $id(id).value = ''; });
+  atelierLogoClear();
   $id('atelier-shop').focus();
 }
 
@@ -8293,10 +8385,269 @@ function saveAtelierInfo() {
   const info = {
     name:  $id('atelier-shop').value.trim(),
     email: $id('atelier-email').value.trim(),
-    insta: $id('atelier-insta').value.trim().replace(/^@+/, '')
+    insta: $id('atelier-insta').value.trim().replace(/^@+/, ''),
+    logo:  _logoData
   };
+  // La clé est écrite même vide : son absence d'une sauvegarde signale un
+  // fichier antérieur au logo, que l'import doit traiter autrement (voir la
+  // branche Atelier de l'import de sauvegarde).
   lsSet(LS_ATELIER, JSON.stringify(info));
   closeAtelierMgr();
+}
+
+// ── Logo de l'atelier ────────────────────────────────────────────────────────
+// Import d'une image (PNG, JPEG, WebP) rangée dans spokeit_atelier.logo sous
+// forme de PNG transparent, détourée et rognée.
+//
+// Le détourage n'a rien d'un traçage vectoriel : il échantillonne les quatre
+// coins et ne se déclenche QUE s'ils s'accordent sur une même couleur. Un fond
+// dégradé, une photo ou un logo déjà cerné d'un cadre ne doivent pas être
+// charcutés au petit bonheur : dans ces cas-là l'image passe telle quelle et
+// la modale le dit. Une image qui porte déjà de la transparence n'est jamais
+// retouchée non plus.
+var LOGO_MAX_FILE = 8 * 1024 * 1024;   // garde d'entrée sur le fichier choisi
+var LOGO_EXPORT_H = 320;               // hauteur maxi du PNG conservé, px
+var LOGO_EXPORT_W = 1200;              // largeur maxi du PNG conservé, px
+var LOGO_MAX_LEN  = 220000;            // au-delà, second passage plus petit
+var LOGO_BG_TOL   = 40;                // écart maxi entre coins pour un fond uni
+var LOGO_T0 = 32, LOGO_T1 = 72;        // bornes de la transition du détourage
+var LOGO_MIN_INK  = 0.003;             // sous ce taux d'encre, le détourage a raté
+var LOGO_INK_LO   = 30;                // ton le plus sombre après normalisation
+var LOGO_INK_HI   = 190;               // ton le plus clair après normalisation
+var LOGO_INK_GAIN = 3;                 // amplification maxi de l'étirement
+var LOGO_PRINT_W  = 22 / 25.4;         // encombrement maxi dans l'en-tête, pouces
+var LOGO_PRINT_H  = 12 / 25.4;
+var LOGO_MIN_DPI  = 150;               // sous cette définition, on avertit
+
+var _logoData = '';                    // logo courant dans la modale (PNG ou '')
+
+function atelierLogoPick() {
+  var f = $id('atelier-logo-file');
+  if (f) f.click();
+}
+
+// Message sous l'aperçu. L'attribut data-i18n est posé en même temps que le
+// texte : un changement de langue pendant que la modale est ouverte le suit.
+function atelierLogoMsg(key, note) {
+  var el = $id('atelier-logo-msg');
+  if (!el) return;
+  if (key) el.setAttribute('data-i18n', key); else el.removeAttribute('data-i18n');
+  el.textContent = key && typeof t === 'function' ? t(key) : '';
+  el.classList.toggle('show', !!key);
+  el.classList.toggle('note', !!note);
+}
+
+function atelierLogoSet(url) {
+  _logoData = url || '';
+  var wrap = $id('atelier-logo-wrap'), img = $id('atelier-logo-img');
+  if (img) {
+    if (_logoData) img.src = _logoData; else img.removeAttribute('src');
+  }
+  if (wrap) wrap.classList.toggle('has-logo', !!_logoData);
+}
+
+// Comme les champs texte : rien n'est écrit tant que ✓ Sauvegarder n'a pas
+// été pressé, et rouvrir la modale rétablit le logo enregistré.
+function atelierLogoClear() {
+  atelierLogoSet('');
+  atelierLogoMsg('');
+}
+
+function atelierLogoFile(input) {
+  var f = input && input.files && input.files[0];
+  input.value = '';                    // re-choisir le même fichier doit refonctionner
+  if (!f) return;
+  // Le type MIME manque parfois (partage depuis une app tierce, fichier d'un
+  // fournisseur cloud) : l'extension prend alors le relais plutôt que de
+  // refuser un PNG valide.
+  var ok = f.type ? /^image\/(png|jpeg|webp)$/.test(f.type)
+                  : /\.(png|jpe?g|webp)$/i.test(f.name || '');
+  if (!ok) { atelierLogoMsg('atelierLogoErrType'); return; }
+  if (f.size > LOGO_MAX_FILE)          { atelierLogoMsg('atelierLogoErrSize'); return; }
+  var fr = new FileReader();
+  fr.onerror = function() { atelierLogoMsg('atelierLogoErrRead'); };
+  fr.onload = function() {
+    var img = new Image();
+    img.onerror = function() { atelierLogoMsg('atelierLogoErrRead'); };
+    img.onload  = function() {
+      var r = _logoBuild(img);
+      if (!r) { atelierLogoMsg('atelierLogoErrRead'); return; }
+      atelierLogoSet(r.url);
+      // Un seul message à la fois : la définition insuffisante passe devant le
+      // fond conservé, parce qu'elle seule appelle une action de l'atelier
+      // (retrouver un fichier plus grand).
+      if (r.lowRes) atelierLogoMsg('atelierLogoLowRes');
+      else {
+        var kept = (r.detoured || r.hadAlpha) ? '' : 'atelierLogoKept';
+        atelierLogoMsg(kept, !!kept);
+      }
+    };
+    img.src = fr.result;
+  };
+  fr.readAsDataURL(f);
+}
+
+// Couleur moyenne d'un carré de 5 px autour d'un point.
+function _logoPatch(d, w, h, cx, cy) {
+  var r = 0, g = 0, b = 0, n = 0;
+  for (var y = cy - 2; y <= cy + 2; y++) {
+    for (var x = cx - 2; x <= cx + 2; x++) {
+      if (x < 0 || y < 0 || x >= w || y >= h) continue;
+      var o = (y * w + x) * 4;
+      r += d[o]; g += d[o + 1]; b += d[o + 2]; n++;
+    }
+  }
+  return n ? [r / n, g / n, b / n] : null;
+}
+
+function _logoDist(a, b) {
+  var dr = a[0] - b[0], dg = a[1] - b[1], db = a[2] - b[2];
+  return Math.sqrt(dr * dr + dg * dg + db * db);
+}
+
+// Couleur de fond si les quatre coins s'accordent, null sinon.
+function _logoBg(d, w, h) {
+  var pts = [[3, 3], [w - 4, 3], [3, h - 4], [w - 4, h - 4]], cols = [], i, c;
+  for (i = 0; i < 4; i++) {
+    c = _logoPatch(d, w, h, Math.max(0, Math.min(w - 1, pts[i][0])), Math.max(0, Math.min(h - 1, pts[i][1])));
+    if (!c) return null;
+    cols.push(c);
+  }
+  for (i = 1; i < 4; i++) if (_logoDist(cols[0], cols[i]) > LOGO_BG_TOL) return null;
+  return [(cols[0][0] + cols[1][0] + cols[2][0] + cols[3][0]) / 4,
+          (cols[0][1] + cols[1][1] + cols[2][1] + cols[3][1]) / 4,
+          (cols[0][2] + cols[1][2] + cols[2][2] + cols[3][2]) / 4];
+}
+
+// Nuances de gris (luma Rec. 709) puis normalisation de contraste, sur place.
+//
+// La plage à étirer est lue aux percentiles 2 et 98 d'un histogramme des seuls
+// pixels PLEINS (alpha > 200), et non sur leurs extrêmes bruts. Deux raisons,
+// toutes deux constatées au banc d'essai : un pixel de bord peut rester opaque
+// tout en portant déjà largement la couleur du fond, parce que le seuil du
+// détourage sature avant que le mélange soit complet, et ces quelques pixels
+// suffisaient à tirer la plage jusqu'au blanc. La transformation, elle,
+// s'applique à tout ce qui est visible, bords compris, pour qu'ils restent
+// dans la continuité du tracé.
+//
+// Le gain est plafonné : deux teintes de luminance voisine (un orange et un
+// bleu peuvent tomber à dix niveaux l'un de l'autre) auraient sinon été
+// séparées par un contraste violent, fabriqué de toutes pièces. Elles sortent
+// désormais toutes deux dans les tons sombres, à peine distinctes — c'est la
+// limite honnête du gris, deux couleurs de même luminance ne peuvent pas être
+// distinguées sans la trahir.
+//
+// Un logo d'un seul ton n'a pas de plage à étirer : il est simplement posé sur
+// le ton sombre, sans quoi un aplat pâle resterait illisible sur la carte
+// presque blanche des PDF.
+//
+// La normalisation n'est tentée que si le fond est TRANSPARENT, c'est-à-dire
+// si l'image a été détourée ou arrivait déjà détourée. Sur une image au fond
+// opaque, rien ne distingue l'encre du fond : l'étirement y prenait le blanc
+// du fond pour le ton clair du logo et le rendait gris, jusqu'à noircir une
+// image claire d'un seul ton. Ces images-là passent en gris, sans plus.
+function _logoGray(d, norm) {
+  var i, v, n = 0, hist = [], lo, hi;
+  for (i = 0; i < 256; i++) hist[i] = 0;
+  for (i = 0; i < d.length; i += 4) {
+    v = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+    d[i] = d[i + 1] = d[i + 2] = v;
+    if (d[i + 3] > 200) { hist[d[i]]++; n++; }
+  }
+  if (!norm || n < 64) return;                   // fond inconnu, ou pas de matière
+  var cut = Math.floor(n * 0.02), acc = 0;
+  for (lo = 0; lo < 255; lo++) { acc += hist[lo]; if (acc > cut) break; }
+  acc = 0;
+  for (hi = 255; hi > lo; hi--) { acc += hist[hi]; if (acc > cut) break; }
+  var flat = (hi - lo) < 12;
+  var k = flat ? 0 : Math.min((LOGO_INK_HI - LOGO_INK_LO) / (hi - lo), LOGO_INK_GAIN);
+  for (i = 0; i < d.length; i += 4) {
+    if (d[i + 3] <= 8) continue;
+    v = flat ? LOGO_INK_LO : LOGO_INK_LO + (d[i] - lo) * k;
+    d[i] = d[i + 1] = d[i + 2] = v < LOGO_INK_LO ? LOGO_INK_LO : (v > 255 ? 255 : v);
+  }
+}
+
+// Image → { url, detoured, hadAlpha }, ou null si le canvas est inexploitable.
+function _logoBuild(img) {
+  var s = Math.min(LOGO_EXPORT_W / img.width, LOGO_EXPORT_H / img.height, 1);
+  var w = Math.max(1, Math.round(img.width * s));
+  var h = Math.max(1, Math.round(img.height * s));
+  var cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  var c = cv.getContext('2d');
+  try { c.imageSmoothingQuality = 'high'; } catch(e) {}
+  c.drawImage(img, 0, 0, w, h);
+  var id, d, i;
+  try { id = c.getImageData(0, 0, w, h); d = id.data; } catch(e) { return null; }
+
+  var hadAlpha = false;
+  for (i = 3; i < d.length; i += 4) { if (d[i] < 250) { hadAlpha = true; break; } }
+
+  var detoured = false;
+  if (!hadAlpha) {
+    var bg = _logoBg(d, w, h);
+    if (bg) {
+      var ink = 0;
+      for (i = 0; i < d.length; i += 4) {
+        var dist = _logoDist([d[i], d[i + 1], d[i + 2]], bg);
+        var a = dist <= LOGO_T0 ? 0
+              : dist >= LOGO_T1 ? 255
+              : Math.round(255 * (dist - LOGO_T0) / (LOGO_T1 - LOGO_T0));
+        d[i + 3] = a;
+        if (a > 8) ink++;
+      }
+      // Presque tout est parti : l'image tenait dans la tolérance du fond
+      // (aplat monochrome, logo très clair sur blanc). On rend l'original.
+      if (ink < w * h * LOGO_MIN_INK) {
+        c.clearRect(0, 0, w, h);
+        c.drawImage(img, 0, 0, w, h);
+      } else {
+        c.putImageData(id, 0, 0);
+        detoured = true;
+      }
+    }
+  }
+
+  // Gris et normalisation, puis rognage sur le contenu visible avec 1 px de
+  // garde pour ne pas raboter l'anticrénelage des bords. Une seule relecture
+  // du canvas sert aux deux.
+  var x0 = w, y0 = h, x1 = -1, y1 = -1, x, y, gid;
+  try { gid = c.getImageData(0, 0, w, h); } catch(e) { return null; }
+  d = gid.data;
+  _logoGray(d, detoured || hadAlpha);
+  c.putImageData(gid, 0, 0);
+  for (y = 0; y < h; y++) {
+    for (x = 0; x < w; x++) {
+      if (d[(y * w + x) * 4 + 3] > 8) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+  }
+  if (x1 < x0 || y1 < y0) return null;          // image entièrement transparente
+  x0 = Math.max(0, x0 - 1); y0 = Math.max(0, y0 - 1);
+  x1 = Math.min(w - 1, x1 + 1); y1 = Math.min(h - 1, y1 + 1);
+  var sw = x1 - x0 + 1, sh = y1 - y0 + 1;
+
+  var url = '', k = 1, out;
+  for (var pass = 0; pass < 2; pass++) {
+    out = document.createElement('canvas');
+    out.width  = Math.max(1, Math.round(sw * k));
+    out.height = Math.max(1, Math.round(sh * k));
+    var oc = out.getContext('2d');
+    try { oc.imageSmoothingQuality = 'high'; } catch(e) {}
+    oc.drawImage(cv, x0, y0, sw, sh, 0, 0, out.width, out.height);
+    url = out.toDataURL('image/png');
+    if (url.length <= LOGO_MAX_LEN) break;      // image très détaillée
+    k = 0.65;
+  }
+  // Définition réellement obtenue à l'impression : la plus contraignante des
+  // deux dimensions, l'image étant posée « au contenu » dans son cadre.
+  var dpi = Math.min(out.width / LOGO_PRINT_W, out.height / LOGO_PRINT_H);
+  return { url: url, detoured: detoured, hadAlpha: hadAlpha, lowRes: dpi < LOGO_MIN_DPI };
 }
 
 document.addEventListener('keydown', function(e) {
@@ -9306,12 +9657,20 @@ function importConfigs(event) {
       // Atelier : singleton — la version importée écrase l'existante (même
       // politique que les autres collections), mais un atelier vide/absent
       // ne touche pas à l'atelier local. Champs connus uniquement.
+      //
+      // Le logo fait exception à l'écrasement en bloc : ABSENT du fichier, il
+      // est conservé, parce qu'une sauvegarde antérieure à cette fonctionnalité
+      // ne pouvait pas le porter et n'a donc rien à en dire ; VIDE, il efface,
+      // parce que le fichier a bien enregistré « pas de logo ».
       if (data.atelier && typeof data.atelier === 'object' &&
-          (data.atelier.name || data.atelier.email || data.atelier.insta)) {
+          (data.atelier.name || data.atelier.email || data.atelier.insta || data.atelier.logo)) {
         if (!lsSet(LS_ATELIER, JSON.stringify({
           name:  String(data.atelier.name  || ''),
           email: String(data.atelier.email || ''),
-          insta: String(data.atelier.insta || '')
+          insta: String(data.atelier.insta || ''),
+          logo:  ('logo' in data.atelier)
+                   ? (/^data:image\/png;base64,/.test(String(data.atelier.logo || '')) ? String(data.atelier.logo) : '')
+                   : String(loadAtelierInfo().logo || '')
         }))) throw _lsWriteFail();
       }
 
@@ -14609,12 +14968,14 @@ async function tmExportPdfWithOpts(opts) {
     });
   }
 
+  const logoOn = pdfAtelierLogo(doc, atelierInfo.logo, { ML: ML, CW: CW, Y: Y, headerH: headerH, HP: HP, colSplit: colSplit, iconS: iconS, coordLines: coordLines, border: C_BORDER });
+
   // Ligne d'identité sous le nom de l'atelier, calée sur lui. Deux paliers :
   // le corps se réduit de 7.5 à 6 pt, puis c'est le NOM DE ROUE qui est amputé.
   // Le type de roue et le rider restent entiers, et la ligne ne peut jamais
   // mordre sur la colonne de coordonnées de l'atelier.
   if (pdfWheelPart || pdfRiderPart) {
-    const idMaxW = (coordLines.length ? colSplit - HP : ML + CW - HP) - (ML + headerPadL);
+    const idMaxW = ((coordLines.length || logoOn) ? colSplit - HP : ML + CW - HP) - (ML + headerPadL);
     const idSep  = (pdfWheelPart && pdfRiderPart) ? ' — ' : '';
     let   idName  = pdfWheelName;
     let   idRider = pdfRiderPart;
@@ -18498,12 +18859,14 @@ async function diagGeneratePdf() {
     });
   }
 
+  var logoOn = pdfAtelierLogo(doc, atelierInfo.logo, { ML: ML, CW: CW, Y: Y, headerH: headerH, HP: HP, colSplit: colSplit, iconS: iconS, coordLines: coordLines, border: C_BORDER });
+
   // Ligne d'identité sous le nom de l'atelier, calée sur lui. Deux paliers :
   // le corps se réduit de 7.5 à 6 pt, puis c'est le NOM DE ROUE qui est amputé.
   // Le type de roue et le rider restent entiers, et la ligne ne peut jamais
   // mordre sur la colonne de coordonnées de l'atelier.
   if (pdfWheelPart || pdfRiderPart) {
-    var idMaxW = (coordLines.length ? colSplit - HP : ML + CW - HP) - (ML + headerPadL);
+    var idMaxW = ((coordLines.length || logoOn) ? colSplit - HP : ML + CW - HP) - (ML + headerPadL);
     var idSep  = (pdfWheelPart && pdfRiderPart) ? ' — ' : '';
     var idName  = pdfWheelName;
     var idRider = pdfRiderPart;
@@ -20723,12 +21086,14 @@ async function snapComparePDF() {
     });
   }
 
+  var logoOn = pdfAtelierLogo(doc, atelierInfo.logo, { ML: ML, CW: CW, Y: Y, headerH: headerH, HP: HP, colSplit: colSplit, iconS: iconS, coordLines: coordLines, border: C_BORDER });
+
   // Ligne d'identité sous le nom de l'atelier, calée sur lui. Deux paliers :
   // le corps se réduit de 7.5 à 6 pt, puis c'est le NOM DE ROUE qui est amputé.
   // Le type de roue et le rider restent entiers, et la ligne ne peut jamais
   // mordre sur la colonne de coordonnées de l'atelier.
   if (pdfWheelPart || pdfRiderPart) {
-    var idMaxW = (coordLines.length ? colSplit - HP : ML + CW - HP) - (ML + headerPadL);
+    var idMaxW = ((coordLines.length || logoOn) ? colSplit - HP : ML + CW - HP) - (ML + headerPadL);
     var idSep  = (pdfWheelPart && pdfRiderPart) ? ' — ' : '';
     var idName  = pdfWheelName;
     var idRider = pdfRiderPart;
