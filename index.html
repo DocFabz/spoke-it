@@ -618,11 +618,16 @@ select option             { background:#161b27 }
 
 /* ── Side labels ───────────────────────────────────────────────────────────── */
 .plabel   { font-size:.6rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; margin-bottom:.75rem; display:flex; align-items:center; gap:.38rem }
-.plabel.L { color:var(--accent) }
-.plabel.R { color:var(--warm) }
-.pdot     { width:5px; height:5px; border-radius:50%; flex-shrink:0 }
-.L .pdot  { background:var(--accent) }
-.R .pdot  { background:var(--warm) }
+/* La teinte suit la RANGÉE et non le côté : orange = fo (nappe forte), bleu =
+   fa, comme partout ailleurs. La rangée forte étant le NDS à l'avant et le DS
+   à l'arrière, les deux titres changent de couleur avec le type de roue sans
+   jamais changer de place — ce sont des côtés physiques. Elle est portée par
+   .color-fo / .color-fa, l'utilitaire de rangée déjà en place ; écrivain
+   unique updateDiffSideLabels(), et les classes posées dans le HTML sont
+   celles de la roue par défaut (avant), pour que le boot n'ait pas de titre
+   incolore. La pastille n'a jamais eu d'autre couleur que son titre : elle la
+   prend en currentColor plutôt qu'en seconde paire à tenir. */
+.pdot     { width:5px; height:5px; border-radius:50%; flex-shrink:0; background:currentColor }
 
 /* ── Pills ─────────────────────────────────────────────────────────────────── */
 .prow        { display:flex; gap:.38rem; margin-bottom:1.1rem }
@@ -1521,7 +1526,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ef-next-btn:hover { border-color:var(--border-s); color:var(--text) }
 
 /* ── Easy Fill : switcher compact (écran de saisie) ──────────────────────── */
-/* Dual-color spans dans le bouton both — fo=warm, fa=accent */
+/* Teinte de rangée, utilitaire partagé — fo=warm, fa=accent. Pas propre à Easy
+   Fill : aussi la modale de conversion et les titres de la card Moyeu. */
 .color-fo { color:var(--warm) }
 .color-fa { color:var(--accent) }
 .sep-part  { color:var(--text3) }
@@ -2398,7 +2404,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 
     <div class="hub-sides">
       <div class="hub-side">
-        <div class="plabel L"><div class="pdot"></div><span data-i18n="left">Gauche</span></div>
+        <div class="plabel color-fo" id="hub-plabel-L"><div class="pdot"></div><span data-i18n="left">Gauche</span></div>
         <div class="f">
           <label class="tip-wrap" for="pcd-left">PCD (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="pcdTipLeft">Pitch Circle Diameter Gauche</span></label>
           <input type="number" id="pcd-left" step="0.1" inputmode="decimal" placeholder="—">
@@ -2416,7 +2422,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       </div>
       <div class="hub-divider"></div>
       <div class="hub-side">
-        <div class="plabel R"><div class="pdot"></div><span data-i18n="right">Droit</span></div>
+        <div class="plabel color-fa" id="hub-plabel-R"><div class="pdot"></div><span data-i18n="right">Droit</span></div>
         <div class="f">
           <label class="tip-wrap" for="pcd-right">PCD (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="pcdTipRight">Pitch Circle Diameter Droit</span></label>
           <input type="number" id="pcd-right" step="0.1" inputmode="decimal" placeholder="—">
@@ -7167,6 +7173,16 @@ function updateDiffSideLabels() {
    ['spoke-diff-label-fo', foLabel], ['spoke-diff-label-fa', faLabel],
    ['tm-spoke-diff-label-fo', foLabel], ['tm-spoke-diff-label-fa', faLabel]
   ].forEach(([id, html]) => { const e = $id(id); if (e) e.innerHTML = html; });
+  // Titres de la card Moyeu : mêmes rangées, autre support. Ce sont des côtés
+  // PHYSIQUES, les deux colonnes ne bougent donc jamais ; seule la teinte suit
+  // la rangée, lue dans diffRowOrder() plutôt que recopiée ici.
+  const hubOrd = diffRowOrder(wtype);
+  [['hub-plabel-L', hubOrd.nds], ['hub-plabel-R', hubOrd.ds]].forEach(([id, row]) => {
+    const e = $id(id);
+    if (!e) return;
+    e.classList.toggle('color-fo', row === 'fo');
+    e.classList.toggle('color-fa', row === 'fa');
+  });
 }
 
 function onTension() {
