@@ -21717,9 +21717,9 @@ async function snapCompareAnim() {
   var TOTAL_MS    = HOLD_MS + MORPH_MS;   // fin du morph = état final
   var REVEAL_B_MS = TOTAL_MS - FADE_MS;   // début du crossfade final
   // Carton de fin (logo de l'atelier, s'il existe). Les instants sont comptés
-  // depuis le début du hold final : le récap garde ses 3 s de lecture, le fond
-  // se referme dessus, puis le logo monte une fois ce fondu achevé : les deux
-  // ne se superposent jamais, pas de logo fantôme sur un radar à demi éteint.
+  // depuis le début du hold final. Le récap garde ses 3 s de lecture, le fond
+  // se referme dessus, puis le logo monte une fois ce fondu achevé. Les deux
+  // ne se superposent jamais : pas de logo fantôme sur un radar à demi éteint.
   // La marge d'1 frame à la coupure passe alors du récap au logo.
   var CARD_READ_MS = 3000;                               // lecture du récap
   var CARD_DIM_MS  = 400;                                // récap → fond uni
@@ -21727,8 +21727,8 @@ async function snapCompareAnim() {
   var CARD_IN_MS   = 500;                                // entrée du logo
   var CARD_END_MS  = CARD_AT_MS + CARD_IN_MS + 2200;     // 2 s de logo + marge
 
-  // Logo préparé une fois, sur un canvas à part, dès l'ouverture : la lecture dure
-  // plusieurs secondes, un PNG en data URL est décodé bien avant. S'il ne
+  // Logo préparé une fois, sur un canvas à part, dès l'ouverture : la lecture
+  // dure plusieurs secondes, un PNG en data URL est décodé bien avant. S'il ne
   // l'est pas au moment du hold (ou s'il est illisible), la vidéo finit
   // simplement sur le récap, comme sans logo.
   var logoCv = null;
@@ -21943,7 +21943,8 @@ async function snapCompareAnim() {
   // que de la repeindre par-dessus, ce qui doublerait l'anticrénelage de ses
   // bords tant que dim est intermédiaire. Son rectangle ne contient que du
   // fond : le radar et ses numéros commencent plus bas (vers 0,08 w), la
-  // date est à droite. Boîte mesurée sur les glyphes, à 2 px près. Mêmes calculs de police et de marge que drawFrame.
+  // date est à droite. Boîte mesurée sur les glyphes, à 2 px près ; police et
+  // marge calculées comme dans drawFrame.
   // Le liseré blanc est repeint ensuite par drawBorder, comme à chaque frame.
   function drawEndCard(dim, la) {
     if (!logoCv || dim <= 0) return;
