@@ -21828,7 +21828,7 @@ async function snapCompareAnim() {
   var HOLD_MS     = 1000;
   var MORPH_MS    = 4500;  // durée réelle du morph des polygones
   var FADE_MS     = 400;   // sortie date A, entrée date B, et fondu récap
-  var HOLD_END_MS = 3200;  // 3 s de lecture + marge d'1 frame à la coupure
+  var HOLD_END_MS = 3200;  // 3 s de lecture + marge de 200 ms (6 images à 30 i/s) à la coupure
   // Le morph démarre à la fin du hold, en même temps que la date de A
   // commence à s'effacer : sa courbe part de 0 à cet instant (aucun saut au
   // premier mouvement) et dure MORPH_MS pleins.
@@ -21839,12 +21839,12 @@ async function snapCompareAnim() {
   // depuis le début du hold final. Le récap garde ses 3 s de lecture, le fond
   // se referme dessus, puis le logo monte une fois ce fondu achevé. Les deux
   // ne se superposent jamais : pas de logo fantôme sur un radar à demi éteint.
-  // La marge d'1 frame à la coupure passe alors du récap au logo.
+  // La marge de 200 ms à la coupure passe alors du récap au logo.
   var CARD_READ_MS = 3000;                               // lecture du récap
   var CARD_DIM_MS  = 400;                                // récap → fond uni
   var CARD_AT_MS   = CARD_READ_MS + CARD_DIM_MS;         // début d'entrée du logo
   var CARD_IN_MS   = 500;                                // entrée du logo
-  var CARD_END_MS  = CARD_AT_MS + CARD_IN_MS + 2200;     // 2 s de logo + marge
+  var CARD_END_MS  = CARD_AT_MS + CARD_IN_MS + 2200;     // 2 s de logo + marge de 200 ms
 
   // Logo préparé une fois, sur un canvas à part, dès l'ouverture : la lecture
   // dure plusieurs secondes, un PNG en data URL est décodé bien avant. S'il ne
