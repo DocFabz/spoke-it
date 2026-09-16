@@ -18633,10 +18633,19 @@ function efStopMic() {
   // courte avc1 (seule reconnue par certains navigateurs), puis WebM
   // (Firefox, Chromium sans H.264). Sans aucun candidat reconnu, le
   // navigateur prend son format par défaut.
+  // Android : H.264 sans profil imposé, quelle que soit la gamme. L'encodeur
+  // est celui de la puce, et un pilote peut annoncer un profil puis échouer
+  // en route (pas de vidéo du tout) ; ce défaut tient au fabricant, pas à la
+  // puissance. La forme courte laisse l'encodeur choisir un profil qu'il
+  // gère, au prix au pire d'un peu de netteté (cf. Baseline imposé par
+  // Safari, rendu jugé bon).
+  var MIME_H264_PROFILES = ['video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1.4d0028',
+                            'video/mp4;codecs=avc1.42e028'];
+  var MIME_TAIL = ['video/mp4;codecs=avc1',
+                   'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
   function pickMime() {
-    var cand = ['video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1.4d0028',
-                'video/mp4;codecs=avc1.42e028', 'video/mp4;codecs=avc1',
-                'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    var android = /Android/i.test(navigator.userAgent || '');
+    var cand = android ? MIME_TAIL : MIME_H264_PROFILES.concat(MIME_TAIL);
     for (var i = 0; i < cand.length; i++) {
       try { if (MediaRecorder.isTypeSupported(cand[i])) return cand[i]; } catch (e) {}
     }
@@ -18644,8 +18653,8 @@ function efStopMic() {
   }
 
   // Arrêt explicite des tracks du flux : une CanvasCaptureMediaStreamTrack
-  // vivante maintient la capture du canvas à 30 fps tant qu'elle n'est pas
-  // GC (paresseuse sur Safari) — travail CPU résiduel après fermeture de la
+  // vivante garde le canvas sous capture tant qu'elle n'est pas GC
+  // (paresseuse sur Safari) : travail CPU résiduel après fermeture de la
   // modale si on se contente de nullifier le recorder.
   function recStopStream() {
     recTrack = null;
@@ -18688,8 +18697,9 @@ function efStopMic() {
       recStream = stream;
     } catch (e) {
       recCv = null;
+      recTrack = null;
       // new MediaRecorder a pu échouer APRÈS captureStream : stopper la track
-      // orpheline, sinon le canvas reste capturé à 30 fps jusqu'à la GC.
+      // orpheline, sinon le canvas reste sous capture jusqu'à la GC.
       if (stream) { try { stream.getTracks().forEach(function(t) { t.stop(); }); } catch (e2) {} }
       return false;
     }
@@ -18734,7 +18744,7 @@ function efStopMic() {
   };
 
   // Fin naturelle de l'animation : clôt la capture puis signale onReady
-  // (petite marge pour embarquer la dernière frame stabilisée).
+  // (petite marge pour que l'encodeur écrive la dernière image reçue).
   window.tmRecCanvasFinish = function(onReady) {
     if (!recCv) return;
     onReadyCb = onReady || null;
@@ -21740,11 +21750,12 @@ function _snapExportRelease() {
   if (c.parentNode) c.parentNode.removeChild(c);
 }
 // Définition de l'export : 1080 × 1350 (4:5, format du fil Instagram).
-// Repli en 864 × 1080 (4:5, 36 % de pixels en moins) sur un Android modeste :
-// c'est la copie canvas vers encodeur de captureStream qui y coûte, pas
-// l'encodage. Critère limité à Android : Safari ne publie pas deviceMemory,
-// et un iPhone encode sans peine. Chrome plafonne deviceMemory à 8.
-// Débit visé proportionnel au nombre de pixels (8 Mb/s en 1080 × 1350).
+// Repli en 864 × 1080 (4:5, 36 % de pixels en moins) sur un Android modeste,
+// où la copie du canvas vers l'encodeur est le poste le plus exposé.
+// Critère limité à Android : Safari ne publie pas deviceMemory, et un iPhone
+// encode sans peine. Les deux définitions sont paires, comme l'exige le
+// H.264 en 4:2:0. Débit visé proportionnel au nombre de pixels (8 Mb/s en
+// 1080 × 1350).
 function _snapExportSize() {
   var mem = navigator.deviceMemory, cores = navigator.hardwareConcurrency;
   var modest = /Android/i.test(navigator.userAgent || '') &&
@@ -21815,10 +21826,14 @@ async function snapCompareAnim() {
   // dans drawFrame) et récap montent ensemble, sur le même FADE_MS. Les deux
   // endroits lisent la constante — ne pas réintroduire le calcul en dur.
   var HOLD_MS     = 1500;
-  var MORPH_MS    = 2500;
+  var MORPH_MS    = 4000;  // durée réelle du morph des polygones
   var FADE_MS     = 400;   // sortie date A, entrée date B, et fondu récap
   var HOLD_END_MS = 3200;  // 3 s de lecture + marge d'1 frame à la coupure
-  var TOTAL_MS    = HOLD_MS + MORPH_MS;   // fin du morph = état final
+  // Le morph démarre à la fin du hold, en même temps que la date de A
+  // commence à s'effacer : sa courbe part de 0 à cet instant (aucun saut au
+  // premier mouvement) et dure MORPH_MS pleins.
+  var MORPH_AT_MS = HOLD_MS;
+  var TOTAL_MS    = MORPH_AT_MS + MORPH_MS;   // fin du morph = état final
   var REVEAL_B_MS = TOTAL_MS - FADE_MS;   // début du crossfade final
   // Carton de fin (logo de l'atelier, s'il existe). Les instants sont comptés
   // depuis le début du hold final. Le récap garde ses 3 s de lecture, le fond
@@ -21883,15 +21898,14 @@ async function snapCompareAnim() {
   function drawFrame(elapsed) {
     var w = VW, radarH = w; // zone radar = carré du haut
     var cx = w/2, cy = radarH/2, R = w*0.38, N = perSide*2, step = (2*Math.PI)/N;
-    // t : progression du morph des polygones (via lerp). Reste à 0 tant que la
-    // date de A s'efface, puis easing jusqu'à 1 atteint à TOTAL_MS.
+    // t : progression du morph des polygones (via lerp). Reste à 0 pendant le
+    // hold, puis easing de 0 à 1 sur MORPH_MS à partir de MORPH_AT_MS (début
+    // de l'effacement de la date de A), atteint à TOTAL_MS.
     // alphaA / alphaB : opacité des DATES seules — les polygones ne dépendent
     // que de t. A sort sur FADE_MS après le hold ; B entre sur les FADE_MS qui
     // précèdent TOTAL_MS, en même temps que le récap (cf. REVEAL_B_MS).
     // Les clamps remplacent les cinq branches de l'ancienne cascade.
-    var t      = elapsed < HOLD_MS + FADE_MS
-               ? 0
-               : easeMorph(clamp01((elapsed - HOLD_MS) / MORPH_MS));
+    var t      = easeMorph(clamp01((elapsed - MORPH_AT_MS) / MORPH_MS));
     var alphaA = clamp01(1 - (elapsed - HOLD_MS) / FADE_MS);
     var alphaB = clamp01((elapsed - REVEAL_B_MS) / FADE_MS);
 
@@ -21968,29 +21982,30 @@ async function snapCompareAnim() {
   var headerH = 60;
   // Largeur mesurée sur le canvas remis à 100 % : après une première
   // ouverture, son style porte la largeur fixe calculée ci-dessous, et la
-  // relire telle quelle ferait dériver la taille d'une ouverture à l'autre
-  // (la marge FRAME_M dépend de maxW). Hauteur à 0 pendant la mesure pour ne
-  // pas faire apparaître d'ascenseur dans la modale.
+  // relire telle quelle figerait la taille à la première ouverture (rotation
+  // de l'écran ignorée) et la ferait dériver d'un pixel d'une ouverture à
+  // l'autre (la marge dépend de la largeur). Hauteur à 0 pendant la mesure
+  // pour ne pas faire apparaître d'ascenseur dans la modale.
   canvasEl.style.width  = '100%';
   canvasEl.style.height = '0px';
   var maxW = canvasEl.offsetWidth || 340;
   var maxH = Math.round((window.innerHeight - headerH) * (isLandscape ? 0.88 : 0.78));
-  // Mise en page au format 4:5 exact (celui du fil Instagram) : la vidéo en
-  // est une pure mise à l'échelle, sans recadrage ni bande. Largeur hors
-  // tout OW limitée par la place, en largeur comme en hauteur ; le récap
-  // prend ce qui reste sous le carré du radar (environ 0,25 OW).
+  // Mise en page écran au format 4:5 exact, comme la vidéo : ce qu'on voit
+  // dans la modale a le cadrage de l'export. Largeur hors tout OW limitée par
+  // la place, en largeur comme en hauteur ; le récap prend ce qui reste sous
+  // le carré du radar (0,25 OW).
   var OW = Math.min(maxW, Math.floor(maxH / 1.25));
   var OH = OW * 1.25;
   FRAME_M = Math.max(6, Math.round(OW * 0.035));
   var SIZE2 = OW - 2 * FRAME_M;
   var RECAP_H = OH - OW;              // = OH - SIZE2 - 2 × FRAME_M
-  // Dimensions paires en pixels réels : le H.264 (4:2:0) l'exige, sinon
-  // l'encodeur rogne ou complète la dernière colonne ou ligne. Arrondi par
-  // défaut (jamais plus large que la place mesurée), et taille CSS déduite
-  // des pixels réels : 1 pixel canvas = 1 pixel écran, aucun rééchantillonnage
-  // du liseré à l'affichage. L'écart (moins d'un pixel) tombe dans la marge.
-  canvasEl.width  = 2 * Math.floor(OW * dpr / 2);
-  canvasEl.height = 2 * Math.floor(OH * dpr / 2);
+  // Pixels réels arrondis par défaut (jamais plus large que la place
+  // mesurée), et taille CSS déduite des pixels réels : 1 pixel canvas =
+  // 1 pixel écran, aucun rééchantillonnage du liseré à l'affichage. L'écart
+  // (moins d'un pixel) tombe dans la marge. Ce canvas n'est pas encodé :
+  // pas de contrainte de parité ici (voir _snapExportSize).
+  canvasEl.width  = Math.floor(OW * dpr);
+  canvasEl.height = Math.floor(OH * dpr);
   canvasEl.style.width  = (canvasEl.width  / dpr) + 'px';
   canvasEl.style.height = (canvasEl.height / dpr) + 'px';
   canvasEl.style.display = 'block';
@@ -22080,8 +22095,8 @@ async function snapCompareAnim() {
     ctx.globalAlpha = 1;
   }
 
-  // Liseré blanc : peint en fin de frame, donc présent à l'écran ET dans la
-  // vidéo (captureStream encode les pixels du canvas). Il est posé au milieu
+  // Liseré blanc : peint en fin de scène, sur chaque surface, donc présent à
+  // l'écran comme dans la vidéo. Il est posé au milieu
   // de la marge FRAME_M, avec ses propres coins arrondis : l'arrondi ou le
   // léger recadrage qu'appliquent les plateformes (story Insta, messageries)
   // ne rogne que du fond, le cadre reste continu. Cadre à mi-marge et rayon
