@@ -18614,6 +18614,7 @@ function efStopMic() {
   var recBlob   = null;   // dernière vidéo complète
   var recFile   = null;
   var onReadyCb = null;
+  var recTrack  = null;   // piste en mode manuel (requestFrame), sinon null
 
   function recSupported() {
     return typeof MediaRecorder !== 'undefined' &&
@@ -18621,8 +18622,21 @@ function efStopMic() {
            !!HTMLCanvasElement.prototype.captureStream;
   }
 
+  // Exposé pour l'appelant : inutile de préparer une surface d'export si le
+  // navigateur ne sait pas enregistrer.
+  window.tmRecSupported = recSupported;
+
+  // Codec toujours explicite : un « video/mp4 » nu laisse le navigateur
+  // choisir, et une build Chromium sans H.264 écrit alors du VP9 dans un
+  // conteneur MP4, que iOS et les réseaux lisent mal. Ordre : H.264 High,
+  // Main puis Baseline (niveau 4.0, qui couvre 1080 × 1350), puis la forme
+  // courte avc1 (seule reconnue par certains navigateurs), puis WebM
+  // (Firefox, Chromium sans H.264). Sans aucun candidat reconnu, le
+  // navigateur prend son format par défaut.
   function pickMime() {
-    var cand = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+    var cand = ['video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1.4d0028',
+                'video/mp4;codecs=avc1.42e028', 'video/mp4;codecs=avc1',
+                'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
     for (var i = 0; i < cand.length; i++) {
       try { if (MediaRecorder.isTypeSupported(cand[i])) return cand[i]; } catch (e) {}
     }
@@ -18634,25 +18648,43 @@ function efStopMic() {
   // GC (paresseuse sur Safari) — travail CPU résiduel après fermeture de la
   // modale si on se contente de nullifier le recorder.
   function recStopStream() {
+    recTrack = null;
     if (!recStream) return;
     try { recStream.getTracks().forEach(function(t) { t.stop(); }); } catch (e) {}
     recStream = null;
   }
 
   // Démarre la capture d'une lecture ; toute capture précédente est jetée.
-  // Retourne false si l'enregistrement n'est pas possible (le bouton
-  // disquette n'apparaîtra simplement pas).
-  window.tmRecCanvasStart = function(canvasEl, baseName) {
+  // opts.bitrate : débit visé en bit/s (indicatif, chaque encodeur le
+  // respecte plus ou moins). Retourne le type MIME retenu (chaîne non vide),
+  // ou false si l'enregistrement n'est pas possible (le bouton disquette
+  // n'apparaîtra simplement pas).
+  window.tmRecCanvasStart = function(canvasEl, baseName, opts) {
     tmRecCanvasAbort();
     recBlob = null; recFile = null;
     if (!canvasEl || !recSupported()) return false;
     var mime = pickMime();
+    var bps  = (opts && opts.bitrate) || 6000000;
     var chunks = [];
     try {
-      var stream = canvasEl.captureStream(30);
+      // Cadence pilotée par l'appelant : captureStream(0) n'émet une image
+      // que sur requestFrame (tmRecCanvasFrame). Avec captureStream(30),
+      // Chrome écarte toute image arrivée un rien avant 33,3 ms : sur un
+      // écran 60 Hz, la vidéo alternait des écarts de 17, 33 et 50 ms,
+      // soit un léger saccadé pendant le morph. Sans requestFrame, repli
+      // sur captureStream() sans limite : une image par repeinte, et c'est
+      // la cadence de dessin de l'appelant qui fait foi.
+      var stream = canvasEl.captureStream(0);
+      var vt = stream.getVideoTracks()[0];
+      if (vt && typeof vt.requestFrame === 'function') {
+        recTrack = vt;
+      } else {
+        stream.getTracks().forEach(function(t) { t.stop(); });
+        stream = canvasEl.captureStream();
+      }
       recCv = mime
-        ? new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 })
-        : new MediaRecorder(stream, { videoBitsPerSecond: 6000000 });
+        ? new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: bps })
+        : new MediaRecorder(stream, { videoBitsPerSecond: bps });
       recStream = stream;
     } catch (e) {
       recCv = null;
@@ -18667,10 +18699,19 @@ function efStopMic() {
     recCv.onstop = function() {
       recCv   = null;
       recStopStream();
-      recBlob = new Blob(chunks, { type: m });
-      var ext = m.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
-      recFile = new File([recBlob], baseName + '.' + ext, { type: m });
-      if (typeof onReadyCb === 'function') { var cb = onReadyCb; onReadyCb = null; cb(); }
+      // Aucune donnée : l'encodeur a échoué en route (type annoncé comme
+      // supporté mais refusé par le matériel, par exemple). Pas de fichier
+      // vide proposé au partage ; onReady reçoit false.
+      var ok = chunks.length > 0;
+      if (ok) {
+        recBlob = new Blob(chunks, { type: m });
+        var ext = m.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
+        recFile = new File([recBlob], baseName + '.' + ext, { type: m });
+      } else {
+        recBlob = null; recFile = null;
+        try { console.warn('[Spokeit] Export vidéo : aucune donnée encodée (' + m + ')'); } catch (e) {}
+      }
+      if (typeof onReadyCb === 'function') { var cb = onReadyCb; onReadyCb = null; cb(ok); }
     };
     // Pas de timeslice périodique : un seul fragment écrit au stop(), pour
     // éviter un bug de MediaRecorder sous Chrome Android où le MP4 fragmenté
@@ -18680,7 +18721,16 @@ function efStopMic() {
     // affectés, mais ce fonctionnement à fragment unique reste correct
     // partout.
     recCv.start();
-    return true;
+    // Première image (vignette) : déjà peinte par l'appelant avant le départ.
+    tmRecCanvasFrame();
+    return recCv.mimeType || mime || 'défaut navigateur';
+  };
+
+  // Signale qu'une image du canvas capturé est prête à encoder (mode
+  // manuel). Sans effet en mode repli ou hors capture.
+  window.tmRecCanvasFrame = function() {
+    if (!recTrack || !recCv) return;
+    try { recTrack.requestFrame(); } catch (e) {}
   };
 
   // Fin naturelle de l'animation : clôt la capture puis signale onReady
@@ -21664,10 +21714,51 @@ var _snapAnimRAF = null;
 var _snapAnimGen = 0;    // jeton de génération : invalide les holdLoop périmés
                          // (close ou nouvelle lecture pendant le hold final)
 
+// Canvas vidéo de l'animation Évolution : taille fixe, indépendante de
+// l'écran, pour que l'export ait la même définition partout. Inséré dans la
+// page (Safari peut ne rien capturer d'un canvas détaché), mais réduit à
+// 2 px quasi transparents sous le contenu : la capture lit le tampon du
+// canvas, pas son affichage. Libéré à la fermeture (5,8 Mo en 1080 × 1350).
+var _snapExportCv = null;
+function _snapExportCanvas(w, h) {
+  var c = _snapExportCv;
+  if (!c) {
+    c = _snapExportCv = document.createElement('canvas');
+    c.setAttribute('aria-hidden', 'true');
+    c.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;' +
+                      'opacity:.01;pointer-events:none;z-index:-1';
+  }
+  if (!c.isConnected) document.body.appendChild(c);
+  if (c.width  !== w) c.width  = w;
+  if (c.height !== h) c.height = h;
+  return c;
+}
+function _snapExportRelease() {
+  var c = _snapExportCv;
+  if (!c) return;
+  c.width = 0; c.height = 0;
+  if (c.parentNode) c.parentNode.removeChild(c);
+}
+// Définition de l'export : 1080 × 1350 (4:5, format du fil Instagram).
+// Repli en 864 × 1080 (4:5, 36 % de pixels en moins) sur un Android modeste :
+// c'est la copie canvas vers encodeur de captureStream qui y coûte, pas
+// l'encodage. Critère limité à Android : Safari ne publie pas deviceMemory,
+// et un iPhone encode sans peine. Chrome plafonne deviceMemory à 8.
+// Débit visé proportionnel au nombre de pixels (8 Mb/s en 1080 × 1350).
+function _snapExportSize() {
+  var mem = navigator.deviceMemory, cores = navigator.hardwareConcurrency;
+  var modest = /Android/i.test(navigator.userAgent || '') &&
+               ((mem && mem <= 4) || (cores && cores <= 4));
+  var w = modest ? 864 : 1080, h = modest ? 1080 : 1350;
+  return { w: w, h: h, modest: !!modest,
+           bitrate: Math.round(8000000 * (w * h) / (1080 * 1350)) };
+}
+
 function snapAnimClose() {
   _snapAnimGen++;
   if (_snapAnimRAF) { cancelAnimationFrame(_snapAnimRAF); _snapAnimRAF = null; }
   if (window.tmRecCanvasAbort) tmRecCanvasAbort();   // capture en cours : jetée
+  _snapExportRelease();
   document.getElementById('snapanim-overlay').classList.remove('show');
   document.getElementById('snapanim-modal').classList.remove('show');
 }
@@ -21712,6 +21803,12 @@ async function snapCompareAnim() {
   snapCompareClose();
   await document.fonts.ready;
 
+  // Marge sombre entre le bord de l'image et le liseré : les coins arrondis
+  // et légers recadrages appliqués par les plateformes (story Insta, bulles
+  // de messagerie) ne mordent que dans le fond. Valeur de la surface
+  // courante (écran ou vidéo), posée par useSurface.
+  var FRAME_M = 0;
+
   // Timings de l'animation, tous regroupés ici (ils étaient déclarés en dur
   // dans drawFrame, play() et son callback).
   // REVEAL_B_MS est l'instant unique où B apparaît PARTOUT : date de B (alphaB
@@ -21749,12 +21846,23 @@ async function snapCompareAnim() {
 
   var canvasEl = document.getElementById('snapanim-canvas');
   var dpr = window.devicePixelRatio || 1;
-  var SIZE = canvasEl.offsetWidth || 340;
-  canvasEl.width  = Math.round(SIZE * dpr);
-  canvasEl.height = Math.round(SIZE * dpr);
-  var VW = Math.round(SIZE), VH = Math.round(SIZE);
-  var ctx = canvasEl.getContext('2d');
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  var VW = 0, VH = 0;   // taille du contenu de la surface courante (unités logiques)
+  // Deux surfaces : l'écran, au dpr de l'appareil, et le canvas vidéo à
+  // taille fixe (EXPORT, créé au dimensionnement). Chacune porte sa mise en
+  // page en unités logiques (vw, vh, m) et son échelle k (pixels réels par
+  // unité). Les fonctions draw* dessinent sur la surface courante, choisie
+  // par paint() : useSurface met à jour cv, ctx, k, VW, VH et FRAME_M.
+  var SCREEN = { cv: canvasEl, ctx: canvasEl.getContext('2d'), k: dpr, vw: 0, vh: 0, m: 0 };
+  var EXPORT = null;
+  var cv = SCREEN.cv, ctx = SCREEN.ctx, k = SCREEN.k;
+  function useSurface(sf) {
+    cv = sf.cv; ctx = sf.ctx; k = sf.k;
+    VW = sf.vw; VH = sf.vh; FRAME_M = sf.m;
+  }
+  // Vider le canvas avant d'afficher la modale : il garde sinon la dernière
+  // image de la comparaison précédente, visible le temps d'une frame.
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, cv.width, cv.height);
 
   var kgfA = _snapKgfs(snapA), kgfB = _snapKgfs(snapB);
   var perSide = Math.max(kgfA.fo.length, kgfA.fa.length, kgfB.fo.length, kgfB.fa.length);
@@ -21773,7 +21881,7 @@ async function snapCompareAnim() {
   // d'y recréer deux closures par frame.
   function easeMorph(x) { return x < 0.5 ? 4*x*x*x : 1 - Math.pow(-2*x+2, 3)/2; }
   function drawFrame(elapsed) {
-    var w = VW, h = VH, radarH = w; // zone radar = carré du haut
+    var w = VW, radarH = w; // zone radar = carré du haut
     var cx = w/2, cy = radarH/2, R = w*0.38, N = perSide*2, step = (2*Math.PI)/N;
     // t : progression du morph des polygones (via lerp). Reste à 0 tant que la
     // date de A s'efface, puis easing jusqu'à 1 atteint à TOTAL_MS.
@@ -21787,8 +21895,11 @@ async function snapCompareAnim() {
     var alphaA = clamp01(1 - (elapsed - HOLD_MS) / FADE_MS);
     var alphaB = clamp01((elapsed - REVEAL_B_MS) / FADE_MS);
 
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#0d1017'; ctx.fillRect(0, 0, w, h);
+    // Fond peint sur tout le canvas (marge comprise), puis repère du contenu
+    // décalé de la marge : drawRecap et drawEndCard en héritent.
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#0d1017'; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.setTransform(k, 0, 0, k, FRAME_M * k, FRAME_M * k);
 
     for (var r = 1; r <= 5; r++) {
       var rr = (r/5)*R;
@@ -21852,22 +21963,58 @@ async function snapCompareAnim() {
 
   // Attendre un frame pour que le layout soit calculé
   await new Promise(function(r) { requestAnimationFrame(r); });
-  var RECAP_H_RATIO = 0.27;
   var isLandscape = window.innerWidth > window.innerHeight;
   // Hauteur dispo = fenêtre moins header modale (~60px) moins padding
   var headerH = 60;
+  // Largeur mesurée sur le canvas remis à 100 % : après une première
+  // ouverture, son style porte la largeur fixe calculée ci-dessous, et la
+  // relire telle quelle ferait dériver la taille d'une ouverture à l'autre
+  // (la marge FRAME_M dépend de maxW). Hauteur à 0 pendant la mesure pour ne
+  // pas faire apparaître d'ascenseur dans la modale.
+  canvasEl.style.width  = '100%';
+  canvasEl.style.height = '0px';
   var maxW = canvasEl.offsetWidth || 340;
   var maxH = Math.round((window.innerHeight - headerH) * (isLandscape ? 0.88 : 0.78));
-  var SIZE2 = Math.min(maxW, Math.round(maxH / (1 + RECAP_H_RATIO)));
-  var RECAP_H = Math.round(SIZE2 * RECAP_H_RATIO);
-  canvasEl.width  = Math.round(SIZE2 * dpr);
-  canvasEl.height = Math.round((SIZE2 + RECAP_H) * dpr);
-  canvasEl.style.width  = SIZE2 + 'px';
-  canvasEl.style.height = (SIZE2 + RECAP_H) + 'px';
+  // Mise en page au format 4:5 exact (celui du fil Instagram) : la vidéo en
+  // est une pure mise à l'échelle, sans recadrage ni bande. Largeur hors
+  // tout OW limitée par la place, en largeur comme en hauteur ; le récap
+  // prend ce qui reste sous le carré du radar (environ 0,25 OW).
+  var OW = Math.min(maxW, Math.floor(maxH / 1.25));
+  var OH = OW * 1.25;
+  FRAME_M = Math.max(6, Math.round(OW * 0.035));
+  var SIZE2 = OW - 2 * FRAME_M;
+  var RECAP_H = OH - OW;              // = OH - SIZE2 - 2 × FRAME_M
+  // Dimensions paires en pixels réels : le H.264 (4:2:0) l'exige, sinon
+  // l'encodeur rogne ou complète la dernière colonne ou ligne. Arrondi par
+  // défaut (jamais plus large que la place mesurée), et taille CSS déduite
+  // des pixels réels : 1 pixel canvas = 1 pixel écran, aucun rééchantillonnage
+  // du liseré à l'affichage. L'écart (moins d'un pixel) tombe dans la marge.
+  canvasEl.width  = 2 * Math.floor(OW * dpr / 2);
+  canvasEl.height = 2 * Math.floor(OH * dpr / 2);
+  canvasEl.style.width  = (canvasEl.width  / dpr) + 'px';
+  canvasEl.style.height = (canvasEl.height / dpr) + 'px';
   canvasEl.style.display = 'block';
-  canvasEl.style.margin  = '0 auto'; // centré horizontalement si plus petit que la modale
-  VW = SIZE2; VH = SIZE2 + RECAP_H;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // Centrage horizontal calé sur un pixel réel entier : un « margin: auto »
+  // sur une largeur CSS fractionnaire poserait le canvas à cheval sur deux
+  // pixels écran et adoucirait le liseré.
+  var mlPx = Math.floor((maxW - canvasEl.width / dpr) / 2 * dpr) / dpr;
+  canvasEl.style.margin  = '0 0 0 ' + Math.max(0, mlPx) + 'px';
+  SCREEN.vw = SIZE2; SCREEN.vh = SIZE2 + RECAP_H; SCREEN.m = FRAME_M;
+  useSurface(SCREEN);   // repère posé par drawFrame à chaque frame
+
+  // Surface vidéo : mise en page de référence FIXE (360 × 450 unités, même
+  // règle 4:5 que l'écran), indépendante de la place dispo sur l'appareil.
+  // Les épaisseurs et rayons en unités absolues (traits de 1, points de 3,5,
+  // marge mini 6) gardent ainsi la même proportion dans toutes les vidéos,
+  // quel que soit l'appareil ou l'orientation. Échelle 3 en 1080 × 1350,
+  // 2,4 en repli 864 × 1080.
+  var EXP = _snapExportSize();
+  if (window.tmRecSupported && tmRecSupported()) {
+    var EOW = 360, EM = Math.max(6, Math.round(EOW * 0.035));
+    var expCv = _snapExportCanvas(EXP.w, EXP.h);
+    EXPORT = { cv: expCv, ctx: expCv.getContext('2d'), k: EXP.w / EOW,
+               vw: EOW - 2 * EM, vh: EOW * 1.25 - 2 * EM, m: EM };
+  }
 
   // Calcul récap moyennes + écart-type (helpers partagés _snapEvo*)
   var avgFoA = _snapEvoAvg(foA), avgFoB = _snapEvoAvg(foB);
@@ -21933,15 +22080,29 @@ async function snapCompareAnim() {
     ctx.globalAlpha = 1;
   }
 
-  // Liseré blanc — peint en fin de frame, donc présent à l'écran ET dans la
-  // vidéo (captureStream encode les pixels du canvas). Rectangle net bord à
-  // bord : pas de coins arrondis, donc aucun coin noir résiduel dans la vidéo
-  // (export Insta propre). À l'écran, le radius CSS rogne à peine les angles.
+  // Liseré blanc : peint en fin de frame, donc présent à l'écran ET dans la
+  // vidéo (captureStream encode les pixels du canvas). Il est posé au milieu
+  // de la marge FRAME_M, avec ses propres coins arrondis : l'arrondi ou le
+  // léger recadrage qu'appliquent les plateformes (story Insta, messageries)
+  // ne rogne que du fond, le cadre reste continu. Cadre à mi-marge et rayon
+  // égal à la marge : il encaisse un arrondi de support jusqu'à 1,5 × FRAME_M.
+  // Tracé en pixels réels, épaisseur entière d'au moins 2 px, calée sur la
+  // grille : il survit au redimensionnement et au réencodage des plateformes,
+  // et les quatre côtés sont identiques même en dpr fractionnaire.
   function drawBorder() {
+    var W  = cv.width, H = cv.height;
+    var lw = Math.max(2, Math.round(k));
+    var m  = Math.round(FRAME_M * k / 2);
+    var r  = Math.round(FRAME_M * k);
+    var o  = lw / 2;   // centre du trait : bords du trait sur des pixels entiers
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(0.5, 0.5, VW - 1, VH - 1);
+    ctx.lineWidth = lw;
+    roundRect(ctx, m + o, m + o, W - 2 * (m + o), H - 2 * (m + o), r);
+    ctx.stroke();
+    ctx.restore();
   }
 
   // Carton de fin : fond uni refermé sur le récap (dim), puis logo centré (la).
@@ -21974,7 +22135,7 @@ async function snapCompareAnim() {
       // Boîte : 62 % de la largeur, 26 % de la hauteur. Agrandissement
       // plafonné à 2 pixels vidéo par pixel du PNG : un petit logo reste
       // net plutôt que de s'étaler flou.
-      var s = Math.min(w * 0.62 / logoCv.width, h * 0.26 / logoCv.height, 2 / dpr);
+      var s = Math.min(w * 0.62 / logoCv.width, h * 0.26 / logoCv.height, 2 / k);
       var lw = logoCv.width * s, lh = logoCv.height * s;
       ctx.globalAlpha = la;
       ctx.imageSmoothingEnabled = true;
@@ -21982,6 +22143,54 @@ async function snapCompareAnim() {
       ctx.drawImage(logoCv, (w - lw) / 2, (h - lh) / 2, lw, lh);
     }
     ctx.restore();
+  }
+
+  // Peint une scène sur l'écran puis, pendant une capture, sur le canvas
+  // vidéo, et signale l'image à l'enregistreur. Côté vidéo, cadence de
+  // 30 i/s calée sur la synchro écran : une image dès que 29,3 ms au moins
+  // se sont écoulées (33,3 ms moins 4 ms de tolérance au jitter). L'écart
+  // reste ainsi constant quel que soit le rafraîchissement : 2 synchros sur
+  // 60 Hz, 3 sur 90 Hz, 4 sur 120 Hz, 5 sur 144 Hz (28,8 i/s).
+  // La surface courante revient toujours à l'écran.
+  var EXPORT_MIN_GAP = 1000 / 30 - 4;
+  var exportOn = false, lastExportTs = -Infinity;
+  // Mesure de fluidité de la capture, affichée en console à la fin
+  // (débogage à distance sur un vrai téléphone).
+  var expStat = null;
+  function paint(scene, withExport) {
+    useSurface(SCREEN);
+    scene();
+    if (!withExport || !exportOn || !EXPORT) return;
+    var now = performance.now();
+    if (now - lastExportTs < EXPORT_MIN_GAP) return;
+    lastExportTs = now;
+    useSurface(EXPORT);
+    scene();
+    useSurface(SCREEN);
+    tmRecCanvasFrame();
+    // Écart > 40 ms : au moins une synchro manquée par rapport aux 33 ms visés
+    if (expStat.last) {
+      var gap = now - expStat.last;
+      if (gap > expStat.max) expStat.max = gap;
+      if (gap > 40) expStat.slow++;
+    }
+    expStat.last = now;
+    expStat.n++;
+  }
+
+  // Scènes : fonctions créées une fois, paramètres dans des variables
+  // (pas de closure recréée à chaque frame pendant l'encodage).
+  var sceneEl = 0, sceneRecapT = 0, sceneDim = 0, sceneLa = 0, sceneLogo = false;
+  function scenePlay() {
+    drawFrame(Math.min(sceneEl, TOTAL_MS));
+    if (sceneEl >= REVEAL_B_MS) drawRecap(sceneRecapT);
+    drawBorder();
+  }
+  function sceneFinal() {
+    drawFrame(TOTAL_MS);
+    drawRecap(1);
+    if (sceneLogo) drawEndCard(sceneDim, sceneLa);
+    drawBorder();
   }
 
   // Après la capture, la modale revient au récap : c'est lui que l'atelier
@@ -21995,10 +22204,8 @@ async function snapCompareAnim() {
       var modal = document.getElementById('snapanim-modal');
       if (!modal || !modal.classList.contains('show')) return;
       var u = clamp01((performance.now() - t1) / FADE_MS);
-      drawFrame(TOTAL_MS);
-      drawRecap(1);
-      drawEndCard(1 - u, 1 - u);
-      drawBorder();
+      sceneLogo = true; sceneDim = 1 - u; sceneLa = 1 - u;
+      paint(sceneFinal, false);
       _snapAnimRAF = u < 1 ? requestAnimationFrame(fadeLoop) : null;
     })();
   }
@@ -22009,19 +22216,16 @@ async function snapCompareAnim() {
     function loop(ts) {
       if (!startTime) startTime = ts;
       var elapsed = ts - startTime;
-      var animElapsed = Math.min(elapsed, TOTAL_MS);
-      drawFrame(animElapsed);
-      if (elapsed >= REVEAL_B_MS) {
-        var recapT = Math.min((elapsed - REVEAL_B_MS) / FADE_MS, 1);
-        drawRecap(recapT);
-      }
-      drawBorder();
+      sceneEl = elapsed;
+      sceneRecapT = Math.min((elapsed - REVEAL_B_MS) / FADE_MS, 1);
+      paint(scenePlay, true);
       if (elapsed < TOTAL_MS) {
         _snapAnimRAF = requestAnimationFrame(loop);
       } else {
         // Rien à repeindre ici : cette frame vient de sortir avec
         // drawFrame(TOTAL_MS) + drawRecap(1) (recapT vaut forcément 1 dès
-        // elapsed >= TOTAL_MS) + drawBorder().
+        // elapsed >= TOTAL_MS) + drawBorder(). Si la cadence vidéo l'a
+        // sautée, le hold qui suit peint exactement le même état.
         _snapAnimRAF = null;
         // onDone : fin de capture vidéo. Le onclick replay passe l'event ici,
         // le typeof le neutralise.
@@ -22047,12 +22251,18 @@ async function snapCompareAnim() {
     var gen = ++_snapAnimGen;   // toute lecture précédente (dont son hold) devient périmée
     if (saveBtn) { saveBtn.style.display = ''; saveBtn.disabled = true; saveBtn.classList.remove('rec-ready'); }
     if (replayBtn) { replayBtn.disabled = true; replayBtn.classList.remove('rec-ready'); }
-    // Peindre la frame 0 (snapshot A complet) AVANT de démarrer la capture :
-    // le canvas vient d'être (re)dimensionné donc noir, et la première frame
-    // encodée sert de vignette à la vidéo (Photos iOS, galeries Android).
-    drawFrame(0);
-    drawBorder();
-    var capturing = tmRecCanvasStart(canvasEl, 'tension-evolution');
+    // Peindre la frame 0 (snapshot A complet) AVANT de démarrer la capture,
+    // sur les deux surfaces : le canvas vidéo est noir ou garde la lecture
+    // précédente, et la première frame encodée sert de vignette à la vidéo
+    // (Photos iOS, galeries Android).
+    exportOn = !!EXPORT;
+    lastExportTs = -Infinity;   // la vignette passe toujours
+    expStat = { n: 0, last: 0, max: 0, slow: 0 };
+    sceneEl = 0; sceneRecapT = 0;
+    paint(scenePlay, true);
+    var capturing = exportOn &&
+      tmRecCanvasStart(EXPORT.cv, 'tension-evolution', { bitrate: EXP.bitrate });
+    exportOn = !!capturing;
     if (!capturing && saveBtn) saveBtn.style.display = 'none';
     play(function() {
       if (!capturing) { snapAnimBtnsReady(); return; }
@@ -22074,16 +22284,26 @@ async function snapCompareAnim() {
         var modal = document.getElementById('snapanim-modal');
         if (!modal || !modal.classList.contains('show')) return;   // modale fermée : abort déjà fait
         var el = performance.now() - t0;
-        drawFrame(TOTAL_MS);
-        drawRecap(1);
-        if (withLogo) drawEndCard(clamp01((el - CARD_READ_MS) / CARD_DIM_MS),
-                                  clamp01((el - CARD_AT_MS) / CARD_IN_MS));
-        drawBorder();
+        sceneLogo = withLogo;
+        sceneDim  = clamp01((el - CARD_READ_MS) / CARD_DIM_MS);
+        sceneLa   = clamp01((el - CARD_AT_MS) / CARD_IN_MS);
+        paint(sceneFinal, true);
         if (el < endMs) {
           _snapAnimRAF = requestAnimationFrame(holdLoop);
         } else {
-          tmRecCanvasFinish(function() {
-            if (saveBtn) { saveBtn.disabled = false; saveBtn.classList.add('rec-ready'); }
+          exportOn = false;
+          tmRecCanvasFinish(function(ok) {
+            try {
+              console.info('[Spokeit] Export Évolution : ' + EXP.w + ' × ' + EXP.h +
+                (EXP.modest ? ' (repli appareil modeste)' : '') + ', ' + capturing +
+                ', ' + Math.round(EXP.bitrate / 1e5) / 10 + ' Mb/s visés, ' +
+                expStat.n + ' images, ' + expStat.slow + ' écart(s) > 40 ms, max ' +
+                Math.round(expStat.max) + ' ms');
+            } catch (e) {}
+            if (saveBtn) {
+              if (ok) { saveBtn.disabled = false; saveBtn.classList.add('rec-ready'); }
+              else saveBtn.style.display = 'none';
+            }
             snapAnimBtnsReady();
             if (withLogo) backToRecap(gen);
           });
