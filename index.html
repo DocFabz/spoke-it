@@ -18672,7 +18672,14 @@ function efStopMic() {
       recFile = new File([recBlob], baseName + '.' + ext, { type: m });
       if (typeof onReadyCb === 'function') { var cb = onReadyCb; onReadyCb = null; cb(); }
     };
-    recCv.start(250);
+    // Pas de timeslice périodique : un seul fragment écrit au stop(), pour
+    // éviter un bug de MediaRecorder sous Chrome Android où le MP4 fragmenté
+    // (plusieurs moof/mdat accumulés via ondataavailable périodique) finit
+    // avec une durée de moov erronée — la vidéo semble alors coupée après
+    // 3-4 s alors que les données sont bien là. iOS/desktop n'étaient pas
+    // affectés, mais ce fonctionnement à fragment unique reste correct
+    // partout.
+    recCv.start();
     return true;
   };
 
