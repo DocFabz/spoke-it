@@ -724,13 +724,18 @@ select option             { background:#161b27 }
 #card-rim.erd-diff-on #rim-col-side > .f > label        { grid-row:1; align-self:end }
 #card-rim.erd-diff-on #rim-col-side > .f > .inline-warn { grid-row:3 }
 #card-rim.erd-diff-on.erd-nsd #rim-asym-field > *       { grid-column:2 }
-/* La ligne des modes cède à la place : le toggle passe seul à la ligne,
-   toujours calé à droite, quand pastilles et toggle ne tiennent plus côte à
-   côte (téléphones). Aucun seuil à maintenir : c'est le flex qui décide.
-   row-gap de 8 px : avec le toggle (16 px), la ligne ajoutée fait 24 px pile,
-   sans fraction qui décalerait l'arrondi des cards suivantes. */
+/* Ligne des modes : le toggle reste sur la ligne des pastilles, calé à
+   droite, et fitErdDiffLabel() raccourcit son libellé par paliers quand la
+   place manque (« Wave différentiel », « Wave diff. », « Wave »). Sa base
+   flex est sa taille minimale, « Wave » + interrupteur : c'est elle qui
+   décide du passage à la ligne, réservé aux écrans où même « Wave » ne tient
+   pas (320 px) ; seul sur sa ligne, il retrouve alors son libellé complet.
+   L'ellipse n'est qu'un filet si un palier déborde encore.
+   row-gap de 8 px : avec le toggle (16 px), une ligne ajoutée fait 24 px
+   pile, sans fraction qui décalerait l'arrondi des cards suivantes. */
 #rim-prow        { flex-wrap:wrap; align-items:center; row-gap:.5rem }
-#rim-prow .diff-toggle-wrap { margin-left:auto }
+#rim-prow .diff-toggle-wrap  { flex:1 1 calc(2rem + .45rem + 28px); min-width:0; justify-content:flex-end }
+#rim-prow .diff-toggle-label { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 
 /* ── Cross buttons: fo/fa variants ─────────────────────────────────────────── */
 #cross-row-diff        { flex-direction:column; gap:.45rem }
@@ -2680,8 +2685,8 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <button class="pill pill-icon active" id="btn-erd-direct" onclick="setErdMode('direct')" data-i18n="erdDirect">ERD DIRECT</button>
       <button class="pill pill-icon"        id="btn-erd-nsd"    onclick="setErdMode('nsd')">NSD + ADDON</button>
       <div class="diff-toggle-wrap">
-        <span class="diff-toggle-label" id="erd-diff-toggle-label" data-i18n="erdDiffLabel">Wave différentiel</span>
-        <button class="diff-toggle" id="erd-diff-toggle" onclick="toggleErdDiff()" role="switch" aria-checked="false" aria-labelledby="erd-diff-toggle-label">
+        <span class="diff-toggle-label" id="erd-diff-toggle-label" data-i18n="erdDiffLabel" aria-hidden="true">Wave différentiel</span>
+        <button class="diff-toggle" id="erd-diff-toggle" onclick="toggleErdDiff()" role="switch" aria-checked="false" aria-label="Wave différentiel">
           <span class="diff-toggle-thumb"></span>
         </button>
       </div>
@@ -5085,7 +5090,7 @@ const i18n = {
     left:'Gauche', right:'Droit',
     pcdTipLeft:'Pitch Circle Diameter Gauche', pcdTipRight:'Pitch Circle Diameter Droit', offset:'Déport', offsetTipLeft:'Centre-Flasque Gauche', offsetTipRight:'Centre-Flasque Droite',
     soLeft:'SO G', soRight:'SO D',
-    erdDirect:'ERD DIRECT', addonTip:"Dépend de l'ecrou utilisé", erdDiffTip:'Jante wave : un ERD par côté', erdDiffLabel:'Wave différentiel',
+    erdDirect:'ERD DIRECT', addonTip:"Dépend de l'ecrou utilisé", erdDiffTip:'Jante wave : un ERD par côté', erdDiffLabel:'Wave différentiel', erdDiffLabelShort:'Wave diff.', erdDiffLabelTiny:'Wave',
     erdCalc:'ERD calculé (mm)', rimAsym:'ASYM. JANTE (mm)', spokeSection:'Section rayon (mm)', cross:'Croisement',
     spokeCard:'Rayons', spokeMaterialSteel:'ACIER', spokeMaterialOther:'AUTRE', spokeMaterial:'Matériau',
     spokeMaterialOtherInfo:"L'estimation de l'élongation des rayons par la loi de Hooke n'est disponible que pour les rayons aciers.",
@@ -5350,7 +5355,7 @@ const i18n = {
     left:'Left', right:'Right',
     pcdTipLeft:'Left Pitch Circle Diameter', pcdTipRight:'Right Pitch Circle Diameter', offset:'Offset', offsetTipLeft:'Left Flange to Center', offsetTipRight:'Right Flange to Center',
     soLeft:'SO L', soRight:'SO R',
-    erdDirect:'ERD DIRECT', addonTip:'Depends on the nipple used', erdDiffTip:'Wave rim: one ERD per side', erdDiffLabel:'Wave differential',
+    erdDirect:'ERD DIRECT', addonTip:'Depends on the nipple used', erdDiffTip:'Wave rim: one ERD per side', erdDiffLabel:'Wave differential', erdDiffLabelShort:'Wave diff.', erdDiffLabelTiny:'Wave',
     erdCalc:'Calculated ERD (mm)', rimAsym:'RIM ASYM. (mm)', spokeSection:'Spoke section (mm)', cross:'Lacing',
     spokeCard:'Spokes', spokeMaterialSteel:'STEEL', spokeMaterialOther:'OTHER', spokeMaterial:'Material',
     spokeMaterialOtherInfo:'Spoke elongation estimation using Hooke\'s law is only available for steel spokes.',
@@ -6185,6 +6190,36 @@ function syncErdUI() {
   $id('erd-diff-nsd').style.display    = nsd     ? '' : 'none';
 }
 
+// Libellé du toggle Wave différentiel : le plus long palier qui tient dans la
+// place que le flex lui laisse. Le texte visible seul change : le nom
+// accessible du bouton reste complet (aria-label, reposé ici à chaque langue ;
+// le libellé visible est aria-hidden). Pas de title : le texte n'est raccourci
+// que sur téléphone, où il n'y a pas de survol, et un title identique au nom
+// serait relu une seconde fois comme description.
+// Trois lectures de mise en page au plus, uniquement quand la largeur de la
+// ligne change (ResizeObserver) ou que la langue change (applyLang).
+// Mesure flottante et non scrollWidth / clientWidth, arrondis à l'entier : un
+// débordement de 0,2 px y passait pour « tient » et le navigateur affichait
+// l'ellipse (« WAVE DIFFÉRENTI… » à 423 px).
+function fitErdDiffLabel() {
+  const el = $id('erd-diff-toggle-label'), btn = $id('erd-diff-toggle');
+  if (!el) return;
+  if (btn) btn.setAttribute('aria-label', t('erdDiffLabel'));
+  const range = document.createRange();
+  const steps = ['erdDiffLabel', 'erdDiffLabelShort', 'erdDiffLabelTiny'];
+  for (const k of steps) {
+    el.textContent = t(k);
+    range.selectNodeContents(el);
+    if (range.getBoundingClientRect().width <= el.getBoundingClientRect().width + 0.01) return;
+  }
+}
+if (typeof ResizeObserver === 'function') {
+  new ResizeObserver(() => fitErdDiffLabel()).observe($id('rim-prow'));
+}
+// Polices embarquées : leur chargement change la largeur du texte, pas celle
+// de la ligne, que l'observateur ne verrait donc pas.
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitErdDiffLabel());
+
 // Même contrat que le différentiel de croisement : une VUE, pas une donnée de
 // plus. À l'ouverture les deux côtés héritent de la valeur simple (ERD direct
 // et NSD, les deux modes étant conservés), au repli une paire restée égale la
@@ -6323,6 +6358,8 @@ function applyLang() {
   });
   // Boutons ✕ des champs du diagnostic (pas d'id, classe partagée)
   document.querySelectorAll('.diag-clear-btn').forEach(b => { b.title = t('clearFieldTitle'); });
+  // La boucle [data-i18n] vient de remettre le libellé complet.
+  fitErdDiffLabel();
   if ($id('arb-wrap').classList.contains('show')) {
     // En-têtes arb-head-* retraduits par la boucle [data-i18n-key] ci-dessus ;
     // ici on redessine seulement le contenu (valeurs/boutons d'arbitrage).
@@ -16102,8 +16139,11 @@ function tmDishRadialJbend(d) {
 // ── Estimation du décentrage à partir de l'écart ratio mesuré / théorique ───
 // Équilibre latéral par paire : T_fa·(faOff/lFa) = T_fo·(foOff/lFo).
 // k  = ratio mesuré (nappe faible / nappe forte, moyennes converties en kgf)
-// k0 = ratio théorique complet (offsets ET longueurs — légèrement ≠ du ratio
-//      affiché sur la card Résultats, qui n'utilise que les offsets)
+// k0 = ratio théorique complet, offsets ET longueurs : même équilibre que
+//      exactRatio() (card Résultats, tension nappe faible), écrit ici dans
+//      l'orientation des colonnes du module tension (faible / forte) au lieu
+//      de la forme min/max. Les longueurs sont celles figées par calc(), une
+//      par côté : un ERD différentiel (jante wave) y est donc déjà intégré.
 // δ  = déplacement de jante qui expliquerait l'écart ; seule l'amplitude |δ|
 //      est exploitée (verdict par seuils). Nécessite la géométrie du calcul de
 //      longueurs : masqué en workflow tension seule (summaryData null ou sans
