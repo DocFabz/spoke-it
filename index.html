@@ -695,6 +695,42 @@ select option             { background:#161b27 }
    colonnes selon avant/arrière, leur géométrie doit rester identique. */
 #spoke-sec-row .diff-side-label { width:auto; text-align:center }
 #spoke-sec-row .diff-side-label .dsl-w { display:inline; margin-left:.3em }
+/* ERD différentiel (jante wave) : un ERD par côté, deux colonnes PHYSIQUES
+   (NDS à gauche, DS à droite) qui ne bougent jamais, comme les deux côtés de
+   la card Moyeu ; seule la teinte des puces suit la rangée. L'écart entre les
+   colonnes est celui de .g2, pour que chaque champ tombe pile au-dessus de
+   ADDON / ASYM. JANTE, qui passent juste dessous. */
+.erd-diff        { margin-bottom:1rem }
+.erd-diff-groups { display:flex; flex-direction:column; gap:.75rem }
+.erd-pair        { display:flex; gap:1rem }
+.erd-pair > *    { flex:1 1 0; min-width:0 }
+.erd-pair-chips  { margin-top:.35rem }
+.f > .erd-pair-chips { margin-top:0 }
+.erd-pair-chips .diff-side-label { width:auto; text-align:center }
+.erd-pair-chips .diff-side-label .dsl-w { display:inline; margin-left:.3em }
+/* En différentiel, la colonne gauche de la grille (champs simples) sort, et la
+   colonne droite se dissout dans la grille jusqu'aux libellés et champs :
+   ADDON et ASYM. JANTE passent côte à côte (NSD), ou ASYM. JANTE seul à
+   gauche (direct). Placement explicite sur trois rangées (libellé, champ,
+   avertissement) : un libellé qui passe sur deux lignes (« ASYM. JANTE (MM) »
+   sur téléphone) agrandit la rangée des libellés, pas sa seule cellule : les
+   deux champs restent alignés, et chaque libellé se cale sur le sien.
+   row-gap reprend l'écart libellé/champ de .f, que display:contents efface. */
+#card-rim.erd-diff-on .g2 { row-gap:.35rem }
+#card-rim.erd-diff-on #rim-col-erd  { display:none }
+#card-rim.erd-diff-on #rim-col-side,
+#card-rim.erd-diff-on #rim-col-side > .f { display:contents }
+#card-rim.erd-diff-on #rim-col-side > .f > *            { grid-column:1; grid-row:2 }
+#card-rim.erd-diff-on #rim-col-side > .f > label        { grid-row:1; align-self:end }
+#card-rim.erd-diff-on #rim-col-side > .f > .inline-warn { grid-row:3 }
+#card-rim.erd-diff-on.erd-nsd #rim-asym-field > *       { grid-column:2 }
+/* La ligne des modes cède à la place : le toggle passe seul à la ligne,
+   toujours calé à droite, quand pastilles et toggle ne tiennent plus côte à
+   côte (téléphones). Aucun seuil à maintenir : c'est le flex qui décide.
+   row-gap de 8 px : avec le toggle (16 px), la ligne ajoutée fait 24 px pile,
+   sans fraction qui décalerait l'arrondi des cards suivantes. */
+#rim-prow        { flex-wrap:wrap; align-items:center; row-gap:.5rem }
+#rim-prow .diff-toggle-wrap { margin-left:auto }
 
 /* ── Cross buttons: fo/fa variants ─────────────────────────────────────────── */
 #cross-row-diff        { flex-direction:column; gap:.45rem }
@@ -859,9 +895,11 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .rc:hover .rc-tap { opacity:1 }
 
 /* ── Summary items ────────────────────────────────────────────────────── */
-.sum-row  { display:flex; justify-content:space-between; align-items:baseline; padding:.38rem 0; border-bottom:1px solid var(--border) }
+.sum-row  { display:flex; justify-content:space-between; align-items:baseline; gap:.5rem; padding:.38rem 0; border-bottom:1px solid var(--border) }
 .sum-lbl  { font-size:.6rem; font-weight:500; letter-spacing:.12em; text-transform:uppercase; color:var(--text3) }
-.sum-val  { font-family:'DM Mono',monospace; font-size:.8rem; color:var(--text) }
+/* Valeur passée sur deux lignes (paire « NDS … / DS … » sur téléphone) : les
+   deux lignes restent calées à droite, comme toutes les valeurs. */
+.sum-val  { font-family:'DM Mono',monospace; font-size:.8rem; color:var(--text); text-align:right }
 .sum-val-btn { font-family:'DM Mono',monospace; font-size:.8rem; background:none; border:none; padding:0; cursor:pointer; touch-action:manipulation; display:inline-flex; align-items:baseline; gap:.35rem }
 .sum-val-btn svg { width:10px; height:10px; stroke:currentColor; stroke-width:1.6; fill:none; flex-shrink:0; align-self:center; opacity:.55 }
 @keyframes sum-blink {
@@ -2638,15 +2676,61 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       </div>
     </div>
 
-    <div class="prow">
+    <div class="prow" id="rim-prow">
       <button class="pill pill-icon active" id="btn-erd-direct" onclick="setErdMode('direct')" data-i18n="erdDirect">ERD DIRECT</button>
       <button class="pill pill-icon"        id="btn-erd-nsd"    onclick="setErdMode('nsd')">NSD + ADDON</button>
+      <div class="diff-toggle-wrap">
+        <span class="diff-toggle-label" id="erd-diff-toggle-label" data-i18n="erdDiffLabel">Wave différentiel</span>
+        <button class="diff-toggle" id="erd-diff-toggle" onclick="toggleErdDiff()" role="switch" aria-checked="false" aria-labelledby="erd-diff-toggle-label">
+          <span class="diff-toggle-thumb"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ERD différentiel (jante wave) : un ERD par côté. Colonnes physiques,
+         NDS à gauche, DS à droite, jamais permutées ; la teinte des puces suit
+         la rangée (updateDiffSideLabels, écrivain unique). ADDON reste unique :
+         il dépend de l'écrou, pas du côté. -->
+    <div id="erd-diff" class="erd-diff" style="display:none">
+      <div class="erd-diff-groups">
+        <div class="f" id="erd-diff-direct">
+          <div class="fld-label tip-wrap"><span id="erd-diff-direct-label">ERD (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="erdDiffTip">Jante wave : un ERD par côté</span></div>
+          <div class="erd-pair">
+            <input type="number" id="erd-direct-nds" step="0.1" inputmode="decimal" placeholder="—" aria-labelledby="erd-diff-direct-label erd-diff-chip-nds">
+            <input type="number" id="erd-direct-ds"  step="0.1" inputmode="decimal" placeholder="—" aria-labelledby="erd-diff-direct-label erd-diff-chip-ds">
+          </div>
+        </div>
+        <div class="erd-diff-groups" id="erd-diff-nsd" style="display:none">
+          <div class="f">
+            <div class="fld-label tip-wrap"><span id="erd-diff-nsd-label">NSD (mm)</span><span class="tip-icon">?</span><span class="tip-box">Nipple Seat Diameter</span></div>
+            <div class="erd-pair">
+              <input type="number" id="nsd-val-nds" step="0.1" inputmode="decimal" placeholder="—" oninput="calcNsd()" aria-labelledby="erd-diff-nsd-label erd-diff-chip-nsd-nds">
+              <input type="number" id="nsd-val-ds"  step="0.1" inputmode="decimal" placeholder="—" oninput="calcNsd()" aria-labelledby="erd-diff-nsd-label erd-diff-chip-nsd-ds">
+            </div>
+            <div class="erd-pair erd-pair-chips">
+              <span class="diff-side-label diff-side-fo erd-chip-nds" id="erd-diff-chip-nsd-nds">NDS</span>
+              <span class="diff-side-label diff-side-fa erd-chip-ds" id="erd-diff-chip-nsd-ds">DS</span>
+            </div>
+          </div>
+          <div class="f">
+            <div class="fld-label" id="erd-diff-result-label" data-i18n="erdCalc">ERD calculé (mm)</div>
+            <div class="erd-pair">
+              <input type="number" id="erd-nsd-result-nds" readonly tabindex="-1" class="inp-readonly" aria-labelledby="erd-diff-result-label erd-diff-chip-nds">
+              <input type="number" id="erd-nsd-result-ds"  readonly tabindex="-1" class="inp-readonly" aria-labelledby="erd-diff-result-label erd-diff-chip-ds">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="erd-pair erd-pair-chips">
+        <span class="diff-side-label diff-side-fo erd-chip-nds" id="erd-diff-chip-nds">NDS</span>
+        <span class="diff-side-label diff-side-fa erd-chip-ds" id="erd-diff-chip-ds">DS</span>
+      </div>
     </div>
 
     <div class="g2">
 
-      <!-- Colonne gauche : ERD / NSD + ERD calculé -->
-      <div class="f">
+      <!-- Colonne gauche : ERD / NSD + ERD calculé (masquée en différentiel) -->
+      <div class="f" id="rim-col-erd">
         <!-- ERD direct -->
         <div id="erd-direct-section" class="f">
           <label class="tip-wrap" for="erd-direct">ERD (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Effective Rim Diameter</span></label>
@@ -2664,8 +2748,8 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         </div>
       </div>
 
-      <!-- Colonne droite : ADDON + ASYM. JANTE -->
-      <div class="f">
+      <!-- Colonne droite : ADDON + ASYM. JANTE (dissoute dans la grille en différentiel) -->
+      <div class="f" id="rim-col-side">
         <!-- ADDON (mode NSD) -->
         <div id="erd-addon-field" style="display:none" class="f">
           <label class="tip-wrap" for="ecrou-type">ADDON (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="addonTip">Dépend de l'ecrou utilisé</span></label>
@@ -2687,7 +2771,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
           </select>
         </div>
         <!-- ASYM. JANTE -->
-        <div class="f">
+        <div class="f" id="rim-asym-field">
           <label class="tip-wrap" for="asym"><span id="asym-label" data-i18n="rimAsym">ASYM. JANTE (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="asymTip">Offset Spoke Bed for Asymmetric Rim</span></label>
           <input type="number" id="asym" aria-labelledby="asym-label" value="0" step="0.5" min="0" inputmode="decimal" onkeydown="if(event.key==='-')event.preventDefault()">
           <p class="inline-warn" id="asym-warn" data-i18n="asymWarn">⚠ Moyeu symétrique : jante asymétrique déconseillée</p>
@@ -5001,7 +5085,7 @@ const i18n = {
     left:'Gauche', right:'Droit',
     pcdTipLeft:'Pitch Circle Diameter Gauche', pcdTipRight:'Pitch Circle Diameter Droit', offset:'Déport', offsetTipLeft:'Centre-Flasque Gauche', offsetTipRight:'Centre-Flasque Droite',
     soLeft:'SO G', soRight:'SO D',
-    erdDirect:'ERD DIRECT', addonTip:"Dépend de l'ecrou utilisé",
+    erdDirect:'ERD DIRECT', addonTip:"Dépend de l'ecrou utilisé", erdDiffTip:'Jante wave : un ERD par côté', erdDiffLabel:'Wave différentiel',
     erdCalc:'ERD calculé (mm)', rimAsym:'ASYM. JANTE (mm)', spokeSection:'Section rayon (mm)', cross:'Croisement',
     spokeCard:'Rayons', spokeMaterialSteel:'ACIER', spokeMaterialOther:'AUTRE', spokeMaterial:'Matériau',
     spokeMaterialOtherInfo:"L'estimation de l'élongation des rayons par la loi de Hooke n'est disponible que pour les rayons aciers.",
@@ -5266,7 +5350,7 @@ const i18n = {
     left:'Left', right:'Right',
     pcdTipLeft:'Left Pitch Circle Diameter', pcdTipRight:'Right Pitch Circle Diameter', offset:'Offset', offsetTipLeft:'Left Flange to Center', offsetTipRight:'Right Flange to Center',
     soLeft:'SO L', soRight:'SO R',
-    erdDirect:'ERD DIRECT', addonTip:'Depends on the nipple used',
+    erdDirect:'ERD DIRECT', addonTip:'Depends on the nipple used', erdDiffTip:'Wave rim: one ERD per side', erdDiffLabel:'Wave differential',
     erdCalc:'Calculated ERD (mm)', rimAsym:'RIM ASYM. (mm)', spokeSection:'Spoke section (mm)', cross:'Lacing',
     spokeCard:'Spokes', spokeMaterialSteel:'STEEL', spokeMaterialOther:'OTHER', spokeMaterial:'Material',
     spokeMaterialOtherInfo:'Spoke elongation estimation using Hooke\'s law is only available for steel spokes.',
@@ -5788,6 +5872,20 @@ function _refreshLoadedRiderChip(name) {
 
 // ── State ────────────────────────────────────────────────────────────────────
 let wtype = 'avant', erdMode = 'direct', sd = null, sa = null, cross = null, hubType = 'jbend';
+// ERD différentiel (jante wave) : un ERD par côté. Clés PHYSIQUES (L = NDS,
+// R = DS) et non de rangée, à la différence de crossFo/sdFo : une jante est
+// enregistrée sans type de roue et se recharge à l'avant comme à l'arrière,
+// son ERD DS doit rester celui du DS. Toujours lu via erdBySide().
+let erdDiff = false;
+// Ids des paires, par côté physique (L = NDS, R = DS).
+const ERD_SIDE_IDS = {
+  direct: { L: 'erd-direct-nds',     R: 'erd-direct-ds' },
+  nsd:    { L: 'nsd-val-nds',        R: 'nsd-val-ds' },
+  result: { L: 'erd-nsd-result-nds', R: 'erd-nsd-result-ds' },
+};
+// Tous les champs ERD saisis (simples et paires, résultats calculés exclus).
+const ERD_INPUT_IDS = ['erd-direct', 'nsd-val',
+  ERD_SIDE_IDS.direct.L, ERD_SIDE_IDS.direct.R, ERD_SIDE_IDS.nsd.L, ERD_SIDE_IDS.nsd.R];
 let spokeMatType = 'steel'; // 'steel' | 'other'
 let diffMode = false, crossFo = null, crossFa = null;
 // Section rayon différentielle. sdFo/saFo décrivent la rangée ORANGE de l'UI,
@@ -6025,10 +6123,102 @@ function resetScrollFlags() { _hubScrolled = false; _rimScrolled = false; _tensi
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function $id(id) { return document.getElementById(id); }
 function getCards() { return document.querySelectorAll('.wrap > .card'); }
+// ERD du champ SIMPLE. Hors helpers ERD ci-dessous, lire erdBySide() : en
+// différentiel ce champ est masqué et ne décrit plus la jante.
 function getERD() {
   return erdMode === 'direct'
     ? parseFloat($id('erd-direct').value)
     : parseFloat($id('erd-nsd-result').value);
+}
+
+// ── ERD différentiel (jante wave) ────────────────────────────────────────────
+// État et tables d'ids : section State, avec erdMode / erdDiff.
+
+// Source unique de l'ERD par côté, pour le calcul comme pour les validations.
+// Mode simple : la même valeur des deux côtés, comportement d'origine.
+function erdBySide() {
+  if (!erdDiff) { const e = getERD(); return { L: e, R: e }; }
+  const ids = erdMode === 'direct' ? ERD_SIDE_IDS.direct : ERD_SIDE_IDS.result;
+  return { L: parseFloat($id(ids.L).value), R: parseFloat($id(ids.R).value) };
+}
+// « La jante est calculable » : les deux côtés valides (NaN > 0 est faux).
+function erdReady() {
+  const e = erdBySide();
+  return e.L > 0 && e.R > 0;
+}
+// Champs à marquer quand l'ERD bloque le calcul. Même règle que l'ancien
+// branchement de calc() : en direct les ERD non valides, en NSD les NSD vides
+// et l'écrou manquant.
+function erdMissingIds() {
+  if (erdMode === 'direct') {
+    return erdDirectInputIds().filter(id => !(parseFloat($id(id).value) > 0));
+  }
+  const out = nsdInputIds().filter(id => isNaN(parseFloat($id(id).value)));
+  if (!$id('ecrou-type').value) out.push('ecrou-type');
+  return out;
+}
+// Champs saisis de la vue active (un ou deux), en direct et en NSD. Sources
+// uniques pour la validation du calcul, le critère d'enregistrement de la
+// jante et l'auto-scroll.
+function erdDirectInputIds() {
+  return erdDiff ? [ERD_SIDE_IDS.direct.L, ERD_SIDE_IDS.direct.R] : ['erd-direct'];
+}
+function nsdInputIds() {
+  return erdDiff ? [ERD_SIDE_IDS.nsd.L, ERD_SIDE_IDS.nsd.R] : ['nsd-val'];
+}
+
+// Reflet pur de l'état ERD vers la card Jante (mode + différentiel).
+// Écrivain unique : setErdMode, toggleErdDiff, applyState, resetFields.
+function syncErdUI() {
+  const direct = erdMode === 'direct', nsd = !direct;
+  $id('btn-erd-direct').classList.toggle('active', direct);
+  $id('btn-erd-nsd').classList.toggle('active', nsd);
+  $id('erd-direct-section').style.display   = direct ? '' : 'none';
+  $id('erd-nsd-section').style.display      = nsd    ? '' : 'none';
+  $id('erd-addon-field').style.display      = nsd    ? '' : 'none';
+  $id('erd-nsd-result-field').style.display = nsd    ? '' : 'none';
+  $id('erd-diff-toggle').setAttribute('aria-checked', erdDiff ? 'true' : 'false');
+  $id('card-rim').classList.toggle('erd-diff-on', erdDiff);
+  $id('card-rim').classList.toggle('erd-nsd', nsd);
+  $id('erd-diff').style.display        = erdDiff ? '' : 'none';
+  $id('erd-diff-direct').style.display = direct  ? '' : 'none';
+  $id('erd-diff-nsd').style.display    = nsd     ? '' : 'none';
+}
+
+// Même contrat que le différentiel de croisement : une VUE, pas une donnée de
+// plus. À l'ouverture les deux côtés héritent de la valeur simple (ERD direct
+// et NSD, les deux modes étant conservés), au repli une paire restée égale la
+// rend au champ simple. Aller-retour sans saisie = zéro trace : ni roue ni
+// jante désaffectées. Seul le repli d'une paire DIVERGENTE modifie la jante
+// (le champ simple repart vide) : markModified() et badge jante éteint.
+// Pendant le différentiel, le champ simple est VIDE : sa valeur est passée dans
+// la paire, et le repli la rend. Rien ne se perd, et roues, jantes, partages
+// et backups ne transportent jamais un ERD simple périmé à côté de la paire.
+// Une version antérieure de l'app qui relit ce fichier trouve donc un ERD vide
+// (calcul refusé) plutôt qu'une ancienne valeur (longueurs fausses).
+function toggleErdDiff() {
+  erdDiff = !erdDiff;
+  let changed = false;
+  [['erd-direct', ERD_SIDE_IDS.direct], ['nsd-val', ERD_SIDE_IDS.nsd]].forEach(([one, ids]) => {
+    const s = $id(one), l = $id(ids.L), r = $id(ids.R);
+    if (erdDiff) { l.value = s.value; r.value = s.value; s.value = ''; return; }
+    const a = parseFloat(l.value), b = parseFloat(r.value);
+    const symmetric = l.value === r.value || (!isNaN(a) && a === b);
+    s.value = symmetric ? l.value : '';
+    if (!symmetric) changed = true;
+  });
+  calcNsd();
+  // Un rouge posé sur un champ qui vient de disparaître ne doit pas survivre,
+  // invisible, ni maintenir #err affiché (même geste que syncSoRadial).
+  ERD_INPUT_IDS.forEach(id => $id(id).classList.remove('invalid'));
+  if (!document.querySelector('.invalid')) $id('err').classList.remove('show');
+  syncErdUI();
+  if (changed) {
+    markModified();
+    if (typeof hrClearLoadedRim === 'function') hrClearLoadedRim();
+  }
+  if (typeof syncScrollFlags === 'function') syncScrollFlags();
+  updateCalcBtn();
 }
 function setInvalid(id)  { $id(id).classList.add('invalid'); }
 function clearInvalids() { document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid')); }
@@ -6043,7 +6233,7 @@ function refreshInvalids() {
   document.querySelectorAll('input.invalid, select.invalid').forEach(el => {
     if (el.value === '' || el.value === null) return;
     el.classList.remove('invalid');
-    if (el.id === 'ecrou-type') { const n = $id('nsd-val'); if (n) n.classList.remove('invalid'); }
+    if (el.id === 'ecrou-type') nsdInputIds().forEach(id => { const n = $id(id); if (n) n.classList.remove('invalid'); });
   });
   if (!document.querySelector('.invalid')) $id('err').classList.remove('show');
 }
@@ -6250,6 +6440,10 @@ function readState() {
     erdMode, erdDirect: $id('erd-direct').value,
     nsdVal: $id('nsd-val').value, ecrouType: $id('ecrou-type').value,
     erdNsdResult: $id('erd-nsd-result').value,
+    erdDiff,
+    erdDirectNds: $id(ERD_SIDE_IDS.direct.L).value, erdDirectDs: $id(ERD_SIDE_IDS.direct.R).value,
+    nsdValNds:    $id(ERD_SIDE_IDS.nsd.L).value,    nsdValDs:    $id(ERD_SIDE_IDS.nsd.R).value,
+    erdNsdResultNds: $id(ERD_SIDE_IDS.result.L).value, erdNsdResultDs: $id(ERD_SIDE_IDS.result.R).value,
     asym: $id('asym').value, spokeSelect: $id('spoke-select').value,
     cross, crossFo, crossFa, diffMode, hubType, sd, sa, spokeMatType,
     spokeDiff, sdFo, saFo, sdFa, saFa,
@@ -6357,12 +6551,17 @@ function _applyStateBody(s) {
   $id('sp-so-right').value = s.soRight || '';
 
   erdMode = s.erdMode;
-  $id('btn-erd-direct').classList.toggle('active', erdMode === 'direct');
-  $id('btn-erd-nsd').classList.toggle('active', erdMode === 'nsd');
-  $id('erd-direct-section').style.display  = erdMode === 'direct' ? '' : 'none';
-  $id('erd-nsd-section').style.display     = erdMode === 'nsd'    ? '' : 'none';
-  $id('erd-addon-field').style.display     = erdMode === 'nsd'    ? '' : 'none';
-  $id('erd-nsd-result-field').style.display= erdMode === 'nsd'    ? '' : 'none';
+  // ERD différentiel : saves antérieures → erdDiff absent ⇒ false, paires vides.
+  // Restauré AVANT la migration de summaryData plus bas, qui relit le DOM via
+  // lateralGeometry().
+  erdDiff = !!s.erdDiff;
+  $id(ERD_SIDE_IDS.direct.L).value = s.erdDirectNds    || '';
+  $id(ERD_SIDE_IDS.direct.R).value = s.erdDirectDs     || '';
+  $id(ERD_SIDE_IDS.nsd.L).value    = s.nsdValNds       || '';
+  $id(ERD_SIDE_IDS.nsd.R).value    = s.nsdValDs        || '';
+  $id(ERD_SIDE_IDS.result.L).value = s.erdNsdResultNds || '';
+  $id(ERD_SIDE_IDS.result.R).value = s.erdNsdResultDs  || '';
+  syncErdUI();
 
   // Restore cross UI
   syncCrossDiffUI();
@@ -6585,7 +6784,9 @@ function _applyStateBody(s) {
 // type de moyeu conserve les données communes et masque les autres.
 function resetFields() {
   ['nb-rayons','pcd-left','offset-left','pcd-right','offset-right',
-   'erd-direct','nsd-val','erd-nsd-result','tension-forte'].forEach(id => { $id(id).value = ''; });
+   'erd-direct','nsd-val','erd-nsd-result','tension-forte',
+   ERD_SIDE_IDS.direct.L, ERD_SIDE_IDS.direct.R, ERD_SIDE_IDS.nsd.L, ERD_SIDE_IDS.nsd.R,
+   ERD_SIDE_IDS.result.L, ERD_SIDE_IDS.result.R].forEach(id => { $id(id).value = ''; });
   $id('diam-trou').value = '2.55'; $id('asym').value = '0';
   hideDiamTrouWarn();
   $id('ecrou-type').value = ''; syncSelectPlaceholder($id('ecrou-type'));
@@ -6596,9 +6797,8 @@ function resetFields() {
   diffMode = false;
   syncCrossDiffUI();
   erdMode = 'direct';
-  $id('btn-erd-direct').classList.add('active'); $id('btn-erd-nsd').classList.remove('active');
-  $id('erd-direct-section').style.display  = ''; $id('erd-nsd-section').style.display = 'none';
-  $id('erd-addon-field').style.display     = 'none'; $id('erd-nsd-result-field').style.display = 'none';
+  erdDiff = false;
+  syncErdUI();
   const disp = $id('tension-faible-display');
   disp.textContent = ''; disp.classList.remove('has-val-accent', 'has-val-warm');
   $id('tension-forte').classList.remove('has-val');
@@ -6747,12 +6947,7 @@ function reorderTensionFields(wh) {
 function setErdMode(m) {
   _lastLoadTime = Date.now();
   erdMode = m;
-  $id('btn-erd-direct').classList.toggle('active', m === 'direct');
-  $id('btn-erd-nsd').classList.toggle('active', m === 'nsd');
-  $id('erd-direct-section').style.display  = m === 'direct' ? '' : 'none';
-  $id('erd-nsd-section').style.display     = m === 'nsd'    ? '' : 'none';
-  $id('erd-addon-field').style.display     = m === 'nsd'    ? '' : 'none';
-  $id('erd-nsd-result-field').style.display= m === 'nsd'    ? '' : 'none';
+  syncErdUI();
   updateCalcBtn();
 }
 
@@ -7020,9 +7215,15 @@ function setHubType(htype, skipClearSO) {
 }
 
 function calcNsd() {
-  const n = parseFloat($id('nsd-val').value), addon = parseFloat($id('ecrou-type').value);
-  if (!isNaN(n) && !isNaN(addon)) $id('erd-nsd-result').value = (n + 2 * addon).toFixed(2);
-  else $id('erd-nsd-result').value = '';
+  // Un seul écrou pour les trois NSD (simple, NDS, DS) : l'ADDON dépend de
+  // l'écrou monté, pas du côté.
+  const addon = parseFloat($id('ecrou-type').value);
+  [['nsd-val', 'erd-nsd-result'],
+   [ERD_SIDE_IDS.nsd.L, ERD_SIDE_IDS.result.L],
+   [ERD_SIDE_IDS.nsd.R, ERD_SIDE_IDS.result.R]].forEach(([from, to]) => {
+    const n = parseFloat($id(from).value);
+    $id(to).value = (!isNaN(n) && !isNaN(addon)) ? (n + 2 * addon).toFixed(2) : '';
+  });
   if (typeof hrUpdateButtons === 'function') hrUpdateButtons();
 }
 
@@ -7273,6 +7474,16 @@ function updateDiffSideLabels() {
     e.classList.toggle('color-fo', row === 'fo');
     e.classList.toggle('color-fa', row === 'fa');
   });
+  // ERD différentiel : même logique que la card Moyeu, colonnes physiques fixes
+  // (NDS gauche, DS droite), libellé constant, teinte selon la rangée.
+  // Toutes les puces du bloc (sous la paire NSD et en pied), par classe.
+  [['.erd-chip-nds', NDS, hubOrd.nds], ['.erd-chip-ds', DS, hubOrd.ds]].forEach(([sel, html, row]) => {
+    document.querySelectorAll(sel).forEach(e => {
+      e.innerHTML = html;
+      e.classList.toggle('diff-side-fo', row === 'fo');
+      e.classList.toggle('diff-side-fa', row === 'fa');
+    });
+  });
 }
 
 function onTension() {
@@ -7389,7 +7600,7 @@ function checkReady() {
   const pL = parseFloat($id('pcd-left').value),  pR = parseFloat($id('pcd-right').value);
   const oL = parseFloat($id('offset-left').value), oR = parseFloat($id('offset-right').value);
   if ([pL,pR,oL,oR].some(isNaN) || pL <= 0 || pR <= 0) return false;
-  const erd = getERD(); if (isNaN(erd) || erd <= 0) return false;
+  if (!erdReady()) return false;
   if (diffMode ? (crossFo === null || crossFa === null) : cross === null) return false;
   if (soMissingIds().length) return false;
   const sign = wtype === 'arriere' ? -1 : 1, asym = parseFloat($id('asym').value) || 0;
@@ -7428,10 +7639,8 @@ function hubDataComplete() {
 function updateCardStatus() {
   setCardDone('card-hub', hubDataComplete());
 
-  // ── Rim : ERD valide (direct ou calculé via NSD)
-  const erd = getERD();
-  const rimDone = !isNaN(erd) && erd > 0;
-  setCardDone('card-rim', rimDone);
+  // ── Rim : ERD valide (direct ou calculé via NSD), des deux côtés en différentiel
+  setCardDone('card-rim', erdReady());
 
   // ── Lacing : croisement sélectionné
   const lacingDone = diffMode ? (crossFo !== null && crossFa !== null) : cross !== null;
@@ -7901,10 +8110,12 @@ function lateralGeometry() {
   const n    = parseInt($id('nb-rayons').value);
   const pL   = parseFloat($id('pcd-left').value),    pR = parseFloat($id('pcd-right').value);
   const oL   = parseFloat($id('offset-left').value), oR = parseFloat($id('offset-right').value);
-  const erd  = getERD();
+  // ERD par côté physique : L = NDS (nappe fa), R = DS (nappe fo), même
+  // convention CÔTÉ que foOff/faOff ci-dessous. Identiques hors différentiel.
+  const erd  = erdBySide();
   const asym = parseFloat($id('asym').value) || 0;
   const trou = parseFloat($id('diam-trou').value) || 2.55;
-  if (!n || [pL, pR, oL, oR].some(isNaN) || pL <= 0 || pR <= 0 || isNaN(erd) || erd <= 0) return null;
+  if (!n || [pL, pR, oL, oR].some(isNaN) || pL <= 0 || pR <= 0 || !(erd.L > 0 && erd.R > 0)) return null;
 
   const isSP = hubType === 'straightpull';
   const soL  = parseFloat($id('sp-so-left').value)  || 0;
@@ -7921,8 +8132,8 @@ function lateralGeometry() {
   const _cs  = crossBySide();
   const crFo = _cs.R, crFa = _cs.L;
   if (crFo === null || crFo === undefined || crFa === null || crFa === undefined) return null;
-  const lFo = isSP ? slenSP(pR, foOff, crFo, n, erd, soR) : slen(pR, foOff, crFo, n, erd, trou);
-  const lFa = isSP ? slenSP(pL, faOff, crFa, n, erd, soL) : slen(pL, faOff, crFa, n, erd, trou);
+  const lFo = isSP ? slenSP(pR, foOff, crFo, n, erd.R, soR) : slen(pR, foOff, crFo, n, erd.R, trou);
+  const lFa = isSP ? slenSP(pL, faOff, crFa, n, erd.L, soL) : slen(pL, faOff, crFa, n, erd.L, trou);
   if (!(lFo > 0 && lFa > 0)) return null;
   return { foOff, faOff, lFo, lFa };
 }
@@ -7967,15 +8178,11 @@ function calc() {
     return showErr('errPcd');
   }
 
-  const erd = getERD();
-  if (isNaN(erd) || erd <= 0) {
-    if (erdMode === 'direct') { setInvalid('erd-direct'); }
-    else {
-      if (isNaN(parseFloat($id('nsd-val').value))) setInvalid('nsd-val');
-      if (!$id('ecrou-type').value) setInvalid('ecrou-type');
-    }
+  if (!erdReady()) {
+    erdMissingIds().forEach(setInvalid);
     return showErr('errErd');
   }
+  const erdS = erdBySide();
 
   const asym = parseFloat($id('asym').value) || 0;
 
@@ -8081,7 +8288,14 @@ function calc() {
   // sur roue arrière et faux sur roue avant — cf. le swap de tmRenderDish(),
   // seul endroit qui les croise aujourd'hui.
   // Conserver les longueurs saisies manuellement si elles existent
-  summaryData = { erd: erd.toFixed(1), wtype, n, h, cross, crossFo, crossFa, diffMode, isSP, sl, asym, ratio, foOff, faOff, lFo: Lfo, lFa: Lfa, lenFo: null, lenFa: null };
+  // ERD : erdFo/erdFa en convention RANGÉE (celle de crossFo/sl). `erd` reste
+  // une chaîne affichable seule (la paire complète en différentiel), pour
+  // qu'une version antérieure qui relit ce state écrive encore quelque chose
+  // de juste avec son `erd + ' mm'`. Rendu courant : summaryErdStr().
+  const erdOrd = diffRowOrder(wtype);
+  const erdRow = { [erdOrd.ds]: erdS.R.toFixed(1), [erdOrd.nds]: erdS.L.toFixed(1) };
+  const erdStr = erdDiff ? diffPairStr(wtype, erdRow.fo, erdRow.fa) : erdS.R.toFixed(1);
+  summaryData = { erd: erdStr, erdDiff, erdFo: erdRow.fo, erdFa: erdRow.fa, wtype, n, h, cross, crossFo, crossFa, diffMode, isSP, sl, asym, ratio, foOff, faOff, lFo: Lfo, lFa: Lfa, lenFo: null, lenFa: null };
   resetSumCardState();
   $id('sum-card-body').style.display = 'none'; $id('sum-card-chevron').style.transform = '';
   $id('summary-wrap').classList.add('show');
@@ -8125,6 +8339,20 @@ function calc() {
 }
 
 // ── Summary ───────────────────────────────────────────────────────────────────
+// Ligne ERD de la card Résumé et du PDF : « 602.0 mm », ou en différentiel
+// « NDS 600.0 mm / DS 604.0 mm », même forme que la section rayon.
+function summaryErdStr(d) {
+  return (d.erdDiff && d.erdFo && d.erdFa)
+    ? diffPairStr(d.wtype, d.erdFo + ' mm', d.erdFa + ' mm')
+    : d.erd + ' mm';
+}
+
+// Paire « A / B » de la card Résumé : ne se coupe qu'après la barre, jamais
+// entre une valeur et son unité. Écran seulement ; le PDF garde la chaîne brute.
+function sumPairNoWrap(s) {
+  return String(s).split(' / ').map(part => part.replace(/ /g, '\u00a0')).join(' / ');
+}
+
 function renderSummary() {
   if (!summaryData) return;
   const d = summaryData;
@@ -8161,13 +8389,13 @@ function renderSummary() {
   const blueLen    = d.lenFa; // fa = toujours bleu
   $id('summary').innerHTML =
     item(t('wheelLabel'),   d.wtype === 'avant' ? t('frontLabel') : t('rearLabel')) +
-    item('ERD',             d.erd + ' mm') +
+    item('ERD',             sumPairNoWrap(summaryErdStr(d))) +
     item(t('spokeCount'),   d.n + ' (' + d.h + t('perSide') + ')') +
     item(t('crossLabel'),   cl) +
     itemClickable(orangeLbl, orangeSide, orangeLen, 'var(--warm2)',   orangeSide) +
     itemClickable(blueLbl,   blueSide,   blueLen,   'var(--accent2)', blueSide) +
     item(t('hubType'),      d.isSP ? 'Straightpull' : 'J-Bend') +
-    item(t('spokeSection2'), d.sl) +
+    item(t('spokeSection2'), sumPairNoWrap(d.sl)) +
     item(t('rimAsym2'),     (d.asym > 0 ? '+' : '') + d.asym + ' mm') +
     item(t('tensionRatio'), (d.ratio * 100).toFixed(1) + '%', ratioColor);
 }
@@ -10503,8 +10731,8 @@ function _hubScrollReady() {
   return !!(nb && pL && oL && pR && oR) && !soMissingIds().length;
 }
 function _rimScrollReady() {
-  if (erdMode === 'direct') return !!$id('erd-direct').value;
-  return !!$id('nsd-val').value && !!$id('ecrou-type').value;
+  if (erdMode === 'direct') return erdDirectInputIds().every(id => !!$id(id).value);
+  return nsdInputIds().every(id => !!$id(id).value) && !!$id('ecrou-type').value;
 }
 function _tensionScrollReady() { return !!$id('tension-forte').value; }
 
@@ -10545,7 +10773,8 @@ function checkTensionComplete() {
 // ── Live validation listeners ─────────────────────────────────────────────────
 const FIELD_GROUPS = {
   hub:     ['nb-rayons','diam-trou','pcd-left','pcd-right','offset-left','offset-right','sp-so-left','sp-so-right'],
-  rim:     ['erd-direct','nsd-val','erd-nsd-result','ecrou-type'],
+  rim:     ['erd-direct','nsd-val','erd-nsd-result','ecrou-type',
+            'erd-direct-nds','erd-direct-ds','nsd-val-nds','nsd-val-ds'],
   tension: ['tension-forte','asym'],
 };
 
@@ -10595,7 +10824,7 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
     if (this.id !== 'asym') hideAsymWarn();
     if (!this.classList.contains('invalid')) return;
     this.classList.remove('invalid');
-    if (this.id === 'ecrou-type') $id('nsd-val').classList.remove('invalid');
+    if (this.id === 'ecrou-type') nsdInputIds().forEach(id => $id(id).classList.remove('invalid'));
     if (!document.querySelector('.invalid')) $id('err').classList.remove('show');
   });
   el.addEventListener('focus', function() { this._blurPrev = this.value; });
@@ -10605,14 +10834,15 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
       if (this.value !== this._blurPrev) resetScrollFlagFor(this.id);
       checkAllScroll();
     }
-    if (['erd-direct','nsd-val','ecrou-type','asym'].includes(this.id)) {
+    if (['erd-direct','nsd-val','ecrou-type','asym',
+         'erd-direct-nds','erd-direct-ds','nsd-val-nds','nsd-val-ds'].includes(this.id)) {
       if (typeof hrUpdateButtons === 'function') hrUpdateButtons();
     }
   });
   el.addEventListener('change', function() {
     if (_switchingHub) return;
     this.classList.remove('invalid');
-    if (this.id === 'ecrou-type') $id('nsd-val').classList.remove('invalid');
+    if (this.id === 'ecrou-type') nsdInputIds().forEach(id => $id(id).classList.remove('invalid'));
     if (!document.querySelector('.invalid')) {
       $id('err').classList.remove('show');
       if (_scrollGroupOwns(this.id)) {
@@ -10630,7 +10860,8 @@ document.querySelectorAll('input[type=number], select').forEach(el => {
 // — donc trois clearResults() par selection au lieu d'un. Un seul chemin pour
 // les trois selects, mono comme differentiel.
 ['nb-rayons','diam-trou','pcd-left','pcd-right','offset-left','offset-right',
- 'erd-direct','nsd-val','erd-nsd-result','tension-forte','asym','sp-so-left','sp-so-right'].forEach(id => {
+ 'erd-direct','nsd-val','erd-nsd-result','tension-forte','asym','sp-so-left','sp-so-right',
+ 'erd-direct-nds','erd-direct-ds','nsd-val-nds','nsd-val-ds'].forEach(id => {
   const el = $id(id); if (!el) return;
   ['input','change'].forEach(ev => {
     // Late-bind : window.updateCalcBtn est patché plus bas (greffe hrUpdateButtons).
@@ -14861,7 +15092,7 @@ async function tmExportPdfWithOpts(opts) {
     const cl = sumD.diffMode
       ? diffPairStr(sumD.wtype, crossStr(sumD.crossFo), crossStr(sumD.crossFa))
       : crossStr(sumD.cross);
-    cfgRows.push(['ERD',           sumD.erd + ' mm']);
+    cfgRows.push(['ERD',           summaryErdStr(sumD)]);
     cfgRows.push([t('spokeCount'), sumD.n + ' (' + sumD.h + t('perSide') + ')']);
     cfgRows.push([t('crossLabel'), cl]);
     // Section rayon : même chaîne que la card Résumé (« 2.0 mm », ou
@@ -19411,6 +19642,14 @@ function hrReadRim() {
     nsdVal:       document.getElementById('nsd-val').value,
     ecrouType:    document.getElementById('ecrou-type').value,
     erdNsdResult: document.getElementById('erd-nsd-result').value,
+    // ERD différentiel : champs absents des jantes antérieures (relues simples)
+    erdDiff:         erdDiff,
+    erdDirectNds:    document.getElementById(ERD_SIDE_IDS.direct.L).value,
+    erdDirectDs:     document.getElementById(ERD_SIDE_IDS.direct.R).value,
+    nsdValNds:       document.getElementById(ERD_SIDE_IDS.nsd.L).value,
+    nsdValDs:        document.getElementById(ERD_SIDE_IDS.nsd.R).value,
+    erdNsdResultNds: document.getElementById(ERD_SIDE_IDS.result.L).value,
+    erdNsdResultDs:  document.getElementById(ERD_SIDE_IDS.result.R).value,
     asym:         document.getElementById('asym').value,
   };
 }
@@ -19447,8 +19686,16 @@ function hrApplyRim(d) {
   if (!d) return;
   _hrApplying = true;
   var mode = d.erdMode || 'direct';
+  // Posé avant setErdMode(), qui repeint la card par syncErdUI().
+  erdDiff = !!d.erdDiff;
   if (typeof setErdMode === 'function') setErdMode(mode);
   document.getElementById('erd-direct').value    = d.erdDirect    || '';
+  document.getElementById(ERD_SIDE_IDS.direct.L).value = d.erdDirectNds    || '';
+  document.getElementById(ERD_SIDE_IDS.direct.R).value = d.erdDirectDs     || '';
+  document.getElementById(ERD_SIDE_IDS.nsd.L).value    = d.nsdValNds       || '';
+  document.getElementById(ERD_SIDE_IDS.nsd.R).value    = d.nsdValDs        || '';
+  document.getElementById(ERD_SIDE_IDS.result.L).value = d.erdNsdResultNds || '';
+  document.getElementById(ERD_SIDE_IDS.result.R).value = d.erdNsdResultDs  || '';
   document.getElementById('nsd-val').value       = d.nsdVal       || '';
   document.getElementById('ecrou-type').value    = d.ecrouType    || '';
   document.getElementById('erd-nsd-result').value= d.erdNsdResult || '';
@@ -19466,15 +19713,18 @@ function hrApplyRim(d) {
 // jante est le NSD seul : l'ADDON dépend de l'écrou monté, pas de la jante, et
 // peut donc rester à choisir. Une jante NSD sans ADDON s'enregistre, se
 // recharge, et calc() continue de la refuser via errErd tant que l'écrou n'est
-// pas choisi — getERD() n'est volontairement pas touché.
+// pas choisi ; erdReady() n'est volontairement pas touché.
 function hrIsRimComplete() {
+  // Différentiel : les deux côtés, faute de quoi la jante enregistrée serait
+  // une demi-jante.
   if (typeof erdMode !== 'undefined' && erdMode === 'nsd') {
-    var el  = document.getElementById('nsd-val');
-    var nsd = el ? parseFloat(el.value) : NaN;
-    return !isNaN(nsd) && nsd > 0;
+    return nsdInputIds().every(function(id) {
+      var el  = document.getElementById(id);
+      var nsd = el ? parseFloat(el.value) : NaN;
+      return !isNaN(nsd) && nsd > 0;
+    });
   }
-  var erd = typeof getERD === 'function' ? getERD() : NaN;
-  return !isNaN(erd) && erd > 0;
+  return typeof erdReady === 'function' ? erdReady() : false;
 }
 
 // ── Update button states ─────────────────────────────────────────────────────
@@ -19554,7 +19804,8 @@ window.updateCalcBtn = function() {
   // cf. hrForgetHubNameStash.
   var hubCommonIds = ['nb-rayons','pcd-left','pcd-right','offset-left','offset-right'];
   var hubTypedIds  = ['diam-trou','sp-so-left','sp-so-right'];
-  var rimIds = ['erd-direct','nsd-val','ecrou-type','asym'];
+  var rimIds = ['erd-direct','nsd-val','ecrou-type','asym',
+                'erd-direct-nds','erd-direct-ds','nsd-val-nds','nsd-val-ds'];
 
   function onHubEditCommon() { if (!_hrApplying) hrForgetHubNames(); }
   function onHubEditTyped()  { if (!_hrApplying) hrClearLoadedHub(); }
