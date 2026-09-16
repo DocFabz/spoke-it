@@ -21825,8 +21825,8 @@ async function snapCompareAnim() {
   // REVEAL_B_MS est l'instant unique où B apparaît PARTOUT : date de B (alphaB
   // dans drawFrame) et récap montent ensemble, sur le même FADE_MS. Les deux
   // endroits lisent la constante — ne pas réintroduire le calcul en dur.
-  var HOLD_MS     = 1500;
-  var MORPH_MS    = 4000;  // durée réelle du morph des polygones
+  var HOLD_MS     = 1000;
+  var MORPH_MS    = 4500;  // durée réelle du morph des polygones
   var FADE_MS     = 400;   // sortie date A, entrée date B, et fondu récap
   var HOLD_END_MS = 3200;  // 3 s de lecture + marge d'1 frame à la coupure
   // Le morph démarre à la fin du hold, en même temps que la date de A
@@ -22313,7 +22313,7 @@ async function snapCompareAnim() {
                 (EXP.modest ? ' (repli appareil modeste)' : '') + ', ' + capturing +
                 ', ' + Math.round(EXP.bitrate / 1e5) / 10 + ' Mb/s visés, ' +
                 expStat.n + ' images, ' + expStat.slow + ' écart(s) > 40 ms, max ' +
-                Math.round(expStat.max) + ' ms');
+                Math.round(expStat.max) + ' ms' + (ok ? '' : ' (échec : aucune vidéo produite)'));
             } catch (e) {}
             if (saveBtn) {
               if (ok) { saveBtn.disabled = false; saveBtn.classList.add('rec-ready'); }
