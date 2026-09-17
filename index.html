@@ -69,6 +69,16 @@
 <meta property="og:image:height" content="1200">
 <meta property="og:type" content="website">
 
+<!-- Contraste : posé avant la feuille de style pour qu'aucun rendu n'ait
+     lieu dans l'autre palier. Écrivain unique de l'attribut au démarrage. -->
+<script>
+(function(){
+  try {
+    if (localStorage.getItem('spokeit_contrast') === 'haut')
+      document.documentElement.setAttribute('data-contrast', 'haut');
+  } catch (e) {}
+})();
+</script>
 
 <style>
 /* ── Polices embarquées (woff2 base64, subset latin) ─────────────────────────
@@ -134,6 +144,29 @@
   --sh:       0 4px 24px rgba(0,0,0,0.32);
 }
 
+/* ── Contraste élevé ─────────────────────────────────────────────────────
+   Un seul palier, pour l'atelier trop éclairé et les reflets. Le sol recule,
+   les bordures se dessinent, les trois niveaux de texte remontent. Les
+   accents ne bougent pas : c'est le fond qui les met en valeur, pas eux qui
+   changent : aucun des litteraux rgba d'accent de la
+   feuille n'est touche, les deux paliers restent donc toujours d'accord.
+   Spécificité (0,1,1) contre (0,1,0) pour :root : il l'emporte sans
+   !important. --text3-dim est recalculé pour garder son 4.5:1 sur --card. */
+html[data-contrast="haut"] {
+  --bg:       #0e1218;
+  --bg2:      #161c26;
+  --card:     #1d2532;
+  --card-alt: #141a25;
+  --border:   rgba(255,255,255,0.18);
+  --border-s: rgba(255,255,255,0.28);
+  --text:     #f2f6fa;
+  --text2:    #dde7f0;
+  --text3:    #a9b8c6;
+  --text3-dim:#9aabba;
+  --inp:      #0c1016;
+  --sh:       0 4px 24px rgba(0,0,0,0.45);
+}
+
 /* ── Reset ─────────────────────────────────────────────────────────────────── */
 *    { box-sizing:border-box; margin:0; padding:0 }
 html { scroll-behavior:smooth; -webkit-text-size-adjust:none; -moz-text-size-adjust:none; text-size-adjust:none }
@@ -173,13 +206,13 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 /* Liseret sous spokeit.fr : tricolore en FR, bleu accent adouci en EN (via html[lang]). translateY plutôt que margin pour ne pas déplacer .header-actions. */
 .hline        { --h1:#4f7bc4; --h2:#c9d3dc; --h3:#c9586a; width:44px; height:1px; background:linear-gradient(90deg,transparent,var(--h1) 30%,var(--h2) 50%,var(--h3) 70%,transparent); margin:1.3rem auto 0; transform:translateY(-.5rem) }
 html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
-.lang-btn     { margin-top:0; background:transparent; border:1px solid var(--border-s); border-radius:7px; color:#b8c8d8; font-family:'DM Mono',monospace; font-size:.65rem; font-weight:400; letter-spacing:.15em; padding:.28rem .9rem; cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
+.lang-btn     { margin-top:0; background:transparent; border:1px solid var(--border-s); border-radius:7px; color:var(--text2); font-family:'DM Mono',monospace; font-size:.65rem; font-weight:400; letter-spacing:.15em; padding:.28rem .9rem; cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .lang-btn:hover { border-color:var(--accent); color:var(--accent) }
 @media (hover: none) { .lang-btn:hover { border-color:var(--border-s); color:var(--text3) } }
 
 .header-actions { display:flex; align-items:center; justify-content:center; gap:.5rem; margin-top:1.1rem }
 
-.save-mgr-btn { background:transparent; border:1px solid var(--border-s); border-radius:7px; color:#b8c8d8; padding:.28rem .9rem; cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s; display:inline-flex; align-items:center; justify-content:center; line-height:1 }
+.save-mgr-btn { background:transparent; border:1px solid var(--border-s); border-radius:7px; color:var(--text2); padding:.28rem .9rem; cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s; display:inline-flex; align-items:center; justify-content:center; line-height:1 }
 .save-mgr-btn:hover { border-color:var(--accent); color:var(--accent) }
 .save-mgr-btn:disabled { opacity:.3; cursor:default; pointer-events:none }
 
@@ -588,7 +621,7 @@ input[type=number], select {
 input:focus, select:not(#tension-forte):focus { outline:none; border-color:rgba(126,200,227,.4); background:rgba(126,200,227,.025) }
 input::placeholder        { color:var(--text2); opacity:1 }
 select.placeholder        { color:var(--text2) }
-select option             { background:#161b27 }
+select option             { background:var(--inp) }
 .inp-readonly             { opacity:.55; cursor:not-allowed }
 .inp-disabled             { opacity:.35; cursor:not-allowed; pointer-events:none }
 /* En-tête du champ Notes : libellé à gauche, « + » aligné sur le bord droit de
@@ -1206,7 +1239,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-outlier-open-btn:hover { border-color:rgba(126,200,227,.5); color:var(--accent) }
 .tm-cv-select     { width:4.2rem; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); color:var(--accent); font-family:'DM Mono',monospace; font-size:.75rem; font-weight:400; padding:.28rem .4rem; padding-right:1.4rem; cursor:pointer; transition:border-color .2s; appearance:none; -webkit-appearance:none; background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 12 8%22 fill=%22none%22 stroke=%22%23596778%22 stroke-width=%221.5%22><path d=%22M1 1l5 5 5-5%22/></svg>'); background-repeat:no-repeat; background-position:right .35rem center; background-size:7px }
 .tm-cv-select:focus { outline:none; border-color:rgba(126,200,227,.4) }
-.tm-cv-select option { background:#161b27 }
+.tm-cv-select option { background:var(--inp) }
 .outlier-overlay  { position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
 .outlier-overlay.show { display:block; opacity:1 }
 .outlier-modal    { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9981; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.5rem 1.4rem 1.3rem; box-shadow:0 16px 64px rgba(0,0,0,.55); width:92%; max-width:340px; max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
@@ -2044,6 +2077,13 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
         <path d="M12 7.5c0-1.1 1.1-2 2.5-2h5a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-.5.5h-5c-1.4 0-2.5.9-2.5 2"/>
       </svg>
     </button>
+    <button class="save-mgr-btn" onclick="toggleContrast()" id="contrast-btn" type="button" aria-pressed="false" title="Contraste élevé" aria-label="Contraste élevé">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/>
+      </svg>
+    </button>
+    <button id="lang-btn" onclick="toggleLang()" class="lang-btn">EN</button>
     <button class="save-mgr-btn" onclick="openAtelierMgr()" id="atelier-mgr-btn" title="Atelier">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
@@ -2055,7 +2095,6 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
         <circle cx="12" cy="7" r="4"/>
       </svg>
     </button>
-    <button id="lang-btn" onclick="toggleLang()" class="lang-btn">EN</button>
     <button class="save-mgr-btn" onclick="openDataPicker()" id="save-mgr-btn" title="Gestion des données" aria-label="Gestion des données">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
     </button>
@@ -5170,6 +5209,7 @@ const i18n = {
     // la map id→clé d'applyLang ou au rendu — cf. delTitle/clearValuesTitle)
     hookeBtnTitle:'Courbe de Hooke',
     helpBtnTitle:'Mode d\'emploi',
+    contrastBtnOff:'Contraste élevé', contrastBtnOn:'Contraste normal',
     helpSheetTitle:'Mode d\'emploi',
     helpCloseTitle:'Fermer',
     tmInvertNdsTitle:'Inverser NDS', tmInvertDsTitle:'Inverser DS',
@@ -5443,6 +5483,7 @@ const i18n = {
     // id→key map or at render time — cf. delTitle/clearValuesTitle)
     hookeBtnTitle:'Hooke curve',
     helpBtnTitle:'User manual',
+    contrastBtnOff:'High contrast', contrastBtnOn:'Normal contrast',
     helpSheetTitle:'User manual',
     helpCloseTitle:'Close',
     tmInvertNdsTitle:'Invert NDS', tmInvertDsTitle:'Invert DS',
@@ -5659,6 +5700,7 @@ const LS_REGISTRY = [
   { key:'spokeit_hrSort',         kind:'pref',      erase:false, exportField:null,            owner:'tri des listes « Charger un moyeu / une jante »' },
   { key:'spokeit_appStamp',       kind:'meta',      erase:false, exportField:null,            owner:'toast nouvelle version (Last-Modified du document)' },
   { key:'spoke-it-lang',          kind:'pref',      erase:false, exportField:null,            owner:'i18n' },
+  { key:'spokeit_contrast',       kind:'pref',      erase:false, exportField:null,            owner:'contraste élevé (par appareil)' },
   { key:'ef_restore',             kind:'transient', erase:true,  exportField:null,            owner:'EF Vocal (reprise crash iOS)' },
 ];
 // Clés « données » précalculées pour le test à chaud dans lsSet.
@@ -6333,6 +6375,7 @@ function applyLang() {
   $id('lang-btn').textContent = lang === 'fr' ? 'EN' : 'FR';
   var bkpSn = $id('bkp-snooze'); if (bkpSn) { bkpSn.title = t('backupSnoozeTitle'); bkpSn.setAttribute('aria-label', t('backupSnoozeTitle')); }
   var pkBtn = $id('save-mgr-btn'); if (pkBtn) { pkBtn.title = t('pickerMenuBtn'); pkBtn.setAttribute('aria-label', t('pickerMenuBtn')); }
+  if (typeof contrastSync === 'function') contrastSync();
   var cfgFb = $id('cfg-fill-badge'); if (cfgFb) cfgFb.title = t('cfgFillHint');
   if (typeof helpSync === 'function') helpSync();
   // Tooltips des boutons d'icône de card (load/save/info) : title figé FR dans
@@ -9373,7 +9416,7 @@ function closeTou() {
 function openHelp() {
   var sheet = $id('help-sheet'), frame = $id('help-frame');
   if (!sheet || !frame) return;
-  var wanted = 'guide.html?lang=' + lang;
+  var wanted = guideURL();
   if (frame.getAttribute('data-src') !== wanted) {
     frame.setAttribute('data-src', wanted);
     frame.src = wanted;
@@ -9395,6 +9438,68 @@ function closeHelp(fromPop) {
   }
 }
 
+// ── Contraste élevé ─────────────────────────────────────────────────────────
+// Deux paliers, portés par html[data-contrast]. L'attribut est posé une
+// première fois par le script de pré-rendu du head ; ici on ne fait que le
+// basculer et tenir ce qui en dépend.
+function contrastOn() {
+  return document.documentElement.getAttribute('data-contrast') === 'haut';
+}
+// La barre système Android suit le fond RÉEL et non une constante : la valeur
+// est relue sur --bg après bascule, donc elle reste juste si le palier change
+// un jour de couleur. Le <meta> statique du head ne vaut que pour le premier
+// rendu, avant que cette fonction ne passe.
+function contrastSyncMeta() {
+  var m = document.querySelector('meta[name="theme-color"]');
+  if (!m) return;
+  var bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  if (bg) m.setAttribute('content', bg);
+}
+// contrastSync : écrivain unique de l'état du bouton, appelé au démarrage et
+// par applyLang (le title annonce l'action, il suit donc la langue ET l'état).
+function contrastSync() {
+  var btn = $id('contrast-btn');
+  if (btn) {
+    var on = contrastOn();
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    var key = on ? 'contrastBtnOn' : 'contrastBtnOff';
+    btn.title = t(key);
+    btn.setAttribute('aria-label', t(key));
+  }
+  contrastSyncMeta();
+}
+// Ecrivain unique de l'URL du manuel : il porte la langue ET le palier.
+// guide.html a son propre bloc html[data-contrast] et lit le parametre au
+// chargement, sinon il s'ouvrirait dans l'autre palier au milieu de l'app.
+function guideURL() {
+  return 'guide.html?lang=' + lang + (contrastOn() ? '&contrast=haut' : '');
+}
+// Manuel deja ouvert au moment d'une bascule : on le recharge dans le bon
+// palier plutot que de laisser les deux diverger. Meme schema que helpSync
+// pour la langue.
+function contrastSyncGuide() {
+  var sheet = $id('help-sheet'), frame = $id('help-frame');
+  if (!sheet || !frame || !sheet.classList.contains('show')) return;
+  var wanted = guideURL();
+  if (frame.getAttribute('data-src') !== wanted) {
+    frame.setAttribute('data-src', wanted);
+    frame.src = wanted;
+  }
+}
+function toggleContrast() {
+  var on = !contrastOn();
+  if (on) document.documentElement.setAttribute('data-contrast', 'haut');
+  else    document.documentElement.removeAttribute('data-contrast');
+  // lsSet et non setItem direct : c'est l'ecrivain maison, il porte deja le
+  // try/catch et le toast de storage plein. Cle kind:'pref', donc il ne
+  // touche pas a spokeit_lastModif : changer de palier n'est pas une
+  // modification de donnees et ne doit pas armer le rappel de sauvegarde.
+  lsSet('spokeit_contrast', on ? 'haut' : 'normal');
+  contrastSync();
+  contrastSyncGuide();
+}
+contrastSync();
+
 // helpSync : écrivain unique des libellés du bouton et du panneau, appelé au
 // démarrage et par applyLang.
 (function() {
@@ -9412,7 +9517,7 @@ function closeHelp(fromPop) {
     // manuel dans la nouvelle langue plutôt que de laisser les deux diverger.
     var sheet = $id('help-sheet'), frame = $id('help-frame');
     if (sheet && frame && sheet.classList.contains('show')) {
-      var wanted = 'guide.html?lang=' + lang;
+      var wanted = guideURL();
       if (frame.getAttribute('data-src') !== wanted) {
         frame.setAttribute('data-src', wanted);
         frame.src = wanted;
@@ -16933,7 +17038,7 @@ function efSetBtMode(val) {
     btBtn.style.background  = 'rgba(126,200,227,.08)';
   } else {
     btBtn.style.color       = 'var(--text3)';
-    btBtn.style.borderColor = 'rgba(255,255,255,0.07)';
+    btBtn.style.borderColor = 'var(--border)';
     btBtn.style.background  = 'none';
   }
 }
@@ -16993,7 +17098,7 @@ function efUpdateDiagBtn() {
     btn.style.background  = 'rgba(126,200,227,.08)';
   } else {
     btn.style.color       = 'var(--text3)';
-    btn.style.borderColor = 'rgba(255,255,255,0.07)';
+    btn.style.borderColor = 'var(--border)';
     btn.style.background  = 'none';
   }
   btn.title = efDiagMode ? (L === 'fr' ? 'Masquer le diagramme' : 'Hide diagram')
@@ -17596,7 +17701,7 @@ function efSetMicActive(val) {
     btn.classList.add('blink');
   } else {
     btn.style.color       = 'var(--text3)';
-    btn.style.borderColor = 'rgba(255,255,255,0.07)';
+    btn.style.borderColor = 'var(--border)';
     btn.style.background  = 'none';
     btn.classList.remove('blink');
   }
