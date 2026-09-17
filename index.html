@@ -18450,6 +18450,24 @@ function efSpeak(text) {
 // rien à la place du suivant. iOS + mode vocal uniquement : le mode bip et
 // les autres plateformes ne passent jamais ici.
 var efIosTtsSeq = 0;
+// Mode silencieux : micro coupé, iOS range l'annonce dans la session par
+// défaut et la rend muette (les bips, joués micro ouvert, y échappent).
+// Session « playback » le temps de l'annonce (Safari 16.4+), puis retour au
+// type d'origine AVANT de relancer la reco, qui a besoin de l'enregistrement.
+var efIosSessPrev = null;
+function efIosPlayback(on) {
+  try {
+    var as = navigator.audioSession;
+    if (!as) return;
+    if (on) {
+      if (efIosSessPrev === null) efIosSessPrev = as.type || 'auto';
+      as.type = 'playback';
+    } else if (efIosSessPrev !== null) {
+      as.type = efIosSessPrev;
+      efIosSessPrev = null;
+    }
+  } catch(e) {}
+}
 function efSpeakIOS(text) {
   var synth = window.speechSynthesis;
   var seq = ++efIosTtsSeq;
@@ -18471,6 +18489,7 @@ function efSpeakIOS(text) {
       efTtsTail = null;
       setTimeout(function() { efTtsLastSpoken = ''; efTtsSpokenNum = null; }, 250);
     }, EF_TTS_TAIL_MS);
+    efIosPlayback(false); // avant la relance : la reco doit retrouver l'enregistrement
     resume(); // la latence de démarrage iOS s'ajoute au tail : pas d'écho capté
   };
   var speakNow = function() {
@@ -18499,9 +18518,11 @@ function efSpeakIOS(text) {
         closeWindow();
       }, 1500);
       efTtsGuard = setTimeout(function() { efTtsGuard = null; closeWindow(); }, 5000);
+      efIosPlayback(true);
       synth.speak(u);
     } catch(e) {
       efTtsSpeaking = false;
+      efIosPlayback(false);
       efBeep();
       resume();
     }
@@ -18747,6 +18768,7 @@ function efStopMic() {
   if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
   // Couper toute synthèse en cours et refermer la fenêtre sourde
   try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch(e) {}
+  efIosPlayback(false); // no-op hors annonce iOS
   if (efTtsTail)  { clearTimeout(efTtsTail);  efTtsTail  = null; }
   if (efTtsGuard) { clearTimeout(efTtsGuard); efTtsGuard = null; }
   efTtsSpeaking   = false;
