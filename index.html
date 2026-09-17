@@ -739,13 +739,30 @@ select option             { background:var(--inp) }
 .f > .erd-pair-chips { margin-top:0 }
 .erd-pair-chips .diff-side-label { width:auto; text-align:center }
 .erd-pair-chips .diff-side-label .dsl-w { display:inline; margin-left:.3em }
+/* ADDON glissé sous la paire NSD par erdAddonPlace() : champ unique, mais calé
+   sur la colonne NDS plutôt qu'étiré sur les deux — même demi-largeur et même
+   gouttière que .erd-pair, dont il reprend le calcul (1rem d'écart partagé en
+   deux). Le libellé, lui, garde toute la largeur : il n'a aucune colonne à
+   respecter et s'épargne un repli de ligne sur téléphone. */
+#erd-diff-nsd > #erd-addon-field > select { width:calc(50% - .5rem) }
+/* Cale d'alignement sous ADDON. Le champ ne porte pas de puces NDS/DS — un
+   seul écrou pour les deux côtés — mais sans elles l'ERD calculé remonte d'une
+   ligne et le bloc perd son rythme : la paire NSD occupe champ + puces, ADDON
+   le seul champ. La cale porte les classes des puces, donc leur hauteur exacte
+   (jamais recopiée en dur) et l'écart de .f au-dessus ; elle n'existe que
+   lorsque erdAddonPlace() a posé le champ sous la paire NSD. La mise hors
+   service passe par .erd-pair.addon-chip-gap et non par la seule classe : elle
+   l'emporte sur .erd-pair par la spécificité, pas par l'ordre des règles. */
+.erd-pair.addon-chip-gap { display:none }
+#erd-diff-nsd > #erd-addon-field > .addon-chip-gap { display:flex }
 /* En différentiel, la colonne gauche de la grille (champs simples) sort, et la
    colonne droite se dissout dans la grille jusqu'aux libellés et champs :
-   ADDON et ASYM. JANTE passent côte à côte (NSD), ou ASYM. JANTE seul à
-   gauche (direct). Placement explicite sur trois rangées (libellé, champ,
-   avertissement) : un libellé qui passe sur deux lignes (« ASYM. JANTE (MM) »
-   sur téléphone) agrandit la rangée des libellés, pas sa seule cellule : les
-   deux champs restent alignés, et chaque libellé se cale sur le sien.
+   ASYM. JANTE reste seul, à gauche, dans les deux modes — en NSD, ADDON a
+   rejoint le bloc ERD différentiel, sous la paire NSD (erdAddonPlace).
+   Placement explicite sur trois rangées (libellé, champ, avertissement) : un
+   libellé qui passe sur deux lignes (« ASYM. JANTE (MM) » sur téléphone)
+   agrandit la rangée des libellés, pas sa seule cellule : les champs restent
+   alignés, et chaque libellé se cale sur le sien.
    row-gap reprend l'écart libellé/champ de .f, que display:contents efface. */
 #card-rim.erd-diff-on .g2 { row-gap:.35rem }
 #card-rim.erd-diff-on #rim-col-erd  { display:none }
@@ -754,7 +771,6 @@ select option             { background:var(--inp) }
 #card-rim.erd-diff-on #rim-col-side > .f > *            { grid-column:1; grid-row:2 }
 #card-rim.erd-diff-on #rim-col-side > .f > label        { grid-row:1; align-self:end }
 #card-rim.erd-diff-on #rim-col-side > .f > .inline-warn { grid-row:3 }
-#card-rim.erd-diff-on.erd-nsd #rim-asym-field > *       { grid-column:2 }
 /* Ligne des modes : le toggle reste sur la ligne des pastilles, calé à
    droite, et fitErdDiffLabel() raccourcit son libellé par paliers quand la
    place manque (« Wave différentiel », « Wave diff. », « Wave »). Sa base
@@ -2762,7 +2778,9 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <!-- ERD différentiel (jante wave) : un ERD par côté. Colonnes physiques,
          NDS à gauche, DS à droite, jamais permutées ; la teinte des puces suit
          la rangée (updateDiffSideLabels, écrivain unique). ADDON reste unique :
-         il dépend de l'écrou, pas du côté. -->
+         il dépend de l'écrou, pas du côté. En NSD, erdAddonPlace() le glisse
+         ici entre la paire NSD et l'ERD calculé, calé sur la colonne NDS et
+         suivi d'une cale à la hauteur d'une rangée de puces. -->
     <div id="erd-diff" class="erd-diff" style="display:none">
       <div class="erd-diff-groups">
         <div class="f" id="erd-diff-direct">
@@ -2784,7 +2802,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
               <span class="diff-side-label diff-side-fa erd-chip-ds" id="erd-diff-chip-nsd-ds">DS</span>
             </div>
           </div>
-          <div class="f">
+          <div class="f" id="erd-diff-result">
             <div class="fld-label" id="erd-diff-result-label" data-i18n="erdCalc">ERD calculé (mm)</div>
             <div class="erd-pair">
               <input type="number" id="erd-nsd-result-nds" readonly tabindex="-1" class="inp-readonly" aria-labelledby="erd-diff-result-label erd-diff-chip-nds">
@@ -2820,7 +2838,9 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         </div>
       </div>
 
-      <!-- Colonne droite : ADDON + ASYM. JANTE (dissoute dans la grille en différentiel) -->
+      <!-- Colonne droite : ADDON (maison d'origine ; erdAddonPlace() l'emmène
+           sous la paire NSD en Wave + NSD) + ASYM. JANTE. Dissoute dans la
+           grille en différentiel. -->
       <div class="f" id="rim-col-side">
         <!-- ADDON (mode NSD) -->
         <div id="erd-addon-field" style="display:none" class="f">
@@ -2841,6 +2861,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
             <option value="3.4">3.4</option><option value="3.5">3.5</option>
             <option value="3.6">3.6</option>
           </select>
+          <div class="erd-pair erd-pair-chips addon-chip-gap" aria-hidden="true"><span class="diff-side-label">&nbsp;</span></div>
         </div>
         <!-- ASYM. JANTE -->
         <div class="f" id="rim-asym-field">
@@ -6258,10 +6279,25 @@ function syncErdUI() {
   $id('erd-nsd-result-field').style.display = nsd    ? '' : 'none';
   $id('erd-diff-toggle').setAttribute('aria-checked', erdDiff ? 'true' : 'false');
   $id('card-rim').classList.toggle('erd-diff-on', erdDiff);
-  $id('card-rim').classList.toggle('erd-nsd', nsd);
   $id('erd-diff').style.display        = erdDiff ? '' : 'none';
   $id('erd-diff-direct').style.display = direct  ? '' : 'none';
   $id('erd-diff-nsd').style.display    = nsd     ? '' : 'none';
+  erdAddonPlace(erdDiff && nsd);
+}
+
+// ADDON est un champ unique : il dépend de l'écrou, pas du côté. En Wave + NSD
+// il se range SOUS la paire NSD, avant l'ERD calculé — on choisit l'écrou puis
+// on lit le résultat, au lieu d'aller chercher l'écrou après le résultat.
+// Ailleurs il reprend sa place d'origine, en colonne droite au-dessus d'ASYM.
+// JANTE. Un seul nœud, déplacé et jamais dupliqué : #ecrou-type garde sa
+// valeur, ses écouteurs et son id, et l'ordre de tabulation suit l'ordre de
+// lecture. Appelé par syncErdUI() seul, qui reste l'écrivain unique de la card.
+function erdAddonPlace(underNsdPair) {
+  const f = $id('erd-addon-field');
+  const anchor = $id(underNsdPair ? 'erd-diff-result' : 'rim-asym-field');
+  // Déjà juste au-dessus de son ancre : ne rien toucher (un insertBefore
+  // inutile ferait perdre le focus au select ouvert).
+  if (f.nextElementSibling !== anchor) anchor.parentNode.insertBefore(f, anchor);
 }
 
 // Libellé du toggle Wave différentiel : le plus long palier qui tient dans la
