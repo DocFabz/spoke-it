@@ -18478,7 +18478,7 @@ function efSpeakIOS(text) {
     try {
       var u = new SpeechSynthesisUtterance(String(text));
       u.lang = efSpeechLang();
-      var efRateByLang = { en:0.92, fr:1.18 };
+      var efRateByLang = { en:0.92, fr:1.18 }; // même table que efSpeak : garder synchronisées
       u.rate = efRateByLang[(u.lang || '').toLowerCase().split(/[-_]/)[0]] || 1.05;
       var v = efPickVoice(u.lang);
       if (v) u.voice = v;
@@ -18522,6 +18522,10 @@ function efSpeakIOS(text) {
   var r = efMicRecog;
   if (r && efMicActive) {
     efMicRecog = null; // onend(r) : plus la courante → pas de relance iOS automatique
+    // Micro coupé pendant l'arrêt (efStopMic ne voit plus r) : ignorer le final
+    // tardif, sinon il s'afficherait dans le champ d'une saisie terminée.
+    var rResult = r.onresult;
+    r.onresult = function(e) { if (efMicActive) rResult.call(this, e); };
     var stopCap = setTimeout(function() { if (!efMicRecog) say(); }, 600);
     r.onend = function() { clearTimeout(stopCap); if (!efMicRecog) say(); };
     try { r.stop(); }
