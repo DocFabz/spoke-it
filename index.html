@@ -206,9 +206,6 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 /* Liseret sous spokeit.fr : tricolore en FR, bleu accent adouci en EN (via html[lang]). translateY plutôt que margin pour ne pas déplacer .header-actions. */
 .hline        { --h1:#4f7bc4; --h2:#c9d3dc; --h3:#c9586a; width:44px; height:1px; background:linear-gradient(90deg,transparent,var(--h1) 30%,var(--h2) 50%,var(--h3) 70%,transparent); margin:1.3rem auto 0; transform:translateY(-.5rem) }
 html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
-.lang-btn     { margin-top:0; background:transparent; border:1px solid var(--border-s); border-radius:7px; color:var(--text2); font-family:'DM Mono',monospace; font-size:.65rem; font-weight:400; letter-spacing:.15em; padding:.28rem .9rem; cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
-.lang-btn:hover { border-color:var(--accent); color:var(--accent) }
-@media (hover: none) { .lang-btn:hover { border-color:var(--border-s); color:var(--text2) } }
 
 .header-actions { display:flex; align-items:center; justify-content:center; gap:.5rem; margin-top:1.1rem }
 
@@ -536,8 +533,8 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 /* Les deux chooseurs à boutons empilés (Rider, et « Données » ouvert par la
    disquette) partagent .ridermgr-chooser et ces règles de bouton. Le bouton
    « Affecter roues » de la modale Rider les reprend : icône + libellé. */
-#riderchoose-modal .ct-save-btn, #datapicker-modal .ct-save-btn, #rideredit-modal .rider-assign-btn { display:flex; align-items:center; justify-content:center; gap:.5rem }
-#riderchoose-modal .ct-save-btn svg, #datapicker-modal .ct-save-btn svg, #rideredit-modal .rider-assign-btn svg { flex-shrink:0; opacity:.85 }
+#riderchoose-modal .ct-save-btn, #datapicker-modal .ct-save-btn, #reglages-modal .ct-save-btn, #rideredit-modal .rider-assign-btn { display:flex; align-items:center; justify-content:center; gap:.5rem }
+#riderchoose-modal .ct-save-btn svg, #datapicker-modal .ct-save-btn svg, #reglages-modal .ct-save-btn svg, #rideredit-modal .rider-assign-btn svg { flex-shrink:0; opacity:.85 }
 .rider-wheels-list { max-height:30vh; max-height:30dvh }
 .rider-wheels-list .wheel-load-empty { padding:.3rem }
 /* Roue en attente dans « Roues affectées » (choisie via « Affecter roues »,
@@ -1815,6 +1812,11 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ct-close:hover { border-color:rgba(232,146,124,.6); color:var(--warm) }
 .ct-save-btn { width:100%; padding:.7rem 1rem; background:transparent; border:1px solid rgba(126,200,227,.3); border-radius:var(--rs); color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.8rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:background .25s, border-color .25s, color .25s, opacity .25s, transform .25s, box-shadow .25s; margin-top:.1rem }
 .ct-save-btn:hover { border-color:rgba(126,200,227,.65); background:rgba(126,200,227,.06) }
+/* Valeur courante d'une ligne de la modale Réglages : le libellé dit quoi,
+   elle dit dans quel état. Poussée à droite par sa marge automatique. */
+.reglages-val { font-family:'DM Mono',monospace; font-size:.68rem; font-weight:400;
+  letter-spacing:.04em; text-transform:none; color:var(--accent); margin-left:auto;
+  padding-left:.6rem; flex-shrink:0 }
 .ct-feedback { font-size:.66rem; color:#f08080; min-height:.9rem; font-style:italic; margin-top:.3rem }
 .ct-list    { display:flex; flex-direction:column; gap:.35rem }
 .ct-item    { display:flex; align-items:center; gap:.5rem; padding:.5rem .9rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); font-size:.75rem; transition:border-color .2s }
@@ -1910,14 +1912,14 @@ button, [onclick], input, select, label { -webkit-tap-highlight-color: transpare
 
 /* 6. Zone tactile élargie à ~44 px effectifs sur les petits boutons,
       sans aucun impact sur le layout (pseudo-élément invisible) */
-.save-mgr-btn, .lang-btn, .card-icon-btn, .ef-bt-btn, .ateliermgr-clear, .tou-link,
+.save-mgr-btn, .card-icon-btn, .ef-bt-btn, .ateliermgr-clear, .tou-link,
 [class*="-close"] { position: relative }
-.save-mgr-btn::after, .lang-btn::after, .card-icon-btn::after, .ef-bt-btn::after, .ateliermgr-clear::after, .tou-link::after,
+.save-mgr-btn::after, .card-icon-btn::after, .ef-bt-btn::after, .ateliermgr-clear::after, .tou-link::after,
 [class*="-close"]::after { content:''; position:absolute; inset:-8px }
 
 /* 7. Retour tactile au press (mobile uniquement) */
 @media (hover: none) {
-  .save-mgr-btn:active, .lang-btn:active, .card-icon-btn:active, .ef-bt-btn:active,
+  .save-mgr-btn:active, .card-icon-btn:active, .ef-bt-btn:active,
   .ateliermgr-clear:active, [class*="-close"]:active {
     transform: scale(.92);
     transition: transform .08s;
@@ -2071,20 +2073,14 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
   </div>
   <div class="hline"></div>
   <div class="header-actions">
-    <button class="save-mgr-btn" onclick="openHelp()" id="help-btn" title="Mode d'emploi" aria-label="Mode d'emploi">
+    <button class="save-mgr-btn" onclick="openReglages()" id="reglages-btn" type="button" title="Réglages" aria-label="Réglages">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 7.5v11"/>
-        <path d="M12 7.5C12 6.4 10.9 5.5 9.5 5.5H4.5A.5.5 0 0 0 4 6v10a.5.5 0 0 0 .5.5h5c1.4 0 2.5.9 2.5 2"/>
-        <path d="M12 7.5c0-1.1 1.1-2 2.5-2h5a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-.5.5h-5c-1.4 0-2.5.9-2.5 2"/>
+        <line x1="4" y1="8" x2="20" y2="8"/>
+        <line x1="4" y1="16" x2="20" y2="16"/>
+        <circle cx="15" cy="8" r="2.4"/>
+        <circle cx="9" cy="16" r="2.4"/>
       </svg>
     </button>
-    <button class="save-mgr-btn" onclick="toggleContrast()" id="contrast-btn" type="button" aria-pressed="false" title="Contraste élevé" aria-label="Contraste élevé">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="9"/>
-        <path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/>
-      </svg>
-    </button>
-    <button id="lang-btn" onclick="toggleLang()" class="lang-btn">EN</button>
     <button class="save-mgr-btn" onclick="openAtelierMgr()" id="atelier-mgr-btn" title="Atelier">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
@@ -2198,6 +2194,37 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
   <button class="ct-save-btn" onclick="closeDataPicker();openEraseMgr()">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
     <span data-i18n="pickerDataMgr">Data manager</span>
+  </button>
+</div>
+
+<!-- ── Modale Réglages ── -->
+<div class="ateliermgr-overlay" id="reglages-overlay" onclick="closeReglages()"></div>
+<div class="ateliermgr-modal ridermgr-chooser" id="reglages-modal" style="max-width:300px" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="reglages-title">
+  <div class="ateliermgr-header">
+    <span class="ateliermgr-header-left">
+      <svg class="ateliermgr-title-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="8" x2="20" y2="8"/>
+        <line x1="4" y1="16" x2="20" y2="16"/>
+        <circle cx="15" cy="8" r="2.4"/>
+        <circle cx="9" cy="16" r="2.4"/>
+      </svg>
+      <span class="ateliermgr-title" id="reglages-title" data-i18n="reglagesBtnTitle">Réglages</span>
+    </span>
+    <button class="ateliermgr-close" onclick="closeReglages()" aria-label="Fermer">&#x2715;</button>
+  </div>
+  <button class="ct-save-btn" id="help-btn" type="button" onclick="closeReglages();openHelp()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 7.5v11"/><path d="M12 7.5C12 6.4 10.9 5.5 9.5 5.5H4.5A.5.5 0 0 0 4 6v10a.5.5 0 0 0 .5.5h5c1.4 0 2.5.9 2.5 2"/><path d="M12 7.5c0-1.1 1.1-2 2.5-2h5a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-.5.5h-5c-1.4 0-2.5.9-2.5 2"/></svg>
+    <span data-i18n="helpBtnTitle">Mode d'emploi</span>
+  </button>
+  <button class="ct-save-btn" id="contrast-btn" type="button" aria-pressed="false" onclick="closeReglages();toggleContrast()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>
+    <span data-i18n="contrastLabel">Contraste</span>
+    <span class="reglages-val" id="contrast-val">Normal</span>
+  </button>
+  <button class="ct-save-btn" id="reglages-lang" type="button" onclick="closeReglages();toggleLang()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/></svg>
+    <span data-i18n="langLabel">Langue</span>
+    <span class="reglages-val" id="lang-btn">FR</span>
   </button>
 </div>
 
@@ -5211,6 +5238,8 @@ const i18n = {
     hookeBtnTitle:'Courbe de Hooke',
     helpBtnTitle:'Mode d\'emploi',
     contrastBtnOff:'Contraste élevé', contrastBtnOn:'Contraste normal',
+    contrastLabel:'Contraste', contrastValNormal:'Normal', contrastValHaut:'Élevé',
+    langLabel:'Langue', reglagesBtnTitle:'Réglages',
     helpSheetTitle:'Mode d\'emploi',
     helpCloseTitle:'Fermer',
     tmInvertNdsTitle:'Inverser NDS', tmInvertDsTitle:'Inverser DS',
@@ -5485,6 +5514,8 @@ const i18n = {
     hookeBtnTitle:'Hooke curve',
     helpBtnTitle:'User manual',
     contrastBtnOff:'High contrast', contrastBtnOn:'Normal contrast',
+    contrastLabel:'Contrast', contrastValNormal:'Normal', contrastValHaut:'High',
+    langLabel:'Language', reglagesBtnTitle:'Settings',
     helpSheetTitle:'User manual',
     helpCloseTitle:'Close',
     tmInvertNdsTitle:'Invert NDS', tmInvertDsTitle:'Invert DS',
@@ -6373,9 +6404,12 @@ function applyLang() {
   updateCrossGeomWarn();
   reorderTensionFields(wtype); // réapplique les bons labels DS/NDS après la retraduction
   onTension();                 // met à jour tension-help-text en dernier
-  $id('lang-btn').textContent = lang === 'fr' ? 'EN' : 'FR';
+  // Valeur COURANTE et non cible : la ligne se lit « Langue · FR ».
+  $id('lang-btn').textContent = lang === 'fr' ? 'FR' : 'EN';
   var bkpSn = $id('bkp-snooze'); if (bkpSn) { bkpSn.title = t('backupSnoozeTitle'); bkpSn.setAttribute('aria-label', t('backupSnoozeTitle')); }
   var pkBtn = $id('save-mgr-btn'); if (pkBtn) { pkBtn.title = t('pickerMenuBtn'); pkBtn.setAttribute('aria-label', t('pickerMenuBtn')); }
+  var rgBtn = $id('reglages-btn');
+  if (rgBtn) { rgBtn.title = t('reglagesBtnTitle'); rgBtn.setAttribute('aria-label', t('reglagesBtnTitle')); }
   if (typeof contrastSync === 'function') contrastSync();
   var cfgFb = $id('cfg-fill-badge'); if (cfgFb) cfgFb.title = t('cfgFillHint');
   if (typeof helpSync === 'function') helpSync();
@@ -9439,6 +9473,22 @@ function closeHelp(fromPop) {
   }
 }
 
+// ── Modale Réglages ─────────────────────────────────────────────────────────
+// Calquée sur openDataPicker / closeDataPicker, au mot près : même paire
+// voile + boîte, même blur en sortie pour qu'iOS ne laisse pas le bouton
+// marqué. Chaque ligne referme avant d'agir, pour que le résultat soit
+// visible au lieu d'être caché par la modale.
+function openReglages() {
+  $id('reglages-overlay').classList.add('show');
+  $id('reglages-modal').classList.add('show');
+}
+function closeReglages() {
+  $id('reglages-overlay').classList.remove('show');
+  $id('reglages-modal').classList.remove('show');
+  if (document.activeElement && document.activeElement !== document.body)
+    document.activeElement.blur();
+}
+
 // ── Contraste élevé ─────────────────────────────────────────────────────────
 // Deux paliers, portés par html[data-contrast]. L'attribut est posé une
 // première fois par le script de pré-rendu du head ; ici on ne fait que le
@@ -9459,14 +9509,15 @@ function contrastSyncMeta() {
 // contrastSync : écrivain unique de l'état du bouton, appelé au démarrage et
 // par applyLang (le title annonce l'action, il suit donc la langue ET l'état).
 function contrastSync() {
+  var on = contrastOn();
   var btn = $id('contrast-btn');
   if (btn) {
-    var on = contrastOn();
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    var key = on ? 'contrastBtnOn' : 'contrastBtnOff';
-    btn.title = t(key);
-    btn.setAttribute('aria-label', t(key));
+    // l'aria-label annonce l'ACTION, le texte visible l'ETAT
+    btn.setAttribute('aria-label', t(on ? 'contrastBtnOn' : 'contrastBtnOff'));
   }
+  var val = $id('contrast-val');
+  if (val) val.textContent = t(on ? 'contrastValHaut' : 'contrastValNormal');
   contrastSyncMeta();
 }
 // Ecrivain unique de l'URL du manuel : il porte la langue ET le palier.
@@ -13356,6 +13407,9 @@ document.addEventListener('keydown', function(e) {
   }
   if (e.key === 'Escape' && $id('datapicker-modal') && $id('datapicker-modal').classList.contains('show')) {
     closeDataPicker();
+  }
+  if (e.key === 'Escape' && $id('reglages-modal') && $id('reglages-modal').classList.contains('show')) {
+    closeReglages();
   }
   if (e.key === 'Escape' && $id('ef-mic-lang-modal') && $id('ef-mic-lang-modal').classList.contains('show')) {
     efCloseMicLangModal();
