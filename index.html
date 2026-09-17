@@ -18290,6 +18290,12 @@ function efStartMic(forceLang) {
       efStartMic('en-US');
       return;
     }
+    // iOS mode vocal : capture interrompue PENDANT la synthèse = transitoire,
+    // onend relance (sinon le micro était coupé et le bouton masqué).
+    if (e.error === 'audio-capture' && efIsIOS() && efTtsMode && efTtsSpeaking) {
+      efRestartCount = 0;
+      return;
+    }
     if (e.error === 'not-allowed' ||
         e.error === 'service-not-allowed' ||
         e.error === 'language-not-supported' ||
@@ -18389,7 +18395,7 @@ function efStartMic(forceLang) {
 // après onend). onresult avale tout pendant cette fenêtre (gate en tête).
 function efSpeak(text) {
   if (!('speechSynthesis' in window)) { efBeep(); return; }
-  if (efIsIOS()) { efSpeakIOS(text); return; } // alternat reco/synthèse, voir plus bas
+  if (efIsIOS()) { efSpeakIOS(text); return; } // cohabitation protégée iOS, voir plus bas
   var synth = window.speechSynthesis;
   // FILET voix : au tout premier énoncé (surtout desktop), getVoices() peut
   // être encore vide → parler dans le vide donnerait un énoncé muet. On diffère
@@ -18436,32 +18442,23 @@ function efSpeak(text) {
   } catch(e) { efTtsSpeaking = false; efBeep(); }
 }
 
-// ── Retour vocal iOS : alternat reco / synthèse ─────────────────────────────
-// WebKit iOS fait mal cohabiter SpeechRecognition et speechSynthesis (session
-// audio partagée) : énoncé avalé micro ouvert, capture coupée par la synthèse,
-// reco qui ne repart plus. La fenêtre sourde jetant déjà tout pendant la
-// synthèse, couper la reco le temps de parler ne retire aucune écoute :
-//   stop() (le final de la valeur peut encore arriver) → onend → speak()
-//   → onend/onerror de l'énoncé → efStartMic() (instance fraîche, comme les
-//   relances onend iOS habituelles).
-// Filets : plafond 600 ms sur l'arrêt de la reco, repli bip + reprise si
-// l'énoncé ne démarre pas sous 1,5 s, plafond 5 s existant. Chaque énoncé
-// porte un numéro (efIosTtsSeq) : un énoncé annulé ne referme ni ne relance
-// rien à la place du suivant. iOS + mode vocal uniquement : le mode bip et
-// les autres plateformes ne passent jamais ici.
+// ── Retour vocal iOS : cohabitation protégée reco / synthèse ────────────────
+// La reco continue pendant la synthèse (indicateur micro stable ; la fenêtre
+// sourde avale l'écho). Protections, iOS + mode vocal uniquement :
+// - speak() jamais dans le même tick qu'un cancel() : Safari 27 a modifié la
+//   gestion de la file de synthèse ;
+// - repli bip si l'énoncé ne démarre pas sous 1,5 s ;
+// - contrôle de santé 1,2 s après chaque énoncé : relance si plus d'instance ;
+// - onerror : audio-capture pendant la synthèse traité comme transitoire ;
+// - efStartMic : filet 300 ms sur resume() d'AudioContext hors geste.
+// Chaque énoncé porte un numéro (efIosTtsSeq) : un énoncé annulé ne referme
+// rien à la place du suivant.
 var efIosTtsSeq = 0;
 function efSpeakIOS(text) {
   var synth = window.speechSynthesis;
   var seq = ++efIosTtsSeq;
   if (efTtsTail)  { clearTimeout(efTtsTail);  efTtsTail  = null; }
   if (efTtsGuard) { clearTimeout(efTtsGuard); efTtsGuard = null; }
-  var resumed = false;
-  var resume = function() {
-    if (resumed) return;
-    resumed = true;
-    if (!efMicActive || efMicRecog) return; // micro coupé, ou reco déjà relancée
-    try { efStartMic(); } catch(e) {}
-  };
   var closeWindow = function() {
     if (seq !== efIosTtsSeq) return; // énoncé remplacé : le suivant gère
     if (efTtsGuard) { clearTimeout(efTtsGuard); efTtsGuard = null; }
@@ -18471,7 +18468,10 @@ function efSpeakIOS(text) {
       efTtsTail = null;
       setTimeout(function() { efTtsLastSpoken = ''; efTtsSpokenNum = null; }, 250);
     }, EF_TTS_TAIL_MS);
-    resume(); // la latence de démarrage iOS s'ajoute au tail : pas d'écho capté
+    setTimeout(function() {
+      if (seq !== efIosTtsSeq || !efMicActive || efMicRecog) return;
+      try { efStartMic(); } catch(e) {}
+    }, 1200);
   };
   var speakNow = function() {
     if (seq !== efIosTtsSeq || !efMicActive) return;
@@ -18482,18 +18482,11 @@ function efSpeakIOS(text) {
       u.rate = efRateByLang[(u.lang || '').toLowerCase().split(/[-_]/)[0]] || 1.05;
       var v = efPickVoice(u.lang);
       if (v) u.voice = v;
-      // Gardes anti-écho posées au moment de parler seulement : le final de la
-      // valeur, livré par stop() juste avant, doit encore passer (correction).
-      efTtsLastSpoken = efNormEcho(text);
-      var mnum = String(text).match(/-?\d+(?:[.,]\d+)?/);
-      efTtsSpokenNum = mnum ? mnum[0].replace(',', '.') : null;
-      efTtsSpeaking = true;
       var started = false;
       u.onstart = function() { started = true; };
       u.onend = u.onerror = closeWindow;
       setTimeout(function() {
         if (started || seq !== efIosTtsSeq) return;
-        // Énoncé avalé : bip de repli, l'écoute repart quand même.
         try { synth.cancel(); } catch(e) {}
         efBeep();
         closeWindow();
@@ -18503,35 +18496,17 @@ function efSpeakIOS(text) {
     } catch(e) {
       efTtsSpeaking = false;
       efBeep();
-      resume();
     }
   };
-  var said = false;
-  var say = function() {
-    if (said) return;
-    said = true;
-    // speak() dans le même tick qu'un cancel() est parfois ignoré par iOS
-    // (énoncé de déverrouillage resté en file, par exemple) : décaler.
-    if (synth.speaking || synth.pending) {
-      try { synth.cancel(); } catch(e) {}
-      setTimeout(speakNow, 60);
-    } else {
-      speakNow();
-    }
-  };
-  var r = efMicRecog;
-  if (r && efMicActive) {
-    efMicRecog = null; // onend(r) : plus la courante → pas de relance iOS automatique
-    var stopCap = setTimeout(function() { if (!efMicRecog) say(); }, 600);
-    r.onend = function() { clearTimeout(stopCap); if (!efMicRecog) say(); };
-    try { r.stop(); }
-    catch(e) {
-      clearTimeout(stopCap);
-      try { r.abort(); } catch(e2) {}
-      say();
-    }
+  efTtsLastSpoken = efNormEcho(text);
+  var mnum = String(text).match(/-?\d+(?:[.,]\d+)?/);
+  efTtsSpokenNum = mnum ? mnum[0].replace(',', '.') : null;
+  efTtsSpeaking = true; // ouvrir la fenêtre sourde
+  if (synth.speaking || synth.pending) {
+    try { synth.cancel(); } catch(e) {}
+    setTimeout(speakNow, 60);
   } else {
-    say();
+    speakNow();
   }
 }
 
