@@ -227,7 +227,7 @@ html[data-contrast="haut"] {
 }
 
 /* ── Fond ────────────────────────────────────────────────────────────────
-   Six sols, portés par html[data-fond]. L'attribut est posé une première
+   Quatre sols, portés par html[data-fond]. L'attribut est posé une première
    fois par le script de pré-rendu du head ; ici on ne fait que décrire les
    paliers. L'ardoise n'a pas de bloc : c'est l'absence d'attribut, donc le
    :root d'origine, donc zéro risque de régression sur le thème historique.
@@ -235,7 +235,7 @@ html[data-contrast="haut"] {
    Deux familles, deux portées :
    - sombre (carbone) ne réécrit QUE le sol, --bg et son
      palier --bg2. Les surfaces, les textes et les accents ne bougent pas.
-   - claire (papier) réécrit tout le jeu : le sol passe au-dessus des
+   - claire (papier, alu) réécrit tout le jeu : le sol passe au-dessus des
      surfaces, les bordures passent du blanc au noir translucide, les trois
      niveaux de texte s'inversent et les accents descendent pour tenir 4,5:1.
      Les RELATIONS, elles, sont identiques dans les deux familles : la carte
@@ -298,6 +298,59 @@ html[data-fond="papier"] {
   --sh-lift:  0 14px 48px rgba(54,44,28,0.20);
 }
 
+/* Famille claire, variante froide : le jeu complet, calé sur les gris de
+   système d'iOS et de macOS. Même structure que le papier, seule la
+   température change : le sol passe du beige au gris bleuté, la carte au
+   blanc pur, l'encre à un quasi noir neutre, l'accent du bleu canard au bleu
+   système. Les RELATIONS, elles, sont les mêmes que partout ailleurs : la
+   carte reste plus claire que le sol, le champ plus sombre que la carte,
+   --bg2 plus clair que --bg.
+   Les ombres sont plus larges et plus douces que sur le papier : c'est la
+   signature de cette famille, une ombre qui POSE la surface au lieu de la
+   cerner. Les accents descendent assez pour tenir 4,5:1 sur la carte comme
+   sur le sol (bleu 5,7:1, corail 5,1:1, vert 5,4:1 sur --card). */
+html[data-fond="alu"] {
+  /* Drapeau de famille, lu par fondClair() côté JS. */
+  --fond-clair: 1;
+  --ink-rgb: 28,28,30;
+  --tip-bg: #2c2c2e;
+  --tip-text: #ebebf0;
+  --text-strong: var(--text);
+  --scrim-1: rgba(24,26,32,.28);
+  --scrim-2: rgba(24,26,32,.32);
+  --scrim-3: rgba(24,26,32,.36);
+  --scrim-4: rgba(24,26,32,.40);
+  --scrim-5: rgba(24,26,32,.42);
+  --accent-rgb: 11,102,195;
+  --warm-rgb: 156,52,19;
+  --warm2-rgb: 156,52,19;
+  --success-rgb: 10,122,78;
+  --bg:       #f2f2f7;
+  --bg2:      #f9f9fc;
+  --card:     #ffffff;
+  --card-alt: #f5f5f8;
+  --border:   rgba(60,60,67,0.13);
+  --border-s: rgba(60,60,67,0.26);
+  --accent:   #0b66c3;
+  --accent2:  #08529b;
+  --warm:     #c1441c;
+  --warm2:    #9c3413;
+  --success:  #0a7a4e;
+  --text:     #1c1c1e;
+  --text2:    #3f4045;
+  --text3:    #6b6b72;
+  --text3-dim:#737379;
+  --inp:      #ebebf0;
+  --sh:       0 2px 12px rgba(17,20,28,0.07);
+  --sh-raise: 0 2px 8px rgba(17,20,28,0.09);
+  --sh-chip:  0 1px 3px rgba(17,20,28,0.09);
+  --sh-pop:   0 8px 26px rgba(17,20,28,0.10);
+  --sh-modal: 0 16px 50px rgba(17,20,28,0.14);
+  --sh-modal-d: 0 16px 50px rgba(17,20,28,0.16);
+  --sh-hero:  0 28px 64px rgba(17,20,28,0.16);
+  --sh-lift:  0 18px 54px rgba(17,20,28,0.16);
+}
+
 /* Palier élevé croisé avec le fond, en (0,2,1). Pour les sols sombres, seul
    le sol redescend ; pour les sols clairs, le sol descend aussi mais le texte
    remonte vers le noir et les bordures se dessinent. */
@@ -325,6 +378,29 @@ html[data-contrast="haut"][data-fond="papier"] {
   --sh-modal:0 12px 44px rgba(54,44,28,0.26); --sh-modal-d:0 12px 44px rgba(54,44,28,0.28);
   --sh-hero:0 22px 56px rgba(54,44,28,0.28); --sh-lift:0 14px 48px rgba(54,44,28,0.28);
 }
+html[data-contrast="haut"][data-fond="alu"] {
+  --ink-rgb: 28,28,30;
+  --tip-bg: #2c2c2e;
+  --tip-text: #ebebf0;
+  --text-strong: var(--text);
+  --scrim-1: rgba(24,26,32,.36);
+  --scrim-2: rgba(24,26,32,.40);
+  --scrim-3: rgba(24,26,32,.44);
+  --scrim-4: rgba(24,26,32,.48);
+  --scrim-5: rgba(24,26,32,.50);
+  --accent-rgb: 10,90,173;
+  --warm-rgb: 135,45,16;
+  --warm2-rgb: 135,45,16;
+  --success-rgb: 10,105,68;
+  --bg:#e6e6ec; --bg2:#f6f6f9; --card:#ffffff; --card-alt:#f1f1f5; --inp:#e4e4ea;
+  --border:rgba(60,60,67,0.24); --border-s:rgba(60,60,67,0.40);
+  --accent:#0a5aad; --accent2:#07447f; --warm:#a93a17; --warm2:#872d10; --success:#0a6944;
+  --text:#0c0c0e; --text2:#2f3035; --text3:#55555c; --text3-dim:#5f5f66;
+  --sh:0 2px 12px rgba(17,20,28,0.12); --sh-raise:0 2px 8px rgba(17,20,28,0.15);
+  --sh-chip:0 1px 3px rgba(17,20,28,0.15); --sh-pop:0 8px 26px rgba(17,20,28,0.16);
+  --sh-modal:0 16px 50px rgba(17,20,28,0.22); --sh-modal-d:0 16px 50px rgba(17,20,28,0.24);
+  --sh-hero:0 28px 64px rgba(17,20,28,0.24); --sh-lift:0 18px 54px rgba(17,20,28,0.24);
+}
 
 /* ── Règles de FAMILLE ────────────────────────────────────────────────────
    Trois endroits, ici et plus bas, ne peuvent pas passer par les jetons et
@@ -340,13 +416,18 @@ html[data-contrast="haut"][data-fond="papier"] {
    barres de défilement, les champs natifs et les menus <select> du système
    resteraient peints en sombre au milieu d'une app claire. (0,1,1) contre le
    :root color-scheme:dark plus bas, qui vaut pour les sols sombres. */
-html[data-fond="papier"] { color-scheme: light }
+html[data-fond="papier"],
+html[data-fond="alu"] { color-scheme: light }
 
 /* Le liseret tricolore sous spokeit.fr est peint en dur : son blanc central
-   s'évapore sur un sol clair et coupe le trait en deux. Sur le fond clair il
+   s'évapore sur un sol clair et coupe le trait en deux. Sur un sol clair il
    passe à un gris qui tient, la lecture bleu / blanc / rouge est conservée
    par la valeur et non par la clarté pure. */
 html[data-fond="papier"] .hline { --h1:#31538f; --h2:#9a9188; --h3:#a03b4c }
+
+/* Variante froide du liseret : même lecture bleu / gris / rouge, sur des
+   valeurs neutres qui vont avec le gris de système. */
+html[data-fond="alu"] .hline { --h1:#2f5fae; --h2:#a4a8b0; --h3:#b0384a }
 
 
 /* ── Reset ─────────────────────────────────────────────────────────────────── */
@@ -382,10 +463,11 @@ header        { text-align:center; padding:1.4rem 1rem 1.6rem }
    sombre. Même timing, mêmes étapes, seul le sens du contraste s'inverse. */
 @keyframes letter-glow-clair {
   0%   { opacity:.45; filter:saturate(0) }
-  40%  { opacity:1; filter:brightness(.5) drop-shadow(0 0 9px rgba(26,111,134,.5)) drop-shadow(0 0 22px rgba(26,111,134,.28)) }
+  40%  { opacity:1; filter:brightness(.5) drop-shadow(0 0 9px rgba(var(--accent-rgb),.5)) drop-shadow(0 0 22px rgba(var(--accent-rgb),.28)) }
   100% { opacity:1; filter:none }
 }
-html[data-fond="papier"] .brand-letter { animation-name: letter-glow-clair }
+html[data-fond="papier"] .brand-letter,
+html[data-fond="alu"] .brand-letter { animation-name: letter-glow-clair }
 
 @keyframes letter-glow {
   0%   { opacity:.45; filter:saturate(0) }
@@ -2038,7 +2120,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
    La pastille montre le sol ET la carte du thème, en miniature et dans leurs
    couleurs réelles : c'est ce qui distingue un sol de l'autre bien plus vite
    qu'un nom. Elle est peinte en littéral et NON en jetons, puisqu'elle doit
-   montrer les six thèmes pendant qu'un seul est actif. */
+   montrer les quatre thèmes pendant qu'un seul est actif. */
 .fond-swatch {
   position:relative; width:21px; height:21px; border-radius:6px; flex-shrink:0;
   border:1px solid rgba(var(--ink-rgb),.24);
@@ -5505,7 +5587,7 @@ const i18n = {
     contrastBtnOff:'Contraste élevé', contrastBtnOn:'Contraste normal',
     contrastLabel:'Contraste', contrastValNormal:'Normal', contrastValHaut:'Élevé',
     fondLabel:'Fond', fondBtnTitle:'Choisir le fond',
-    fondArdoise:'Ardoise', fondCarbone:'Carbone', fondPapier:'Papier',
+    fondArdoise:'Ardoise', fondCarbone:'Carbone', fondPapier:'Papier', fondAlu:'Alu',
     langLabel:'Langue', reglagesBtnTitle:'Réglages',
     helpSheetTitle:'Mode d\'emploi',
     helpCloseTitle:'Fermer',
@@ -5783,7 +5865,7 @@ const i18n = {
     contrastBtnOff:'High contrast', contrastBtnOn:'Normal contrast',
     contrastLabel:'Contrast', contrastValNormal:'Normal', contrastValHaut:'High',
     fondLabel:'Background', fondBtnTitle:'Choose background',
-    fondArdoise:'Slate', fondCarbone:'Carbon', fondPapier:'Paper',
+    fondArdoise:'Slate', fondCarbone:'Carbon', fondPapier:'Paper', fondAlu:'Alu',
     langLabel:'Language', reglagesBtnTitle:'Settings',
     helpSheetTitle:'User manual',
     helpCloseTitle:'Close',
@@ -9846,19 +9928,20 @@ function toggleContrast() {
 contrastSync();
 
 // ── Fond ────────────────────────────────────────────────────────────────────
-// Trois sols, portés par html[data-fond], posé une première fois par le
+// Quatre sols, portés par html[data-fond], posé une première fois par le
 // script de pré-rendu du head. L'ardoise est l'ABSENCE d'attribut et non une
 // valeur : le thème historique reste donc exactement le :root d'origine, sans
 // qu'aucun bloc ne s'interpose. C'est ce qui garantit zéro régression.
 //
-// Deux d'entre eux ne réécrivent que le sol ; le troisième, Papier, bascule
-// tout le jeu de jetons. Le sélecteur ne fait pas la distinction : la pastille
-// de chaque ligne montre le sol et la carte, ce qui la dit mieux qu'un groupe.
+// Deux d'entre eux ne réécrivent que le sol ; les deux clairs, Papier et Alu,
+// basculent tout le jeu de jetons. Le sélecteur ne fait pas la distinction :
+// la pastille de chaque ligne montre le sol et la carte, ce qui la dit mieux
+// qu'un groupe.
 // CETTE LISTE EST LA SEULE : la feuille décrit les sols, ce tableau les
 // ordonne et les nomme, et rien d'autre n'en tient d'inventaire.
-var FONDS_DISPO = ['ardoise','carbone','papier'];
+var FONDS_DISPO = ['ardoise','carbone','papier','alu'];
 var FOND_I18N = {
-  ardoise:'fondArdoise', carbone:'fondCarbone', papier:'fondPapier'
+  ardoise:'fondArdoise', carbone:'fondCarbone', papier:'fondPapier', alu:'fondAlu'
 };
 // Lecture tolérante : un attribut absent, inconnu ou corrompu vaut ardoise.
 // Le script de pré-rendu, lui, pose sans filtrer — c'est voulu, il n'a pas à
@@ -9879,6 +9962,16 @@ function fondActuel() {
 function fondClair() {
   return getComputedStyle(document.documentElement)
            .getPropertyValue('--fond-clair').trim() === '1';
+}
+// Jeton résolu, pour les canvas. Ils ne comprennent pas var(), mais rien ne
+// les empêche de LIRE la valeur calculée : c'est ce qui permet à un dessin de
+// suivre le sol sans que chaque fonction de tracé tienne sa propre liste de
+// couleurs. Sans lui, les rares littéraux calés sur le papier (sa carte
+// alternative, son encre tertiaire, ses accents) resteraient beiges sur un
+// deuxième sol clair. Le défaut couvre le cas où le jeton n'existe pas.
+function fondJeton(nom, defaut) {
+  var v = getComputedStyle(document.documentElement).getPropertyValue(nom).trim();
+  return v || defaut;
 }
 // Un sol retiré d'une version à l'autre (ou une clé corrompue) laisse une
 // valeur morte dans le stockage : l'attribut n'a alors aucun bloc CSS et rend
@@ -9908,7 +10001,7 @@ function fondSync() {
   var modal = $id('fondpicker-modal');
   if (modal && modal.classList.contains('show')) fondPickerRender();
   // La barre système Android suit le fond réel : contrastSyncMeta relit --bg
-  // après bascule, elle couvre donc les trois sols sans rien savoir d'eux.
+  // après bascule, elle couvre donc les quatre sols sans rien savoir d'eux.
   contrastSyncMeta();
 }
 // Écrivain unique du sol. Appelé par le chooser, jamais ailleurs.
@@ -9950,7 +10043,8 @@ function fondRepeintCanvas() {
 var FOND_PASTILLE = {
   ardoise: ['#181c24', '#232a38'],
   carbone: ['#0f1114', '#232a38'],
-  papier:  ['#edeae2', '#fdfcfa']
+  papier:  ['#edeae2', '#fdfcfa'],
+  alu:     ['#f2f2f7', '#ffffff']
 };
 function fondPickerRender() {
   var list = $id('fondpicker-list');
@@ -23624,8 +23718,8 @@ document.addEventListener('keydown', function(e) {
     // suivent donc le sol d'un seul endroit. Mêmes accents que les jetons
     // clairs de la feuille, pour que la légende s'accorde au reste.
     var _cl   = (typeof fondClair === 'function') && fondClair();
-    var color = side === 'fo' ? (_cl ? '#b04a30' : '#e8927c')
-                              : (_cl ? '#1a6f86' : '#7ec8e3');
+    var color = side === 'fo' ? (_cl ? fondJeton('--warm',   '#b04a30') : '#e8927c')
+                              : (_cl ? fondJeton('--accent', '#1a6f86') : '#7ec8e3');
     return { L:L, T:T, eTotal:eTot, k:k, color:color,
              label: label ? label.textContent : diffSideLabel(side, wtype) };
   }
@@ -23727,10 +23821,10 @@ document.addEventListener('keydown', function(e) {
     // modale claire tranche. Le fond suit --card-alt, et la grille, les axes
     // et les graduations suivent avec, sinon ils s'inversent tout seuls.
     var clair   = (typeof fondClair === 'function') && fondClair();
-    var bg      = clair ? '#f5f2ec'            : '#1a2030';
+    var bg      = clair ? fondJeton('--card-alt', '#f5f2ec') : '#1a2030';
     var gridC   = clair ? 'rgba(0,0,0,.08)'    : 'rgba(255,255,255,.06)';
     var axisC   = clair ? 'rgba(0,0,0,.20)'    : 'rgba(255,255,255,.15)';
-    var tickC   = clair ? '#645d51'            : '#4a5668';
+    var tickC   = clair ? fondJeton('--text3', '#645d51')    : '#4a5668';
     var monoFont = "10px 'DM Mono',monospace";
 
     var pad = { top:16, right:18, bottom:42, left:54 };

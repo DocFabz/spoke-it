@@ -99,6 +99,14 @@ html[data-fond="papier"]{
   --inp:#eeeae1;
   --ink-rgb:30,26,18; --accent-rgb:26,111,134; --warm-rgb:146,57,34;
 }
+html[data-fond="alu"]{
+  --bg:#f2f2f7; --bg2:#f9f9fc; --card:#ffffff; --card-alt:#f5f5f8;
+  --border:rgba(60,60,67,.13); --border-s:rgba(60,60,67,.26);
+  --accent:#0b66c3; --accent2:#08529b; --warm:#c1441c; --warm2:#9c3413; --success:#0a7a4e;
+  --text:#1c1c1e; --text2:#3f4045; --text3:#6b6b72;
+  --inp:#ebebf0;
+  --ink-rgb:28,28,30; --accent-rgb:11,102,195; --warm-rgb:156,52,19;
+}
 html[data-contrast="haut"][data-fond="carbone"]{ --bg:#060709; --bg2:#101318 }
 html[data-contrast="haut"][data-fond="papier"]{
   --bg:#e5e0d5; --bg2:#f7f4ef; --card:#fffefc; --card-alt:#f3efe7;
@@ -108,11 +116,20 @@ html[data-contrast="haut"][data-fond="papier"]{
   --inp:#e8e3d8;
   --ink-rgb:30,26,18; --accent-rgb:23,95,115; --warm-rgb:132,50,29;
 }
+html[data-contrast="haut"][data-fond="alu"]{
+  --bg:#e6e6ec; --bg2:#f6f6f9; --card:#ffffff; --card-alt:#f1f1f5;
+  --border:rgba(60,60,67,.24); --border-s:rgba(60,60,67,.40);
+  --accent:#0a5aad; --accent2:#07447f; --warm:#a93a17; --warm2:#872d10; --success:#0a6944;
+  --text:#0c0c0e; --text2:#2f3035; --text3:#55555c;
+  --inp:#e4e4ea;
+  --ink-rgb:28,28,30; --accent-rgb:10,90,173; --warm-rgb:135,45,16;
+}
 
 /* Le sol clair annonce son palier natif au navigateur : sans ça la barre de
    défilement du manuel resterait sombre au milieu d'une page claire. */
 :root{color-scheme:dark}
-html[data-fond="papier"]{color-scheme:light}
+html[data-fond="papier"],
+html[data-fond="alu"]{color-scheme:light}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{
@@ -388,7 +405,7 @@ body.embedded header{padding-top:1.5rem}
         <line x1="4" y1="16" x2="20" y2="16"/>
         <circle cx="15" cy="8" r="2.4"/>
         <circle cx="9" cy="16" r="2.4"/>
-      </svg></span><div class="e-body"><h3 class="e-label"><span lang="fr">Réglages</span><span lang="en">Settings</span></h3><p lang="fr">Ouvre une fenêtre de quatre lignes, la valeur courante à droite de chacune. Un choix referme aussitôt ; la croix, un appui à côté ou Échap ferment sans rien changer.</p><p lang="en">Opens a four-line dialog, each showing its current value on the right. A choice closes it at once; the cross, tapping outside or pressing Esc close it without changing anything.</p><p lang="fr"><strong>Mode d'emploi</strong> ouvre ce manuel par-dessus l'application, sans rien recharger, et il reste consultable hors ligne. <strong>Contraste</strong> propose deux paliers de lisibilité pour l'atelier trop éclairé, sans toucher aux couleurs. <strong>Fond</strong> ouvre le choix du thème : Ardoise, le fond d'origine, Carbone, un noir plus profond qui éteint les pixels des écrans OLED, et Papier, un thème clair pour l'atelier en plein jour. Le fond et le contraste se combinent, et le manuel suit les deux. <strong>Langue</strong> bascule entre français et anglais ; l'application choisit seule à la première ouverture, cette ligne sert à la corriger.</p><p lang="en"><strong>User manual</strong> opens this manual over the app, with nothing reloaded, and it stays available offline. <strong>Contrast</strong> offers two legibility levels for a brightly lit workshop, without touching the colours. <strong>Background</strong> opens the theme picker: Slate, the original background, Carbon, a deeper black that switches OLED pixels off, and Paper, a light theme for a workshop in daylight. Background and contrast combine, and this manual follows both. <strong>Language</strong> switches between French and English; the app picks one on first load, this line is there to override it.</p></div></div>
+      </svg></span><div class="e-body"><h3 class="e-label"><span lang="fr">Réglages</span><span lang="en">Settings</span></h3><p lang="fr">Ouvre une fenêtre de quatre lignes, la valeur courante à droite de chacune. Un choix referme aussitôt ; la croix, un appui à côté ou Échap ferment sans rien changer.</p><p lang="en">Opens a four-line dialog, each showing its current value on the right. A choice closes it at once; the cross, tapping outside or pressing Esc close it without changing anything.</p><p lang="fr"><strong>Mode d'emploi</strong> ouvre ce manuel par-dessus l'application, sans rien recharger, et il reste consultable hors ligne. <strong>Contraste</strong> propose deux paliers de lisibilité pour l'atelier trop éclairé, sans toucher aux couleurs. <strong>Fond</strong> ouvre le choix du thème : Ardoise, le fond d'origine, Carbone, un noir plus profond qui éteint les pixels des écrans OLED, Papier, un thème clair et chaud pour l'atelier en plein jour, et Alu, un thème clair aux gris froids. Le fond et le contraste se combinent, et le manuel suit les deux. <strong>Langue</strong> bascule entre français et anglais ; l'application choisit seule à la première ouverture, cette ligne sert à la corriger.</p><p lang="en"><strong>User manual</strong> opens this manual over the app, with nothing reloaded, and it stays available offline. <strong>Contrast</strong> offers two legibility levels for a brightly lit workshop, without touching the colours. <strong>Background</strong> opens the theme picker: Slate, the original background, Carbon, a deeper black that switches OLED pixels off, Paper, a warm light theme for a workshop in daylight, and Alu, a light theme in cool greys. Background and contrast combine, and this manual follows both. <strong>Language</strong> switches between French and English; the app picks one on first load, this line is there to override it.</p></div></div>
   <div class="entry"><span class="e-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
       </svg></span><div class="e-body"><h3 class="e-label"><span lang="fr">Atelier</span><span lang="en">Workshop</span></h3><p lang="fr">Nom de l'atelier, email et compte Instagram. Le «&nbsp;@&nbsp;» est affiché par le champ, saisissez le pseudo seul. Ces informations forment l'en-tête de tous les exports PDF et JPEG. Sans nom saisi, les exports portent «&nbsp;Spoke It&nbsp;». <em>Sauvegarder</em> valide, <em>Effacer</em> vide les champs et le logo.</p><p lang="en">Workshop name, email and Instagram handle. The “@” is shown by the field, so enter the handle on its own. This information becomes the header of every PDF and JPEG export. With no name entered, exports are headed “Spoke It”. <em>Save</em> confirms, <em>Clear</em> empties the fields and the logo.</p><p lang="fr"><strong>Logo.</strong> Le cadre sous les coordonnées importe un PNG, un JPEG ou un WebP, jusqu'à 8&nbsp;Mo. L'image est adaptée sur l'appareil, sans aucun envoi&nbsp;: fond uni retiré, passage en gris, contraste ajusté. Elle se place à droite de l'en-tête des PDF et apparaît à la fin de la vidéo d'évolution. La croix retire le logo. Le fichier d'origine n'est pas conservé&nbsp;; pour un autre résultat, réimportez-le.</p><p lang="en"><strong>Logo.</strong> The frame below your contact details imports a PNG, JPEG or WebP file, up to 8&nbsp;MB. The image is adapted on the device, nothing is uploaded: a plain background is removed, the logo is converted to greyscale and its contrast adjusted. It sits on the right of the PDF header and appears at the end of the evolution video. The cross removes the logo. The original file is not kept; for a different result, import it again.</p></div></div>
