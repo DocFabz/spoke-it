@@ -17421,6 +17421,11 @@ function efCommitCurrent() {
   // Ici : repli pour un commit issu d'un final sans auto-avance. efCycling
   // rend le double appel inoffensif.
   efCommitPrev2 = efCommitPrev1; efCommitPrev1 = parsed;
+  // Point de passage UNIQUE de tous les commits (auto-avance, final, numpad,
+  // clavier BT) — la fenêtre d'écho part donc de l'instant réel d'écriture du
+  // rayon, quel que soit le chemin. Écriture gardée par efEchoWindowMs() :
+  // hors Android Chrome et Chrome desktop, aucune de ces lignes ne s'exécute.
+  if (efEchoWindowMs()) { efEchoLastCommitVal = parsed; efEchoLastCommitAt = Date.now(); }
   // Chrome desktop : recycler IMMÉDIATEMENT et différer le bip « parle » à
   // l'audiostart de la nouvelle session (efCycleBeep). L'ancien setTimeout 250 ms
   // partait quasi en même temps que le bip à 280 ms du chemin final : sur une
@@ -17991,9 +17996,25 @@ var efCycleAudioReady = false; // audiostart reçu depuis le dernier recyclage. 
                               // (commit fait ET écoute rouverte), dans n'importe quel ordre d'arrivée.
 var efLastTxt        = '';    // dernier transcript interim (efHeardTwice — Chrome desktop uniquement)
 var efAutoAdvancedAt = 0;     // Date.now() de la dernière auto-avance (fenêtre de la dédup 2e forme)
+var efEchoLastCommitVal = null; // dernière valeur PARSÉE commitée + instant du commit (efCommitCurrent).
+var efEchoLastCommitAt  = 0;    // Base de la dédup d'écho moteur (efEchoWindowMs : Android et Chrome desktop).
 var efHoldStream     = null;  // Chrome desktop : flux micro getUserMedia maintenu pendant la saisie
 var EF_MAX_ALTS      = 5;     // hypothèses demandées au moteur (finals seulement en pratique). Repêchage
                               // isFinal : « vingt » entendu "Va" (0.57) avec "20" (0.30) en 2e hypothèse.
+var EF_ECHO_MS_ANDROID = 1200; // Android Chrome : durée pendant laquelle une valeur identique à celle
+                              // qui vient d'être commitée est tenue pour un écho du moteur et non pour
+                              // une nouvelle dictée. Unique réglage de la dédup mobile. Desktop mesure
+                              // la ré-émission à 386-663 ms du commit ; le moteur Android est plus lent,
+                              // d'où la marge. Borne haute : une répétition VOLONTAIRE de la même valeur
+                              // (égalisation à une tension cible) demande bip + repositionnement du
+                              // comparateur + lecture, soit largement plus de 1,2 s. Si un utilisateur
+                              // signalait une valeur avalée, c'est cette constante qu'il faut baisser.
+var EF_ECHO_MS_DESKTOP = 800; // Chrome desktop : même dédup, fenêtre plus courte. Traces Chrome 152 :
+                              // ré-émission 386-663 ms après le commit. 800 ms est déjà la borne
+                              // « quelle que soit la confiance » de la garde 2e forme ci-dessous, avec
+                              // laquelle cette valeur reste donc cohérente. Le bip « parle » différé
+                              // d'efCycleSR retarde encore la reprise de parole : une répétition
+                              // volontaire ne peut pas produire d'intermédiaire avant ~900 ms.
 
 
 function efSaveState() {
@@ -18068,6 +18089,34 @@ function efIsChromeDesktop() {
     efChromeDesktop = !efIsIOS() && !/Android|Mobile/i.test(ua) && /Chrome\//.test(ua) && !/Edg\//.test(ua);
   }
   return efChromeDesktop;
+}
+
+// Chromium sur Android (Chrome, PWA installée, WebView, Samsung Internet), hors
+// Edge (EdgA/) et Opera (OPR/) : MÊME moteur cloud Google que Chrome desktop,
+// donc mêmes ré-émissions de transcript après un commit. Périmètre exclusif de
+// la dédup d'écho par mémo de commit (efEchoWindowMs, efEchoLastCommitVal),
+// qu'il partage avec Chrome desktop mais avec une fenêtre propre. iOS, Edge,
+// Opera et Firefox ne traversent aucune de ces lignes. Firefox Android n'a pas
+// de jeton Chrome/ dans son UA.
+var efAndroidChrome = null; // cache : l'UA ne change pas en cours de session
+function efIsAndroidChrome() {
+  if (efAndroidChrome === null) {
+    var ua = navigator.userAgent;
+    efAndroidChrome = /Android/.test(ua) && /Chrome\//.test(ua) &&
+                      !/EdgA?\//.test(ua) && !/OPR\//.test(ua);
+  }
+  return efAndroidChrome;
+}
+
+// Fenêtre pendant laquelle une valeur identique à celle qui vient d'être
+// commitée est tenue pour un écho du moteur (ré-émission sans nouvelle parole)
+// et non pour une dictée. 0 = plateforme hors périmètre : iOS, Edge, Firefox et
+// Opera n'exécutent aucune des gardes qui l'appellent. Un seul point de décision
+// pour les trois sites d'appel (intermédiaire, final, mémorisation au commit).
+function efEchoWindowMs() {
+  if (efIsAndroidChrome()) return EF_ECHO_MS_ANDROID;
+  if (efIsChromeDesktop()) return EF_ECHO_MS_DESKTOP;
+  return 0;
 }
 
 async function efRequestWakeLock() {
@@ -18667,6 +18716,31 @@ function efStartMic(forceLang) {
           var efSinceAdv = Date.now() - efAutoAdvancedAt;
           if (((result[0].confidence || 0) >= 0.5 && efSinceAdv < 1500) || efSinceAdv < 800) return;
         }
+        // DEDUP moteur, 3e forme — MÉMO DE COMMIT. Même cause que la 2e forme
+        // ci-dessus (le
+        // moteur cloud Google ré-émet sa séquence stabilisée après le commit,
+        // sans nouvelle parole), mais elle s'adosse au COMMIT et non aux
+        // drapeaux d'auto-avance, ce qui couvre deux angles morts de la 2e forme :
+        //   (a) l'écho qui suit un commit venu du chemin isFinal, où
+        //       efAutoAdvanced est déjà retombé à false et efLastInterimNum à
+        //       null : la 2e forme, adossée à ces deux drapeaux, ne le voit pas.
+        //       Cas courant en dictée d'ENTIERS (« 30 » pour 0,30 sur un Wheel
+        //       Fanatyk) : un token unique, que le moteur finalise vite et
+        //       ré-émet à l'identique, alors qu'un décimal est révisé par étapes
+        //       (« 0,3 » puis « 0,30 ») et tombe rarement deux fois sur la même
+        //       chaîne. C'est le doublon rapporté sur tablette et téléphone ;
+        //   (b) Android, où les interims rapportent confidence = 0 : le seuil de
+        //       confiance de la 2e forme n'y discrimine rien.
+        // Sans garde, cette ré-émission est traitée en nouvel énoncé : nouveau
+        // timer, 2e auto-avance, la MÊME valeur écrite sur deux rayons.
+        // Comparaison sur la valeur PARSÉE (et non sur la chaîne) : « 30 » et
+        // « 0,30 » désignent le même relevé, un écho reformaté par le moteur ne
+        // doit pas passer entre les mailles. !efBeepTimer : un timer armé
+        // signale un énoncé en cours, que la 1re forme couvre déjà.
+        var efEchoWin = efEchoWindowMs();
+        if (efEchoWin && !efBeepTimer && efEchoLastCommitVal !== null &&
+            Date.now() - efEchoLastCommitAt < efEchoWin &&
+            tmParseInput(numInterim) === efEchoLastCommitVal) return;
         // Un nouvel énoncé démarre. Si une auto-avance est encore "en attente de final"
         // (efAutoAdvanced true), son final tardif arriverait après la fermeture de la
         // fenêtre de correction ci-dessous et écraserait le rayon courant : on mémorise
@@ -18821,6 +18895,25 @@ function efStartMic(forceLang) {
     if (efStaleFinalGuard !== null) {
       if (efVoiceToNumber(txt) === efStaleFinalGuard) { efStaleFinalGuard = null; return; }
       efStaleFinalGuard = null;
+    }
+    // Écho moteur, versant FINAL (mémo de commit, cf. 3e forme plus haut) : la
+    // ré-émission avalée en intermédiaire peut être finalisée par le moteur et
+    // retomber ici, où plus rien ne la distingue d'une dictée (efAutoAdvanced à
+    // false et efLastInterimNum à null après un commit venu du chemin final) —
+    // elle serait commitée une 2e fois. Mêmes bornes que la garde intermédiaire.
+    // !efAutoAdvanced : quand l'auto-avance attend encore son final, c'est la
+    // branche de correction plus bas qui doit le consommer, elle seule sait
+    // réécrire le step commité ; l'avaler ici laisserait efAutoStep armé et un
+    // final ultérieur, lui différent, corrigerait le mauvais rayon.
+    // !efBeepTimer : un timer armé porte un énoncé en cours, on ne le touche pas.
+    // Une commande nav ne donne aucun nombre (efVoiceToNumber null) et n'est
+    // donc jamais avalée par cette garde.
+    var efEchoWinF = efEchoWindowMs();
+    if (efEchoWinF && !efAutoAdvanced && !efBeepTimer &&
+        efEchoLastCommitVal !== null &&
+        Date.now() - efEchoLastCommitAt < efEchoWinF) {
+      var efEchoNum = efVoiceToNumber(txt);
+      if (efEchoNum && tmParseInput(efEchoNum) === efEchoLastCommitVal) return;
     }
     if (efBeepTimer)   { clearTimeout(efBeepTimer);   efBeepTimer = null; }
     if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
