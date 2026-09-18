@@ -7,14 +7,24 @@
 <meta name="description" content="Mode d'emploi complet de Spoke It : chaque fonction et chaque bouton, en français et en anglais. Complete Spoke It manual: every function and every button, in French and English.">
 <meta name="theme-color" content="#181c24">
 
-<!-- Contraste : posé avant la feuille de style, sinon le manuel se rend une
-     première fois dans l'autre palier et bascule sous les yeux. L'app passe
-     &contrast=haut dans l'URL de l'iframe. -->
+<!-- Contraste et fond : posés avant la feuille de style, sinon le manuel se
+     rend une première fois dans l'autre palier ou sur l'autre sol et bascule
+     sous les yeux. L'app passe &contrast=haut et &fond=… dans l'URL de
+     l'iframe, et ne passe rien pour les valeurs par défaut (palier normal,
+     sol ardoise) : l'absence de paramètre est donc le défaut des deux côtés.
+     Aucune liste blanche, comme dans l'app : un sol inconnu pose un attribut
+     sans bloc CSS et rend exactement comme l'ardoise.
+     Le manuel s'ouvre aussi hors iframe (lien direct) : sans paramètre il
+     prend le thème d'origine, ce qui est le comportement voulu. -->
 <script>
 (function(){
   try {
     if (/[?&]contrast=haut(&|$)/.test(location.search))
       document.documentElement.setAttribute('data-contrast', 'haut');
+    var m = /[?&]fond=([a-z]+)/.exec(location.search);
+    if (m && m[1] !== 'ardoise') {
+      document.documentElement.setAttribute('data-fond', m[1]);
+    }
   } catch (e) {}
 })();
 </script>
@@ -48,11 +58,18 @@
 :root{
   --bg:#181c24; --bg2:#1e2330; --card:#232a38; --card-alt:#1a2030;
   --border:rgba(255,255,255,.07); --border-s:rgba(255,255,255,.13);
-  --accent:#7ec8e3; --accent2:#a8d8ea; --warm:#e8927c; --success:#7ecfa8;
+  --accent:#7ec8e3; --accent2:#a8d8ea; --warm:#e8927c; --warm2:#f0b49a; --success:#7ecfa8;
   --text:#dce4ed; --text2:#c8d6e2; --text3:#8fa0b0;
   --inp:#161b27;
   --r:14px; --rs:9px;
   --gut:2.2rem; --gap:.9rem; --ind:3.1rem;
+  /* Canaux RVB : la feuille bâtit quelques rgba() sur l'accent, le corail et
+     l'encre (liserés, teintes de survol, filet de la table des matières).
+     Paramétrés plutôt que littéraux, pour qu'ils s'inversent avec le sol au
+     lieu de disparaître sur un fond clair. Même mécanique que dans l'app. */
+  --ink-rgb:255,255,255;
+  --accent-rgb:126,200,227;
+  --warm-rgb:232,146,124;
 }
 
 /* Contraste élevé. Recopie du palier de l'app : le manuel s'ouvre par-dessus
@@ -63,7 +80,39 @@ html[data-contrast="haut"]{
   --text:#f2f6fa; --text2:#dde7f0; --text3:#a9b8c6;
   --inp:#0c1016;
 }
+
+/* ── Fond ────────────────────────────────────────────────────────────────
+   Recopie des sols de l'app, pour la même raison que le palier de contraste
+   au-dessus : le manuel s'ouvre par-dessus elle, les deux doivent s'accorder.
+   L'ardoise n'a pas de bloc, c'est l'absence d'attribut et donc le :root
+   d'origine. Les valeurs sont celles de l'app, à la virgule près : si elles
+   divergent un jour, c'est ici qu'il faut les réaligner.
+   Spécificité (0,1,1) comme html[data-contrast="haut"], mais écrits APRÈS,
+   donc ils l'emportent sur les jetons communs : d'où les blocs composés en
+   (0,2,1) plus bas, qui rétablissent le palier élevé. ── */
+html[data-fond="carbone"]{ --bg:#0f1114; --bg2:#181b20 }
+html[data-fond="papier"]{
+  --bg:#edeae2; --bg2:#f9f7f3; --card:#fdfcfa; --card-alt:#f5f2ec;
+  --border:rgba(44,34,20,.11); --border-s:rgba(44,34,20,.21);
+  --accent:#1a6f86; --accent2:#14576a; --warm:#b04a30; --warm2:#8f3a24; --success:#1d7452;
+  --text:#221f1a; --text2:#443f36; --text3:#645d51;
+  --inp:#eeeae1;
+  --ink-rgb:30,26,18; --accent-rgb:26,111,134; --warm-rgb:146,57,34;
+}
+html[data-contrast="haut"][data-fond="carbone"]{ --bg:#060709; --bg2:#101318 }
+html[data-contrast="haut"][data-fond="papier"]{
+  --bg:#e5e0d5; --bg2:#f7f4ef; --card:#fffefc; --card-alt:#f3efe7;
+  --border:rgba(44,34,20,.21); --border-s:rgba(44,34,20,.35);
+  --accent:#175f73; --accent2:#114a5b; --warm:#9c3f27; --warm2:#80321d; --success:#196547;
+  --text:#16130e; --text2:#352f26; --text3:#544d42;
+  --inp:#e8e3d8;
+  --ink-rgb:30,26,18; --accent-rgb:23,95,115; --warm-rgb:132,50,29;
+}
+
+/* Le sol clair annonce son palier natif au navigateur : sans ça la barre de
+   défilement du manuel resterait sombre au milieu d'une page claire. */
 :root{color-scheme:dark}
+html[data-fond="papier"]{color-scheme:light}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{
@@ -103,18 +152,18 @@ header{
 .lang-btn{
   font-family:'DM Mono',monospace; font-size:.7rem; letter-spacing:.14em;
   background:transparent; color:var(--accent);
-  border:1px solid rgba(126,200,227,.4); border-radius:var(--rs);
+  border:1px solid rgba(var(--accent-rgb),.4); border-radius:var(--rs);
   padding:.42rem .85rem; cursor:pointer; min-width:4.4rem;
   transition:border-color .2s,background .2s;
 }
-.lang-btn:hover{border-color:rgba(126,200,227,.85); background:rgba(126,200,227,.07)}
+.lang-btn:hover{border-color:rgba(var(--accent-rgb),.85); background:rgba(var(--accent-rgb),.07)}
 #q{
   font-family:'DM Sans',sans-serif; font-size:.82rem; color:var(--text);
   background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs);
   padding:.42rem .8rem; width:min(19rem,68vw);
 }
 #q::placeholder{color:var(--text3)}
-#q:focus{outline:none; border-color:rgba(126,200,227,.55)}
+#q:focus{outline:none; border-color:rgba(var(--accent-rgb),.55)}
 
 /* ── Grille ──────────────────────────────────────────────── */
 .shell{max-width:1080px; margin:0 auto; padding:0 1.4rem 5rem; display:block}
@@ -155,13 +204,13 @@ section h2{
 /* ── Entrées ─────────────────────────────────────────────── */
 .entry{
   display:grid; grid-template-columns:var(--gut) 1fr; gap:0 var(--gap);
-  padding:.95rem 0; border-bottom:1px solid rgba(255,255,255,.045);
+  padding:.95rem 0; border-bottom:1px solid rgba(var(--ink-rgb),.045);
 }
 .entry:last-child{border-bottom:none}
 .e-ico{
   color:var(--accent); display:flex; align-items:center; justify-content:center;
   width:1.7rem; height:1.7rem; margin-top:.1rem;
-  border:1px solid rgba(126,200,227,.28); border-radius:7px;
+  border:1px solid rgba(var(--accent-rgb),.28); border-radius:7px;
 }
 .e-ico svg{width:15px; height:15px; display:block}
 .e-dot{
@@ -217,7 +266,7 @@ body.embedded .foot-close{display:block}
   padding:.42rem .9rem; cursor:pointer;
   transition:border-color .2s, color .2s;
 }
-.close-btn:hover{border-color:rgba(232,146,124,.6); color:#f0b49a}
+.close-btn:hover{border-color:rgba(var(--warm-rgb),.6); color:var(--warm2)}
 .empty{
   display:none; color:var(--text3); font-size:.9rem;
   font-family:'DM Mono',monospace; letter-spacing:.06em;
@@ -267,6 +316,21 @@ a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{
    remplace le lien de retour, et l'en-tête n'a plus à respirer autant. */
 body.embedded header{padding-top:1.5rem}
 </style>
+
+<!-- Barre système : relue sur le --bg effectivement appliqué plutôt que sur
+     une table de couleurs, qui ferait un inventaire des sols de plus à tenir
+     d'accord avec l'app. Le palier de contraste est donc pris en compte sans
+     rien ajouter. En iframe la balise est ignorée, elle ne vaut que pour le
+     manuel ouvert dans son propre onglet. -->
+<script>
+(function(){
+  try {
+    var meta = document.querySelector('meta[name="theme-color"]');
+    var bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+    if (meta && bg) meta.setAttribute('content', bg);
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 
@@ -324,7 +388,7 @@ body.embedded header{padding-top:1.5rem}
         <line x1="4" y1="16" x2="20" y2="16"/>
         <circle cx="15" cy="8" r="2.4"/>
         <circle cx="9" cy="16" r="2.4"/>
-      </svg></span><div class="e-body"><h3 class="e-label"><span lang="fr">Réglages</span><span lang="en">Settings</span></h3><p lang="fr">Ouvre une fenêtre de trois lignes, la valeur courante à droite de chacune. Un choix referme aussitôt ; la croix, un appui à côté ou Échap ferment sans rien changer.</p><p lang="en">Opens a three-line dialog, each showing its current value on the right. A choice closes it at once; the cross, tapping outside or pressing Esc close it without changing anything.</p><p lang="fr"><strong>Mode d'emploi</strong> ouvre ce manuel par-dessus l'application, sans rien recharger, et il reste consultable hors ligne. <strong>Contraste</strong> propose deux paliers de lisibilité pour l'atelier trop éclairé, sans toucher aux couleurs. <strong>Langue</strong> bascule entre français et anglais ; l'application choisit seule à la première ouverture, cette ligne sert à la corriger.</p><p lang="en"><strong>User manual</strong> opens this manual over the app, with nothing reloaded, and it stays available offline. <strong>Contrast</strong> offers two legibility levels for a brightly lit workshop, without touching the colours. <strong>Language</strong> switches between French and English; the app picks one on first load, this line is there to override it.</p></div></div>
+      </svg></span><div class="e-body"><h3 class="e-label"><span lang="fr">Réglages</span><span lang="en">Settings</span></h3><p lang="fr">Ouvre une fenêtre de quatre lignes, la valeur courante à droite de chacune. Un choix referme aussitôt ; la croix, un appui à côté ou Échap ferment sans rien changer.</p><p lang="en">Opens a four-line dialog, each showing its current value on the right. A choice closes it at once; the cross, tapping outside or pressing Esc close it without changing anything.</p><p lang="fr"><strong>Mode d'emploi</strong> ouvre ce manuel par-dessus l'application, sans rien recharger, et il reste consultable hors ligne. <strong>Contraste</strong> propose deux paliers de lisibilité pour l'atelier trop éclairé, sans toucher aux couleurs. <strong>Fond</strong> ouvre le choix du thème : Ardoise, le fond d'origine, Carbone, un noir plus profond qui éteint les pixels des écrans OLED, et Papier, un thème clair pour l'atelier en plein jour. Le fond et le contraste se combinent, et le manuel suit les deux. <strong>Langue</strong> bascule entre français et anglais ; l'application choisit seule à la première ouverture, cette ligne sert à la corriger.</p><p lang="en"><strong>User manual</strong> opens this manual over the app, with nothing reloaded, and it stays available offline. <strong>Contrast</strong> offers two legibility levels for a brightly lit workshop, without touching the colours. <strong>Background</strong> opens the theme picker: Slate, the original background, Carbon, a deeper black that switches OLED pixels off, and Paper, a light theme for a workshop in daylight. Background and contrast combine, and this manual follows both. <strong>Language</strong> switches between French and English; the app picks one on first load, this line is there to override it.</p></div></div>
   <div class="entry"><span class="e-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
       </svg></span><div class="e-body"><h3 class="e-label"><span lang="fr">Atelier</span><span lang="en">Workshop</span></h3><p lang="fr">Nom de l'atelier, email et compte Instagram. Le «&nbsp;@&nbsp;» est affiché par le champ, saisissez le pseudo seul. Ces informations forment l'en-tête de tous les exports PDF et JPEG. Sans nom saisi, les exports portent «&nbsp;Spoke It&nbsp;». <em>Sauvegarder</em> valide, <em>Effacer</em> vide les champs et le logo.</p><p lang="en">Workshop name, email and Instagram handle. The “@” is shown by the field, so enter the handle on its own. This information becomes the header of every PDF and JPEG export. With no name entered, exports are headed “Spoke It”. <em>Save</em> confirms, <em>Clear</em> empties the fields and the logo.</p><p lang="fr"><strong>Logo.</strong> Le cadre sous les coordonnées importe un PNG, un JPEG ou un WebP, jusqu'à 8&nbsp;Mo. L'image est adaptée sur l'appareil, sans aucun envoi&nbsp;: fond uni retiré, passage en gris, contraste ajusté. Elle se place à droite de l'en-tête des PDF et apparaît à la fin de la vidéo d'évolution. La croix retire le logo. Le fichier d'origine n'est pas conservé&nbsp;; pour un autre résultat, réimportez-le.</p><p lang="en"><strong>Logo.</strong> The frame below your contact details imports a PNG, JPEG or WebP file, up to 8&nbsp;MB. The image is adapted on the device, nothing is uploaded: a plain background is removed, the logo is converted to greyscale and its contrast adjusted. It sits on the right of the PDF header and appears at the end of the evolution video. The cross removes the logo. The original file is not kept; for a different result, import it again.</p></div></div>
