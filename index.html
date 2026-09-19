@@ -17769,7 +17769,7 @@ function efCommitCurrent() {
   // partait quasi en même temps que le bip à 280 ms du chemin final : sur une
   // dizaine ronde dont le final arrive avant le timer interim, l'utilisateur
   // était invité à parler exactement pendant le trou de redémarrage.
-  if (efMicActive && efCommitPrev1 === efCommitPrev2 && efIsChromeDesktop()) {
+  if (efMicActive && efCommitPrev1 === efCommitPrev2 && efCycleAllowed()) {
     if (!efTtsMode) efCycleBeep = true;
     efCycleSR();
   }
@@ -18265,7 +18265,7 @@ var efMicRecog       = null;
 //   5. efAutoAdvanced → correction éventuelle du step précédent + return
 //   6. Traitement normal → efNext()
 //
-// Chrome desktop (efIsChromeDesktop) — voir efCycleSR : quand la valeur
+// Chrome desktop et Chrome Android (efCycleAllowed) — voir efCycleSR : quand la valeur
 // auto-avancée égale le dernier commit, la session SR est recyclée dès la
 // décision. Le final de l'énoncé en cours ne vient donc JAMAIS ; efCycleSR
 // solde lui-même efAutoAdvanced / efAutoStep / efLastInterimNum /
@@ -18332,7 +18332,7 @@ var efCycleBeep      = false; // bips de validation différés jusqu'à l'audios
                               // le bip signifie « tu peux parler », il ne doit pas précéder l'écoute.
 var efCycleAudioReady = false; // audiostart reçu depuis le dernier recyclage. Le bip différé exige les DEUX
                               // (commit fait ET écoute rouverte), dans n'importe quel ordre d'arrivée.
-var efLastTxt        = '';    // dernier transcript interim (efHeardTwice — Chrome desktop uniquement)
+var efLastTxt        = '';    // dernier transcript interim (efHeardTwice — périmètre efCycleAllowed)
 var efAutoAdvancedAt = 0;     // Date.now() de la dernière auto-avance (fenêtre de la dédup 2e forme)
 var efEchoLastCommitVal = null; // dernière valeur PARSÉE commitée + instant du commit (efCommitCurrent).
 var efEchoLastCommitAt  = 0;    // Base de la dédup d'écho moteur (efEchoWindowMs : Android et Chrome desktop).
@@ -18455,6 +18455,25 @@ function efEchoWindowMs() {
   if (efIsAndroidChrome()) return EF_ECHO_MS_ANDROID;
   if (efIsChromeDesktop()) return EF_ECHO_MS_DESKTOP;
   return 0;
+}
+
+// Le recyclage de session SR (efCycleSR) est-il applicable ici ? MÊME moteur
+// cloud Google des deux côtés, donc même filtre anti-répétition : le 3e énoncé
+// identique consécutif n'émet plus rien, session vivante. Sur desktop c'était
+// déjà couvert ; sur Android rien ne recyclait et le 3e relevé identique
+// disparaissait en silence — nappe décalée d'un rayon, sans bip ni trace.
+// Cas courant : on égalise à une valeur cible et on la répète (0,30 0,30 0,30).
+// Point de décision unique des quatre sites d'appel (efCycleSR, le déclencheur
+// d'efCommitCurrent, efHeardTwice et la mémorisation d'efLastTxt), sur le
+// modèle d'efEchoWindowMs. iOS, Edge, Opera et Firefox restent hors périmètre :
+// moteur différent, aucun de ces chemins ne s'y exécute.
+// NB : le reste du périmètre desktop N'EST PAS étendu. efHoldMic en
+// particulier (flux getUserMedia maintenu pendant la saisie) reste desktop :
+// sur Android une capture concurrente de la reconnaissance est un risque pour
+// le micro lui-même, et le gain — éviter la renégociation de périphérique aux
+// relances — ne le vaut pas.
+function efCycleAllowed() {
+  return efIsChromeDesktop() || efIsAndroidChrome();
 }
 
 async function efRequestWakeLock() {
@@ -18831,11 +18850,12 @@ function efWarmSR() {
   } catch(e) {}
 }
 
-// ── Recyclage de session SR (Chrome desktop) ─────────────────────────────────
+// ── Recyclage de session SR (Chrome desktop et Chrome Android) ───────────────
 // Mesuré (traces Spokeit + banc d'essai autonome) : en session continue, le
 // moteur cloud Chrome n'émet plus rien — ni interim, ni final, ni onend, ni
 // onerror — au 3e énoncé identique consécutif (« 30 30 30 », « 24 24 24 »),
-// session vivante ; un mot différent débloque. Périmètre : efIsChromeDesktop.
+// session vivante ; un mot différent débloque. Périmètre : efCycleAllowed
+// (Chrome desktop et Chrome Android — même moteur, même filtre).
 // Cas courant : on égalise à une valeur cible et on la répète. Remède :
 // contexte vierge dès que deux commits identiques se suivent, OU dès que le
 // moteur a déjà entendu deux fois la valeur dans le segment (efHeardTwice :
@@ -18848,10 +18868,10 @@ function efWarmSR() {
 
 // Le moteur a-t-il déjà entendu cette valeur deux fois dans le segment courant ?
 // Mesuré (traces Chrome 152) : filtre anti-répétition du moteur cloud — deux
-// énoncés identiques passent, le troisième n'émet aucun événement. Chrome
-// desktop uniquement (efLastTxt n'est exploité qu'ici, via efCycleSR gardé).
+// énoncés identiques passent, le troisième n'émet aucun événement. Périmètre
+// efCycleAllowed (efLastTxt n'est exploité qu'ici, via efCycleSR gardé).
 function efHeardTwice(parsed) {
-  if (!efIsChromeDesktop() || !efLastTxt || parsed === null) return false;
+  if (!efCycleAllowed() || !efLastTxt || parsed === null) return false;
   var n = 0, toks = efLastTxt.split(/\s+/);
   for (var i = 0; i < toks.length; i++) {
     var s = toks[i] && efVoiceToNumber(toks[i]);
@@ -18888,7 +18908,7 @@ function efCycleBeepPlay(force) {
 }
 
 function efCycleSR() {
-  if (!efIsChromeDesktop() || !efMicActive || !efMicRecog || efCycling) return;
+  if (!efCycleAllowed() || !efMicActive || !efMicRecog || efCycling) return;
   var old = efMicRecog;
   efCycling  = true;
   efCycleAudioReady = false;
@@ -19016,7 +19036,7 @@ function efStartMic(forceLang) {
         else                         efClose();
         return;
       }
-      if (efIsChromeDesktop()) efLastTxt = txt;
+      if (efCycleAllowed()) efLastTxt = txt;
       var numInterim = efVoiceToNumber(txt);
       if (numInterim) {
         // DEDUP moteur : même nombre que le dernier interim ET timer de
