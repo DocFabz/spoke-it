@@ -31,6 +31,7 @@
   <label><input type="checkbox" id="tts" checked> retour vocal</label>
   <label><input type="checkbox" id="cancel" checked> cancel() avant speak()</label>
   <label><input type="checkbox" id="alt"> alternat (stop reco pendant la lecture)</label>
+  <label><input type="checkbox" id="recycle"> recycler la reco après la lecture</label>
   <label>audioSession <select id="as"><option value="">(ne pas toucher)</option><option value="auto">auto</option><option value="playback">playback</option><option value="play-and-record">play-and-record</option><option value="ambient">ambient</option></select></label>
   <button id="copy">Copier</button>
   <button id="clear">Effacer</button>
@@ -38,6 +39,10 @@
 <div id="log"></div>
 <script>
 var log = document.getElementById('log'), r = null, t0 = performance.now(), active = false, speaking = false, nSpeak = 0, tSpeak = 0;
+// Après chaque lecture, un compte à rebours de 8 s : s'il n'arrive AUCUN résultat de reco, on le signale.
+var deafTimer = null, gotResultSinceTts = true;
+function armDeaf() { gotResultSinceTts = false; if (deafTimer) clearTimeout(deafTimer);
+  deafTimer = setTimeout(function() { if (!gotResultSinceTts && active) line('n', 'aucun résultat de reco dans les 8 s qui suivent la lecture : reco sourde ?'); }, 8000); }
 function now() { return ((performance.now() - t0) / 1000).toFixed(2).padStart(6) + 's'; }
 function line(cls, txt) { var d = document.createElement('div'); d.className = cls; d.textContent = now() + '  ' + txt; log.appendChild(d); log.scrollTop = log.scrollHeight; }
 line('i', 'UA: ' + navigator.userAgent);
@@ -66,13 +71,22 @@ function speak(text) {
   u.lang = document.getElementById('lang').value;
   var v = pickVoice(u.lang); if (v) u.voice = v;
   u.rate = /^fr/.test(u.lang) ? 1.18 : 0.92;
-  var ts = performance.now();
-  u.onstart = function() { speaking = true; line('t', 'TTS#' + id + ' start (' + Math.round(performance.now() - ts) + ' ms après speak)  voix=' + (v ? v.name : 'défaut')); };
-  u.onend   = function() { speaking = false; line('t', 'TTS#' + id + ' end   durée ' + Math.round(performance.now() - ts) + ' ms'); if (altOn && active) { setTimeout(function() { if (active) { startRecog(); line('t', 'alternat : reco relancée'); } }, 150); } };
+  var ts = performance.now(), started = false;
+  u.onstart = function() { speaking = true; started = true; line('t', 'TTS#' + id + ' start (' + Math.round(performance.now() - ts) + ' ms après speak)  voix=' + (v ? v.name : 'défaut')); };
+  u.onend   = function() {
+    speaking = false;
+    line('t', 'TTS#' + id + ' end   durée ' + Math.round(performance.now() - ts) + ' ms' + (started ? '' : '  (SANS start : énoncé jeté, silencieux ?)'));
+    armDeaf();
+    if (altOn && active) { setTimeout(function() { if (active) { startRecog(); line('t', 'alternat : reco relancée'); } }, 150); }
+    else if (document.getElementById('recycle').checked && active) {
+      var tr = performance.now();
+      setTimeout(function() { if (active) { startRecog(); line('t', 'recyclage : reco recréée ' + Math.round(performance.now() - tr) + ' ms après end TTS'); } }, 50);
+    }
+  };
   u.onerror = function(e) { speaking = false; line('e', 'TTS#' + id + ' ERROR ' + e.error + ' après ' + Math.round(performance.now() - ts) + ' ms'); if (altOn && active) startRecog(); };
   line('t', 'TTS#' + id + ' speak("' + text + '")  speaking=' + speechSynthesis.speaking + ' pending=' + speechSynthesis.pending + ' paused=' + speechSynthesis.paused);
   speechSynthesis.speak(u);
-  setTimeout(function() { if (nSpeak === id && !speaking) line('n', 'TTS#' + id + ' : pas de start après 3 s (muet ou bloqué ?)  speaking=' + speechSynthesis.speaking + ' pending=' + speechSynthesis.pending); }, 3000);
+  setTimeout(function() { if (!started) line('n', 'TTS#' + id + ' : aucun start après 3 s (bloqué ?)  speaking=' + speechSynthesis.speaking + ' pending=' + speechSynthesis.pending); }, 3000);
 }
 
 function startRecog() {
@@ -90,6 +104,7 @@ function startRecog() {
     if (active && me === r && !document.getElementById('alt').checked) setTimeout(function() { if (active && me === r) { try { me.start(); line('i', 'reco restart'); } catch(x) { line('e', 'restart KO ' + x.message); } } }, 80);
   };
   me.onresult = function(e) {
+    gotResultSinceTts = true;
     for (var i = e.resultIndex; i < e.results.length; i++) {
       var res = e.results[i], parts = [];
       for (var k = 0; k < res.length; k++) parts.push('"' + res[k].transcript + '"' + (typeof res[k].confidence === 'number' ? ' (' + res[k].confidence.toFixed(2) + ')' : ''));
@@ -107,7 +122,7 @@ function stop() { active = false; if (r) { try { r.abort(); } catch(x) {} r = nu
 document.getElementById('go').onclick = function() {
   if (active) { stop(); return; }
   active = true; t0 = performance.now();
-  line('i', '--- start lang=' + document.getElementById('lang').value + ' tts=' + document.getElementById('tts').checked + ' cancel=' + document.getElementById('cancel').checked + ' alternat=' + document.getElementById('alt').checked);
+  line('i', '--- start lang=' + document.getElementById('lang').value + ' tts=' + document.getElementById('tts').checked + ' cancel=' + document.getElementById('cancel').checked + ' alternat=' + document.getElementById('alt').checked + ' recyclage=' + document.getElementById('recycle').checked);
   // Déverrouillage TTS sur geste utilisateur (comme efUnlockTts)
   try { var u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch(x) {}
   startRecog();
