@@ -19476,7 +19476,8 @@ function efStartMic(forceLang) {
     r.start();
     efSetMicActive(true);
     efRequestWakeLock();
-    if (efIsChromeDesktop()) { efHoldMic(); setTimeout(efWarmSR, 0); } // flux maintenu + instance de rechange pour efCycleSR
+    if (efIsChromeDesktop()) efHoldMic();          // flux micro maintenu : desktop seul
+    if (efCycleAllowed()) setTimeout(efWarmSR, 0); // rechange prête d'avance pour efCycleSR
   };
   if (efAudioCtx.state === 'suspended') {
     efAudioCtx.resume().then(_startNow).catch(_startNow);
