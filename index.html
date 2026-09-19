@@ -70,21 +70,24 @@
 <meta property="og:type" content="website">
 
 <!-- Contraste et fond : posés avant la feuille de style pour qu'aucun rendu
-     n'ait lieu dans l'autre palier ni sur l'autre sol. Écrivain unique des
+     n'ait lieu dans un autre palier ni sur l'autre sol. Écrivain unique des
      deux attributs au démarrage.
      Le fond n'est PAS déduit de prefers-color-scheme : c'est un choix
      explicite, au même titre que le contraste, et l'absence de clé vaut
      ardoise (le thème d'origine).
-     Aucune liste blanche ici, volontairement : elle ferait un deuxième
-     inventaire des sols à tenir d'accord avec celui du script principal. Une
-     valeur inconnue (clé corrompue, ou sol retiré d'une version à l'autre)
-     pose un attribut sans bloc CSS, donc rend exactement comme l'ardoise, et
-     fondNormalise() la nettoie dès que le script principal passe. -->
+     Aucune liste blanche ici, volontairement, ni pour le sol ni pour le
+     palier : elle ferait un deuxième inventaire à tenir d'accord avec celui du
+     script principal. Une valeur inconnue (clé corrompue, palier ou sol retiré
+     d'une version à l'autre) pose un attribut sans bloc CSS, donc rend
+     exactement comme le normal sur l'ardoise, et fondNormalise() /
+     contrastNormalise() la nettoient dès que le script principal passe.
+     Le palier normal est l'ABSENCE d'attribut, comme l'ardoise : c'est ce qui
+     garantit que le thème d'origine reste le :root pur. -->
 <script>
 (function(){
   try {
-    if (localStorage.getItem('spokeit_contrast') === 'haut')
-      document.documentElement.setAttribute('data-contrast', 'haut');
+    var c = localStorage.getItem('spokeit_contrast');
+    if (c && c !== 'normal') document.documentElement.setAttribute('data-contrast', c);
     var f = localStorage.getItem('spokeit_fond');
     if (f && f !== 'ardoise') document.documentElement.setAttribute('data-fond', f);
   } catch (e) {}
@@ -185,7 +188,7 @@
   --scrim-5: rgba(0,0,0,.72);
   /* Canaux RVB des trois accents. La feuille contient plus de trois cents
      rgba() d'accent écrites en dur (liserés, teintes de fond, halos) : tant
-     que les deux paliers étaient sombres elles pouvaient rester littérales,
+     que tous les paliers étaient sombres elles pouvaient rester littérales,
      et c'était le choix d'origine. Sur un sol clair elles ne tiennent plus,
      un liseré corail à .45 posé sur du papier vire au rose pâle. Le canal
      est donc paramétré et les opacités, elles, ne bougent pas. */
@@ -208,14 +211,33 @@
   --sh-lift:  0 20px 72px rgba(0,0,0,.6);
 }
 
+/* ── Contraste : trois paliers ───────────────────────────────────────────
+   html[data-contrast] vaut « bas », rien, ou « haut ». Le palier normal est
+   l'ABSENCE d'attribut, comme l'ardoise est l'absence de data-fond : le thème
+   d'origine reste exactement le :root, sans qu'aucun bloc ne s'interpose.
+   Les deux autres paliers s'écrivent chacun en un bloc commun ici, puis en
+   trois blocs composés avec le sol plus bas.
+
+   Ces deux-là ne sont pas le miroir l'un de l'autre, et c'est voulu :
+   - ÉLEVÉ écarte l'échelle par les deux bouts. Le sol recule, l'encre monte.
+   - BAS ne peut pas faire l'inverse, parce que l'encre est déjà posée sur son
+     plancher : --text3-dim tient 4,5:1 sur --card et n'a nulle part où
+     descendre. Il resserre donc les SURFACES et rabat le HAUT de l'échelle
+     d'encre, en laissant le bas où il est.
+   La règle du palier bas tient en une phrase : chaque écart de surface à la
+   carte est divisé par deux, et l'encre est le miroir du palier élevé tant
+   que le plancher le permet. La carte est le point fixe — aucun bloc du
+   palier bas ne déclare --card, et c'est ce qui laisse le bas de l'échelle
+   d'encre presque immobile pendant que le haut redescend. ── */
+
 /* ── Contraste élevé ─────────────────────────────────────────────────────
-   Un seul palier, pour l'atelier trop éclairé et les reflets. Le sol recule,
-   les bordures se dessinent, les trois niveaux de texte remontent. Les
-   accents ne bougent pas : c'est le fond qui les met en valeur, pas eux qui
-   changent : aucun des litteraux rgba d'accent de la
-   feuille n'est touche, les deux paliers restent donc toujours d'accord.
+   Pour l'atelier trop éclairé et les reflets. Le sol recule, les bordures se
+   dessinent, les trois niveaux de texte remontent.
+   Les accents ne bougent pas : c'est le fond qui les met en valeur, pas eux
+   qui changent. Aucun des littéraux rgba d'accent de la feuille n'est touché,
+   les trois paliers restent donc toujours d'accord.
    Spécificité (0,1,1) contre (0,1,0) pour :root : il l'emporte sans
-   !important. --text3-dim est recalculé pour garder son 4.5:1 sur --card. */
+   !important. --text3-dim est recalculé pour garder son 4,5:1 sur --card. */
 html[data-contrast="haut"] {
   --bg:       #0e1218;
   --bg2:      #161c26;
@@ -231,6 +253,48 @@ html[data-contrast="haut"] {
      L* sous le sol ne suffisait pas non plus. */
   --inp:      #06090e;
   --sh:       0 4px 24px rgba(0,0,0,0.45);
+}
+
+/* ── Contraste bas ───────────────────────────────────────────────────────
+   Pour l'atelier sombre et la fin de soirée. Palier plus DOUX, pas palier
+   moins lisible : aucun ratio ne descend sous 4,5:1, et --text3-dim tient son
+   plancher sur --card exactement comme aux deux autres paliers (4,59:1 ici,
+   contre 4,65 au normal).
+   Trois gestes, et rien d'autre :
+     1. Les surfaces se resserrent autour de la carte, chaque écart divisé par
+        deux : l'étendue passe de 10,1 à 6,1 points de L*. C'est ce
+        resserrement qui fait l'essentiel de l'adoucissement, pas l'encre.
+     2. Le haut de l'échelle d'encre redescend, en miroir du palier élevé
+        (÷1,266, l'exact inverse du ×1,266 qu'il applique) : --text passe de
+        11,21:1 à 8,88 sur la carte, --text2 de 9,71 à 7,67. Le bas ne bouge
+        quasiment pas, faute de place : --text3 5,36 → 5,16.
+     3. --text-strong quitte le blanc pur, qui est LA source d'éblouissement
+        d'un thème sombre le soir, et descend au niveau qu'occupait l'encre
+        courante au palier normal. Il garde donc son cran au-dessus de
+        --text, qui vient de descendre plus bas encore.
+   Le champ ne suit pas tout à fait la division par deux : à 2,0 points de L*
+   sous le sol il laissait la piste du sélecteur de module trop à plat, il est
+   redescendu à 2,7. C'est la seule valeur de ce bloc qui ne sorte pas de la
+   règle.
+   Les bordures s'effacent sans disparaître, à un peu plus que le miroir
+   strict (qui donnait 0,027 et 0,060) : une fois les surfaces resserrées,
+   cette même piste ne tient plus QUE par sa bordure.
+   Les accents ne bougent pas, pour la même raison qu'au palier élevé : la
+   carte est le point fixe, ils gardent donc leurs ratios au centième près et
+   aucun des trois cents rgba d'accent de la feuille n'est à revoir. ── */
+html[data-contrast="bas"] {
+  --bg:       #1e232c;
+  --bg2:      #212634;
+  --card-alt: #1e2536;
+  --border:   rgba(255,255,255,0.04);
+  --border-s: rgba(255,255,255,0.08);
+  --text:     #c5ccd4;
+  --text2:    #b2bfca;
+  --text3:    #8c9dac;
+  --text3-dim:#83949e;
+  --text-strong: #dce4ed;
+  --inp:      #171d2d;
+  --sh:       0 4px 24px rgba(0,0,0,0.23);
 }
 
 /* ── Fond ────────────────────────────────────────────────────────────────
@@ -256,8 +320,8 @@ html[data-contrast="haut"] {
 
    Spécificité : (0,1,1) comme html[data-contrast="haut"], mais ces blocs sont
    écrits APRÈS, donc ils l'emportent sur les jetons communs. C'est pour ça
-   que chaque fond a aussi son bloc composé [data-contrast][data-fond] plus
-   bas, en (0,2,1), qui rétablit le palier élevé. ── */
+   que chaque fond a aussi ses blocs composés [data-contrast][data-fond] plus
+   bas, en (0,2,1), qui rétablissent le palier élevé et le palier bas. ── */
 
 /* Famille sombre : le jeu de surfaces, en gris franc.
    Le carbone ne réécrivait que --bg et --bg2 et héritait des surfaces de
@@ -339,8 +403,11 @@ html[data-fond="papier"] {
      parce que le cyan sonnait froid sur un sol beige.
      Le second geste est une ROTATION DE TEINTE PURE : chaque valeur conserve
      la luminance exacte de celle qu'elle remplace, au dernier chiffre que
-     permet un hexadécimal. Les vingt ratios de la famille — deux jetons,
-     cinq surfaces, deux paliers — sont donc inchangés au centième près. Un
+     permet un hexadécimal. Les trente ratios de la famille — deux jetons,
+     cinq surfaces, trois paliers — sont donc inchangés au centième près. Le
+     palier bas est venu s'ajouter sans rien y changer : il ne touche pas aux
+     accents, et une rotation à luminance constante reste neutre sur autant de
+     paliers qu'on voudra. Un
      réchauffement ne doit rien coûter en lisibilité ; celui-ci ne coûte rien
      du tout, et c'est vérifiable jeton par jeton.
      Le vert de --success est à 156° : trente-deux degrés plus bas, l'écart
@@ -484,10 +551,6 @@ html[data-contrast="haut"][data-fond="carbone"] {
   --text:#f4f4f4; --text2:#e2e2e2; --text3:#c4c4c4; --text3-dim:#bcbcbc;
 }
 html[data-contrast="haut"][data-fond="papier"] {
-  --ink-rgb: 30,26,18;
-  --tip-bg: #2b2620;
-  --tip-text: #ece7dd;
-  --text-strong: var(--text);
   --scrim-1: rgba(38,30,18,.38);
   --scrim-2: rgba(38,30,18,.42);
   --scrim-3: rgba(38,30,18,.46);
@@ -512,10 +575,6 @@ html[data-contrast="haut"][data-fond="papier"] {
   --sh-hero:0 22px 56px rgba(54,44,28,0.28); --sh-lift:0 14px 48px rgba(54,44,28,0.28);
 }
 html[data-contrast="haut"][data-fond="alu"] {
-  --ink-rgb: 28,28,30;
-  --tip-bg: #2c2c2e;
-  --tip-text: #ebebf0;
-  --text-strong: var(--text);
   --scrim-1: rgba(24,26,32,.36);
   --scrim-2: rgba(24,26,32,.40);
   --scrim-3: rgba(24,26,32,.44);
@@ -526,12 +585,16 @@ html[data-contrast="haut"][data-fond="alu"] {
   --warm2-rgb: 135,45,16;
   --success-rgb: 10,105,68;
   /* Le sol reprend systemGray5 (#e5e5ea), c'est-à-dire le cran que le palier
-     normal vient de quitter : les deux paliers restent donc sur des valeurs
-     Apple authentiques, à un barreau d'écart. Le reste de l'échelle descend
+     normal vient de quitter : ce palier-ci et le normal restent donc sur des
+     valeurs Apple authentiques, à un barreau d'écart. Le palier bas remonte
+     de l'autre côté et sort de l'échelle, qui s'arrête à systemGray6 ; son
+     bloc le dit. Le reste de l'échelle descend
      du même pas. Au passage, le champ retrouve un sol : à #d7d7dc sur
      #d9d9de, la piste du sélecteur de module était à 0,7 point de L* de la
      page, invisible ; l'écart passe à 4,6. */
-  --bg:#e5e5ea; --bg2:#f6f6f9; --card:#ffffff; --card-alt:#e3e3e9; --inp:#d8d8de;
+  /* --card n'est pas déclaré : l'alu est le seul sol dont la carte est déjà le
+     blanc pur au palier normal, elle n'a donc nulle part où monter. */
+  --bg:#e5e5ea; --bg2:#f6f6f9; --card-alt:#e3e3e9; --inp:#d8d8de;
   --border:rgba(60,60,67,0.24); --border-s:rgba(60,60,67,0.40);
   --accent:#0a5aad; --accent2:#07447f; --warm:#a93a17; --warm2:#872d10; --success:#0a6944;
   --text:#0c0c0e; --text2:#2f3035; --text3:#55555c; --text3-dim:#5f5f66;
@@ -539,6 +602,79 @@ html[data-contrast="haut"][data-fond="alu"] {
   --sh-chip:0 1px 3px rgba(17,20,28,0.15); --sh-pop:0 8px 26px rgba(17,20,28,0.16);
   --sh-modal:0 16px 50px rgba(17,20,28,0.22); --sh-modal-d:0 16px 50px rgba(17,20,28,0.24);
   --sh-hero:0 28px 64px rgba(17,20,28,0.24); --sh-lift:0 18px 54px rgba(17,20,28,0.24);
+}
+
+/* Palier bas croisé avec le fond, en (0,2,1). Même règle partout : chaque
+   écart de surface à la carte divisé par deux, le haut de l'échelle d'encre
+   rabattu en miroir du palier élevé, le bas laissé sur son plancher.
+   Ce que ces trois blocs NE nomment PAS est aussi important que ce qu'ils
+   nomment : ni --card, qui est le point fixe du palier ; ni les accents, qui
+   gardent donc leurs ratios au centième près puisque leur surface de
+   référence n'a pas bougé ; ni --ink-rgb ni l'infobulle sur les sols clairs,
+   que le bloc du sol pose déjà et que ce palier n'a aucune raison de
+   redéclarer. */
+
+/* Le carbone est le sol qui bouge le plus, et c'est arithmétique : ses
+   surfaces s'étalent sur 22 points de L*, deux fois plus que les trois
+   autres, donc la division par deux lui retire 11 points là où l'ardoise n'en
+   perd que 4. Son sol quitte le presque noir pour un gris franc à mi-hauteur
+   de sa carte, et l'app se lit à plat. Son encre, elle, ne bouge presque pas :
+   elle était déjà sur son plancher (4,69:1 pour --text3-dim, contre 5,38 en
+   papier), il ne restait rien à rabattre.
+   --text-strong est la seule valeur de ce bloc qui ne sorte pas du calcul :
+   sans lui, le carbone hériterait du #dce4ed bleuté du bloc commun, au milieu
+   d'un thème tenu strictement neutre. Il reprend donc l'encre courante du
+   carbone au palier normal, comme ailleurs, mais dans son propre gris. */
+html[data-contrast="bas"][data-fond="carbone"] {
+  --bg:#212836; --bg2:#2f343e; --card-alt:#353942; --inp:#282d39;
+  --tip-bg:#282d39; --tip-text:#cfcfcf;
+  --text:#dddddd; --text2:#cfcfcf; --text3:#b6b6b6; --text3-dim:#acacac;
+  --text-strong:#e9e9e9;
+}
+html[data-contrast="bas"][data-fond="papier"] {
+  --scrim-1: rgba(38,30,18,.26);
+  --scrim-2: rgba(38,30,18,.30);
+  --scrim-3: rgba(38,30,18,.34);
+  --scrim-4: rgba(38,30,18,.38);
+  --scrim-5: rgba(38,30,18,.40);
+  --bg:#f6f3eb; --bg2:#fbf9f5; --card-alt:#faf7f1; --inp:#f1ecdf;
+  --border:rgba(44,34,20,0.06); --border-s:rgba(44,34,20,0.13);
+  --text:#2e2a24; --text2:#4d483e; --text3:#6e6659; --text3-dim:#756e60;
+  --sh:0 3px 14px rgba(54,44,28,0.07); --sh-raise:0 2px 10px rgba(54,44,28,0.09);
+  --sh-chip:0 1px 4px rgba(54,44,28,0.08); --sh-pop:0 6px 22px rgba(54,44,28,0.10);
+  --sh-modal:0 12px 44px rgba(54,44,28,0.13); --sh-modal-d:0 12px 44px rgba(54,44,28,0.14);
+  --sh-hero:0 22px 56px rgba(54,44,28,0.14); --sh-lift:0 14px 48px rgba(54,44,28,0.14);
+}
+/* Le champ reprend systemGray6 (#f2f2f7), c'est-à-dire le cran que le sol
+   vient de quitter en montant : le palier bas reste donc sur une valeur Apple
+   authentique, exactement comme le palier élevé qui pose son sol sur
+   systemGray5. Le sol, lui, monte au-dessus de systemGray6 et quitte l'échelle
+   d'Apple, qui s'arrête là : #f8f8fd n'est pas une valeur de la charte, et
+   c'est le seul endroit des trois paliers de l'alu où il a fallu en inventer
+   une. La carte étant déjà le blanc pur, il n'y avait pas d'autre moyen de
+   resserrer l'écart sol / carte.
+   Le champ y gagne au passage ce que le palier normal lui refusait :
+   --text3-dim y tenait 3,75:1, il tient 4,10 ici. */
+html[data-contrast="bas"][data-fond="alu"] {
+  --scrim-1: rgba(24,26,32,.24);
+  --scrim-2: rgba(24,26,32,.28);
+  --scrim-3: rgba(24,26,32,.32);
+  --scrim-4: rgba(24,26,32,.36);
+  --scrim-5: rgba(24,26,32,.38);
+  --bg:#f8f8fd; --bg2:#fcfcfe; --card-alt:#f7f7fc; --inp:#f2f2f7;
+  --border:rgba(60,60,67,0.07); --border-s:rgba(60,60,67,0.15);
+  /* --text3-dim n'est pas déclaré, et c'est délibéré : il ne bouge pas d'un
+     chiffre à ce palier, pour la même raison qu'au carbone, il n'a aucune
+     place. L'alu est le sol où il est le plus serré des quatre (4,71:1 sur la
+     carte au palier normal, contre 5,38 en papier), et il ne tient 4,5:1 que
+     sur --card et --bg2. L'éclaircir d'un seul cran faisait tomber --bg2 à
+     4,47. Il garde donc sa valeur du palier normal, par héritage du bloc du
+     sol, pendant que les trois encres au-dessus de lui redescendent. */
+  --text:#27272a; --text2:#48494e; --text3:#686870;
+  --sh:0 2px 12px rgba(17,20,28,0.05); --sh-raise:0 2px 8px rgba(17,20,28,0.06);
+  --sh-chip:0 1px 3px rgba(17,20,28,0.06); --sh-pop:0 8px 26px rgba(17,20,28,0.07);
+  --sh-modal:0 16px 50px rgba(17,20,28,0.10); --sh-modal-d:0 16px 50px rgba(17,20,28,0.11);
+  --sh-hero:0 28px 64px rgba(17,20,28,0.11); --sh-lift:0 18px 54px rgba(17,20,28,0.11);
 }
 
 /* ── Règles de FAMILLE ────────────────────────────────────────────────────
@@ -2356,6 +2492,105 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .fond-opt-check { margin-left:auto; padding-left:.6rem; flex-shrink:0; visibility:hidden }
 .fond-opt[aria-checked="true"] .fond-opt-check { visibility:visible }
 .fond-opt-name { text-align:left }
+/* ── Curseur de contraste ─────────────────────────────────────────────────
+   Un input range natif habillé, et non un faux curseur : il porte déjà le
+   rôle slider, les flèches, Origine / Fin, le pas et le glissement tactile.
+   Tout ce qui suit est de la peinture.
+   LA valeur qui commande tout le bloc est --contrast-thumb : le pouce est rond, son
+   centre ne va donc pas jusqu'aux bords de la piste mais s'arrête à un rayon
+   de chaque extrémité. C'est cet écart, et lui seul, qui décale les crans et
+   les libellés ; il est écrit une fois et repris partout, sinon la légende et
+   les crans dérivent du pouce de quelques pixels aux deux extrémités.
+   Les crans sont posés SOUS la piste et non dessus : sur la piste, un cran
+   devrait rester lisible à la fois sur la partie remplie (l'accent) et sur la
+   partie vide (le champ), ce qu'aucune couleur ne fait dans les deux familles
+   de sol à la fois. Sous la piste il se détache de la carte, toujours. ── */
+/* Le seul voile transparent de l'app, et c'est la raison d'être de la modale :
+   un curseur de contraste sert à VOIR le palier changer. Derrière le voile
+   commun (--scrim-2 plus un flou de 4 px) on ne voyait plus rien de l'app, et
+   le curseur ne valait pas mieux que trois boutons.
+   Le retrait de la modale est alors porté par sa seule ombre et son liseré, ce
+   qui suffit : elle fait 300 px au milieu d'une page qui, elle, bouge à chaque
+   cran. L'overlay reste en place, sans peinture, pour continuer de capter le
+   clic de fermeture. */
+#contrastpicker-overlay { background:transparent; backdrop-filter:none }
+.contrast-range-wrap {
+  /* Les DEUX valeurs qui commandent le bloc. Tout le reste en découle par
+     calc() : le rayon de la piste, le recentrage vertical du pouce, les
+     marges de la légende. Rien n'est écrit en dur ailleurs, sinon changer le
+     diamètre du pouce ferait dériver les crans de quelques pixels aux deux
+     extrémités sans qu'on voie pourquoi. */
+  --contrast-thumb:18px;
+  --contrast-track:6px;
+  display:flex; flex-direction:column; padding:.15rem 0 .1rem;
+}
+.contrast-range {
+  -webkit-appearance:none; appearance:none; width:100%; margin:0;
+  background:transparent; cursor:pointer;
+  /* Le pouce déborde la piste d'un demi-écart en haut comme en bas : sans
+     cette hauteur, Chrome rogne le cercle au lieu d'agrandir la zone. */
+  height:var(--contrast-thumb);
+}
+.contrast-range:focus { outline:none }
+.contrast-range::-webkit-slider-runnable-track {
+  height:var(--contrast-track); border-radius:calc(var(--contrast-track) / 2);
+  background:linear-gradient(90deg,
+    var(--accent) 0 var(--contrast-fill,50%), var(--inp) var(--contrast-fill,50%) 100%);
+  box-shadow:inset 0 0 0 1px var(--border-s);
+}
+.contrast-range::-moz-range-track {
+  height:var(--contrast-track); border-radius:calc(var(--contrast-track) / 2);
+  background:var(--inp); box-shadow:inset 0 0 0 1px var(--border-s);
+}
+/* Firefox peint la partie remplie tout seul, avec son propre pseudo-élément :
+   la piste reste unie ci-dessus et c'est lui qui porte l'accent. */
+.contrast-range::-moz-range-progress {
+  height:var(--contrast-track);
+  border-radius:calc(var(--contrast-track) / 2) 0 0 calc(var(--contrast-track) / 2);
+  background:var(--accent);
+}
+.contrast-range::-webkit-slider-thumb {
+  -webkit-appearance:none; appearance:none;
+  width:var(--contrast-thumb); height:var(--contrast-thumb); border-radius:50%;
+  background:var(--accent); border:2px solid var(--card); box-sizing:border-box;
+  box-shadow:var(--sh-chip);
+  /* Recentrage vertical sur la piste : Chrome aligne le pouce sur le HAUT de
+     la piste, Firefox le centre tout seul. */
+  margin-top:calc((var(--contrast-track) - var(--contrast-thumb)) / 2);
+  transition:box-shadow .2s, transform .2s;
+}
+.contrast-range::-moz-range-thumb {
+  width:var(--contrast-thumb); height:var(--contrast-thumb); border-radius:50%;
+  background:var(--accent); border:2px solid var(--card); box-sizing:border-box;
+  box-shadow:var(--sh-chip); transition:box-shadow .2s, transform .2s;
+}
+.contrast-range:focus-visible::-webkit-slider-thumb { box-shadow:0 0 0 4px rgba(var(--accent-rgb),.28) }
+.contrast-range:focus-visible::-moz-range-thumb     { box-shadow:0 0 0 4px rgba(var(--accent-rgb),.28) }
+.contrast-range:active::-webkit-slider-thumb { transform:scale(1.08) }
+.contrast-range:active::-moz-range-thumb     { transform:scale(1.08) }
+/* La légende n'occupe QUE la course du pouce, d'où les marges d'un demi-pouce :
+   sur toute la largeur, ses trois repères tomberaient à côté des trois crans.
+   Chaque libellé est ensuite centré sur son cran par left + translateX(-50%),
+   posés en JS depuis l'index, pour qu'un palier ajouté se place tout seul. */
+.contrast-range-legend {
+  position:relative; height:1.5rem;
+  margin:.45rem calc(var(--contrast-thumb) / 2) 0;
+}
+.contrast-range-tick {
+  position:absolute; top:0; transform:translateX(-50%); white-space:nowrap;
+  padding-top:.5rem;
+  font-family:'DM Mono',monospace; font-size:.68rem; font-weight:400;
+  letter-spacing:.04em; text-transform:none; color:var(--text3);
+  transition:color .25s;
+}
+/* Le cran lui-même : un trait de 5 px entre la piste et le libellé. */
+.contrast-range-tick::before {
+  content:''; position:absolute; top:0; left:50%; transform:translateX(-50%);
+  width:1px; height:5px; border-radius:1px;
+  background:rgba(var(--ink-rgb),.28); transition:background .25s;
+}
+.contrast-range-tick.is-on { color:var(--accent) }
+.contrast-range-tick.is-on::before { background:var(--accent) }
 .ct-feedback { font-size:.66rem; color:#f08080; min-height:.9rem; font-style:italic; margin-top:.3rem }
 .ct-list    { display:flex; flex-direction:column; gap:.35rem }
 .ct-item    { display:flex; align-items:center; gap:.5rem; padding:.5rem .9rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); font-size:.75rem; transition:border-color .2s }
@@ -2769,6 +3004,36 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
   <div id="fondpicker-list" role="radiogroup" aria-labelledby="fondpicker-title" style="display:flex;flex-direction:column;gap:.7rem"></div>
 </div>
 
+<!-- ── Contraste : sélecteur à curseur. Même coque que le chooser de fond, mais
+     un curseur et non une liste : le contraste est un AXE, du plus doux au
+     plus franc, quand les quatre sols ne s'ordonnent pas. Les trois crans et
+     leurs libellés sont construits par contrastPickerRender() à partir de
+     CONTRASTES_DISPO, pour qu'un palier ajouté ou retiré n'ait pas à être
+     répercuté dans le markup.
+     Les max et value ci-dessous ne sont donc PAS l'inventaire : ce sont des
+     valeurs de repli, pour que l'input soit cohérent avant le premier rendu.
+     contrastPickerRender() réécrit les deux à chaque ouverture, et c'est lui
+     l'écrivain. Un palier ajouté à CONTRASTES_DISPO n'a rien à faire ici.
+     Le palier s'applique pendant le glissement : la modale est étroite, on
+     voit donc l'app changer derrière elle. ── -->
+<div class="ateliermgr-overlay" id="contrastpicker-overlay" onclick="closeContrastPicker()"></div>
+<div class="ateliermgr-modal ridermgr-chooser" id="contrastpicker-modal" style="max-width:300px" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="contrastpicker-title">
+  <div class="ateliermgr-header">
+    <span class="ateliermgr-header-left">
+      <svg class="ateliermgr-title-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/>
+      </svg>
+      <span class="ateliermgr-title" id="contrastpicker-title" data-i18n="contrastLabel">Contraste</span>
+    </span>
+    <button class="ateliermgr-close" onclick="closeContrastPicker()" aria-label="Fermer">&#x2715;</button>
+  </div>
+  <div class="contrast-range-wrap">
+    <input class="contrast-range" id="contrastpicker-range" type="range" min="0" max="2" step="1" value="1"
+           aria-labelledby="contrastpicker-title" oninput="contrastPickerInput(event)">
+    <div class="contrast-range-legend" id="contrastpicker-legend"></div>
+  </div>
+</div>
+
 <!-- ── Modale Réglages ── -->
 <div class="ateliermgr-overlay" id="reglages-overlay" onclick="closeReglages()"></div>
 <div class="ateliermgr-modal ridermgr-chooser" id="reglages-modal" style="max-width:300px" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="reglages-title">
@@ -2793,7 +3058,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
     <span data-i18n="fondLabel">Fond</span>
     <span class="reglages-val" id="fond-val">Ardoise</span>
   </button>
-  <button class="ct-save-btn" id="contrast-btn" type="button" aria-pressed="false" onclick="closeReglages();toggleContrast()">
+  <button class="ct-save-btn" id="contrast-btn" type="button" onclick="closeReglages();openContrastPicker()">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>
     <span data-i18n="contrastLabel">Contraste</span>
     <span class="reglages-val" id="contrast-val">Normal</span>
@@ -5819,8 +6084,8 @@ const i18n = {
     // la map id→clé d'applyLang ou au rendu — cf. delTitle/clearValuesTitle)
     hookeBtnTitle:'Courbe de Hooke',
     helpBtnTitle:'Mode d\'emploi',
-    contrastBtnOff:'Contraste élevé', contrastBtnOn:'Contraste normal',
-    contrastLabel:'Contraste', contrastValNormal:'Normal', contrastValHaut:'Élevé',
+    contrastLabel:'Contraste', contrastBtnTitle:'Choisir le contraste',
+    contrastValBas:'Bas', contrastValNormal:'Normal', contrastValHaut:'Élevé',
     fondLabel:'Fond', fondBtnTitle:'Choisir le fond',
     fondArdoise:'Ardoise', fondCarbone:'Carbone', fondPapier:'Papier', fondAlu:'Alu',
     langLabel:'Langue', reglagesBtnTitle:'Réglages',
@@ -6097,8 +6362,8 @@ const i18n = {
     // id→key map or at render time — cf. delTitle/clearValuesTitle)
     hookeBtnTitle:'Hooke curve',
     helpBtnTitle:'User manual',
-    contrastBtnOff:'High contrast', contrastBtnOn:'Normal contrast',
-    contrastLabel:'Contrast', contrastValNormal:'Normal', contrastValHaut:'High',
+    contrastLabel:'Contrast', contrastBtnTitle:'Choose contrast',
+    contrastValBas:'Low', contrastValNormal:'Normal', contrastValHaut:'High',
     fondLabel:'Background', fondBtnTitle:'Choose background',
     fondArdoise:'Slate', fondCarbone:'Carbon', fondPapier:'Paper', fondAlu:'Alu',
     langLabel:'Language', reglagesBtnTitle:'Settings',
@@ -6318,7 +6583,7 @@ const LS_REGISTRY = [
   { key:'spokeit_hrSort',         kind:'pref',      erase:false, exportField:null,            owner:'tri des listes « Charger un moyeu / une jante »' },
   { key:'spokeit_appStamp',       kind:'meta',      erase:false, exportField:null,            owner:'toast nouvelle version (Last-Modified du document)' },
   { key:'spoke-it-lang',          kind:'pref',      erase:false, exportField:null,            owner:'i18n' },
-  { key:'spokeit_contrast',       kind:'pref',      erase:false, exportField:null,            owner:'contraste élevé (par appareil)' },
+  { key:'spokeit_contrast',       kind:'pref',      erase:false, exportField:null,            owner:'palier de contraste (par appareil)' },
   { key:'spokeit_fond',           kind:'pref',      erase:false, exportField:null,            owner:'fond (par appareil)' },
   { key:'ef_restore',             kind:'transient', erase:true,  exportField:null,            owner:'EF Vocal (reprise crash iOS)' },
 ];
@@ -10092,52 +10357,90 @@ function closeReglages() {
     document.activeElement.blur();
 }
 
-// ── Contraste élevé ─────────────────────────────────────────────────────────
-// Deux paliers, portés par html[data-contrast]. L'attribut est posé une
-// première fois par le script de pré-rendu du head ; ici on ne fait que le
-// basculer et tenir ce qui en dépend.
-function contrastOn() {
-  return document.documentElement.getAttribute('data-contrast') === 'haut';
+// ── Contraste ───────────────────────────────────────────────────────────────
+// Trois paliers, portés par html[data-contrast], posé une première fois par le
+// script de pré-rendu du head. Le NORMAL est l'ABSENCE d'attribut et non une
+// valeur, exactement comme l'ardoise pour le sol : le thème d'origine reste
+// donc le :root pur, sans qu'aucun bloc ne s'interpose, et c'est ce qui
+// garantit zéro régression sur le palier historique.
+// CETTE LISTE EST LA SEULE : la feuille décrit les paliers, ce tableau les
+// ORDONNE (c'est lui qui donne au curseur son axe, du plus doux au plus franc)
+// et les nomme, et rien d'autre n'en tient d'inventaire.
+var CONTRASTES_DISPO = ['bas','normal','haut'];
+var CONTRAST_I18N = {
+  bas:'contrastValBas', normal:'contrastValNormal', haut:'contrastValHaut'
+};
+// ATTENTION, la différence avec fondActuel() est réelle et facile à rater :
+// là-bas le défaut (l'ardoise) est en TÊTE de liste, et le test est donc
+// indexOf > 0. Ici la liste est ordonnée par l'AXE du curseur, du plus doux au
+// plus franc, et le défaut est au MILIEU. Le test doit porter sur
+// l'appartenance seule, sinon 'bas', qui est à l'index 0, serait relu comme
+// normal — et le curseur reviendrait au cran du milieu pendant que la feuille
+// de style, elle, appliquerait bien le palier bas.
+function contrastActuel() {
+  var c = document.documentElement.getAttribute('data-contrast');
+  return CONTRASTES_DISPO.indexOf(c) === -1 ? 'normal' : c;
+}
+// Jumeau de fondNormalise() : une clé corrompue ou un palier retiré d'une
+// version à l'autre a posé un attribut sans bloc CSS, qui rend donc comme le
+// normal. On nettoie l'attribut et la clé pour que l'état affiché et l'état
+// réel redeviennent le même. 'normal' en attribut est nettoyé lui aussi : le
+// palier normal est l'ABSENCE d'attribut, un html[data-contrast="normal"] est
+// donc un état illégal même si sa valeur, elle, est connue.
+function contrastNormalise() {
+  var c = document.documentElement.getAttribute('data-contrast');
+  if (c === null || (c !== 'normal' && CONTRASTES_DISPO.indexOf(c) !== -1)) return;
+  document.documentElement.removeAttribute('data-contrast');
+  try { lsSet('spokeit_contrast', 'normal'); } catch (e) {}
 }
 // La barre système Android suit le fond RÉEL et non une constante : la valeur
-// est relue sur --bg après bascule, donc elle reste juste si le palier change
-// un jour de couleur. Le <meta> statique du head ne vaut que pour le premier
-// rendu, avant que cette fonction ne passe.
-function contrastSyncMeta() {
+// est relue sur --bg après bascule, donc elle reste juste si un palier ou un
+// sol change un jour de couleur. Le <meta> statique du head ne vaut que pour
+// le premier rendu, avant que cette fonction ne passe.
+// Nom volontairement neutre, et non contrastSyncMeta : --bg dépend du COUPLE
+// sol + palier, c'est pourquoi fondSync l'appelle autant que contrastSync.
+// Elle vit dans ce module parce qu'elle y est née, pas parce qu'elle lui
+// appartient : douze combinaisons y passent, pas trois.
+function themeSyncMeta() {
   var m = document.querySelector('meta[name="theme-color"]');
   if (!m) return;
   var bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
   if (bg) m.setAttribute('content', bg);
 }
 // contrastSync : écrivain unique de l'état du bouton, appelé au démarrage et
-// par applyLang (le title annonce l'action, il suit donc la langue ET l'état).
+// par applyLang (le nom du palier est traduit, il suit donc la langue).
+// Le bouton n'est plus un interrupteur mais l'entrée d'un sélecteur à trois
+// crans : plus d'aria-pressed, qui ne sait dire que deux états et annoncerait
+// « non pressé » sur deux paliers distincts.
 function contrastSync() {
-  var on = contrastOn();
+  var p = contrastActuel();
   var btn = $id('contrast-btn');
-  if (btn) {
-    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    // l'aria-label annonce l'ACTION, le texte visible l'ETAT
-    btn.setAttribute('aria-label', t(on ? 'contrastBtnOn' : 'contrastBtnOff'));
-  }
+  // l'aria-label annonce l'ACTION, le texte visible l'ÉTAT
+  if (btn) btn.setAttribute('aria-label', t('contrastBtnTitle'));
   var val = $id('contrast-val');
-  if (val) val.textContent = t(on ? 'contrastValHaut' : 'contrastValNormal');
-  contrastSyncMeta();
+  if (val) val.textContent = t(CONTRAST_I18N[p]);
+  // Sélecteur déjà ouvert au moment d'une bascule FR/EN : on le reconstruit
+  // plutôt que de laisser ses libellés dans l'ancienne langue. Même schéma que
+  // fondSync pour le sol.
+  var modal = $id('contrastpicker-modal');
+  if (modal && modal.classList.contains('show')) contrastPickerRender();
+  themeSyncMeta();
 }
-// Ecrivain unique de l'URL du manuel : il porte la langue ET le palier.
-// guide.html a son propre bloc html[data-contrast] et lit le parametre au
-// chargement, sinon il s'ouvrirait dans l'autre palier au milieu de l'app.
+// Écrivain unique de l'URL du manuel. Il s'ouvre en iframe au milieu de l'app :
+// il doit donc arriver dans la même langue, le même palier et le même sol,
+// sinon il tranche. guide.html recopie les trois blocs de jetons et lit les
+// trois paramètres au chargement.
+// Les deux défauts ne passent RIEN, comme partout ailleurs : ni le palier
+// normal, ni l'ardoise. L'absence de paramètre est le défaut des deux côtés,
+// ce qui évite d'avoir à tenir un inventaire ici comme là-bas.
 function guideURL() {
-  // Le manuel s'ouvre en iframe au milieu de l'app : il doit arriver dans la
-  // meme langue, le meme palier et le meme sol, sinon il tranche. guide.html
-  // lit les trois parametres au chargement. L'ardoise ne passe rien, comme
-  // partout ailleurs : c'est le defaut des deux cotes.
-  var f = fondActuel();
+  var f = fondActuel(), c = contrastActuel();
   return 'guide.html?lang=' + lang
-       + (contrastOn() ? '&contrast=haut' : '')
+       + (c !== 'normal' ? '&contrast=' + c : '')
        + (f !== 'ardoise' ? '&fond=' + f : '');
 }
-// Manuel deja ouvert au moment d'une bascule : on le recharge dans le bon
-// palier plutot que de laisser les deux diverger. Meme schema que helpSync
+// Manuel déjà ouvert au moment d'une bascule : on le recharge dans le bon
+// palier plutôt que de laisser les deux diverger. Même schéma que helpSync
 // pour la langue.
 function contrastSyncGuide() {
   var sheet = $id('help-sheet'), frame = $id('help-frame');
@@ -10148,18 +10451,102 @@ function contrastSyncGuide() {
     frame.src = wanted;
   }
 }
-function toggleContrast() {
-  var on = !contrastOn();
-  if (on) document.documentElement.setAttribute('data-contrast', 'haut');
-  else    document.documentElement.removeAttribute('data-contrast');
-  // lsSet et non setItem direct : c'est l'ecrivain maison, il porte deja le
-  // try/catch et le toast de storage plein. Cle kind:'pref', donc il ne
-  // touche pas a spokeit_lastModif : changer de palier n'est pas une
-  // modification de donnees et ne doit pas armer le rappel de sauvegarde.
-  lsSet('spokeit_contrast', on ? 'haut' : 'normal');
+// Écrivain unique du palier. Appelé par le curseur, jamais ailleurs.
+function setContrast(p) {
+  if (CONTRASTES_DISPO.indexOf(p) === -1) return;
+  if (p === 'normal') document.documentElement.removeAttribute('data-contrast');
+  else                document.documentElement.setAttribute('data-contrast', p);
+  // lsSet et non setItem direct : c'est l'écrivain maison, il porte déjà le
+  // try/catch et le toast de storage plein. Clé kind:'pref', donc il ne
+  // touche pas à spokeit_lastModif : changer de palier n'est pas une
+  // modification de données et ne doit pas armer le rappel de sauvegarde.
+  lsSet('spokeit_contrast', p);
   contrastSync();
+  // Le manuel ne peut pas être ouvert en même temps que ce curseur : il
+  // s'ouvre depuis les Réglages, qui se referment avant, et son iframe couvre
+  // alors le bouton. L'appel ne fait donc rien aujourd'hui, mais il est la
+  // moitié manquante de guideURL() — qui, lui, porte bien le palier — et c'est
+  // le même couple que dans setFond juste en dessous. Le retirer laisserait
+  // une asymétrie qui mordrait au premier chemin qui rouvrirait le cas.
   contrastSyncGuide();
+  // Les canvas ne réagissent ni au changement d'attribut ni à une transition
+  // CSS : ils gardent la palette de l'ancien palier jusqu'au prochain rendu.
+  // Ici l'appel PORTE, là où celui de setFond était surtout prudent : le voile
+  // de cette modale est transparent, et le radar du module tension vit dans
+  // #tm-result-card, sur la page et non dans une modale. Il est donc en clair
+  // derrière le curseur pendant qu'on le déplace, et sans ce repeint il serait
+  // le seul élément de l'écran resté au palier précédent.
+  fondRepeintCanvas();
 }
+
+// ── Sélecteur de contraste ──────────────────────────────────────────────────
+// Un curseur à trois crans plutôt que trois boutons : le contraste est un axe,
+// pas une liste de thèmes, et c'est la différence avec le sélecteur de sol
+// juste au-dessus, dont les quatre entrées ne s'ordonnent pas.
+// Le palier s'applique PENDANT le glissement (événement input et non change) :
+// la modale ne couvre qu'une partie de l'écran, on voit donc le palier changer
+// derrière elle, et c'est tout l'intérêt d'un curseur ici.
+// L'input range natif porte déjà le rôle slider, les flèches, Origine / Fin et
+// le glissement tactile ; il ne lui manque que aria-valuetext, sans quoi un
+// lecteur d'écran annoncerait « 0 » au lieu de « Bas ».
+function contrastPickerRender() {
+  var input = $id('contrastpicker-range');
+  if (!input) return;
+  var n = CONTRASTES_DISPO.length;
+  var p = contrastActuel(), i = CONTRASTES_DISPO.indexOf(p);
+  input.max = String(n - 1);
+  input.value = String(i);
+  input.setAttribute('aria-valuetext', t(CONTRAST_I18N[p]));
+  // Partie remplie de la piste, pour Chrome et Safari, qui n'ont pas
+  // l'équivalent du ::-moz-range-progress de Firefox. Le pourcentage est celui
+  // du CENTRE du pouce, et la piste est peinte sur toute sa largeur : le
+  // remplissage déborde donc d'un demi-pouce à chaque extrémité, ce qui est
+  // exactement ce qu'on veut — au cran du bas la piste est entièrement vide,
+  // au cran du haut entièrement pleine.
+  input.style.setProperty('--contrast-fill', (n > 1 ? (i / (n - 1)) * 100 : 0) + '%');
+  var legend = $id('contrastpicker-legend');
+  if (!legend) return;
+  legend.innerHTML = '';
+  CONTRASTES_DISPO.forEach(function(c, k) {
+    var s = document.createElement('span');
+    s.className = 'contrast-range-tick' + (k === i ? ' is-on' : '');
+    // aria-hidden : l'input porte déjà le libellé du palier courant dans son
+    // aria-valuetext, la légende ferait doublon à la lecture d'écran.
+    s.setAttribute('aria-hidden', 'true');
+    s.style.left = (n > 1 ? (k / (n - 1)) * 100 : 50) + '%';
+    s.textContent = t(CONTRAST_I18N[c]);
+    legend.appendChild(s);
+  });
+}
+function contrastPickerInput(e) {
+  var i = parseInt(e.target.value, 10);
+  if (isNaN(i) || !CONTRASTES_DISPO[i]) return;
+  // setContrast appelle contrastSync, qui reconstruit le sélecteur ouvert :
+  // pas de contrastPickerRender() ici, ce serait un second rendu pour rien.
+  setContrast(CONTRASTES_DISPO[i]);
+}
+// Escape seulement : les flèches et le glissement appartiennent à l'input
+// natif, qui les traite mieux qu'un raccourci maison ne le ferait.
+function contrastPickerKey(e) {
+  var modal = $id('contrastpicker-modal');
+  if (!modal || !modal.classList.contains('show')) return;
+  if (e.key === 'Escape') { e.preventDefault(); closeContrastPicker(); }
+}
+document.addEventListener('keydown', contrastPickerKey);
+function openContrastPicker() {
+  contrastPickerRender();
+  $id('contrastpicker-overlay').classList.add('show');
+  $id('contrastpicker-modal').classList.add('show');
+  var input = $id('contrastpicker-range');
+  if (input) input.focus();
+}
+function closeContrastPicker() {
+  $id('contrastpicker-overlay').classList.remove('show');
+  $id('contrastpicker-modal').classList.remove('show');
+  if (document.activeElement && document.activeElement !== document.body)
+    document.activeElement.blur();
+}
+contrastNormalise();
 contrastSync();
 
 // ── Fond ────────────────────────────────────────────────────────────────────
@@ -10235,9 +10622,9 @@ function fondSync() {
   // fait partie.
   var modal = $id('fondpicker-modal');
   if (modal && modal.classList.contains('show')) fondPickerRender();
-  // La barre système Android suit le fond réel : contrastSyncMeta relit --bg
+  // La barre système Android suit le fond réel : themeSyncMeta relit --bg
   // après bascule, elle couvre donc les quatre sols sans rien savoir d'eux.
-  contrastSyncMeta();
+  themeSyncMeta();
 }
 // Écrivain unique du sol. Appelé par le chooser, jamais ailleurs.
 function setFond(f) {
