@@ -2840,7 +2840,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
 </head>
 <body>
 <!-- BUILD D'ESSAI audio.html : étiquette d'identification, à ne jamais reporter dans index.html -->
-<div id="ef-essai-badge" style="position:fixed;left:8px;bottom:8px;z-index:99999;pointer-events:none;font:600 11px/1 system-ui,sans-serif;letter-spacing:.02em;color:#fff;background:#c0392b;padding:6px 9px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.35)">ESSAI · lecture vocale active · iOS : recyclage après lecture</div>
+<div id="ef-essai-badge" style="position:fixed;left:8px;bottom:8px;z-index:99999;pointer-events:none;font:600 11px/1 system-ui,sans-serif;letter-spacing:.02em;color:#fff;background:#c0392b;padding:6px 9px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.35)">ESSAI · lecture vocale active (hors iOS)</div>
 
 <header>
   <div class="header-links-row">
@@ -19770,13 +19770,6 @@ function efSpeak(text) {
     var closeWindow = function() {
       if (u !== efTtsUtter) return;
       if (efTtsGuard) { clearTimeout(efTtsGuard); efTtsGuard = null; }
-      // iOS 27 (BUILD D'ESSAI) : depuis que la reco compte comme capture audio
-      // (WebKit bug 317741), la synthèse reconfigure la session et laisse la
-      // capture sourde, sans aucun événement. Mesuré sur iPhone (apple2.html) :
-      // la voix est bien prononcée micro ouvert ; recréer l'instance de reco
-      // juste après la lecture rend l'écoute en ~400 ms (start → audiostart).
-      // Même mécanique que la relance onend d'iOS 26, déclenchée par nous.
-      if (efIsIOS() && efMicActive) efStartMic();
       if (efTtsTail)  clearTimeout(efTtsTail);
       efTtsTail = setTimeout(function() {
         efTtsSpeaking = false;
@@ -19894,11 +19887,11 @@ function efUnlockTts() {
 // de langue dans le même geste. Tout le code TTS reste en place.
 // Réactivation : passer à true (iOS reste exclu tant que sa ligne est là).
 // Tests : test-ios-sans-alternat.html (voix active partout, iOS compris).
-var EF_TTS_ENABLED = true; // BUILD D'ESSAI audio.html : voix active partout, iOS compris
+var EF_TTS_ENABLED = true; // BUILD D'ESSAI audio.html : voix active, iOS toujours exclu (bip imposé)
 
 function efOpenFeedbackModal() {
   // iOS / iPadOS : exclu même si EF_TTS_ENABLED repasse à true (voir plus haut).
-  if (!EF_TTS_ENABLED) { efPickFeedback('beep'); return; } // BUILD D'ESSAI : iOS inclus (recyclage de la reco après chaque lecture, voir efSpeak)
+  if (!EF_TTS_ENABLED || efIsIOS()) { efPickFeedback('beep'); return; }
   // Précharger la liste des voix (chargement asynchrone sur desktop)
   try { if ('speechSynthesis' in window) window.speechSynthesis.getVoices(); } catch(e) {}
   var isFr = (typeof lang !== 'undefined' && lang === 'fr');
