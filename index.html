@@ -232,23 +232,70 @@ html[data-contrast="haut"] {
    paliers. L'ardoise n'a pas de bloc : c'est l'absence d'attribut, donc le
    :root d'origine, donc zéro risque de régression sur le thème historique.
 
-   Deux familles, deux portées :
-   - sombre (carbone) ne réécrit QUE le sol, --bg et son
-     palier --bg2. Les surfaces, les textes et les accents ne bougent pas.
-   - claire (papier, alu) réécrit tout le jeu : le sol passe au-dessus des
-     surfaces, les bordures passent du blanc au noir translucide, les trois
-     niveaux de texte s'inversent et les accents descendent pour tenir 4,5:1.
-     Les RELATIONS, elles, sont identiques dans les deux familles : la carte
-     reste plus claire que le sol, le champ plus sombre que la carte, --bg2
-     plus clair que --bg. Aucune règle de la feuille ne change de forme.
+   Deux familles, mais une seule portée : les trois sols écrivent le jeu
+   complet. Ce qui les sépare n'est plus l'étendue de ce qu'ils redéfinissent,
+   c'est le SENS de l'encre.
+   - sombre (carbone) réécrit ses surfaces et ses trois niveaux de texte, mais
+     garde l'encre claire, les bordures blanches translucides et les accents
+     du :root. Il n'a longtemps réécrit que --bg et --bg2, en héritant des
+     surfaces de l'ardoise ; elles sont bleues, son sol ne l'est plus assez
+     pour les porter, et un gris neutre posé au milieu d'elles virait au vert.
+   - claire (papier, alu) réécrit tout : le sol passe au-dessus des surfaces,
+     les bordures passent du blanc au noir translucide, les trois niveaux de
+     texte s'inversent et les accents descendent pour tenir 4,5:1.
+   Les RELATIONS, elles, sont identiques dans les deux familles : la carte
+   reste plus claire que le sol, le champ plus sombre que la carte, --bg2
+   plus clair que --bg. Aucune règle de la feuille ne change de forme.
 
    Spécificité : (0,1,1) comme html[data-contrast="haut"], mais ces blocs sont
    écrits APRÈS, donc ils l'emportent sur les jetons communs. C'est pour ça
    que chaque fond a aussi son bloc composé [data-contrast][data-fond] plus
    bas, en (0,2,1), qui rétablit le palier élevé. ── */
 
-/* Famille sombre : le sol seul. */
-html[data-fond="carbone"]  { --bg:#0f1114; --bg2:#181b20 }
+/* Famille sombre : le jeu de surfaces, en gris franc.
+   Le carbone ne réécrivait que --bg et --bg2 et héritait des surfaces de
+   l'ardoise, taillées pour un sol bleu : sur un sol neutre, la carte et les
+   panneaux gauche/droite viraient au bleu (écart bleu-rouge de 21 et 22,
+   contre 5 pour le sol), et --bg2 posé au milieu de --inp, deux fois moins
+   bleu à clarté égale, basculait vers l'olive par contraste simultané.
+   D'où un jeu complet, strictement neutre (R=G=B), et une échelle rebâtie :
+   dans l'ancien carbone, la piste du segment (--inp) et le bouton actif
+   (--bg2) avaient la MÊME clarté, l'état sélectionné ne tenait que par son
+   ombre. Ici les cinq paliers montent franchement, de L* 5 à L* 27.
+   Les textes tertiaires montent avec eux : --text3-dim tient 4,5:1 sur
+   --card, et l'ancien #84959f plafonnait à une carte #2c2c2c. Ils sont
+   neutralisés eux aussi, sinon leur bleu résiduel fait paraître le gris
+   chaud par contraste, ce qu'on cherchait justement à supprimer.
+   --tip-bg suit : sans lui, l'infobulle restait le dernier bleu de l'écran.
+   L'accent, lui, ne bouge pas : il est désormais la seule couleur de
+   l'écran, et c'est voulu. */
+/* Correction optique : les surfaces ne sont PAS strictement neutres, elles
+   portent 12 points de bleu (écart bleu-rouge), soit un peu plus de la
+   moitié de l'ardoise, qui en porte 21. Un gris mesuré R=G=B est bien neutre à
+   l'instrument, mais l'œil qui vient d'une interface bleue le lit chaud, et
+   il le lit chaud aussi sous une dalle réglée tiède, True Tone ou Night Shift
+   compris. Les clartés sont celles du jeu neutre, au dixième de L* près :
+   seule la teinte bouge. Pour revenir au neutre absolu, ramener chaque
+   valeur à son gris de même clarté : #111111, #1b1b1b, #282828, #323232,
+   #404040. */
+html[data-fond="carbone"] {
+  --bg:       #0d1119;
+  --bg2:      #242830;
+  --card:     #3c4048;
+  --card-alt: #2e323a;
+  --inp:      #171b23;
+  --tip-bg:   #171b23;
+  --tip-text: #dcdcdc;
+  --text:     #e9e9e9;
+  --text2:    #d4d4d4;
+  --text3:    #b8b8b8;
+  --text3-dim:#aeaeae;
+  /* Le corail est éclairci de #e8927c : la carte du carbone est 10 points de
+     L* au-dessus de celle de l'ardoise, et le corail d'origine n'y tenait plus
+     que 4,38:1. Les autres accents avaient de la marge, lui seul en manquait. */
+  --warm:     #ea9884;
+  --warm-rgb: 234,152,132;
+}
 
 /* Famille claire : le jeu complet. --text3-dim garde son 4,5:1 sur --card,
    comme en sombre. Les ombres perdent les deux tiers de leur poids et
@@ -325,22 +372,34 @@ html[data-fond="alu"] {
   --warm-rgb: 156,52,19;
   --warm2-rgb: 156,52,19;
   --success-rgb: 10,122,78;
-  --bg:       #f2f2f7;
-  --bg2:      #f9f9fc;
+  /* Le sol descend d'un cran dans l'échelle des gris système dont ce thème
+     est tiré : systemGray5 (#e5e5ea) au lieu de systemGray6 (#f2f2f7). À la
+     valeur d'origine, le sol et la carte blanche n'étaient séparés que de
+     4,5 points de L* : les cartes ne tenaient que par leur ombre, et la
+     pastille du sélecteur de fond ne montrait qu'un aplat blanc. L'écart
+     passe à 8,9. --bg2, --card-alt et --inp descendent du même pas, sinon le
+     champ devient plus clair que la page et la relation s'inverse. */
+  --bg:       #e5e5ea;
+  --bg2:      #ececf1;
   --card:     #ffffff;
-  --card-alt: #f5f5f8;
+  --card-alt: #e8e8ed;
   --border:   rgba(60,60,67,0.13);
   --border-s: rgba(60,60,67,0.26);
   --accent:   #0b66c3;
   --accent2:  #08529b;
-  --warm:     #c1441c;
+  /* Corail assombri de #c1441c : sur le nouveau --card-alt il ne tenait plus
+     que 4,18:1, et il porte l'étiquette GAUCHE des panneaux de moyeu. */
+  --warm:     #b33d15;
   --warm2:    #9c3413;
   --success:  #0a7a4e;
   --text:     #1c1c1e;
   --text2:    #3f4045;
-  --text3:    #6b6b72;
+  /* Tertiaire descendu de #6b6b72 : sur le nouveau --inp il tombait à
+     3,94:1, et il porte les libellés inactifs du segment. À #5f5f66 il tient
+     4,72:1. */
+  --text3:    #5f5f66;
   --text3-dim:#737379;
-  --inp:      #ebebf0;
+  --inp:      #dedee3;
   --sh:       0 2px 12px rgba(17,20,28,0.07);
   --sh-raise: 0 2px 8px rgba(17,20,28,0.09);
   --sh-chip:  0 1px 3px rgba(17,20,28,0.09);
@@ -354,7 +413,14 @@ html[data-fond="alu"] {
 /* Palier élevé croisé avec le fond, en (0,2,1). Pour les sols sombres, seul
    le sol redescend ; pour les sols clairs, le sol descend aussi mais le texte
    remonte vers le noir et les bordures se dessinent. */
-html[data-contrast="haut"][data-fond="carbone"]  { --bg:#060709; --bg2:#101318 }
+/* Le carbone en palier élevé : mêmes gris francs, sol plus profond,
+   surfaces légèrement resserrées et textes remontés, comme le fait le
+   palier élevé commun pour l'ardoise. */
+html[data-contrast="haut"][data-fond="carbone"] {
+  --bg:#02060e; --bg2:#1c2028; --card:#32363e; --card-alt:#262a32; --inp:#10141c;
+  --tip-bg:#10141c; --tip-text:#e6e6e6;
+  --text:#f4f4f4; --text2:#e2e2e2; --text3:#c4c4c4; --text3-dim:#bcbcbc;
+}
 html[data-contrast="haut"][data-fond="papier"] {
   --ink-rgb: 30,26,18;
   --tip-bg: #2b2620;
@@ -392,7 +458,7 @@ html[data-contrast="haut"][data-fond="alu"] {
   --warm-rgb: 135,45,16;
   --warm2-rgb: 135,45,16;
   --success-rgb: 10,105,68;
-  --bg:#e6e6ec; --bg2:#f6f6f9; --card:#ffffff; --card-alt:#f1f1f5; --inp:#e4e4ea;
+  --bg:#d9d9de; --bg2:#e9e9ee; --card:#ffffff; --card-alt:#e4e4e9; --inp:#d7d7dc;
   --border:rgba(60,60,67,0.24); --border-s:rgba(60,60,67,0.40);
   --accent:#0a5aad; --accent2:#07447f; --warm:#a93a17; --warm2:#872d10; --success:#0a6944;
   --text:#0c0c0e; --text2:#2f3035; --text3:#55555c; --text3-dim:#5f5f66;
@@ -446,6 +512,17 @@ body {
     radial-gradient(ellipse 60% 40% at 15%  5%, rgba(var(--accent-rgb),.055) 0%, transparent 70%),
     radial-gradient(ellipse 50% 35% at 85% 95%, rgba(var(--warm-rgb),.04)  0%, transparent 70%);
 }
+/* Le carbone n'a pas de lavis. Les deux ellipses ci-dessus teintent le sol,
+   l'une en accent, l'autre en corail : sur les surfaces bleues des autres
+   sols elles ne se voient pas, mais sur un gris strictement neutre le coin
+   bas-droite passe mesurément au brun. Relevé sur le rendu, sol #111111 :
+   (22,20,19) en bas à droite contre (17,18,19) en haut à gauche, soit un
+   dégradé chaud-froid en travers de la page. C'était la vraie cause du
+   « ça vire au marron », et non les jetons, qui eux sont exactement
+   R=G=B. Le sol du carbone reste donc un aplat.
+   Pour retrouver du relief sans teinte, remplacer none par deux ellipses
+   en rgba(255,255,255,.035) et rgba(255,255,255,.022). */
+html[data-fond="carbone"] body { background-image:none }
 /* ── Header ────────────────────────────────────────────────────────────────── */
 header        { text-align:center; padding:1.4rem 1rem 1.6rem }
 .brand        { margin:0; font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:.18em; text-transform:uppercase; color:var(--text) }
@@ -627,11 +704,11 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .erasemgr-item-btn { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
 .erasemgr-item-btn:hover { color:var(--warm) }
 .erasemgr-footer { display:flex; justify-content:flex-end }
-.erasemgr-eraseall { background:none; border:1px solid rgba(var(--warm-rgb),.45); border-radius:7px; height:26px; display:inline-flex; align-items:center; font-family:'DM Mono',monospace; font-size:.58rem; font-weight:400; letter-spacing:.15em; text-transform:uppercase; color:rgba(var(--warm-rgb),.75); cursor:pointer; gap:.35rem; padding:0 .6rem 0 .45rem; line-height:1; transition:color .2s, border-color .2s, background .2s, box-shadow .2s, transform .2s; touch-action:manipulation }
+.erasemgr-eraseall { background:none; border:1px solid rgba(var(--warm-rgb),.45); border-radius:7px; height:26px; display:inline-flex; align-items:center; font-family:'DM Mono',monospace; font-size:.58rem; font-weight:400; letter-spacing:.15em; text-transform:uppercase; color:var(--warm); cursor:pointer; gap:.35rem; padding:0 .6rem 0 .45rem; line-height:1; transition:color .2s, border-color .2s, background .2s, box-shadow .2s, transform .2s; touch-action:manipulation }
 .erasemgr-eraseall svg { flex-shrink:0; opacity:.75 }
 .erasemgr-eraseall:hover svg { opacity:1 }
 .erasemgr-eraseall:hover { border-color:rgba(var(--warm-rgb),.6); color:var(--warm2); box-shadow:0 0 10px rgba(var(--warm-rgb),.12),inset 0 0 6px rgba(var(--warm-rgb),.05) }
-@media (hover: none) { .erasemgr-eraseall:hover { border-color:rgba(var(--warm-rgb),.45); color:rgba(var(--warm-rgb),.75); box-shadow:none } .erasemgr-eraseall:active { background:rgba(var(--warm-rgb),.14); transform:scale(.96) } }
+@media (hover: none) { .erasemgr-eraseall:hover { border-color:rgba(var(--warm-rgb),.45); color:var(--warm); box-shadow:none } .erasemgr-eraseall:active { background:rgba(var(--warm-rgb),.14); transform:scale(.96) } }
 
 /* ── Hub/Rim quick save/load icon buttons ──────────────────────────────────── */
 .card-icon-btn {
@@ -654,14 +731,14 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .card-icon-btn.active { border-color: rgba(var(--accent-rgb),.5); color: var(--accent) }
 .card-icon-btn.has-data { border-color: rgba(var(--accent-rgb),.4); color: var(--accent) }
 .card-icon-btn:disabled { opacity: .3; cursor: default; pointer-events: none }
-.wheel-reset-btn { position:relative; background:none; border:1px solid rgba(var(--warm-rgb),.45); border-radius:7px; height:26px; display:inline-flex; align-items:center; gap:.35rem; font-family:'DM Mono',monospace; font-size:.58rem; font-weight:400; letter-spacing:.15em; text-transform:uppercase; color:rgba(var(--warm-rgb),.75); cursor:pointer; padding:0 .6rem 0 .45rem; line-height:1; transition:color .2s, border-color .2s, background .2s, box-shadow .2s, transform .2s; touch-action:manipulation; overflow:hidden }
+.wheel-reset-btn { position:relative; background:none; border:1px solid rgba(var(--warm-rgb),.45); border-radius:7px; height:26px; display:inline-flex; align-items:center; gap:.35rem; font-family:'DM Mono',monospace; font-size:.58rem; font-weight:400; letter-spacing:.15em; text-transform:uppercase; color:var(--warm); cursor:pointer; padding:0 .6rem 0 .45rem; line-height:1; transition:color .2s, border-color .2s, background .2s, box-shadow .2s, transform .2s; touch-action:manipulation; overflow:hidden }
 .wheel-reset-btn::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(var(--warm-rgb),.07) 0%,rgba(var(--warm2-rgb),.04) 100%); opacity:0; transition:opacity .2s }
 .wheel-reset-btn:hover { border-color:rgba(var(--warm-rgb),.6); color:var(--warm2); box-shadow:0 0 10px rgba(var(--warm-rgb),.12),inset 0 0 6px rgba(var(--warm-rgb),.05) }
 .wheel-reset-btn:hover::before { opacity:1 }
 .wheel-reset-btn:active { border-color:var(--warm2); color:var(--warm2); box-shadow:0 0 18px rgba(var(--warm-rgb),.25) }
 .wheel-reset-btn .reset-icon { flex-shrink:0; opacity:.75; transition:transform .35s cubic-bezier(.22,1,.36,1) }
 .wheel-reset-btn:hover .reset-icon { transform:rotate(-180deg); opacity:1 }
-@media (hover: none) { .wheel-reset-btn:hover { border-color:rgba(var(--warm-rgb),.45); color:rgba(var(--warm-rgb),.75); box-shadow:none } .wheel-reset-btn:hover::before { opacity:0 } .wheel-reset-btn:hover .reset-icon { transform:none; opacity:.75 } .wheel-reset-btn:active { background:rgba(var(--warm-rgb),.14); transform:scale(.96); border-color:rgba(var(--warm-rgb),.45); color:rgba(var(--warm-rgb),.75); box-shadow:none } }
+@media (hover: none) { .wheel-reset-btn:hover { border-color:rgba(var(--warm-rgb),.45); color:var(--warm); box-shadow:none } .wheel-reset-btn:hover::before { opacity:0 } .wheel-reset-btn:hover .reset-icon { transform:none; opacity:.75 } .wheel-reset-btn:active { background:rgba(var(--warm-rgb),.14); transform:scale(.96); border-color:rgba(var(--warm-rgb),.45); color:var(--warm); box-shadow:none } }
 
 /* ── Hub/Rim save modal ─────────────────────────────────────────────────────── */
 .hr-save-overlay { position:fixed; inset:0; background:var(--scrim-2); backdrop-filter:blur(4px); z-index:9980; opacity:0; transition:opacity .22s; display:none }
@@ -1167,7 +1244,9 @@ select option             { background:var(--inp) }
 .faible-display.has-val-accent { background:var(--inp); border-color:rgba(var(--accent-rgb),.4); color:var(--text) }
 .faible-display.has-val-warm   { background:var(--inp); border-color:rgba(var(--warm-rgb),.4);  color:var(--text) }
 /* État "pas encore calculé" — remplace l'opacity:.35 du conteneur (contraste WCAG) :
-   les éléments non textuels sont fortement grisés, le label garde ≥4.5:1 (#84959f = 4.65:1 sur --card) */
+   les éléments non textuels sont fortement grisés, le label garde ≥4.5:1. Le
+   chiffre dépend du sol, chacun accordant son --text3-dim à sa carte : 4,65:1
+   en ardoise (#84959f sur #232a38), 4,67 en carbone, 4,71 en alu. */
 .tension-field-calc label            { color:var(--text3-dim); transition:color .2s }
 .tension-field-calc .tension-dot     { opacity:.35; transition:opacity .2s }
 .tension-field-calc .faible-display  { opacity:.45 }
@@ -1180,9 +1259,49 @@ select option             { background:var(--inp) }
 #tension-forte-field label .tension-dot, #tension-faible-field label .tension-dot { margin-top:.13em }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */
-.btn           { width:100%; padding:1.1rem 1.5rem; background:rgba(var(--accent-rgb),.07); border:1.5px solid rgba(var(--accent-rgb),.3); border-radius:8px; color:var(--accent); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:background .22s, border-color .22s, color .22s, opacity .22s, transform .22s, box-shadow .22s; display:flex; align-items:center; justify-content:center; gap:.5rem }
-.btn:active    { background:rgba(var(--accent-rgb),.18); transform:scale(.97) }
-.btn.ready     { border-color:rgba(var(--accent-rgb),.55); color:var(--accent); background:rgba(var(--accent-rgb),.13); box-shadow:inset 0 1px 0 rgba(var(--accent-rgb),.12); transition:background .25s, border-color .25s, color .25s, opacity .25s, transform .25s, box-shadow .25s }
+/* Calculer est une SURFACE surélevée, pas un lavis : même construction que
+   .sb.active, le bouton sélectionné du segment, dont il reprend le fond
+   (--bg2), l'ombre portée (--sh-raise) et, une fois armé, le filet d'accent
+   en inset. C'est ce qui le fait ressortir du sol au lieu de le teinter.
+   L'ancien fond était rgba(var(--accent-rgb),.07), un lavis de cyan : il
+   tenait tant que les surfaces étaient bleues, mais il verdissait dès que le
+   sol perdait sa teinte, et surtout il ne donnait aucun relief.
+   Tout est en jetons : chaque sol y met ses propres valeurs, et le rapport
+   au sol reste celui du segment sélectionné, clair comme sombre. */
+.btn           { width:100%; padding:1.1rem 1.5rem; background:var(--bg2); border:1.5px solid rgba(var(--accent-rgb),.3); border-radius:8px; color:var(--accent2); font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; touch-action:manipulation; box-shadow:var(--sh-raise); transition:background .22s, border-color .22s, color .22s, opacity .22s, transform .22s, box-shadow .22s; display:flex; align-items:center; justify-content:center; gap:.5rem }
+.btn.ready     { border-color:rgba(var(--accent-rgb),.55); color:var(--accent); background:var(--bg2); box-shadow:var(--sh-raise), 0 0 0 1px rgba(var(--accent-rgb),.15) inset; transition:background .25s, border-color .25s, color .25s, opacity .25s, transform .25s, box-shadow .25s }
+/* L'appui AJOUTE de l'accent, il n'en retire pas : le lavis d'origine passait
+   de 7 % à 18 % au doigt, le remplissage montait. Le fond étant devenu opaque,
+   le lavis revient ici en calque par-dessus la surface, ce qui conserve le
+   sens du geste : plus de matière, pas moins. Sur sol sombre le bouton
+   s'éclaircit, sur sol clair il fonce, exactement comme avant, puisque dans
+   les deux cas c'est la couleur d'accent qui gagne du terrain.
+   Les deux sélecteurs sont nécessaires : .btn.ready est écrit après
+   .btn:active et a la même spécificité, il gagnait donc sur l'appui. Le
+   bouton armé, c'est-à-dire le seul qu'on presse en pratique, ne répondait
+   qu'avec son scale, sans changement de fond. C'était déjà le cas avant. */
+/* L'étiquette passe à --accent2 le temps de l'appui : le lavis rapproche le
+   fond de l'accent, et --accent, qui porte le libellé du bouton armé, y
+   tombait à 4,28:1 en papier et 3,85 en alu. --accent2 est plus clair que
+   --accent sur sol sombre et plus foncé sur sol clair : il s'écarte du lavis
+   dans les deux familles, sans exception par sol. */
+/* Un .btn posé SUR UNE CARTE et non sur le sol : il n'existe pas de palier
+   au-dessus de --card, donc --bg2 y ferait un CREUX, onze points de L* sous
+   la carte en carbone et six en alu. Le relief ne peut pas venir de la
+   surface là où la surface est déjà la plus haute : ce bouton garde donc le
+   lavis d'accent, qui ne dépend d'aucun palier, et rend son ombre portée.
+   L'appui continue d'ajouter son calque par-dessus, comme partout ailleurs.
+   background-color et non background : la forme courte remettrait
+   background-image à none et neutraliserait le calque d'appui.
+   Un nouveau bouton posé dans une carte se déclare ici. */
+#cc-modal .btn       { background-color:rgba(var(--accent-rgb),.07); box-shadow:none }
+#cc-modal .btn.ready { background-color:rgba(var(--accent-rgb),.13);
+                       box-shadow:inset 0 1px 0 rgba(var(--accent-rgb),.12) }
+
+.btn:active,
+.btn.ready:active { background-image:linear-gradient(rgba(var(--accent-rgb),.16),
+                                                     rgba(var(--accent-rgb),.16));
+                    color:var(--accent2); transform:scale(.97) }
 .btn-row       { display:block }
 /* ── Rangée Easy Fill + Clear (module tension) ────────────────────────────── */
 #ef-btn-row { display:flex; gap:.5rem }
@@ -2117,17 +2236,25 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   letter-spacing:.04em; text-transform:none; color:var(--accent); margin-left:auto;
   padding-left:.6rem; flex-shrink:0 }
 /* ── Chooser de fond ──────────────────────────────────────────────────────
-   La pastille montre le sol ET la carte du thème, en miniature et dans leurs
-   couleurs réelles : c'est ce qui distingue un sol de l'autre bien plus vite
-   qu'un nom. Elle est peinte en littéral et NON en jetons, puisqu'elle doit
-   montrer les quatre thèmes pendant qu'un seul est actif. */
+   La pastille montre le sol, la carte ET l'accent du thème, en trois tiers et
+   dans leurs couleurs réelles : c'est ce qui distingue un sol de l'autre bien
+   plus vite qu'un nom, et l'accent est ce qui sépare le papier de l'alu, dont
+   les deux sols clairs se ressemblent de loin. Elle est peinte en littéral et
+   NON en jetons, puisqu'elle doit montrer les quatre thèmes pendant qu'un
+   seul est actif.
+   Le liseré appartient au sol MONTRÉ et non au sol ACTIF : écrit en
+   rgba(var(--ink-rgb),…), il était blanc pour tout le monde sur une carte
+   sombre et noir pour tout le monde sur une carte claire, donc invisible une
+   fois sur deux, précisément sur les pastilles qui en avaient besoin.
+   La forme ronde remplace le carré de 21 px et son carré de 10 px encastré
+   dans l'angle : à cette échelle, deux rayons et deux liserés qui se croisent
+   sur 4 px de diagonale font du bruit, et les 21 px imposaient leur hauteur à
+   la ligne alors que le texte n'en fait que 17. */
 .fond-swatch {
-  position:relative; width:21px; height:21px; border-radius:6px; flex-shrink:0;
-  border:1px solid rgba(var(--ink-rgb),.24);
-}
-.fond-swatch::after {
-  content:''; position:absolute; right:2px; bottom:2px; width:10px; height:10px;
-  border-radius:3px; background:var(--sw-card); border:1px solid rgba(var(--ink-rgb),.16);
+  width:18px; height:18px; border-radius:50%; flex-shrink:0;
+  background:conic-gradient(from 210deg,
+    var(--sw-sol) 0 33.34%, var(--sw-card) 33.34% 66.67%, var(--sw-acc) 66.67% 100%);
+  box-shadow:inset 0 0 0 1px var(--sw-rim);
 }
 /* L'état sélectionné : le liseré et la coche, pas une couleur de fond, pour ne
    pas concurrencer la pastille juste à côté. */
@@ -2553,15 +2680,15 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5v11"/><path d="M12 7.5C12 6.4 10.9 5.5 9.5 5.5H4.5A.5.5 0 0 0 4 6v10a.5.5 0 0 0 .5.5h5c1.4 0 2.5.9 2.5 2"/><path d="M12 7.5c0-1.1 1.1-2 2.5-2h5a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-.5.5h-5c-1.4 0-2.5.9-2.5 2"/></svg>
     <span data-i18n="helpBtnTitle">Mode d'emploi</span>
   </button>
-  <button class="ct-save-btn" id="contrast-btn" type="button" aria-pressed="false" onclick="closeReglages();toggleContrast()">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>
-    <span data-i18n="contrastLabel">Contraste</span>
-    <span class="reglages-val" id="contrast-val">Normal</span>
-  </button>
   <button class="ct-save-btn" id="fond-btn" type="button" onclick="closeReglages();openFondPicker()">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="M3 14.5h18" fill="currentColor" opacity=".18"/><path d="M3 14.5l4.5-4 3.5 3 3-2.5 7 5.5"/></svg>
     <span data-i18n="fondLabel">Fond</span>
     <span class="reglages-val" id="fond-val">Ardoise</span>
+  </button>
+  <button class="ct-save-btn" id="contrast-btn" type="button" aria-pressed="false" onclick="closeReglages();toggleContrast()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>
+    <span data-i18n="contrastLabel">Contraste</span>
+    <span class="reglages-val" id="contrast-val">Normal</span>
   </button>
   <button class="ct-save-btn" id="reglages-lang" type="button" onclick="closeReglages();toggleLang()">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/></svg>
@@ -10037,14 +10164,19 @@ function fondRepeintCanvas() {
   } catch (e) {}
 }
 
-// Pastilles du chooser : le sol et la carte de chaque thème, au palier normal.
-// Littéraux assumés, puisqu'il faut montrer les trois pendant qu'un seul est
-// actif : des jetons donneraient trois fois la même pastille.
+// Pastilles du chooser : le sol, la carte et l'accent de chaque thème, au
+// palier normal. Littéraux assumés, puisqu'il faut montrer les QUATRE pendant
+// qu'un seul est actif : des jetons donneraient quatre fois la même pastille.
+// Quatrième valeur : 1 si le sol appartient à la famille claire. Elle ne sert
+// qu'à choisir le liseré de la pastille, sombre sur un sol clair et clair sur
+// un sol sombre, pour qu'il reste lisible quelle que soit la carte sous elle.
+// Elle double --fond-clair à dessein : ce drapeau-ci décrit le sol MONTRÉ,
+// l'autre le sol ACTIF, et le chooser a justement besoin des deux.
 var FOND_PASTILLE = {
-  ardoise: ['#181c24', '#232a38'],
-  carbone: ['#0f1114', '#232a38'],
-  papier:  ['#edeae2', '#fdfcfa'],
-  alu:     ['#f2f2f7', '#ffffff']
+  ardoise: ['#181c24', '#232a38', '#7ec8e3', 0],
+  carbone: ['#0d1119', '#3c4048', '#7ec8e3', 0],
+  papier:  ['#edeae2', '#fdfcfa', '#1a6f86', 1],
+  alu:     ['#e5e5ea', '#ffffff', '#0b66c3', 1]
 };
 function fondPickerRender() {
   var list = $id('fondpicker-list');
@@ -10052,7 +10184,7 @@ function fondPickerRender() {
   var actuel = fondActuel();
   list.innerHTML = '';
   FONDS_DISPO.forEach(function(f) {
-    var sw = FOND_PASTILLE[f] || ['#181c24', '#232a38'];
+    var sw = FOND_PASTILLE[f] || ['#181c24', '#232a38', '#7ec8e3', 0];
     var b = document.createElement('button');
     b.type = 'button';
     b.className = 'ct-save-btn fond-opt';
@@ -10061,7 +10193,9 @@ function fondPickerRender() {
     b.setAttribute('data-fond-opt', f);
     b.style.marginTop = '0';
     b.innerHTML =
-      '<span class="fond-swatch" style="background:' + sw[0] + ';--sw-card:' + sw[1] + '"></span>' +
+      '<span class="fond-swatch" style="--sw-sol:' + sw[0] + ';--sw-card:' + sw[1] +
+        ';--sw-acc:' + sw[2] + ';--sw-rim:' +
+        (sw[3] ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.26)') + '"></span>' +
       '<span class="fond-opt-name"></span>' +
       '<svg class="fond-opt-check" width="15" height="15" viewBox="0 0 24 24" fill="none" ' +
         'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" ' +
@@ -23820,11 +23954,17 @@ document.addEventListener('keydown', function(e) {
     // elle-même dans les deux familles, mais un panneau sombre au milieu d'une
     // modale claire tranche. Le fond suit --card-alt, et la grille, les axes
     // et les graduations suivent avec, sinon ils s'inversent tout seuls.
+    // Le jeton est lu dans LES DEUX familles, pas seulement en clair : la
+    // branche sombre tenait en dur le --card-alt de l'ardoise (#1a2030), ce
+    // qui passait tant que le carbone héritait des surfaces de l'ardoise.
+    // Depuis que le carbone a les siennes, un littéral peindrait un panneau
+    // plus sombre que la carte qui l'entoure. Les fallbacks restent, par
+    // famille, pour le cas où le jeton manque.
     var clair   = (typeof fondClair === 'function') && fondClair();
-    var bg      = clair ? fondJeton('--card-alt', '#f5f2ec') : '#1a2030';
+    var bg      = fondJeton('--card-alt', clair ? '#f5f2ec' : '#1a2030');
     var gridC   = clair ? 'rgba(0,0,0,.08)'    : 'rgba(255,255,255,.06)';
     var axisC   = clair ? 'rgba(0,0,0,.20)'    : 'rgba(255,255,255,.15)';
-    var tickC   = clair ? fondJeton('--text3', '#645d51')    : '#4a5668';
+    var tickC   = fondJeton('--text3', clair ? '#645d51' : '#8fa0b0');
     var monoFont = "10px 'DM Mono',monospace";
 
     var pad = { top:16, right:18, bottom:42, left:54 };
