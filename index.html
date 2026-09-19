@@ -2300,15 +2300,34 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   touch-action:manipulation;
   line-height:1;
 }
-.ef-numpad-key:active { background:rgba(var(--accent-rgb),.13); border-color:rgba(var(--accent-rgb),.4); transform:scale(.94) }
+/* L'appui AJOUTE un calque d'accent au lieu de REMPLACER le fond de la
+   touche. L'ancienne écriture, background:rgba(accent,.13), effaçait
+   --card-alt et se recomposait sur la carte : sur alu le résultat tombait à
+   0,4 point de L* de la touche au repos, autrement dit aucun retour visible
+   au doigt. En calque, l'écart est garanti dans les deux familles, comme
+   pour .btn et pour la touche Entrée. */
+.ef-numpad-key:active { background-image:linear-gradient(rgba(var(--accent-rgb),.16),rgba(var(--accent-rgb),.16));
+  border-color:rgba(var(--accent-rgb),.4); transform:scale(.94) }
 .ef-numpad-key.key-dot  { font-size:1.1rem }
 .ef-numpad-key.key-del  { font-size:.95rem; color:var(--text2) }
-.ef-numpad-key.key-del:active { background:rgba(var(--warm-rgb),.12); border-color:rgba(var(--warm-rgb),.4) }
+.ef-numpad-key.key-del:active { background-image:linear-gradient(rgba(var(--warm-rgb),.16),rgba(var(--warm-rgb),.16));
+  border-color:rgba(var(--warm-rgb),.4) }
+/* La touche Entrée portait mot pour mot l'ancien .btn : lavis d'accent à 7 %,
+   liseré .3, appui à 18 %. C'était le dernier endroit de la feuille à garder
+   ce langage après le passage de Calculer en surface surélevée.
+   Elle prend donc la tenue de Calculer ARMÉ, puisqu'une touche Entrée est
+   actionnable en permanence : liseré .55, étiquette d'accent, filet d'accent
+   en inset. Une seule adaptation, imposée par le lieu : le pavé est posé sur
+   une CARTE, où --bg2 serait un creux. La touche monte donc au palier le plus
+   haut disponible, --card, et c'est l'ombre portée qui fait le relief.
+   L'appui suit la règle commune : un calque d'accent PAR-DESSUS la surface,
+   donc un remplissage qui monte, et non l'ancien remplacement à 18 %. */
 .ef-numpad-key.key-enter {
   grid-column:span 3;
-  background:rgba(var(--accent-rgb),.07);
-  border-color:rgba(var(--accent-rgb),.3);
+  background:var(--card);
+  border-color:rgba(var(--accent-rgb),.55);
   color:var(--accent);
+  box-shadow:var(--sh-raise), 0 0 0 1px rgba(var(--accent-rgb),.15) inset;
   font-family:'DM Sans',sans-serif;
   font-size:.88rem;
   font-weight:600;
@@ -2316,7 +2335,10 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   text-transform:uppercase;
   padding:1.1rem;
 }
-.ef-numpad-key.key-enter:active { background:rgba(var(--accent-rgb),.18); transform:scale(.97) }
+.ef-numpad-key.key-enter:active {
+  background-image:linear-gradient(rgba(var(--accent-rgb),.16),rgba(var(--accent-rgb),.16));
+  color:var(--accent2); transform:scale(.97);
+}
 
 /* ── Cache toast ──────────────────────────────────────────────────────────── */
 .cache-toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid rgba(var(--warm-rgb),.35); border-radius:var(--rs); padding:.55rem 1.1rem; font-family:'DM Sans',sans-serif; font-size:.67rem; color:var(--warm2); z-index:10000; pointer-events:none; opacity:0; transition:opacity .3s; white-space:nowrap; margin-bottom:env(safe-area-inset-bottom, 0px) }
