@@ -60,7 +60,7 @@
   --border:rgba(255,255,255,.07); --border-s:rgba(255,255,255,.13);
   --accent:#7ec8e3; --accent2:#a8d8ea; --warm:#e8927c; --warm2:#f0b49a; --success:#7ecfa8;
   --text:#dce4ed; --text2:#c8d6e2; --text3:#8fa0b0;
-  --inp:#161b27;
+  --inp:#101522;
   --r:14px; --rs:9px;
   --gut:2.2rem; --gap:.9rem; --ind:3.1rem;
   /* Canaux RVB : la feuille bâtit quelques rgba() sur l'accent, le corail et
@@ -78,7 +78,7 @@ html[data-contrast="haut"]{
   --bg:#0e1218; --bg2:#161c26; --card:#1d2532; --card-alt:#141a25;
   --border:rgba(255,255,255,.18); --border-s:rgba(255,255,255,.28);
   --text:#f2f6fa; --text2:#dde7f0; --text3:#a9b8c6;
-  --inp:#0c1016;
+  --inp:#06090e;
 }
 
 /* ── Fond ────────────────────────────────────────────────────────────────
@@ -99,17 +99,21 @@ html[data-fond="carbone"]{
 html[data-fond="papier"]{
   --bg:#edeae2; --bg2:#f9f7f3; --card:#fdfcfa; --card-alt:#f5f2ec;
   --border:rgba(44,34,20,.11); --border-s:rgba(44,34,20,.21);
-  --accent:#1a6f86; --accent2:#14576a; --warm:#b04a30; --warm2:#8f3a24; --success:#1d7452;
+  --accent:#196c79; --accent2:#125863; --warm:#b04a30; --warm2:#8f3a24; --success:#1d7452;
   --text:#221f1a; --text2:#443f36; --text3:#645d51;
-  --inp:#eeeae1;
-  --ink-rgb:30,26,18; --accent-rgb:26,111,134; --warm-rgb:146,57,34;
+  --inp:#e6e1d5;
+  --ink-rgb:30,26,18; --accent-rgb:25,108,121; --warm-rgb:146,57,34;
 }
+/* Sol sur le systemGroupedBackground d'Apple (#f2f2f7, systemGray6) et carte
+   sur le blanc pur, comme dans l'app : c'est le couple de la charte. --inp
+   se pose sur systemGray5, le gris des champs d'iOS, --card-alt entre les
+   deux, et --bg2 reste juste sous la carte. */
 html[data-fond="alu"]{
-  --bg:#e5e5ea; --bg2:#ececf1; --card:#ffffff; --card-alt:#e8e8ed;
+  --bg:#f2f2f7; --bg2:#fafafc; --card:#ffffff; --card-alt:#f0f0f5;
   --border:rgba(60,60,67,.13); --border-s:rgba(60,60,67,.26);
-  --accent:#0b66c3; --accent2:#08529b; --warm:#b33d15; --warm2:#9c3413; --success:#0a7a4e;
+  --accent:#0b66c3; --accent2:#08529b; --warm:#bc411a; --warm2:#9c3413; --success:#0a7a4e;
   --text:#1c1c1e; --text2:#3f4045; --text3:#5f5f66;
-  --inp:#dedee3;
+  --inp:#e5e5ea;
   --ink-rgb:28,28,30; --accent-rgb:11,102,195; --warm-rgb:156,52,19;
 }
 html[data-contrast="haut"][data-fond="carbone"]{
@@ -120,17 +124,19 @@ html[data-contrast="haut"][data-fond="carbone"]{
 html[data-contrast="haut"][data-fond="papier"]{
   --bg:#e5e0d5; --bg2:#f7f4ef; --card:#fffefc; --card-alt:#f3efe7;
   --border:rgba(44,34,20,.21); --border-s:rgba(44,34,20,.35);
-  --accent:#175f73; --accent2:#114a5b; --warm:#9c3f27; --warm2:#80321d; --success:#196547;
+  --accent:#17606b; --accent2:#0f4b54; --warm:#9c3f27; --warm2:#80321d; --success:#196547;
   --text:#16130e; --text2:#352f26; --text3:#544d42;
-  --inp:#e8e3d8;
-  --ink-rgb:30,26,18; --accent-rgb:23,95,115; --warm-rgb:132,50,29;
+  --inp:#ddd8ca;
+  --ink-rgb:30,26,18; --accent-rgb:23,96,107; --warm-rgb:132,50,29;
 }
+/* Le sol reprend systemGray5 (#e5e5ea), le cran que le palier normal vient
+   de quitter : les deux paliers restent sur des valeurs Apple. */
 html[data-contrast="haut"][data-fond="alu"]{
-  --bg:#d9d9de; --bg2:#e9e9ee; --card:#ffffff; --card-alt:#e4e4e9;
+  --bg:#e5e5ea; --bg2:#f6f6f9; --card:#ffffff; --card-alt:#e3e3e9;
   --border:rgba(60,60,67,.24); --border-s:rgba(60,60,67,.40);
   --accent:#0a5aad; --accent2:#07447f; --warm:#a93a17; --warm2:#872d10; --success:#0a6944;
   --text:#0c0c0e; --text2:#2f3035; --text3:#55555c;
-  --inp:#d7d7dc;
+  --inp:#d8d8de;
   --ink-rgb:28,28,30; --accent-rgb:10,90,173; --warm-rgb:135,45,16;
 }
 

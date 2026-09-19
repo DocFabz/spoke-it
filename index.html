@@ -160,7 +160,12 @@
      qui s'inverse avec le sol alors que son fond, lui, ne s'inversait pas. */
   --tip-bg:   #0e1420;
   --tip-text: #c8d6e2;
-  --inp:      #161b27;
+  /* Le champ est le palier le plus bas, et il doit se creuser sous les DEUX
+     surfaces qu'il touche : la carte, où vivent ses trente usages, et le sol,
+     où .module-nav pose la piste du sélecteur de module — le seul --inp de
+     l'app posé à même la page. À #161b27 il n'était sous le sol que de 0,4
+     point de L* et la piste était à plat, tenue par sa seule bordure. */
+  --inp:      #101522;
   --r:        14px;
   --rs:       9px;
   --sh:       0 4px 24px rgba(0,0,0,0.32);
@@ -222,7 +227,9 @@ html[data-contrast="haut"] {
   --text2:    #dde7f0;
   --text3:    #a9b8c6;
   --text3-dim:#9aabba;
-  --inp:      #0c1016;
+  /* Même correction qu'au palier normal, au cran du dessous : 0,8 point de
+     L* sous le sol ne suffisait pas non plus. */
+  --inp:      #06090e;
   --sh:       0 4px 24px rgba(0,0,0,0.45);
 }
 
@@ -315,7 +322,7 @@ html[data-fond="papier"] {
   --scrim-3: rgba(38,30,18,.38);
   --scrim-4: rgba(38,30,18,.42);
   --scrim-5: rgba(38,30,18,.44);
-  --accent-rgb: 26,111,134;
+  --accent-rgb: 25,108,121;
   --warm-rgb: 146,57,34;
   --warm2-rgb: 143,58,36;
   --success-rgb: 29,116,82;
@@ -325,8 +332,23 @@ html[data-fond="papier"] {
   --card-alt: #f5f2ec;
   --border:   rgba(44,34,20,0.11);
   --border-s: rgba(44,34,20,0.21);
-  --accent:   #1a6f86;
-  --accent2:  #14576a;
+  /* Canard, deux fois retouché et pour deux raisons distinctes.
+     D'abord assombri d'un point et demi de L* depuis #1a6f86, pour rendre au
+     champ la place de se creuser : sur le nouveau --inp l'ancienne valeur
+     tombait à 4,40:1. Puis réchauffé de cinq degrés de teinte, 193° -> 188°,
+     parce que le cyan sonnait froid sur un sol beige.
+     Le second geste est une ROTATION DE TEINTE PURE : chaque valeur conserve
+     la luminance exacte de celle qu'elle remplace, au dernier chiffre que
+     permet un hexadécimal. Les vingt ratios de la famille — deux jetons,
+     cinq surfaces, deux paliers — sont donc inchangés au centième près. Un
+     réchauffement ne doit rien coûter en lisibilité ; celui-ci ne coûte rien
+     du tout, et c'est vérifiable jeton par jeton.
+     Le vert de --success est à 156° : trente-deux degrés plus bas, l'écart
+     reste franc. Descendre plus bas les rapprocherait.
+     --accent2 et --accent-rgb portent la même teinte : le canard est UNE
+     couleur déclinée, pas trois voisines. */
+  --accent:   #196c79;
+  --accent2:  #125863;
   --warm:     #b04a30;
   --warm2:    #8f3a24;
   --success:  #1d7452;
@@ -334,7 +356,11 @@ html[data-fond="papier"] {
   --text2:    #443f36;
   --text3:    #645d51;
   --text3-dim:#6f685b;
-  --inp:      #eeeae1;
+  /* Même motif qu'en ardoise : le champ se creuse sous la carte ET sous le
+     sol. À #eeeae1 il était 0,1 point de L* AU-DESSUS du sol, la piste du
+     sélecteur de module disparaissait dans la page. Il passe 3,1 points en
+     dessous ; c'est ce pas qui a demandé d'assombrir --accent au-dessus. */
+  --inp:      #e6e1d5;
   --sh:       0 3px 14px rgba(54,44,28,0.10);
   --sh-raise: 0 2px 10px rgba(54,44,28,0.13);
   --sh-chip:  0 1px 4px rgba(54,44,28,0.12);
@@ -355,7 +381,9 @@ html[data-fond="papier"] {
    Les ombres sont plus larges et plus douces que sur le papier : c'est la
    signature de cette famille, une ombre qui POSE la surface au lieu de la
    cerner. Les accents descendent assez pour tenir 4,5:1 sur la carte comme
-   sur le sol (bleu 5,7:1, corail 5,1:1, vert 5,4:1 sur --card). */
+   sur le sol (sur --card : bleu 5,7:1, corail 5,4:1, vert 5,4:1 ; sur le
+   sol : 5,1, 4,8 et 4,8). Le corail a longtemps été annoncé ici à 5,1:1 :
+   c'était le chiffre de #c1441c, remplacé depuis. */
 html[data-fond="alu"] {
   /* Drapeau de famille, lu par fondClair() côté JS. */
   --fond-clair: 1;
@@ -372,34 +400,68 @@ html[data-fond="alu"] {
   --warm-rgb: 156,52,19;
   --warm2-rgb: 156,52,19;
   --success-rgb: 10,122,78;
-  /* Le sol descend d'un cran dans l'échelle des gris système dont ce thème
-     est tiré : systemGray5 (#e5e5ea) au lieu de systemGray6 (#f2f2f7). À la
-     valeur d'origine, le sol et la carte blanche n'étaient séparés que de
-     4,5 points de L* : les cartes ne tenaient que par leur ombre, et la
-     pastille du sélecteur de fond ne montrait qu'un aplat blanc. L'écart
-     passe à 8,9. --bg2, --card-alt et --inp descendent du même pas, sinon le
-     champ devient plus clair que la page et la relation s'inverse. */
-  --bg:       #e5e5ea;
-  --bg2:      #ececf1;
+  /* Le sol est le systemGroupedBackground d'Apple, #f2f2f7 (systemGray6), et
+     la carte le blanc pur qui va avec : c'est LE couple de la charte, celui
+     d'un écran de Réglages, et le thème existe pour le citer.
+     Il avait été descendu d'un cran, sur systemGray5 (#e5e5ea), pour éloigner
+     le sol de la carte ; le couple d'origine est rétabli, avec ses 4,4 points
+     de L* d'écart, que la charte assume : chez Apple la carte tient par son
+     ombre et son liseré, pas par un creux de valeur. Ce qui manquait alors se
+     récupère plus bas dans l'échelle, sur les champs.
+     Les paliers INTÉRIEURS à la carte (--card-alt, --inp) remontent avec le
+     sol mais moins vite, puisqu'ils butent sur le blanc : --inp se pose sur
+     systemGray5, le gris des champs et des pistes de segment d'iOS, et
+     --card-alt entre les deux.
+     Une inversion au passage, assumée : --card-alt descend SOUS --bg, alors
+     qu'il est au-dessus dans les trois autres sols. Sans conséquence, parce
+     que --card-alt ne se pose jamais SUR le sol — ses cinquante-deux
+     emplacements sont tous dans une carte ou une modale, et dans les quatre
+     sols — et parce que chez Apple la surface encastrée dans une carte
+     blanche et le sol groupé sont justement la même valeur. Ce qui reste
+     invariant, c'est ce qui se touche vraiment : le champ sous la carte, le
+     champ sous le sol, --bg2 au-dessus de --bg et sous la carte.
+     Le champ gagne d'ailleurs l'écart au sol qui lui manquait : la piste du
+     sélecteur de module, seul --inp posé à même le sol, passe de 2,5 à 4,6
+     points de L*. */
+  --bg:       #f2f2f7;
+  /* Palier des reliefs (bouton Calculer sur le sol, curseur des segments sur
+     --inp). Il reste sous la carte, de deux points de L* : au-dessus d'un sol
+     déjà à 95,6, il n'y a plus la place d'en prendre davantage sans devenir
+     la carte. */
+  --bg2:      #fafafc;
   --card:     #ffffff;
-  --card-alt: #e8e8ed;
+  --card-alt: #f0f0f5;
   --border:   rgba(60,60,67,0.13);
   --border-s: rgba(60,60,67,0.26);
   --accent:   #0b66c3;
   --accent2:  #08529b;
-  /* Corail assombri de #c1441c : sur le nouveau --card-alt il ne tenait plus
-     que 4,18:1, et il porte l'étiquette GAUCHE des panneaux de moyeu. */
-  --warm:     #b33d15;
+  /* Corail rendu en partie. Il avait été assombri de #c1441c à #b33d15 parce
+     qu'il ne tenait que 4,18:1 sur --card-alt quand celui-ci était encore à
+     #e8e8ed ; le palier ayant reclairci à #f0f0f5, la contrainte s'est
+     desserrée et la valeur remonte.
+     Pas jusqu'à #c1441c pour autant : le corail ne porte du texte que sur
+     trois surfaces — la carte (étiquettes de côté, bouton Reset), --card-alt
+     (étiquettes de panneau, cibles) et le lavis warm à 6 % posé SUR LA CARTE
+     (en-têtes du module tension, soit rgb(249,243,241)). La plus exigeante
+     des trois est --card-alt, et #c1441c y tombe à 4,497:1, sous la barre de
+     trois millièmes. #bc411a y tient 4,73:1, 4,89 sur le lavis et 5,37 sur la
+     carte : la marge est celle du papier, dont le corail tient 4,86 sur sa
+     propre carte alternative.
+     Le corail ne se pose JAMAIS sur --inp, qui serait sinon la contrainte
+     basse ; les champs à fond corail portent --text, pas --warm. */
+  --warm:     #bc411a;
   --warm2:    #9c3413;
   --success:  #0a7a4e;
   --text:     #1c1c1e;
   --text2:    #3f4045;
-  /* Tertiaire descendu de #6b6b72 : sur le nouveau --inp il tombait à
-     3,94:1, et il porte les libellés inactifs du segment. À #5f5f66 il tient
-     4,72:1. */
+  /* Tertiaire descendu de #6b6b72, qui tombait à 3,94:1 sur --inp. À #5f5f66
+     il tenait 4,72:1 sur l'ancien champ et tient 5,05:1 sur celui-ci ; il
+     porte les libellés inactifs du segment, d'où la marge gardée. */
   --text3:    #5f5f66;
   --text3-dim:#737379;
-  --inp:      #dedee3;
+  /* systemGray5 : le gris des champs remplis et des pistes de segment d'iOS.
+     C'est lui qui porte désormais le creux que le sol a rendu. */
+  --inp:      #e5e5ea;
   --sh:       0 2px 12px rgba(17,20,28,0.07);
   --sh-raise: 0 2px 8px rgba(17,20,28,0.09);
   --sh-chip:  0 1px 3px rgba(17,20,28,0.09);
@@ -431,13 +493,18 @@ html[data-contrast="haut"][data-fond="papier"] {
   --scrim-3: rgba(38,30,18,.46);
   --scrim-4: rgba(38,30,18,.50);
   --scrim-5: rgba(38,30,18,.52);
-  --accent-rgb: 23,95,115;
+  --accent-rgb: 23,96,107;
   --warm-rgb: 132,50,29;
   --warm2-rgb: 128,50,29;
   --success-rgb: 25,101,71;
-  --bg:#e5e0d5; --bg2:#f7f4ef; --card:#fffefc; --card-alt:#f3efe7; --inp:#e8e3d8;
+  /* --inp descend comme au palier normal (il était 1,1 point AU-DESSUS du
+     sol) ; l'accent, lui, est déjà assombri par le palier et tient 5,05 sur
+     le nouveau champ, il ne bouge pas. */
+  --bg:#e5e0d5; --bg2:#f7f4ef; --card:#fffefc; --card-alt:#f3efe7; --inp:#ddd8ca;
   --border:rgba(44,34,20,0.21); --border-s:rgba(44,34,20,0.35);
-  --accent:#175f73; --accent2:#114a5b; --warm:#9c3f27; --warm2:#80321d; --success:#196547;
+  /* Même rotation de teinte qu'au palier normal, à luminance constante :
+     le palier garde exactement le contraste qu'il avait. */
+  --accent:#17606b; --accent2:#0f4b54; --warm:#9c3f27; --warm2:#80321d; --success:#196547;
   --text:#16130e; --text2:#352f26; --text3:#544d42; --text3-dim:#5f584c;
   --sh:0 3px 14px rgba(54,44,28,0.16); --sh-raise:0 2px 10px rgba(54,44,28,0.19);
   --sh-chip:0 1px 4px rgba(54,44,28,0.18); --sh-pop:0 6px 22px rgba(54,44,28,0.20);
@@ -458,7 +525,13 @@ html[data-contrast="haut"][data-fond="alu"] {
   --warm-rgb: 135,45,16;
   --warm2-rgb: 135,45,16;
   --success-rgb: 10,105,68;
-  --bg:#d9d9de; --bg2:#e9e9ee; --card:#ffffff; --card-alt:#e4e4e9; --inp:#d7d7dc;
+  /* Le sol reprend systemGray5 (#e5e5ea), c'est-à-dire le cran que le palier
+     normal vient de quitter : les deux paliers restent donc sur des valeurs
+     Apple authentiques, à un barreau d'écart. Le reste de l'échelle descend
+     du même pas. Au passage, le champ retrouve un sol : à #d7d7dc sur
+     #d9d9de, la piste du sélecteur de module était à 0,7 point de L* de la
+     page, invisible ; l'écart passe à 4,6. */
+  --bg:#e5e5ea; --bg2:#f6f6f9; --card:#ffffff; --card-alt:#e3e3e9; --inp:#d8d8de;
   --border:rgba(60,60,67,0.24); --border-s:rgba(60,60,67,0.40);
   --accent:#0a5aad; --accent2:#07447f; --warm:#a93a17; --warm2:#872d10; --success:#0a6944;
   --text:#0c0c0e; --text2:#2f3035; --text3:#55555c; --text3-dim:#5f5f66;
@@ -1246,7 +1319,7 @@ select option             { background:var(--inp) }
 /* État "pas encore calculé" — remplace l'opacity:.35 du conteneur (contraste WCAG) :
    les éléments non textuels sont fortement grisés, le label garde ≥4.5:1. Le
    chiffre dépend du sol, chacun accordant son --text3-dim à sa carte : 4,65:1
-   en ardoise (#84959f sur #232a38), 4,67 en carbone, 4,71 en alu. */
+   en ardoise (#84959f sur #232a38), 4,69 en carbone, 4,71 en alu. */
 .tension-field-calc label            { color:var(--text3-dim); transition:color .2s }
 .tension-field-calc .tension-dot     { opacity:.35; transition:opacity .2s }
 .tension-field-calc .faible-display  { opacity:.45 }
@@ -1282,12 +1355,16 @@ select option             { background:var(--inp) }
    qu'avec son scale, sans changement de fond. C'était déjà le cas avant. */
 /* L'étiquette passe à --accent2 le temps de l'appui : le lavis rapproche le
    fond de l'accent, et --accent, qui porte le libellé du bouton armé, y
-   tombait à 4,28:1 en papier et 3,85 en alu. --accent2 est plus clair que
-   --accent sur sol sombre et plus foncé sur sol clair : il s'écarte du lavis
-   dans les deux familles, sans exception par sol. */
+   tombait à 4,28:1 en papier et 4,32 en alu. Le papier, depuis que son
+   accent a été assombri pour creuser son champ, est remonté à 4,52 et
+   passerait désormais ; l'alu, lui, reste sous la barre. La règle est donc
+   conservée pour tout le monde : un seul sol en défaut suffit à la
+   justifier, et l'exception par sol serait pire que la règle. --accent2 est
+   plus clair que --accent sur sol sombre et plus foncé sur sol clair : il
+   s'écarte du lavis dans les deux familles, sans exception par sol. */
 /* Un .btn posé SUR UNE CARTE et non sur le sol : il n'existe pas de palier
    au-dessus de --card, donc --bg2 y ferait un CREUX, onze points de L* sous
-   la carte en carbone et six en alu. Le relief ne peut pas venir de la
+   la carte en carbone et deux en alu. Le relief ne peut pas venir de la
    surface là où la surface est déjà la plus haute : ce bouton garde donc le
    lavis d'accent, qui ne dépend d'aucun palier, et rend son ombre portée.
    L'appui continue d'ajouter son calque par-dessus, comme partout ailleurs.
@@ -2249,11 +2326,28 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
    La forme ronde remplace le carré de 21 px et son carré de 10 px encastré
    dans l'angle : à cette échelle, deux rayons et deux liserés qui se croisent
    sur 4 px de diagonale font du bruit, et les 21 px imposaient leur hauteur à
-   la ligne alors que le texte n'en fait que 17. */
+   la ligne alors que le texte n'en fait que 17.
+   UNE seule coupe, à la frontière sol / carte, et aucune ailleurs. C'est la
+   seule des trois frontières où deux NEUTRES se touchent : les deux autres
+   butent sur l'accent, qui se détache tout seul, et y poser un trait gris
+   contre du bleu saturé ne ferait qu'un artefact. Entre le sol et la carte,
+   en revanche, la valeur seule ne suffit plus dès que le thème les rapproche :
+   quatre points de L* en alu depuis le calage sur la charte Apple, six en
+   papier, sept en ardoise. Le carbone est le seul à n'en pas avoir besoin,
+   avec ses vingt-deux points, et le trait ne lui coûte rien. Il rend le
+   partage lisible à 18 px sans mentir sur les couleurs, qui restent celles
+   du thème.
+   --sw-cut double --sw-rim plutôt que de le réutiliser : le liseré cerne la
+   pastille sur la carte, la coupe sépare deux aplats à l'intérieur, et les
+   deux n'ont pas besoin de la même force. Comme le liseré, elle appartient au
+   sol MONTRÉ et non au sol ACTIF. */
 .fond-swatch {
   width:18px; height:18px; border-radius:50%; flex-shrink:0;
-  background:conic-gradient(from 210deg,
-    var(--sw-sol) 0 33.34%, var(--sw-card) 33.34% 66.67%, var(--sw-acc) 66.67% 100%);
+  background-image:
+    conic-gradient(from 210deg,
+      rgba(0,0,0,0) 0 32.2%, var(--sw-cut) 32.2% 34.5%, rgba(0,0,0,0) 34.5% 100%),
+    conic-gradient(from 210deg,
+      var(--sw-sol) 0 33.34%, var(--sw-card) 33.34% 66.67%, var(--sw-acc) 66.67% 100%);
   box-shadow:inset 0 0 0 1px var(--sw-rim);
 }
 /* L'état sélectionné : le liseré et la coche, pas une couleur de fond, pour ne
@@ -2370,8 +2464,17 @@ body {
 /* 3. Sélection de texte au thème */
 ::selection { background: rgba(var(--accent-rgb),.28); color: var(--text-strong) }
 
-/* 4. Focus clavier visible (accessibilité), invisible au tactile */
-:focus-visible { outline: 2px solid rgba(var(--accent-rgb),.55); outline-offset: 2px; border-radius: 4px }
+/* 4. Focus clavier visible (accessibilité), invisible au tactile.
+   L'anneau est peint en accent SOLIDE et non en lavis. À 55 % d'opacité il
+   se composait avec la surface qui passait dessous, et retombait sous les
+   3:1 que demande WCAG 1.4.11 pour un élément non textuel : 2,81 en carbone,
+   2,19 en papier, 2,21 en alu, cinq combinaisons sol × palier sur huit.
+   En solide le minimum des huit est 4,52, et surtout l'anneau cesse de
+   dépendre de ce qu'il y a dessous : il hérite du contrat de --accent, que
+   chaque sol garantit déjà à 4,5:1 sur toutes ses surfaces. Une constante
+   d'opacité de moins à réauditer quand un palier bouge.
+   C'est déjà l'écriture de guide.html. */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px }
 :focus:not(:focus-visible) { outline: none }
 
 /* 5. Tap propre partout : pas de flash gris, pas de délai 300 ms */
@@ -10190,15 +10293,16 @@ function fondRepeintCanvas() {
 // palier normal. Littéraux assumés, puisqu'il faut montrer les QUATRE pendant
 // qu'un seul est actif : des jetons donneraient quatre fois la même pastille.
 // Quatrième valeur : 1 si le sol appartient à la famille claire. Elle ne sert
-// qu'à choisir le liseré de la pastille, sombre sur un sol clair et clair sur
-// un sol sombre, pour qu'il reste lisible quelle que soit la carte sous elle.
+// qu'à choisir le liseré de la pastille ET sa coupe sol / carte, sombres sur
+// un sol clair et clairs sur un sol sombre, pour qu'ils restent lisibles
+// quelle que soit la carte sous elle.
 // Elle double --fond-clair à dessein : ce drapeau-ci décrit le sol MONTRÉ,
 // l'autre le sol ACTIF, et le chooser a justement besoin des deux.
 var FOND_PASTILLE = {
   ardoise: ['#181c24', '#232a38', '#7ec8e3', 0],
   carbone: ['#0d1119', '#3c4048', '#7ec8e3', 0],
-  papier:  ['#edeae2', '#fdfcfa', '#1a6f86', 1],
-  alu:     ['#e5e5ea', '#ffffff', '#0b66c3', 1]
+  papier:  ['#edeae2', '#fdfcfa', '#196c79', 1],
+  alu:     ['#f2f2f7', '#ffffff', '#0b66c3', 1]
 };
 function fondPickerRender() {
   var list = $id('fondpicker-list');
@@ -10217,7 +10321,8 @@ function fondPickerRender() {
     b.innerHTML =
       '<span class="fond-swatch" style="--sw-sol:' + sw[0] + ';--sw-card:' + sw[1] +
         ';--sw-acc:' + sw[2] + ';--sw-rim:' +
-        (sw[3] ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.26)') + '"></span>' +
+        (sw[3] ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.26)') + ';--sw-cut:' +
+        (sw[3] ? 'rgba(0,0,0,.42)' : 'rgba(255,255,255,.42)') + '"></span>' +
       '<span class="fond-opt-name"></span>' +
       '<svg class="fond-opt-check" width="15" height="15" viewBox="0 0 24 24" fill="none" ' +
         'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" ' +
@@ -23875,7 +23980,7 @@ document.addEventListener('keydown', function(e) {
     // clairs de la feuille, pour que la légende s'accorde au reste.
     var _cl   = (typeof fondClair === 'function') && fondClair();
     var color = side === 'fo' ? (_cl ? fondJeton('--warm',   '#b04a30') : '#e8927c')
-                              : (_cl ? fondJeton('--accent', '#1a6f86') : '#7ec8e3');
+                              : (_cl ? fondJeton('--accent', '#196c79') : '#7ec8e3');
     return { L:L, T:T, eTotal:eTot, k:k, color:color,
              label: label ? label.textContent : diffSideLabel(side, wtype) };
   }
