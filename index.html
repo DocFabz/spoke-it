@@ -6601,6 +6601,8 @@ const LS_LEGACY_KEYS = [
   'spokeit_emSort',         // tri Nom/Date du Data manager, essai abandonné (remplacé par le filtre Période)
   'spokeit_appTag',         // détection de version par ETag (remplacée par document.lastModified)
   'ef_debug',               // drapeau de debug EF Vocal d'une build de test, jamais lu par l'app
+  'spokeit_wmAlt',          // clés d'un build de test « wm » sur la même origine, jamais lues par l'app
+  'spokeit_wmTest',
 ];
 // Audit au démarrage (hors chemin critique) : purge des clés legacy, puis
 // signaler en console toute clé de notre espace de nommage absente du
@@ -18658,6 +18660,7 @@ var efTtsMode        = false;
 var efTtsSpeaking    = false; // true pendant la TTS + tail → gate sourde dans onresult
 var efTtsTail        = null;  // timer prolongeant la fenêtre sourde après onend
 var efTtsGuard       = null;  // FILET : referme la fenêtre même si onend ne vient jamais
+var efTtsUtter       = null;  // énoncé courant : les événements d'un énoncé remplacé (cancel) sont ignorés
 var efTtsLastSpoken  = '';    // dernier énoncé TTS normalisé (filtre anti-écho « phrase »)
 var efTtsSpokenNum   = null;  // nombre exact prononcé (garde anti-écho déterministe)
 var efVoicesReady    = false; // true dès que la liste des voix TTS est chargée
@@ -19757,7 +19760,13 @@ function efSpeak(text) {
     if (efTtsTail)  { clearTimeout(efTtsTail);  efTtsTail  = null; }
     if (efTtsGuard) { clearTimeout(efTtsGuard); efTtsGuard = null; }
     efTtsSpeaking = true; // ouvrir la fenêtre sourde
+    efTtsUtter = u;
+    // Un énoncé REMPLACÉ (synth.cancel() en tête de l'appel suivant) reçoit son
+    // 'interrupted' APRÈS que le nouvel énoncé a ouvert sa fenêtre : sans cette
+    // garde, il refermait la fenêtre du suivant en pleine lecture (reco exposée
+    // à l'écho) et effaçait son filet de 5 s.
     var closeWindow = function() {
+      if (u !== efTtsUtter) return;
       if (efTtsGuard) { clearTimeout(efTtsGuard); efTtsGuard = null; }
       if (efTtsTail)  clearTimeout(efTtsTail);
       efTtsTail = setTimeout(function() {
@@ -19767,7 +19776,18 @@ function efSpeak(text) {
         setTimeout(function() { efTtsLastSpoken = ''; efTtsSpokenNum = null; }, 250);
       }, EF_TTS_TAIL_MS);
     };
-    u.onend = u.onerror = closeWindow;
+    u.onend = closeWindow;
+    // Échec réel du moteur (synthesis-failed, not-allowed, audio-busy, moteur
+    // TTS système absent…) : la valeur est déjà commitée par efNext, sans le
+    // bip l'utilisateur n'aurait AUCUN accusé de réception. 'interrupted' et
+    // 'canceled' sont provoqués par Spokeit lui-même (synth.cancel() en tête
+    // d'efSpeak et dans efStopMic) : pas de bip, une autre lecture prend le
+    // relais ou le micro vient d'être coupé.
+    u.onerror = function(ev) {
+      if (u !== efTtsUtter) return;
+      closeWindow();
+      if (ev && ev.error !== 'interrupted' && ev.error !== 'canceled') efBeepOk();
+    };
     // FILET DE SÉCURITÉ : si onend/onerror ne se déclenche jamais (voix non
     // chargée, énoncé abandonné), la fenêtre sourde resterait ouverte et la reco
     // deviendrait muette en permanence. On force la fermeture après un plafond.
@@ -19986,6 +20006,7 @@ function efStopMic() {
   if (efTtsTail)  { clearTimeout(efTtsTail);  efTtsTail  = null; }
   if (efTtsGuard) { clearTimeout(efTtsGuard); efTtsGuard = null; }
   efTtsSpeaking   = false;
+  efTtsUtter      = null;
   efTtsLastSpoken = '';
   efTtsSpokenNum  = null;
   efSetMicActive(false);
