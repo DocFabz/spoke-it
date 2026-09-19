@@ -2406,33 +2406,14 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ef-numpad-key.key-del  { font-size:.95rem; color:var(--text2) }
 .ef-numpad-key.key-del:active { background-image:linear-gradient(rgba(var(--warm-rgb),.16),rgba(var(--warm-rgb),.16));
   border-color:rgba(var(--warm-rgb),.4) }
-/* La touche Entrée portait mot pour mot l'ancien .btn : lavis d'accent à 7 %,
-   liseré .3, appui à 18 %. C'était le dernier endroit de la feuille à garder
-   ce langage après le passage de Calculer en surface surélevée.
-   Elle prend donc la tenue de Calculer ARMÉ, puisqu'une touche Entrée est
-   actionnable en permanence : liseré .55, étiquette d'accent, filet d'accent
-   en inset. Une seule adaptation, imposée par le lieu : le pavé est posé sur
-   une CARTE, où --bg2 serait un creux. La touche monte donc au palier le plus
-   haut disponible, --card, et c'est l'ombre portée qui fait le relief.
-   L'appui suit la règle commune : un calque d'accent PAR-DESSUS la surface,
-   donc un remplissage qui monte, et non l'ancien remplacement à 18 %. */
-.ef-numpad-key.key-enter {
-  grid-column:span 3;
-  background:var(--card);
-  border-color:rgba(var(--accent-rgb),.55);
-  color:var(--accent);
-  box-shadow:var(--sh-raise), 0 0 0 1px rgba(var(--accent-rgb),.15) inset;
-  font-family:'DM Sans',sans-serif;
-  font-size:.88rem;
-  font-weight:600;
-  letter-spacing:.1em;
-  text-transform:uppercase;
-  padding:1.1rem;
-}
-.ef-numpad-key.key-enter:active {
-  background-image:linear-gradient(rgba(var(--accent-rgb),.16),rgba(var(--accent-rgb),.16));
-  color:var(--accent2); transform:scale(.97);
-}
+/* La touche Entrée a longtemps porté une tenue à part : surface --card,
+   ombre portée, filet d'accent en inset, étiquette DM Sans en capitales.
+   Ce relief jurait avec les douze touches posées à plat juste au-dessus,
+   dans un pavé qui n'est rien d'autre qu'un clavier. Elle ne garde donc
+   plus qu'une seule ligne, sa largeur : surface, liseré, typographie,
+   appui et échelle au clic viennent tous de .ef-numpad-key, comme pour
+   un chiffre. */
+.ef-numpad-key.key-enter { grid-column:span 3 }
 
 /* ── Cache toast ──────────────────────────────────────────────────────────── */
 .cache-toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid rgba(var(--warm-rgb),.35); border-radius:var(--rs); padding:.55rem 1.1rem; font-family:'DM Sans',sans-serif; font-size:.67rem; color:var(--warm2); z-index:10000; pointer-events:none; opacity:0; transition:opacity .3s; white-space:nowrap; margin-bottom:env(safe-area-inset-bottom, 0px) }
