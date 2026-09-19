@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test reco + retour vocal</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 14px/1.4 system-ui, sans-serif; margin: 0; padding: 12px; max-width: 900px; margin-inline: auto; }
+  h1 { font-size: 16px; margin: 0 0 6px; }
+  .hint { opacity: .75; margin: 0 0 10px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 8px; }
+  button { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid #888; background: #eee; color: #000; cursor: pointer; }
+  button.on { background: #c0392b; color: #fff; border-color: #c0392b; }
+  select, input, label { font: inherit; }
+  #log { font: 12px/1.35 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; border: 1px solid #8884; border-radius: 6px; padding: 8px; min-height: 200px; max-height: 65vh; overflow: auto; }
+  .f { color: #1a7f37; font-weight: 600; }
+  .i { opacity: .7; }
+  .e { color: #c0392b; font-weight: 600; }
+  .t { color: #0969da; font-weight: 600; }
+  .n { color: #8250df; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>Test reco + retour vocal (TTS)</h1>
+<p class="hint">Démarrer, puis dicter des nombres. Chaque FINAL est relu par la synthèse (« 30 kilos »), comme dans Spokeit. Le journal montre si la reco survit à la lecture (résultats suivants, événements end/error) et si la synthèse parle vraiment (start/end/error, durée). « Parler seul » teste la synthèse micro fermé.</p>
+<div class="bar">
+  <button id="go">Démarrer</button>
+  <button id="say">Parler seul</button>
+  <label>Langue <select id="lang"><option value="fr-FR" selected>fr-FR</option><option value="en-US">en-US</option></select></label>
+  <label><input type="checkbox" id="tts" checked> retour vocal</label>
+  <label><input type="checkbox" id="cancel" checked> cancel() avant speak()</label>
+  <label><input type="checkbox" id="alt"> alternat (stop reco pendant la lecture)</label>
+  <label>audioSession <select id="as"><option value="">(ne pas toucher)</option><option value="auto">auto</option><option value="playback">playback</option><option value="play-and-record">play-and-record</option><option value="ambient">ambient</option></select></label>
+  <button id="copy">Copier</button>
+  <button id="clear">Effacer</button>
+</div>
+<div id="log"></div>
+<script>
+var log = document.getElementById('log'), r = null, t0 = performance.now(), active = false, speaking = false, nSpeak = 0, tSpeak = 0;
+function now() { return ((performance.now() - t0) / 1000).toFixed(2).padStart(6) + 's'; }
+function line(cls, txt) { var d = document.createElement('div'); d.className = cls; d.textContent = now() + '  ' + txt; log.appendChild(d); log.scrollTop = log.scrollHeight; }
+line('i', 'UA: ' + navigator.userAgent);
+line('i', 'SpeechRecognition: ' + (('SpeechRecognition' in window) ? 'natif' : ('webkitSpeechRecognition' in window) ? 'webkit' : 'ABSENT') +
+          ' | speechSynthesis: ' + (('speechSynthesis' in window) ? 'oui' : 'ABSENT') +
+          ' | navigator.audioSession: ' + (navigator.audioSession ? 'oui (type=' + navigator.audioSession.type + ')' : 'non'));
+if ('speechSynthesis' in window) {
+  var vc = function() { var v = speechSynthesis.getVoices(); line('i', 'voix disponibles : ' + v.length + (v.length ? ' (fr: ' + v.filter(function(x){return /^fr/i.test(x.lang);}).length + ')' : '')); };
+  vc(); speechSynthesis.addEventListener('voiceschanged', vc);
+}
+document.getElementById('as').onchange = function() {
+  if (!navigator.audioSession) { line('e', 'audioSession non supporté'); return; }
+  if (this.value) { try { navigator.audioSession.type = this.value; line('i', 'audioSession.type = ' + navigator.audioSession.type); } catch(x) { line('e', 'audioSession KO ' + x.message); } }
+};
+
+function pickVoice(lang) {
+  var vs = speechSynthesis.getVoices(), L = lang.toLowerCase(), b = L.split('-')[0];
+  return vs.filter(function(v){ return v.lang.toLowerCase() === L; })[0] || vs.filter(function(v){ return v.lang.toLowerCase().split(/[-_]/)[0] === b; })[0] || null;
+}
+function speak(text) {
+  if (!('speechSynthesis' in window)) { line('e', 'pas de speechSynthesis'); return; }
+  var id = ++nSpeak, altOn = document.getElementById('alt').checked;
+  if (document.getElementById('cancel').checked) speechSynthesis.cancel();
+  if (altOn && r && active) { try { r.abort(); } catch(x) {} line('t', 'TTS#' + id + ' alternat : reco coupée'); }
+  var u = new SpeechSynthesisUtterance(text);
+  u.lang = document.getElementById('lang').value;
+  var v = pickVoice(u.lang); if (v) u.voice = v;
+  u.rate = /^fr/.test(u.lang) ? 1.18 : 0.92;
+  var ts = performance.now();
+  u.onstart = function() { speaking = true; line('t', 'TTS#' + id + ' start (' + Math.round(performance.now() - ts) + ' ms après speak)  voix=' + (v ? v.name : 'défaut')); };
+  u.onend   = function() { speaking = false; line('t', 'TTS#' + id + ' end   durée ' + Math.round(performance.now() - ts) + ' ms'); if (altOn && active) { setTimeout(function() { if (active) { startRecog(); line('t', 'alternat : reco relancée'); } }, 150); } };
+  u.onerror = function(e) { speaking = false; line('e', 'TTS#' + id + ' ERROR ' + e.error + ' après ' + Math.round(performance.now() - ts) + ' ms'); if (altOn && active) startRecog(); };
+  line('t', 'TTS#' + id + ' speak("' + text + '")  speaking=' + speechSynthesis.speaking + ' pending=' + speechSynthesis.pending + ' paused=' + speechSynthesis.paused);
+  speechSynthesis.speak(u);
+  setTimeout(function() { if (nSpeak === id && !speaking) line('n', 'TTS#' + id + ' : pas de start après 3 s (muet ou bloqué ?)  speaking=' + speechSynthesis.speaking + ' pending=' + speechSynthesis.pending); }, 3000);
+}
+
+function startRecog() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { line('e', 'Pas de SpeechRecognition'); return; }
+  if (r) { try { r.abort(); } catch(x) {} }
+  r = new SR();
+  r.lang = document.getElementById('lang').value; r.continuous = true; r.interimResults = true; r.maxAlternatives = 3;
+  var me = r;
+  ['audiostart','soundstart','speechstart','speechend','soundend','audioend','nomatch'].forEach(function(ev) { me.addEventListener(ev, function() { line('i', 'reco ' + ev + (speaking ? '  (pendant TTS)' : '')); }); });
+  me.onstart = function() { line('i', 'reco start'); };
+  me.onerror = function(e) { line('e', 'reco error ' + e.error + (speaking ? '  (pendant TTS)' : '')); };
+  me.onend = function() {
+    line(speaking ? 'e' : 'i', 'reco end' + (speaking ? '  (PENDANT TTS)' : ''));
+    if (active && me === r && !document.getElementById('alt').checked) setTimeout(function() { if (active && me === r) { try { me.start(); line('i', 'reco restart'); } catch(x) { line('e', 'restart KO ' + x.message); } } }, 80);
+  };
+  me.onresult = function(e) {
+    for (var i = e.resultIndex; i < e.results.length; i++) {
+      var res = e.results[i], parts = [];
+      for (var k = 0; k < res.length; k++) parts.push('"' + res[k].transcript + '"' + (typeof res[k].confidence === 'number' ? ' (' + res[k].confidence.toFixed(2) + ')' : ''));
+      line(res.isFinal ? 'f' : 'i', (res.isFinal ? 'FINAL  ' : 'interim') + ' #' + i + ' ' + parts.join(' | ') + (speaking ? '  (pendant TTS)' : ''));
+      if (res.isFinal && document.getElementById('tts').checked) {
+        var m = res[0].transcript.match(/\d+(?:[.,]\d+)?/g);
+        var val = m ? m[m.length - 1] : res[0].transcript.trim();
+        speak(val + (/^fr/.test(me.lang) ? ' kilos' : ' kilos'));
+      }
+    }
+  };
+  try { me.start(); } catch(x) { line('e', 'start KO ' + x.message); }
+}
+function stop() { active = false; if (r) { try { r.abort(); } catch(x) {} r = null; } try { speechSynthesis.cancel(); } catch(x) {} line('i', '--- stop'); document.getElementById('go').textContent = 'Démarrer'; document.getElementById('go').className = ''; }
+document.getElementById('go').onclick = function() {
+  if (active) { stop(); return; }
+  active = true; t0 = performance.now();
+  line('i', '--- start lang=' + document.getElementById('lang').value + ' tts=' + document.getElementById('tts').checked + ' cancel=' + document.getElementById('cancel').checked + ' alternat=' + document.getElementById('alt').checked);
+  // Déverrouillage TTS sur geste utilisateur (comme efUnlockTts)
+  try { var u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch(x) {}
+  startRecog();
+  document.getElementById('go').textContent = 'Arrêter'; document.getElementById('go').className = 'on';
+};
+document.getElementById('say').onclick = function() { speak((/^fr/.test(document.getElementById('lang').value) ? '30 kilos' : '30 kilos')); };
+document.getElementById('clear').onclick = function() { log.textContent = ''; };
+document.getElementById('copy').onclick = function() {
+  var txt = log.innerText;
+  function fb() { var ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); line('i', '(copié)'); } catch(x) {} ta.remove(); }
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function() { line('i', '(copié)'); }, fb); else fb();
+};
+</script>
+</body>
+</html>
