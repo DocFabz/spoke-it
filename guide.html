@@ -9,18 +9,23 @@
 
 <!-- Contraste et fond : posés avant la feuille de style, sinon le manuel se
      rend une première fois dans l'autre palier ou sur l'autre sol et bascule
-     sous les yeux. L'app passe &contrast=haut et &fond=… dans l'URL de
+     sous les yeux. L'app passe &contrast=… et &fond=… dans l'URL de
      l'iframe, et ne passe rien pour les valeurs par défaut (palier normal,
      sol ardoise) : l'absence de paramètre est donc le défaut des deux côtés.
-     Aucune liste blanche, comme dans l'app : un sol inconnu pose un attribut
-     sans bloc CSS et rend exactement comme l'ardoise.
+     Aucune liste blanche, comme dans l'app, ni pour le sol ni pour le palier :
+     une valeur inconnue pose un attribut sans bloc CSS et rend exactement
+     comme le défaut. C'est ce qui permet de lire le palier par une capture
+     plutôt que par une égalité : un palier ajouté un jour à l'app arrive ici
+     tout seul, et il ne manque que son bloc de jetons.
      Le manuel s'ouvre aussi hors iframe (lien direct) : sans paramètre il
      prend le thème d'origine, ce qui est le comportement voulu. -->
 <script>
 (function(){
   try {
-    if (/[?&]contrast=haut(&|$)/.test(location.search))
-      document.documentElement.setAttribute('data-contrast', 'haut');
+    var c = /[?&]contrast=([a-z]+)/.exec(location.search);
+    if (c && c[1] !== 'normal') {
+      document.documentElement.setAttribute('data-contrast', c[1]);
+    }
     var m = /[?&]fond=([a-z]+)/.exec(location.search);
     if (m && m[1] !== 'ardoise') {
       document.documentElement.setAttribute('data-fond', m[1]);
@@ -72,13 +77,27 @@
   --warm-rgb:232,146,124;
 }
 
-/* Contraste élevé. Recopie du palier de l'app : le manuel s'ouvre par-dessus
-   elle, les deux doivent s'accorder. Les accents ne bougent pas. */
+/* Contraste : trois paliers, recopiés de l'app. Le manuel s'ouvre par-dessus
+   elle, les deux doivent s'accorder ; les valeurs sont donc celles de l'app à
+   la virgule près, et si elles divergent un jour, c'est ici qu'il faut les
+   réaligner. Le palier normal est l'ABSENCE d'attribut, comme l'ardoise.
+   Les accents ne bougent à aucun des deux paliers : au palier élevé parce que
+   c'est le fond qui les met en valeur, au palier bas parce que --card est son
+   point fixe et qu'ils gardent donc leurs ratios tels quels. */
 html[data-contrast="haut"]{
   --bg:#0e1218; --bg2:#161c26; --card:#1d2532; --card-alt:#141a25;
   --border:rgba(255,255,255,.18); --border-s:rgba(255,255,255,.28);
   --text:#f2f6fa; --text2:#dde7f0; --text3:#a9b8c6;
   --inp:#06090e;
+}
+/* Contraste bas : chaque écart de surface à la carte divisé par deux, le haut
+   de l'échelle d'encre rabattu en miroir du palier élevé. La carte est le
+   point fixe, aucun bloc du palier bas ne déclare donc --card. */
+html[data-contrast="bas"]{
+  --bg:#1e232c; --bg2:#212634; --card-alt:#1e2536;
+  --border:rgba(255,255,255,.04); --border-s:rgba(255,255,255,.08);
+  --text:#c5ccd4; --text2:#b2bfca; --text3:#8c9dac;
+  --inp:#171d2d;
 }
 
 /* ── Fond ────────────────────────────────────────────────────────────────
@@ -138,6 +157,30 @@ html[data-contrast="haut"][data-fond="alu"]{
   --text:#0c0c0e; --text2:#2f3035; --text3:#55555c;
   --inp:#d8d8de;
   --ink-rgb:28,28,30; --accent-rgb:10,90,173; --warm-rgb:135,45,16;
+}
+/* Le carbone est le sol qui bouge le plus au palier bas, et c'est
+   arithmétique : ses surfaces s'étalent sur 22 points de L*, deux fois plus
+   que les trois autres, donc la division par deux lui en retire 11. */
+html[data-contrast="bas"][data-fond="carbone"]{
+  --bg:#212836; --bg2:#2f343e; --card-alt:#353942;
+  --text:#dddddd; --text2:#cfcfcf; --text3:#b6b6b6;
+  --inp:#282d39;
+}
+html[data-contrast="bas"][data-fond="papier"]{
+  --bg:#f6f3eb; --bg2:#fbf9f5; --card-alt:#faf7f1;
+  --border:rgba(44,34,20,.06); --border-s:rgba(44,34,20,.13);
+  --text:#2e2a24; --text2:#4d483e; --text3:#6e6659;
+  --inp:#f1ecdf;
+}
+/* Le champ reprend systemGray6 (#f2f2f7), le cran que le sol vient de quitter
+   en montant : symétrique du palier élevé, qui pose son sol sur systemGray5.
+   Le sol, lui, quitte l'échelle d'Apple, qui s'arrête à systemGray6 : la carte
+   étant déjà le blanc pur, il n'y avait pas d'autre moyen de resserrer. */
+html[data-contrast="bas"][data-fond="alu"]{
+  --bg:#f8f8fd; --bg2:#fcfcfe; --card-alt:#f7f7fc;
+  --border:rgba(60,60,67,.07); --border-s:rgba(60,60,67,.15);
+  --text:#27272a; --text2:#48494e; --text3:#686870;
+  --inp:#f2f2f7;
 }
 
 /* Le sol clair annonce son palier natif au navigateur : sans ça la barre de
@@ -420,7 +463,7 @@ body.embedded header{padding-top:1.5rem}
         <line x1="4" y1="16" x2="20" y2="16"/>
         <circle cx="15" cy="8" r="2.4"/>
         <circle cx="9" cy="16" r="2.4"/>
-      </svg></span><div class="e-body"><h3 class="e-label"><span lang="fr">Réglages</span><span lang="en">Settings</span></h3><p lang="fr">Ouvre une fenêtre de quatre lignes, la valeur courante à droite de chacune. Un choix referme aussitôt ; la croix, un appui à côté ou Échap ferment sans rien changer.</p><p lang="en">Opens a four-line dialog, each showing its current value on the right. A choice closes it at once; the cross, tapping outside or pressing Esc close it without changing anything.</p><p lang="fr"><strong>Mode d'emploi</strong> ouvre ce manuel par-dessus l'application, sans rien recharger, et il reste consultable hors ligne. <strong>Fond</strong> ouvre le choix du thème : Ardoise, le fond d'origine, Carbone, un noir plus profond qui éteint les pixels des écrans OLED, Papier, un thème clair et chaud pour l'atelier en plein jour, et Alu, un thème clair aux gris froids. <strong>Contraste</strong> propose deux paliers de lisibilité pour l'atelier trop éclairé, sans toucher aux couleurs. Le fond et le contraste se combinent, et le manuel suit les deux. <strong>Langue</strong> bascule entre français et anglais ; l'application choisit seule à la première ouverture, cette ligne sert à la corriger.</p><p lang="en"><strong>User manual</strong> opens this manual over the app, with nothing reloaded, and it stays available offline. <strong>Background</strong> opens the theme picker: Slate, the original background, Carbon, a deeper black that switches OLED pixels off, Paper, a warm light theme for a workshop in daylight, and Alu, a light theme in cool greys. <strong>Contrast</strong> offers two legibility levels for a brightly lit workshop, without touching the colours. Background and contrast combine, and this manual follows both. <strong>Language</strong> switches between French and English; the app picks one on first load, this line is there to override it.</p></div></div>
+      </svg></span><div class="e-body"><h3 class="e-label"><span lang="fr">Réglages</span><span lang="en">Settings</span></h3><p lang="fr">Ouvre une fenêtre de quatre lignes, la valeur courante à droite de chacune. Un choix referme aussitôt ; la croix, un appui à côté ou Échap ferment sans rien changer. Le contraste fait exception : son curseur applique chaque palier au fur et à mesure et la fenêtre reste ouverte, fermer ne revient donc pas en arrière.</p><p lang="en">Opens a four-line dialog, each showing its current value on the right. A choice closes it at once; the cross, tapping outside or pressing Esc close it without changing anything. Contrast is the exception: its slider applies each level as you go and the dialog stays open, so closing it does not undo your choice.</p><p lang="fr"><strong>Mode d'emploi</strong> ouvre ce manuel par-dessus l'application, sans rien recharger, et il reste consultable hors ligne. <strong>Fond</strong> ouvre le choix du thème : Ardoise, le fond d'origine, Carbone, un noir plus profond qui éteint les pixels des écrans OLED, Papier, un thème clair et chaud pour l'atelier en plein jour, et Alu, un thème clair aux gris froids. <strong>Contraste</strong> ouvre un curseur à trois crans, du plus doux au plus franc : Bas pour l'atelier sombre et la fin de soirée, Normal, et Élevé pour l'atelier trop éclairé et les reflets. Aucun des trois ne touche aux couleurs, et aucun ne descend sous le seuil de lisibilité : le palier bas resserre les surfaces et adoucit l'encre, il ne la rend pas moins nette. Le fond et le contraste se combinent, et le manuel suit les deux.<strong>Langue</strong> bascule entre français et anglais ; l'application choisit seule à la première ouverture, cette ligne sert à la corriger.</p><p lang="en"><strong>User manual</strong> opens this manual over the app, with nothing reloaded, and it stays available offline. <strong>Background</strong> opens the theme picker: Slate, the original background, Carbon, a deeper black that switches OLED pixels off, Paper, a warm light theme for a workshop in daylight, and Alu, a light theme in cool greys. <strong>Contrast</strong> opens a three-notch slider, from softest to sharpest: Low for a dark workshop and late evenings, Normal, and High for a brightly lit workshop and glare. None of the three touches the colours, and none drops below the legibility threshold: the low level draws the surfaces closer together and softens the ink, it does not make it less crisp. Background and contrast combine, and this manual follows both. <strong>Language</strong> switches between French and English; the app picks one on first load, this line is there to override it.</p></div></div>
   <div class="entry"><span class="e-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
       </svg></span><div class="e-body"><h3 class="e-label"><span lang="fr">Atelier</span><span lang="en">Workshop</span></h3><p lang="fr">Nom de l'atelier, email et compte Instagram. Le «&nbsp;@&nbsp;» est affiché par le champ, saisissez le pseudo seul. Ces informations forment l'en-tête de tous les exports PDF et JPEG. Sans nom saisi, les exports portent «&nbsp;Spoke It&nbsp;». <em>Sauvegarder</em> valide, <em>Effacer</em> vide les champs et le logo.</p><p lang="en">Workshop name, email and Instagram handle. The “@” is shown by the field, so enter the handle on its own. This information becomes the header of every PDF and JPEG export. With no name entered, exports are headed “Spoke It”. <em>Save</em> confirms, <em>Clear</em> empties the fields and the logo.</p><p lang="fr"><strong>Logo.</strong> Le cadre sous les coordonnées importe un PNG, un JPEG ou un WebP, jusqu'à 8&nbsp;Mo. L'image est adaptée sur l'appareil, sans aucun envoi&nbsp;: fond uni retiré, passage en gris, contraste ajusté. Elle se place à droite de l'en-tête des PDF et apparaît à la fin de la vidéo d'évolution. La croix retire le logo. Le fichier d'origine n'est pas conservé&nbsp;; pour un autre résultat, réimportez-le.</p><p lang="en"><strong>Logo.</strong> The frame below your contact details imports a PNG, JPEG or WebP file, up to 8&nbsp;MB. The image is adapted on the device, nothing is uploaded: a plain background is removed, the logo is converted to greyscale and its contrast adjusted. It sits on the right of the PDF header and appears at the end of the evolution video. The cross removes the logo. The original file is not kept; for a different result, import it again.</p></div></div>
@@ -576,7 +619,7 @@ body.embedded header{padding-top:1.5rem}
   <div class="entry"><span class="e-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <rect x="9" y="1" width="6" height="11" rx="3"/>
           <path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
-        </svg></span><div class="e-body"><h3 class="e-label"><span lang="fr">Saisie vocale</span><span lang="en">Voice input</span></h3><p lang="fr">Dicte les lectures sans lâcher le tensiomètre. Le moteur suit la langue du navigateur et retombe sur l'anglais si elle n'est pas prise en charge&nbsp;; les séparateurs décimaux dits à voix haute sont reconnus dans une douzaine de langues. Un bip court confirme chaque valeur&nbsp;; un bip grave signale une lecture hors de la charte. La saisie vocale nécessite une connexion.</p><p lang="en">Dictate readings without letting go of the tensiometer. The engine follows the browser language and falls back to English if that language is unsupported; spoken decimal separators are recognised in a dozen languages. A short beep confirms each value; a low beep flags a reading outside the chart. Voice input requires a connection.</p><p lang="fr">La saisie vocale est pleinement opérationnelle sur iPhone et iPad (Safari), sur Android et sur Edge. Sur Chrome pour ordinateur, elle est un peu moins à l'aise&nbsp;: son moteur est conçu pour la dictée de phrases et peine sur un nombre court prononcé seul, qu'il peut attendre, confondre ou ignorer. Deux habitudes règlent la question. Sur un tensiomètre à lecture décimale, dicter la lecture complète plutôt que le raccourci&nbsp;: «&nbsp;zéro virgule trente&nbsp;» plutôt que «&nbsp;trente&nbsp;». Ou faire précéder la lecture d'un mot d'appui, par exemple «&nbsp;mesure trente&nbsp;» ou «&nbsp;nombre trente&nbsp;». Dans les deux cas, la valeur est reconnue et saisie normalement.</p><p lang="en">Voice input is fully operational on iPhone and iPad (Safari), on Android and on Edge. On Chrome for desktop it is a little less at ease: its engine is built for dictating sentences and struggles with a short number spoken on its own, which it may hold back, confuse or drop. Two habits settle it. On a decimal-reading tensiometer, dictate the full reading rather than the shortcut: “zero point thirty” rather than “thirty”. Or lead in with a cue word, for instance “reading thirty” or “number thirty”. Either way the value is recognised and entered as usual.</p></div></div>
+        </svg></span><div class="e-body"><h3 class="e-label"><span lang="fr">Saisie vocale</span><span lang="en">Voice input</span></h3><p lang="fr">Dicte les lectures sans lâcher le tensiomètre. Le moteur suit la langue du navigateur et retombe sur l'anglais si elle n'est pas prise en charge&nbsp;; les séparateurs décimaux dits à voix haute sont reconnus dans une douzaine de langues. Un bip court confirme chaque valeur&nbsp;; un bip grave signale une lecture hors de la charte. La saisie vocale nécessite une connexion.</p><p lang="en">Dictate readings without letting go of the tensiometer. The engine follows the browser language and falls back to English if that language is unsupported; spoken decimal separators are recognised in a dozen languages. A short beep confirms each value; a low beep flags a reading outside the chart. Voice input requires a connection.</p><p lang="fr">La saisie vocale est pleinement opérationnelle sur iPhone et iPad (Safari) et sur Edge. Sur Android, elle fonctionne tout aussi bien, à ceci près que le système peut y ajouter ses propres sons (voir les questions fréquentes). Sur Chrome pour ordinateur, elle est un peu moins à l'aise&nbsp;: son moteur est conçu pour la dictée de phrases et peine sur un nombre court prononcé seul, qu'il peut attendre, confondre ou ignorer. Deux habitudes règlent la question. Sur un tensiomètre à lecture décimale, dicter la lecture complète plutôt que le raccourci&nbsp;: «&nbsp;zéro virgule trente&nbsp;» plutôt que «&nbsp;trente&nbsp;». Ou faire précéder la lecture d'un mot d'appui, par exemple «&nbsp;mesure trente&nbsp;» ou «&nbsp;nombre trente&nbsp;». Dans les deux cas, la valeur est reconnue et saisie normalement.</p><p lang="en">Voice input is fully operational on iPhone and iPad (Safari) and on Edge. On Android it works just as well, except that the system may add sounds of its own (see the common questions). On Chrome for desktop it is a little less at ease: its engine is built for dictating sentences and struggles with a short number spoken on its own, which it may hold back, confuse or drop. Two habits settle it. On a decimal-reading tensiometer, dictate the full reading rather than the shortcut: “zero point thirty” rather than “thirty”. Or lead in with a cue word, for instance “reading thirty” or “number thirty”. Either way the value is recognised and entered as usual.</p></div></div>
   <div class="entry"><span class="e-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="12,2.5 20,8 20,16 12,21.5 4,16 4,8"/>
           <polygon points="12,7 16.5,10 16.5,14 12,17 7.5,14 7.5,10"/>
@@ -663,6 +706,7 @@ body.embedded header{padding-top:1.5rem}
   <div class="entry"><span class="e-dot" aria-hidden="true"></span><div class="e-body"><h3 class="e-label"><span lang="fr">J'arrondis au demi-millimètre supérieur ou inférieur&nbsp;?</span><span lang="en">Do I round up or down to the nearest half-millimetre?</span></h3><p lang="fr">Il n'y a pas de règle universelle&nbsp;: cela dépend de la base de votre ERD et de l'engagement de filet que vous visez avec vos écrous. La grille <em>Arrondi suggéré</em> affiche l'écart de chaque taille réellement disponible, à vous de trancher en connaissance de cause.</p><p lang="en">There is no universal rule: it depends on the basis of your ERD and the thread engagement you are aiming for with your nipples. The <em>Suggested rounding</em> grid shows the deviation of every size actually available, so you can decide knowingly.</p><p class="e-see" lang="fr">→ <a href="#results">Résultats</a></p><p class="e-see" lang="en">→ <a href="#results">Results</a></p></div></div>
   <div class="entry"><span class="e-dot" aria-hidden="true"></span><div class="e-body"><h3 class="e-label"><span lang="fr">Asymétrie de jante&nbsp;: je mets quel signe&nbsp;?</span><span lang="en">Rim asymmetry: which sign do I use?</span></h3><p lang="fr">La valeur est toujours positive. Le côté vers lequel le lit est décalé se déduit du type de roue, vous n'avez pas à le renseigner. Un avertissement apparaît si vous l'associez à un moyeu symétrique.</p><p lang="en">The value is always positive. The side the spoke bed is offset towards follows from the wheel type, you do not have to state it. A warning appears if you pair it with a symmetric hub.</p><p class="e-see" lang="fr">→ <a href="#rim">Carte Jante</a></p><p class="e-see" lang="en">→ <a href="#rim">Rim card</a></p></div></div>
   <div class="entry"><span class="e-dot" aria-hidden="true"></span><div class="e-body"><h3 class="e-label"><span lang="fr">Le micro ne se lance pas</span><span lang="en">The microphone will not start</span></h3><p lang="fr">Vérifiez l'autorisation micro du navigateur pour le site, puis la connexion&nbsp;: la reconnaissance ne fonctionne pas hors ligne. Sur iOS, le premier lancement doit suivre une action directe de votre part sur le bouton.</p><p lang="en">Check the browser's microphone permission for the site, then the connection: recognition does not work offline. On iOS the first start must directly follow a tap of your own on the button.</p></div></div>
+  <div class="entry"><span class="e-dot" aria-hidden="true"></span><div class="e-body"><h3 class="e-label"><span lang="fr">Saisie vocale Easy Fill&nbsp;: j'entends un son qui ne vient pas de l'application (Android)</span><span lang="en">Easy Fill voice input: I hear a sound that does not come from the app (Android)</span></h3><p lang="fr">La saisie vocale s'appuie sur la reconnaissance du navigateur, dite Web Speech API. Sur Android, celle-ci est confiée au service vocal du système, qui joue ses propres sons à chaque ouverture d'écoute, en plus des bips de Spoke It. Leur présence et leur intensité varient selon l'appareil, la version d'Android et celle des services Google installés. Ces sons ne viennent pas de l'application, qui n'a aucun moyen de les supprimer&nbsp;: ils se coupent, quand l'appareil le permet, dans les réglages d'accessibilité de l'assistant Google, aux options de son de début et de fin d'écoute. iPhone, iPad et ordinateur ne sont pas concernés.</p><p lang="en">Voice input relies on the browser's own speech recognition, known as the Web Speech API. On Android this is handed over to the system voice service, which plays its own sounds every time listening reopens, on top of Spoke It's beeps. Whether you hear them, and how loudly, depends on the device, the Android version and the version of the Google services installed. These sounds do not come from the app, which has no way of suppressing them: where the device allows it, they are turned off in the Google assistant's accessibility settings, under the start and end of listening sound options. iPhone, iPad and desktop are unaffected.</p><p class="e-see" lang="fr">→ <a href="#easyfill">Easy Fill</a></p><p class="e-see" lang="en">→ <a href="#easyfill">Easy Fill</a></p></div></div>
 </section>
 
 <p class="empty" id="empty">
