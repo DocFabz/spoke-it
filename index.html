@@ -2410,10 +2410,12 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
    ombre portée, filet d'accent en inset, étiquette DM Sans en capitales.
    Ce relief jurait avec les douze touches posées à plat juste au-dessus,
    dans un pavé qui n'est rien d'autre qu'un clavier. Elle ne garde donc
-   plus qu'une seule ligne, sa largeur : surface, liseré, typographie,
-   appui et échelle au clic viennent tous de .ef-numpad-key, comme pour
-   un chiffre. */
-.ef-numpad-key.key-enter { grid-column:span 3 }
+   plus que deux lignes, sa largeur et la casse de son étiquette : surface,
+   liseré, typographie, appui et échelle au clic viennent tous de
+   .ef-numpad-key, comme pour un chiffre. La capitale est posée en CSS, et
+   non dans les huit chaînes FR/EN du libellé, pour rester un point unique ;
+   elle ne crée aucun écart avec les chiffres, qui n'ont pas de casse. */
+.ef-numpad-key.key-enter { grid-column:span 3; text-transform:uppercase }
 
 /* ── Cache toast ──────────────────────────────────────────────────────────── */
 .cache-toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid rgba(var(--warm-rgb),.35); border-radius:var(--rs); padding:.55rem 1.1rem; font-family:'DM Sans',sans-serif; font-size:.67rem; color:var(--warm2); z-index:10000; pointer-events:none; opacity:0; transition:opacity .3s; white-space:nowrap; margin-bottom:env(safe-area-inset-bottom, 0px) }
