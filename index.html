@@ -416,10 +416,11 @@ html[data-fond="papier"] {
      couleur déclinée, pas trois voisines. */
   --accent:   #196c79;
   --accent2:  #125863;
-  /* Corail adouci : chroma OKLCH réduite de 22 % (0,140 -> 0,110), teinte et
+  /* Corail adouci : chroma OKLCH réduite de 23 % (0,140 -> 0,108), teinte et
      luminance WCAG conservées. Les ratios sur les cinq surfaces sont donc
-     inchangés au centième (5,28 sur la carte, 4,85 sur --card-alt, 4,93 sur
-     le lavis) ; seule la dureté du rouge-brique est partie. Le palier haut,
+     inchangés au centième (5,28 sur la carte, 4,85 sur --card-alt, 4,83 sur
+     le lavis warm à 6 % posé sur la carte) ; seule la dureté du rouge-brique
+     est partie. Le palier haut,
      --warm-rgb et la palette JPEG (FOND_JPEG.papier.warm) suivent la même
      règle, pour que l'écran et l'export restent d'accord. */
   --warm:     #a2543f;
@@ -10654,6 +10655,22 @@ function fondJeton(nom, defaut) {
   var v = getComputedStyle(document.documentElement).getPropertyValue(nom).trim();
   return v || defaut;
 }
+// Même lecture, rendue en triplet « r,g,b » pour composer des rgba() à
+// l'opacité voulue : c'est ce dont les radars et la courbe de conversion ont
+// besoin, qui peignent le même accent à cinq alphas différents. Accepte un
+// hexadécimal (#rgb, #rrggbb) ou un rgb()/rgba(), et rend le défaut pour
+// tout le reste, jeton manquant compris.
+function fondJetonRgb(nom, defaut) {
+  var v = fondJeton(nom, '');
+  var m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(v);
+  if (m) {
+    var h = m[1].length === 3 ? m[1].replace(/./g, function (c) { return c + c; }) : m[1];
+    return parseInt(h.slice(0, 2), 16) + ',' + parseInt(h.slice(2, 4), 16) + ',' + parseInt(h.slice(4, 6), 16);
+  }
+  m = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(v);
+  if (m) return m[1] + ',' + m[2] + ',' + m[3];
+  return defaut;
+}
 // Un sol retiré d'une version à l'autre (ou une clé corrompue) laisse une
 // valeur morte dans le stockage : l'attribut n'a alors aucun bloc CSS et rend
 // comme l'ardoise, mais il traînerait sur <html> et le bouton afficherait un
@@ -10799,8 +10816,8 @@ function fondPaletteExport(f) {
     // claire, l'écran remplit avec le corail et le cyan PASTEL de l'ardoise,
     // pas avec l'accent assombri du sol, qui pèse trois fois plus au même
     // alpha : c'est ce pastel-là que le JPEG reprend.
-    fillFo:   p.neutre ? rgba(p.warm, 0.07)   : clair ? 'rgba(232,146,124,0.18)' : rgba(p.warm, 0.06),
-    fillFa:   p.neutre ? rgba(p.accent, 0.10) : clair ? 'rgba(126,200,227,0.18)' : rgba(p.accent, 0.06),
+    fillFo:   p.neutre ? rgba(p.warm, 0.07)   : clair ? 'rgba(232,146,124,0.10)' : rgba(p.warm, 0.06),
+    fillFa:   p.neutre ? rgba(p.accent, 0.10) : clair ? 'rgba(126,200,227,0.10)' : rgba(p.accent, 0.06),
     // Blocs de stats : remplissage du sol (null = liseré seul), liseré aux
     // accents ou au gris du sol, étiquette pleine.
     blockFill: p.blockFill,
@@ -14111,16 +14128,21 @@ function tmDrawConvCurve(pts) {
 
   // Palette du sol courant, même logique que le radar : la grille blanche à
   // 6 % et les labels gris-bleu disparaissent sur un sol clair, et la courbe
-  // cyan à 85 % n'y tient pas le contraste. Valeurs claires alignées sur
-  // celles des exports whiteBg.
+  // cyan à 85 % n'y tient pas le contraste. La courbe et son lavis prennent
+  // l'accent du sol, lu dans le jeton, et non plus un azur figé sur la
+  // famille claire : en papier c'est le canard, en alu le bleu d'iOS. Les
+  // opacités ne bougent pas.
   const clair    = (typeof fondClair === 'function') && fondClair();
+  const accRgb   = (typeof fondJetonRgb === 'function')
+                     ? fondJetonRgb('--accent', clair ? '25,108,121' : '126,200,227')
+                     : (clair ? '25,108,121' : '126,200,227');
   const C_grid   = clair ? 'rgba(0,0,0,0.10)'      : 'rgba(255,255,255,0.06)';
   const C_lab    = clair ? 'rgba(45,60,78,0.80)'   : 'rgba(150,170,190,0.55)';
   const C_axis   = clair ? 'rgba(45,60,78,0.72)'   : 'rgba(150,170,190,0.5)';
-  const C_fill0  = clair ? 'rgba(40,140,185,0.20)' : 'rgba(126,200,227,0.18)';
-  const C_fill1  = clair ? 'rgba(40,140,185,0.02)' : 'rgba(126,200,227,0.01)';
-  const C_line   = clair ? 'rgba(40,140,185,1)'    : 'rgba(126,200,227,0.85)';
-  const C_dot    = clair ? 'rgba(40,140,185,1)'    : 'rgba(126,200,227,0.9)';
+  const C_fill0  = 'rgba(' + accRgb + (clair ? ',0.20)' : ',0.18)');
+  const C_fill1  = 'rgba(' + accRgb + (clair ? ',0.02)' : ',0.01)');
+  const C_line   = 'rgba(' + accRgb + (clair ? ',1)'    : ',0.85)');
+  const C_dot    = 'rgba(' + accRgb + (clair ? ',1)'    : ',0.9)');
 
   // Grille horizontale + labels Y
   ctx.strokeStyle = C_grid;
@@ -16506,23 +16528,32 @@ function tmDrawRadar(foKgfs, faKgfs, outliers, canvasEl) {
 
   ctx.clearRect(0, 0, W, H);
 
-  // Palette du sol courant. Les valeurs claires sont exactement celles que
-  // tmRenderRadarOffscreen utilise déjà sous whiteBg : le radar à l'écran et
-  // le radar exporté restent donc d'accord, et il n'y a pas une deuxième
-  // palette claire à maintenir. Sans ça les anneaux, peints en blanc à 15 %,
-  // disparaissent purement et simplement sur un sol clair.
+  // Palette du sol courant, calée sur fondPaletteExport rôle par rôle : le
+  // radar à l'écran et le JPEG du même sol se peignent avec les mêmes accents
+  // aux mêmes opacités. Les accents sont LUS dans les jetons (--warm, --accent
+  // du sol et du palier actifs) plutôt que tenus en dur : la famille claire
+  // portait un corail et un azur figés (190,85,55 et 40,140,185) qui ne
+  // suivaient ni le papier ni l'alu, et n'étaient pas ceux de l'export. Les
+  // gris (anneaux, graduations, moyeu) restent à la famille, comme là-bas.
+  // Sur la famille claire les aplats gardent le corail et le cyan PASTEL de
+  // l'ardoise, pas l'accent du sol qui pèse trois fois plus au même alpha ;
+  // c'est aussi la règle de l'export. Les défauts, par famille, couvrent le
+  // cas où un jeton manque.
   const clair     = (typeof fondClair === 'function') && fondClair();
+  const _rgb      = (typeof fondJetonRgb === 'function') ? fondJetonRgb : function (n, d) { return d; };
+  const warmRgb   = _rgb('--warm',   clair ? '162,84,63'   : '232,146,124');
+  const accentRgb = _rgb('--accent', clair ? '25,108,121'  : '126,200,227');
   const C_ring    = clair ? 'rgba(0,0,0,0.12)'        : 'rgba(255,255,255,0.15)';
   const C_grad    = clair ? 'rgba(60,80,100,0.75)'    : 'rgba(150,170,190,0.7)';
   const C_hub     = clair ? 'rgba(100,120,140,0.4)'   : 'rgba(150,170,190,0.35)';
-  const C_spokeFo = clair ? 'rgba(232,146,124,0.5)'   : 'rgba(232,146,124,0.22)';
-  const C_spokeFa = clair ? 'rgba(126,200,227,0.5)'   : 'rgba(126,200,227,0.22)';
-  const C_dotFo   = clair ? 'rgba(190,85,55,1)'       : 'rgba(232,146,124,0.75)';
-  const C_dotFa   = clair ? 'rgba(40,140,185,1)'      : 'rgba(126,200,227,0.65)';
-  const C_lineFo  = clair ? 'rgba(190,85,55,0.95)'    : 'rgba(232,146,124,0.8)';
-  const C_lineFa  = clair ? 'rgba(40,140,185,0.95)'   : 'rgba(126,200,227,0.8)';
-  const C_fillFo  = clair ? 'rgba(232,146,124,0.18)'  : 'rgba(232,146,124,0.06)';
-  const C_fillFa  = clair ? 'rgba(126,200,227,0.18)'  : 'rgba(126,200,227,0.06)';
+  const C_spokeFo = 'rgba(' + warmRgb   + (clair ? ',0.5)'  : ',0.22)');
+  const C_spokeFa = 'rgba(' + accentRgb + (clair ? ',0.5)'  : ',0.22)');
+  const C_dotFo   = 'rgba(' + warmRgb   + (clair ? ',1)'    : ',0.75)');
+  const C_dotFa   = 'rgba(' + accentRgb + (clair ? ',1)'    : ',0.65)');
+  const C_lineFo  = 'rgba(' + warmRgb   + (clair ? ',0.95)' : ',0.8)');
+  const C_lineFa  = 'rgba(' + accentRgb + (clair ? ',0.95)' : ',0.8)');
+  const C_fillFo  = clair ? 'rgba(232,146,124,0.10)'  : 'rgba(' + warmRgb   + ',0.06)';
+  const C_fillFa  = clair ? 'rgba(126,200,227,0.10)'  : 'rgba(' + accentRgb + ',0.06)';
 
   const perSide   = foKgfs.length;
   const N         = perSide * 2;
@@ -20466,8 +20497,16 @@ function efStopMic() {
     var isFo = (subStep === 0);
     var label = radarLegLabels(wtype)[isFo ? 'fo' : 'fa'];
     var kgfV  = isFo ? foKgfs[spokeIdx] : faKgfs[spokeIdx];
-    var color = isFo ? 'rgba(232,146,124,.95)' : 'rgba(126,200,227,.95)';
-    var colorDim = isFo ? 'rgba(232,146,124,.55)' : 'rgba(126,200,227,.55)';
+    // Même accent que le point animé et le radar : lu dans le jeton du sol,
+    // et non plus le pastel ardoise figé, qui ne tenait pas sur un sol clair.
+    // L'intitulé, atténué, l'est moins sur la famille claire, où l'alpha
+    // coûte plus de contraste.
+    var _clr  = (typeof fondClair === 'function') && fondClair();
+    var rgb   = (typeof fondJetonRgb === 'function')
+                  ? fondJetonRgb(isFo ? '--warm' : '--accent', isFo ? '232,146,124' : '126,200,227')
+                  : (isFo ? '232,146,124' : '126,200,227');
+    var color = 'rgba(' + rgb + (_clr ? ',1)' : ',.95)');
+    var colorDim = 'rgba(' + rgb + (_clr ? ',.8)' : ',.55)');
 
     disp.style.visibility = 'visible';
     if (title) { title.textContent = label; title.style.color = colorDim; }
@@ -20493,7 +20532,13 @@ function efStopMic() {
     var isFo     = (item.side === 'fo');
     var subStep  = isFo ? 0 : 1;
     var val      = isFo ? foKgfs[spokeIdx] : faKgfs[spokeIdx];
-    var color    = isFo ? [232,146,124] : [126,200,227];
+    // Le point animé prend l'accent du sol, lu dans le jeton comme le radar
+    // qu'il surligne : en pastel ardoise figé, il ne suivait ni le papier
+    // ni l'alu. Son liseré blanc reste : sur sol clair il détache le point
+    // de la nappe comme il le fait du sol sombre.
+    var color    = ((typeof fondJetonRgb === 'function')
+                     ? fondJetonRgb(isFo ? '--warm' : '--accent', isFo ? '232,146,124' : '126,200,227')
+                     : (isFo ? '232,146,124' : '126,200,227')).split(',').map(Number);
     var perSide  = foKgfs.length;
 
     // Géométrie du point — seule la partie indépendante de la taille
@@ -24562,11 +24607,13 @@ document.addEventListener('keydown', function(e) {
     var label = document.getElementById('rtag-' + side);
     // fo = orange toujours, fa = bleu toujours
     // Sert au tracé canvas ET au libellé HTML de la légende : les deux
-    // suivent donc le sol d'un seul endroit. Mêmes accents que les jetons
-    // clairs de la feuille, pour que la légende s'accorde au reste.
+    // suivent donc le sol d'un seul endroit. Le jeton est lu dans LES DEUX
+    // familles, comme pour le radar : la branche sombre tenait en dur le
+    // corail de l'ardoise, que le carbone ne partage pas (#ea9884). Les
+    // défauts, par famille, couvrent le cas où le jeton manque.
     var _cl   = (typeof fondClair === 'function') && fondClair();
-    var color = side === 'fo' ? (_cl ? fondJeton('--warm',   '#a2543f') : '#e8927c')
-                              : (_cl ? fondJeton('--accent', '#196c79') : '#7ec8e3');
+    var color = side === 'fo' ? fondJeton('--warm',   _cl ? '#a2543f' : '#e8927c')
+                              : fondJeton('--accent', _cl ? '#196c79' : '#7ec8e3');
     return { L:L, T:T, eTotal:eTot, k:k, color:color,
              label: label ? label.textContent : diffSideLabel(side, wtype) };
   }
@@ -24743,7 +24790,7 @@ document.addEventListener('keydown', function(e) {
       ctx.lineTo(xp(maxF), pad.top+ph); ctx.lineTo(pad.left, pad.top+ph); ctx.closePath();
       ctx.fillStyle = fg; ctx.fill();
 
-      ctx.strokeStyle = 'rgba(' + rgb + ',' + lineAlpha + ')'; ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(' + rgb + ',' + lineAlpha + ')'; ctx.lineWidth = 1.2;
       ctx.beginPath();
       for (var i=0; i<=steps; i++) { var f=i/steps*maxF; i===0?ctx.moveTo(xp(f),yp(f/kKgf)):ctx.lineTo(xp(f),yp(f/kKgf)); }
       ctx.stroke();
@@ -24752,11 +24799,13 @@ document.addEventListener('keydown', function(e) {
     if (hookeNeedsTwoCurves(ks)) {
       // Chaque droite prend la couleur de son côté : le rattachement point ↔
       // courbe doit se lire sans légende.
-      sides.forEach(function(d, i) { drawCurve(ks[i], hookeRgb(d.color), clair ? '.95' : '.5', clair ? '.16' : '.06'); });
+      // Lavis clair à 10 %, comme les nappes du radar sur la même famille.
+      sides.forEach(function(d, i) { drawCurve(ks[i], hookeRgb(d.color), clair ? '.95' : '.5', clair ? '.10' : '.06'); });
     } else {
-      // Raideur commune : courbe blanche, rendu inchangé par rapport à avant
-      // le différentiel.
-      drawCurve(ks[0], clair ? '34,42,54' : '255,255,255', clair ? '.9' : '.55', clair ? '.14' : '.07');
+      // Raideur commune : courbe blanche (encre sur sol clair), tracé inchangé
+      // par rapport à avant le différentiel ; seul le lavis clair est descendu
+      // à 10 %, comme celui des deux courbes.
+      drawCurve(ks[0], clair ? '34,42,54' : '255,255,255', clair ? '.9' : '.55', clair ? '.10' : '.07');
     }
 
     // Points de travail
@@ -24769,9 +24818,10 @@ document.addEventListener('keydown', function(e) {
       ctx.beginPath(); ctx.moveTo(pad.left, yp(d.eTotal)); ctx.lineTo(xp(d.T), yp(d.eTotal)); ctx.stroke();
       ctx.setLineDash([]);
 
-      ctx.beginPath(); ctx.arc(xp(d.T), yp(d.eTotal), 5, 0, Math.PI*2);
-      ctx.fillStyle = '#1a2030'; ctx.fill();
-      ctx.beginPath(); ctx.arc(xp(d.T), yp(d.eTotal), 3, 0, Math.PI*2);
+      // Point plein, sans halo : l'ancien disque de 5 px en #1a2030 (la carte
+      // alternative de l'ardoise, en dur) cerclait le point de sombre sur
+      // les sols clairs.
+      ctx.beginPath(); ctx.arc(xp(d.T), yp(d.eTotal), 3.5, 0, Math.PI*2);
       ctx.fillStyle = hex; ctx.fill();
     });
   }
