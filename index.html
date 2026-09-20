@@ -10807,8 +10807,8 @@ function fondPaletteExport(f) {
     grad:   clair ? 'rgba(60,80,100,0.75)'   : p.muted,
     hub:    clair ? 'rgba(100,120,140,0.4)'  : 'rgba(150,170,190,0.35)',
     // Rangées : fo = corail, fa = accent. Même rôle, même opacité.
-    axisFo:   p.neutre ? 'rgba(0,0,0,0.14)' : rgba(p.warm,   clair ? 0.5  : 0.22),
-    axisFa:   p.neutre ? 'rgba(0,0,0,0.14)' : rgba(p.accent, clair ? 0.5  : 0.22),
+    axisFo:   p.neutre ? 'rgba(0,0,0,0.14)' : rgba(p.warm,   clair ? 0.35 : 0.22),
+    axisFa:   p.neutre ? 'rgba(0,0,0,0.14)' : rgba(p.accent, clair ? 0.35 : 0.22),
     numFo:    p.neutre ? p.muted : rgba(p.warm,   clair ? 1    : 0.75),
     numFa:    p.neutre ? p.muted : rgba(p.accent, clair ? 1    : 0.65),
     strokeFo: rgba(p.warm,   clair ? 0.95 : 0.8),  strokeFa: rgba(p.accent, clair ? 0.95 : 0.8),
@@ -16546,8 +16546,8 @@ function tmDrawRadar(foKgfs, faKgfs, outliers, canvasEl) {
   const C_ring    = clair ? 'rgba(0,0,0,0.12)'        : 'rgba(255,255,255,0.15)';
   const C_grad    = clair ? 'rgba(60,80,100,0.75)'    : 'rgba(150,170,190,0.7)';
   const C_hub     = clair ? 'rgba(100,120,140,0.4)'   : 'rgba(150,170,190,0.35)';
-  const C_spokeFo = 'rgba(' + warmRgb   + (clair ? ',0.5)'  : ',0.22)');
-  const C_spokeFa = 'rgba(' + accentRgb + (clair ? ',0.5)'  : ',0.22)');
+  const C_spokeFo = 'rgba(' + warmRgb   + (clair ? ',0.35)' : ',0.22)');
+  const C_spokeFa = 'rgba(' + accentRgb + (clair ? ',0.35)' : ',0.22)');
   const C_dotFo   = 'rgba(' + warmRgb   + (clair ? ',1)'    : ',0.75)');
   const C_dotFa   = 'rgba(' + accentRgb + (clair ? ',1)'    : ',0.65)');
   const C_lineFo  = 'rgba(' + warmRgb   + (clair ? ',0.95)' : ',0.8)');
