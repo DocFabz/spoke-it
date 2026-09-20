@@ -830,11 +830,13 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .ateliermgr-affix .ateliermgr-inp { padding-left:calc(.75rem + 1ch) }
 /* Logo : l'aperçu est posé sur un damier, sinon un fond détouré ne se
    distingue pas d'un fond blanc conservé, et c'est justement ce que l'import
-   doit laisser vérifier d'un coup d'œil. Le champ vide reste sur le fond
-   sombre des autres saisies ; dès qu'un logo est posé, la vignette bascule sur
-   la plaque claire (#f8fafc, la couleur exacte de la carte d'en-tête des PDF)
-   et son damier gris : le détourage sort l'encre dans les tons sombres, calés
-   pour le papier, qui se lisaient mal sur le fond sombre du champ. */
+   doit laisser vérifier d'un coup d'œil. Le champ vide reste sur le fond des
+   autres saisies ; dès qu'un logo est posé, la vignette bascule sur une
+   plaque claire. Sur les sols sombres c'est la plaque PDF (#f8fafc, la
+   couleur exacte de la carte d'en-tête des PDF) et son damier gris : le
+   détourage sort l'encre dans les tons sombres, calés pour le papier, qui se
+   lisaient mal sur le fond sombre du champ. Sur les sols clairs la plaque se
+   peint dans le sol, voir la règle de famille plus bas. */
 .ateliermgr-logo-wrap { flex:1; min-width:0; height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.3rem; padding:.4rem; font-family:inherit; border:1px solid var(--border-s); border-radius:var(--rs); background-color:var(--inp); background-image:linear-gradient(45deg,rgba(var(--ink-rgb),.04) 25%,transparent 25%,transparent 75%,rgba(var(--ink-rgb),.04) 75%),linear-gradient(45deg,rgba(var(--ink-rgb),.04) 25%,transparent 25%,transparent 75%,rgba(var(--ink-rgb),.04) 75%); background-size:14px 14px; background-position:0 0,7px 7px; cursor:pointer; transition:border-color .2s; -webkit-tap-highlight-color:transparent }
 .ateliermgr-logo-wrap:hover, .ateliermgr-logo-wrap:focus-visible { border-color:rgba(var(--accent-rgb),.4); outline:none }
 .ateliermgr-logo-img { max-width:100%; max-height:100%; object-fit:contain; display:none }
@@ -847,6 +849,22 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .ateliermgr-logo-wrap.has-logo .ateliermgr-logo-plus { display:none }
 .ateliermgr-logo-wrap.has-logo { background-color:#f8fafc; background-image:linear-gradient(45deg,rgba(15,23,42,.10) 25%,transparent 25%,transparent 75%,rgba(15,23,42,.10) 75%),linear-gradient(45deg,rgba(15,23,42,.10) 25%,transparent 25%,transparent 75%,rgba(15,23,42,.10) 75%); border-color:rgba(15,23,42,.22) }
 .ateliermgr-logo-wrap.has-logo:hover, .ateliermgr-logo-wrap.has-logo:focus-visible { border-color:rgba(38,122,153,.55) }
+/* Famille claire : la plaque garde sa fonction (surface claire, damier pour
+   lire le détourage) mais se peint dans le sol au lieu de la plaque PDF
+   commune (#f8fafc et gris ardoise), qui jurait dans le papier. Les deux
+   cases sont deux surfaces du sol elles-mêmes, pas une teinte approchée, et
+   le damier suit donc les paliers de contraste. En papier : --card et --bg,
+   blanc et beige. En alu : --card et --inp, blanc et systemGray5, parce que
+   son --bg (#f2f2f7) ne s'écarte du blanc que de deux points de L* et le
+   damier n'y lisait plus rien ; --inp est le gris des champs, la surface
+   suivante de sa charte. Le liseré et son survol passent aux jetons du sol
+   pour la même raison. Les sols sombres gardent la plaque PDF : leur carte
+   ne saurait porter un damier lisible. */
+html[data-fond="papier"] .ateliermgr-logo-wrap.has-logo,
+html[data-fond="alu"] .ateliermgr-logo-wrap.has-logo { --damier:var(--bg); background-color:var(--card); background-image:linear-gradient(45deg,var(--damier) 25%,transparent 25%,transparent 75%,var(--damier) 75%),linear-gradient(45deg,var(--damier) 25%,transparent 25%,transparent 75%,var(--damier) 75%); border-color:var(--border-s) }
+html[data-fond="alu"] .ateliermgr-logo-wrap.has-logo { --damier:var(--inp) }
+html[data-fond="papier"] .ateliermgr-logo-wrap.has-logo:hover, html[data-fond="papier"] .ateliermgr-logo-wrap.has-logo:focus-visible,
+html[data-fond="alu"] .ateliermgr-logo-wrap.has-logo:hover, html[data-fond="alu"] .ateliermgr-logo-wrap.has-logo:focus-visible { border-color:rgba(var(--accent-rgb),.55) }
 .ateliermgr-logo-msg { display:none; font-size:.62rem; line-height:1.45; color:var(--warm) }
 .ateliermgr-logo-msg.show { display:block }
 .ateliermgr-logo-msg.note { color:var(--text3) }
