@@ -387,8 +387,8 @@ html[data-fond="papier"] {
   --scrim-4: rgba(38,30,18,.42);
   --scrim-5: rgba(38,30,18,.44);
   --accent-rgb: 25,108,121;
-  --warm-rgb: 146,57,34;
-  --warm2-rgb: 143,58,36;
+  --warm-rgb: 134,66,48;
+  --warm2-rgb: 131,66,49;
   --success-rgb: 29,116,82;
   --bg:       #edeae2;
   --bg2:      #f9f7f3;
@@ -416,8 +416,14 @@ html[data-fond="papier"] {
      couleur déclinée, pas trois voisines. */
   --accent:   #196c79;
   --accent2:  #125863;
-  --warm:     #b04a30;
-  --warm2:    #8f3a24;
+  /* Corail adouci : chroma OKLCH réduite de 22 % (0,140 -> 0,110), teinte et
+     luminance WCAG conservées. Les ratios sur les cinq surfaces sont donc
+     inchangés au centième (5,28 sur la carte, 4,85 sur --card-alt, 4,93 sur
+     le lavis) ; seule la dureté du rouge-brique est partie. Le palier haut,
+     --warm-rgb et la palette JPEG (FOND_JPEG.papier.warm) suivent la même
+     règle, pour que l'écran et l'export restent d'accord. */
+  --warm:     #a2543f;
+  --warm2:    #834231;
   --success:  #1d7452;
   --text:     #221f1a;
   --text2:    #443f36;
@@ -512,7 +518,7 @@ html[data-fond="alu"] {
      (en-têtes du module tension, soit rgb(249,243,241)). La plus exigeante
      des trois est --card-alt, et #c1441c y tombe à 4,497:1, sous la barre de
      trois millièmes. #bc411a y tient 4,73:1, 4,89 sur le lavis et 5,37 sur la
-     carte : la marge est celle du papier, dont le corail tient 4,86 sur sa
+     carte : la marge est celle du papier, dont le corail tient 4,85 sur sa
      propre carte alternative.
      Le corail ne se pose JAMAIS sur --inp, qui serait sinon la contrainte
      basse ; les champs à fond corail portent --text, pas --warm. */
@@ -557,8 +563,8 @@ html[data-contrast="haut"][data-fond="papier"] {
   --scrim-4: rgba(38,30,18,.50);
   --scrim-5: rgba(38,30,18,.52);
   --accent-rgb: 23,96,107;
-  --warm-rgb: 132,50,29;
-  --warm2-rgb: 128,50,29;
+  --warm-rgb: 121,58,42;
+  --warm2-rgb: 117,58,42;
   --success-rgb: 25,101,71;
   /* --inp descend comme au palier normal (il était 1,1 point AU-DESSUS du
      sol) ; l'accent, lui, est déjà assombri par le palier et tient 5,05 sur
@@ -567,7 +573,7 @@ html[data-contrast="haut"][data-fond="papier"] {
   --border:rgba(44,34,20,0.21); --border-s:rgba(44,34,20,0.35);
   /* Même rotation de teinte qu'au palier normal, à luminance constante :
      le palier garde exactement le contraste qu'il avait. */
-  --accent:#17606b; --accent2:#0f4b54; --warm:#9c3f27; --warm2:#80321d; --success:#196547;
+  --accent:#17606b; --accent2:#0f4b54; --warm:#8f4835; --warm2:#753a2a; --success:#196547;
   --text:#16130e; --text2:#352f26; --text3:#544d42; --text3-dim:#5f584c;
   --sh:0 3px 14px rgba(54,44,28,0.16); --sh-raise:0 2px 10px rgba(54,44,28,0.19);
   --sh-chip:0 1px 4px rgba(54,44,28,0.18); --sh-pop:0 6px 22px rgba(54,44,28,0.20);
@@ -10761,7 +10767,7 @@ var FOND_JPEG = {
   neutre:  { clair:1, neutre:1, bg:'#ffffff', blockFill:null, blockLine:'#b8b8b8', titre:'#1c1c1e', label:'#1c1c1e', legend:'#3a3a3a', stat:'#1c1c1e', muted:'rgba(90,90,90,0.9)', accent:[62,118,168], warm:[196,112,58] },
   ardoise: { clair:0, bg:'#232a38', blockFill:'#000000', label:'rgba(255,255,255,0.92)', legend:'rgba(220,228,237,0.95)', stat:'#dce4ed', muted:'rgba(150,170,190,0.7)', accent:[126,200,227], warm:[232,146,124] },
   carbone: { clair:0, bg:'#3c4048', blockFill:'#000000', label:'#f2f2f2',                legend:'#d4d4d4',                stat:'#e9e9e9', muted:'rgba(184,184,184,0.8)', accent:[126,200,227], warm:[234,152,132] },
-  papier:  { clair:1, bg:'#edeae2', blockFill:'#ffffff', label:'#221f1a',                legend:'#443f36',                stat:'#221f1a', muted:'rgba(100,93,81,0.9)',   accent:[25,108,121],  warm:[176,74,48]  },
+  papier:  { clair:1, bg:'#edeae2', blockFill:'#ffffff', label:'#221f1a',                legend:'#443f36',                stat:'#221f1a', muted:'rgba(100,93,81,0.9)',   accent:[25,108,121],  warm:[162,84,63]  },
   alu:     { clair:1, bg:'#f2f2f7', blockFill:'#ffffff', label:'#1c1c1e',                legend:'#3f4045',                stat:'#1c1c1e', muted:'rgba(95,95,102,0.9)',   accent:[11,102,195],  warm:[188,65,26]  }
 };
 // Retrait du panneau par rapport au bord du JPEG, en pixels (largeur de
@@ -24559,7 +24565,7 @@ document.addEventListener('keydown', function(e) {
     // suivent donc le sol d'un seul endroit. Mêmes accents que les jetons
     // clairs de la feuille, pour que la légende s'accorde au reste.
     var _cl   = (typeof fondClair === 'function') && fondClair();
-    var color = side === 'fo' ? (_cl ? fondJeton('--warm',   '#b04a30') : '#e8927c')
+    var color = side === 'fo' ? (_cl ? fondJeton('--warm',   '#a2543f') : '#e8927c')
                               : (_cl ? fondJeton('--accent', '#196c79') : '#7ec8e3');
     return { L:L, T:T, eTotal:eTot, k:k, color:color,
              label: label ? label.textContent : diffSideLabel(side, wtype) };
