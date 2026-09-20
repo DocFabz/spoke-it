@@ -19914,18 +19914,17 @@ function efUnlockTts() {
   } catch(e) {}
 }
 
-// Lecture vocale désactivée sur toutes les plateformes (sept. 2026) : la
-// synthèse est devenue imprévisible selon les moteurs (iOS 27 : elle bloque la
-// reco micro ouvert et, micro coupé, obéit au mode silencieux ; tablette
-// Android : voix muette du jour au lendemain, code Spokeit hors de cause).
-// false : la modale bip/voix est sautée, bip imposé, on enchaîne sur le choix
-// de langue dans le même geste. Tout le code TTS reste en place.
-// Réactivation : passer à true (iOS reste exclu tant que sa ligne est là).
+// Lecture vocale : proposée partout sauf iOS / iPadOS (sept. 2026). Sur iOS 27
+// la synthèse bloque la reco micro ouvert et, micro coupé, obéit au mode
+// silencieux : bip imposé, modale bip/voix sautée, on enchaîne sur le choix de
+// langue dans le même geste. Ailleurs (Android, desktop) la modale est proposée ;
+// un moteur muet est rattrapé par le repli automatique en bip (EF_TTS_MAX_FAILS).
+// false : bip imposé sur toutes les plateformes, tout le code TTS reste en place.
 // Tests : test-ios-sans-alternat.html (voix active partout, iOS compris).
-var EF_TTS_ENABLED = false;
+var EF_TTS_ENABLED = true;
 
 function efOpenFeedbackModal() {
-  // iOS / iPadOS : exclu même si EF_TTS_ENABLED repasse à true (voir plus haut).
+  // iOS / iPadOS : exclu quel que soit EF_TTS_ENABLED (voir plus haut).
   if (!EF_TTS_ENABLED || efIsIOS()) { efPickFeedback('beep'); return; }
   // Précharger la liste des voix (chargement asynchrone sur desktop)
   try { if ('speechSynthesis' in window) window.speechSynthesis.getVoices(); } catch(e) {}
