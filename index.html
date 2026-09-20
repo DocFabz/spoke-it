@@ -1624,6 +1624,10 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 }
 #backup-reminder.show { display:flex; animation:sum-blink 3.36s ease-in-out infinite }
 #backup-reminder svg { flex-shrink:0; opacity:.9 }
+/* Icône + texte : bouton transparent qui hérite tout du bandeau (couleur, taille,
+   interlettrage) pour un rendu identique à l'ancien span ; pas d'effet au survol,
+   seul le curseur signale le clic. */
+#bkp-open { display:flex; align-items:center; gap:.5rem; background:none; border:0; padding:0; margin:0; color:inherit; font:inherit; letter-spacing:inherit; text-align:inherit; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent }
 #bkp-snooze { background:none; border:0; color:inherit; cursor:pointer; font-size:.95rem; line-height:1; padding:0 .15rem; margin-left:.1rem; opacity:.6; touch-action:manipulation; transition:opacity .2s }
 #bkp-snooze:hover { opacity:1 }
 /* ── Modale saisie rayon ── */
@@ -2938,9 +2942,13 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
 
 <!-- ── Bandeau rappel de sauvegarde (en flux, masqué par défaut) ── -->
 <div id="backup-reminder">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-  <span data-i18n="backupReminderMsg">Sauvegardez vos données.</span>
-  <button id="bkp-snooze" type="button" onclick="bkpSnooze(event)" title="Reporter" aria-label="Reporter">&#x2715;</button>
+  <!-- Icône + texte = un seul bouton : ouvre directement « Gestion des sauvegardes »
+       (sans passer par le Data manager). Le ✕ reste un bouton frère, indépendant. -->
+  <button id="bkp-open" type="button" onclick="openSaveMgr()" title="Gestion des sauvegardes">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    <span data-i18n="backupReminderMsg">Sauvegardez vos données.</span>
+  </button>
+  <button id="bkp-snooze" type="button" onclick="bkpSnooze()" title="Reporter" aria-label="Reporter">&#x2715;</button>
 </div>
 
 <!-- ── Panneau Mode d'emploi ── -->
@@ -7332,6 +7340,7 @@ function applyLang() {
   // Valeur COURANTE et non cible : la ligne se lit « Langue · FR ».
   $id('lang-btn').textContent = lang === 'fr' ? 'FR' : 'EN';
   var bkpSn = $id('bkp-snooze'); if (bkpSn) { bkpSn.title = t('backupSnoozeTitle'); bkpSn.setAttribute('aria-label', t('backupSnoozeTitle')); }
+  var bkpOp = $id('bkp-open'); if (bkpOp) bkpOp.title = t('saveMgrTitle');
   var pkBtn = $id('save-mgr-btn'); if (pkBtn) { pkBtn.title = t('pickerMenuBtn'); pkBtn.setAttribute('aria-label', t('pickerMenuBtn')); }
   var rgBtn = $id('reglages-btn');
   if (rgBtn) { rgBtn.title = t('reglagesBtnTitle'); rgBtn.setAttribute('aria-label', t('reglagesBtnTitle')); }
@@ -12208,8 +12217,10 @@ function cshareImport(event) {
 // seuil — 5 j en PWA installée, 4 j en navigateur (marge avant l'éviction ITP de
 // Safari). Mesuré depuis la dernière sauvegarde, pour aussi alerter qui édite tous
 // les jours sans jamais exporter. Contrôlé au chargement ET à chaque retour au
-// premier plan (warm start iOS). « Reporter » (×) tait le rappel 24 h ; il revient
-// ensuite si des données restent non sauvegardées. Aucun rappel s'il n'y a rien
+// premier plan (warm start iOS). Le bandeau lui-même (icône + texte) est un bouton
+// qui ouvre directement « Gestion des sauvegardes », sans l'étape Data manager ;
+// « Reporter » (×) tait le rappel 24 h ; il revient ensuite si des données restent
+// non sauvegardées. Aucun rappel s'il n'y a rien
 // à sauvegarder (toutes collections vides — cf. bkpHasData), ce qui couvre le
 // cas « avait des données puis tout supprimé ». Tout s'éteint après un export
 // réussi (cf. exportConfigs).
@@ -12296,8 +12307,7 @@ function bkpCheckReminder() {
 
 // « Pas maintenant » : on tait le rappel 24 h ; il revient ensuite si des données
 // restent non sauvegardées. La fenêtre s'auto-expire — rien à nettoyer sur export.
-function bkpSnooze(ev) {
-  if (ev) ev.stopPropagation();
+function bkpSnooze() {
   try { localStorage.setItem('spokeit_lastSnooze', String(Date.now())); } catch(e){}
   bkpSetPending(false);
 }
