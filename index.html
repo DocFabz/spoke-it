@@ -4421,19 +4421,19 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     </div>
     <div id="tm-tc-numpad" style="display:none">
       <div class="ef-numpad">
-        <button class="ef-numpad-key" ontouchstart="tmTcKey('7');event.preventDefault()">7</button>
-        <button class="ef-numpad-key" ontouchstart="tmTcKey('8');event.preventDefault()">8</button>
-        <button class="ef-numpad-key" ontouchstart="tmTcKey('9');event.preventDefault()">9</button>
-        <button class="ef-numpad-key" ontouchstart="tmTcKey('4');event.preventDefault()">4</button>
-        <button class="ef-numpad-key" ontouchstart="tmTcKey('5');event.preventDefault()">5</button>
-        <button class="ef-numpad-key" ontouchstart="tmTcKey('6');event.preventDefault()">6</button>
-        <button class="ef-numpad-key" ontouchstart="tmTcKey('1');event.preventDefault()">1</button>
-        <button class="ef-numpad-key" ontouchstart="tmTcKey('2');event.preventDefault()">2</button>
-        <button class="ef-numpad-key" ontouchstart="tmTcKey('3');event.preventDefault()">3</button>
-        <button class="ef-numpad-key key-dot" ontouchstart="tmTcKey('.');event.preventDefault()">.</button>
-        <button class="ef-numpad-key" ontouchstart="tmTcKey('0');event.preventDefault()">0</button>
-        <button class="ef-numpad-key key-del" ontouchstart="tmTcDel();event.preventDefault()">⌫</button>
-        <button class="ef-numpad-key key-enter" ontouchstart="tmTcCommit();event.preventDefault()" id="tm-tc-numpad-enter">OK</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('7');event.preventDefault()" onclick="tmTcKey('7')">7</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('8');event.preventDefault()" onclick="tmTcKey('8')">8</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('9');event.preventDefault()" onclick="tmTcKey('9')">9</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('4');event.preventDefault()" onclick="tmTcKey('4')">4</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('5');event.preventDefault()" onclick="tmTcKey('5')">5</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('6');event.preventDefault()" onclick="tmTcKey('6')">6</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('1');event.preventDefault()" onclick="tmTcKey('1')">1</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('2');event.preventDefault()" onclick="tmTcKey('2')">2</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('3');event.preventDefault()" onclick="tmTcKey('3')">3</button>
+        <button class="ef-numpad-key key-dot" ontouchstart="tmTcKey('.');event.preventDefault()" onclick="tmTcKey('.')">.</button>
+        <button class="ef-numpad-key" ontouchstart="tmTcKey('0');event.preventDefault()" onclick="tmTcKey('0')">0</button>
+        <button class="ef-numpad-key key-del" ontouchstart="tmTcDel();event.preventDefault()" onclick="tmTcDel()">⌫</button>
+        <button class="ef-numpad-key key-enter" ontouchstart="tmTcCommit();event.preventDefault()" onclick="tmTcCommit()" id="tm-tc-numpad-enter">OK</button>
       </div>
     </div>
   </div>
@@ -4572,19 +4572,19 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <!-- Pavé numérique EF (touch uniquement ; desktop = clavier physique) -->
     <div id="ec-numpad" style="display:none">
       <div class="ef-numpad">
-        <button class="ef-numpad-key" ontouchstart="ecKey('7');event.preventDefault()">7</button>
-        <button class="ef-numpad-key" ontouchstart="ecKey('8');event.preventDefault()">8</button>
-        <button class="ef-numpad-key" ontouchstart="ecKey('9');event.preventDefault()">9</button>
-        <button class="ef-numpad-key" ontouchstart="ecKey('4');event.preventDefault()">4</button>
-        <button class="ef-numpad-key" ontouchstart="ecKey('5');event.preventDefault()">5</button>
-        <button class="ef-numpad-key" ontouchstart="ecKey('6');event.preventDefault()">6</button>
-        <button class="ef-numpad-key" ontouchstart="ecKey('1');event.preventDefault()">1</button>
-        <button class="ef-numpad-key" ontouchstart="ecKey('2');event.preventDefault()">2</button>
-        <button class="ef-numpad-key" ontouchstart="ecKey('3');event.preventDefault()">3</button>
-        <button class="ef-numpad-key key-dot" ontouchstart="ecKey('.');event.preventDefault()">.</button>
-        <button class="ef-numpad-key" ontouchstart="ecKey('0');event.preventDefault()">0</button>
-        <button class="ef-numpad-key key-del" ontouchstart="ecDel();event.preventDefault()">⌫</button>
-        <button class="ef-numpad-key key-enter" ontouchstart="ecCommit();event.preventDefault()" id="ec-numpad-enter">Entrée ↵</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('7');event.preventDefault()" onclick="ecKey('7')">7</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('8');event.preventDefault()" onclick="ecKey('8')">8</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('9');event.preventDefault()" onclick="ecKey('9')">9</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('4');event.preventDefault()" onclick="ecKey('4')">4</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('5');event.preventDefault()" onclick="ecKey('5')">5</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('6');event.preventDefault()" onclick="ecKey('6')">6</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('1');event.preventDefault()" onclick="ecKey('1')">1</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('2');event.preventDefault()" onclick="ecKey('2')">2</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('3');event.preventDefault()" onclick="ecKey('3')">3</button>
+        <button class="ef-numpad-key key-dot" ontouchstart="ecKey('.');event.preventDefault()" onclick="ecKey('.')">.</button>
+        <button class="ef-numpad-key" ontouchstart="ecKey('0');event.preventDefault()" onclick="ecKey('0')">0</button>
+        <button class="ef-numpad-key key-del" ontouchstart="ecDel();event.preventDefault()" onclick="ecDel()">⌫</button>
+        <button class="ef-numpad-key key-enter" ontouchstart="ecCommit();event.preventDefault()" onclick="ecCommit()" id="ec-numpad-enter">Entrée ↵</button>
       </div>
     </div>
   </div>
@@ -6585,7 +6585,6 @@ const LS_REGISTRY = [
   { key:'spoke-it-lang',          kind:'pref',      erase:false, exportField:null,            owner:'i18n' },
   { key:'spokeit_contrast',       kind:'pref',      erase:false, exportField:null,            owner:'palier de contraste (par appareil)' },
   { key:'spokeit_fond',           kind:'pref',      erase:false, exportField:null,            owner:'fond (par appareil)' },
-  { key:'ef_restore',             kind:'transient', erase:true,  exportField:null,            owner:'EF Vocal (reprise crash iOS)' },
 ];
 // Clés « données » précalculées pour le test à chaud dans lsSet.
 const LS_DATA_KEYS = (function() {
@@ -6601,6 +6600,7 @@ const LS_LEGACY_KEYS = [
   'spokeit_emSort',         // tri Nom/Date du Data manager, essai abandonné (remplacé par le filtre Période)
   'spokeit_appTag',         // détection de version par ETag (remplacée par document.lastModified)
   'ef_debug',               // drapeau de debug EF Vocal d'une build de test, jamais lu par l'app
+  'ef_restore',             // reprise après crash EF Vocal, retirée : sans persistance du formulaire ni des relevés, elle n'a jamais rien restauré
   'spokeit_wmAlt',          // clés d'un build de test « wm » sur la même origine, jamais lues par l'app
   'spokeit_wmTest',
 ];
@@ -6712,6 +6712,10 @@ function markModified() {
   _loadedConfigName[wtype] = null;
   _cfgFillMode[wtype] = false;
   _refreshLoadedBadges();
+  // Le cache _snapHasHistory (bouton Snapshots, verrou nb de rayons via
+  // tmAnyReadings) décrit la roue affectée : il tombe avec elle. Déclaré dans
+  // un bloc ultérieur, d'où le typeof.
+  if (typeof snapRefreshBtn === 'function') snapRefreshBtn();
 }
 
 // Deux rythmes, deux fonctions — mais UN SEUL jeu de verrous. Les VERROUS
@@ -7196,7 +7200,9 @@ function toggleErdDiff() {
     if (typeof hrClearLoadedRim === 'function') hrClearLoadedRim();
   }
   if (typeof syncScrollFlags === 'function') syncScrollFlags();
-  updateCalcBtn();
+  // Vue seule (paire restée symétrique) : les résultats restent affichés,
+  // sinon un ré-enregistrement rendrait la roue « incomplète ».
+  if (changed) updateCalcBtn(); else { updateCardStatus(); if (typeof hrUpdateButtons === 'function') hrUpdateButtons(); }
 }
 function setInvalid(id)  { $id(id).classList.add('invalid'); }
 function clearInvalids() { document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid')); }
@@ -7531,6 +7537,11 @@ function _applyStateBody(s) {
   // Un seul état pour deux toggles : celui du module tension suit.
   if (typeof syncTmSpokeDiffUI === 'function') syncTmSpokeDiffUI();
   diffMode = s.diffMode || false; crossFo = s.crossFo ?? null; crossFa = s.crossFa ?? null;
+  // Repeindre les pastilles AVANT setHubType() : updateCrossForHubType() lit
+  // les classes .active du DOM, qui portaient encore le laçage de la roue
+  // précédente (radial d'une roue avant validé sur une roue arrière, 4× d'un
+  // J-Bend validé sur un straightpull chargé) et écrasaient la valeur restaurée.
+  syncCrossDiffUI();
   if (s.hubType) { hubType = s.hubType; hubTypeByWheel[wtype] = s.hubType; setHubType(hubType, true); }
   $id('sp-so-left').value  = s.soLeft  || '';
   $id('sp-so-right').value = s.soRight || '';
@@ -7723,7 +7734,7 @@ function _applyStateBody(s) {
   if (typeof hrLoadAll === 'function') {
     if (s.loadedHubName) {
       var _hubs = hrLoadAll('hub');
-      var _hubFound = _hubs.some(function(e) { return e.name === s.loadedHubName; });
+      var _hubFound = _hubs.some(function(e) { return e.name === s.loadedHubName && ((e.data && e.data.wtype) || 'avant') === wtype; });
       if (!_hubFound && typeof hrReadHub === 'function') {
         var _hubData = hrReadHub();
         _hubs.unshift({ name: s.loadedHubName, data: _hubData, ts: Date.now() });
@@ -7930,9 +7941,15 @@ function reorderTensionFields(wh) {
 
 // ── Field interactions ────────────────────────────────────────────────────────
 function setErdMode(m) {
+  // Re-clic du mode déjà actif : rien ne change (ni résultats, ni badge jante).
+  if (m === erdMode) return;
   _lastLoadTime = Date.now();
   erdMode = m;
   syncErdUI();
+  // Changer de mode périme le badge de la jante chargée, sauf pendant
+  // hrApplyRim(), qui pose le badge lui-même. (Anciennement un listener click
+  // sur les pastilles, inconditionnel donc déclenché aussi par un re-clic.)
+  if (typeof _hrApplying !== 'undefined' && !_hrApplying && typeof hrClearLoadedRim === 'function') hrClearLoadedRim();
   updateCalcBtn();
 }
 
@@ -8151,6 +8168,9 @@ function updateCrossForHubType() {
 }
 
 function setHubType(htype, skipClearSO) {
+  // Re-clic de la pastille déjà active : rien ne change, donc rien à
+  // désaffecter (même garde que crossSwapForHubType / hrSwapHubName).
+  if (htype === hubType && !skipClearSO) return;
   const _prevHubType = hubType;
   // Avant toute écriture : entre deux bascules, la case du type affiché doit
   // être restée vide. C'est le seul instant où la question a un sens.
@@ -8418,7 +8438,8 @@ function toggleDiff() {
   updateDiffSideLabels();
   if (lacingChanged) markModified();
   updateCrossForHubType();
-  updateCalcBtn();
+  // Vue seule (croisement inchangé) : résultats conservés, cf. toggleErdDiff.
+  if (lacingChanged) updateCalcBtn(); else { updateCardStatus(); if (typeof hrUpdateButtons === 'function') hrUpdateButtons(); }
 }
 
 // Les deux sections sont côte à côte : leur ordre à l'écran doit être l'ordre
@@ -9610,7 +9631,9 @@ function saveAtelierInfo() {
   // La clé est écrite même vide : son absence d'une sauvegarde signale un
   // fichier antérieur au logo, que l'import doit traiter autrement (voir la
   // branche Atelier de l'import de sauvegarde).
-  lsSet(LS_ATELIER, JSON.stringify(info));
+  // Écriture refusée (quota) : le toast de lsSet est déjà affiché, la modale
+  // reste ouverte pour que l'utilisateur ne croie pas ses infos enregistrées.
+  if (!lsSet(LS_ATELIER, JSON.stringify(info))) return;
   closeAtelierMgr();
 }
 
@@ -9994,6 +10017,7 @@ function saveConfig(nameOverride, riderIdOverride, skipConfirm) {
     // 1..n, un snapshot n°1 est donc garanti, il n'y a rien à compléter.
     // Roue jamais snapshotée mais mesurée : snapshot n°1 créé à la volée.
     const existingSnapshots = ei2 >= 0 ? (configs2[ei2].snapshots || []) : [];
+    let _snapCleanPending = false; // _snapMarkClean() différé après persistance réussie
     if (existingSnapshots.length > 0) {
       entry.snapshots = existingSnapshots;
     } else if (tmHasData()) {
@@ -10007,11 +10031,15 @@ function saveConfig(nameOverride, riderIdOverride, skipConfirm) {
       // Uniquement dans CETTE branche : une roue qui garde un historique et
       // dont les relevés vifs n'ont pas été snapshotés reste sale, et son
       // en-tête doit rester muet — c'est ce qui la fait rouvrir sur eux.
-      _snapMarkClean();
+      _snapCleanPending = true;
     }
     if (ei2 >= 0) configs2.splice(ei2, 1, entry);
     else configs2.unshift(entry);
-    persistConfigs(configs2);
+    // Écriture refusée (quota, stockage bloqué) : lsSet a déjà affiché le
+    // toast ; ni badge, ni drapeau snapshot, l'écran ne doit pas annoncer une
+    // roue qui n'existe pas dans le store.
+    if (!persistConfigs(configs2)) return;
+    if (_snapCleanPending) _snapMarkClean();
     hrUpdateButtons();
     flashWheelCard(name);
   }
@@ -11307,7 +11335,11 @@ function importConfigs(event) {
         data.savedHubs.forEach(entry => {
           if (!entry || typeof entry.name !== 'string') return;
           _importNormTs(entry);
-          const idx = existing.findIndex(h => h.name.toLowerCase() === entry.name.toLowerCase());
+          // Même clé d'unicité que confirmHrSave : (nom, côté) — un moyeu
+          // avant et un moyeu arrière homonymes sont deux entrées.
+          const side = (entry.data && entry.data.wtype) || 'avant';
+          const idx = existing.findIndex(h => h.name.toLowerCase() === entry.name.toLowerCase() &&
+                                              ((h.data && h.data.wtype) || 'avant') === side);
           if (idx >= 0) existing.splice(idx, 1, entry); else existing.unshift(entry);
         });
         if (!hrPersist('hub', existing)) throw _lsWriteFail();
@@ -12052,7 +12084,7 @@ function bkpHasData() {
     if (typeof hrLoadAll  === 'function' && (hrLoadAll('rim') || []).length) return true;
     if (typeof loadRiders === 'function' && (loadRiders() || []).length) return true;
     var at = localStorage.getItem('spokeit_atelier');
-    if (at) { var o = JSON.parse(at); if (o && (o.name || o.email || o.insta)) return true; }
+    if (at) { var o = JSON.parse(at); if (o && (o.name || o.email || o.insta || o.logo)) return true; }
   } catch(e) { return true; }
   return false;
 }
@@ -12162,13 +12194,13 @@ function syncScrollFlags() {
 function checkHubComplete() {
   if (_hubScrolled) return;
   if (_hubScrollReady()) {
-    _hubScrolled = true; scrollToCard(getCards()[2]);
+    _hubScrolled = true; scrollToCard($id('card-rayon'));
   }
 }
 
 function checkRimComplete() {
   if (_rimScrolled) return;
-  if (_rimScrollReady()) { _rimScrolled = true; scrollToCard(getCards()[3]); }
+  if (_rimScrollReady()) { _rimScrolled = true; scrollToCard($id('card-lacing')); }
 }
 
 function checkTensionComplete() {
@@ -13484,16 +13516,18 @@ function tmSyncWheelButtons() {
 
 // ── Changement nb rayons depuis le module tension ─────────────────────────────
 function tmOnNbChange() {
-  const val = $id('tm-nb-select').value;
+  const tmSel = $id('tm-nb-select');
+  // Verrou (.locked ne parle qu'à la souris) : la valeur est annulée, comme
+  // la garde autoritaire du listener nb-rayons côté calculateur.
+  if (tmSel.classList.contains('locked')) { tmSel.value = $id('nb-rayons').value; return; }
+  const val = tmSel.value;
   // Sync vers le calculateur
   $id('nb-rayons').value = val;
-  // Déclencher l'event du calculateur pour mettre à jour son état
+  // Déclencher l'event du calculateur pour mettre à jour son état. Le listener
+  // voit les deux valeurs déjà égales et n'invalide rien : la purge complète
+  // (tous les vestiaires, pas seulement le tensiomètre actif) se fait ici.
   $id('nb-rayons').dispatchEvent(new Event('change'));
-  // Réinitialiser la saisie et reconstruire la table
-  tmResetData();
-  tmBuildTable();
-  tmHideResult();
-  diagClearData();
+  tmInvalidateOnNbChange();
 }
 
 // ── Changement type de roue depuis le module tension ─────────────────────────
@@ -13558,6 +13592,7 @@ function setTM(type) {
   $id('tm-dt-subtype').style.display = type === 'dt' ? 'flex' : 'none';
   const clearBtn = $id('tm-clear-tensio');
   if (clearBtn) clearBtn.classList.toggle('inactive', !type);
+  tmUpdateHint();
 }
 
 function tmOnTensioSelectChange(val) {
@@ -13581,6 +13616,7 @@ function tmClearTensio() {
   tmPopulateSpokeSelect();
   tmUpdateBadges();
   tmUpdateConvBtn();
+  tmUpdateHint();
   tmBuildTable();
   tmHideResult();
   // Fermer le body de la card measured deflections
@@ -13603,6 +13639,7 @@ function setDTSub(sub) {
   $id('tm-btn-dt-std').classList.toggle('active',  sub === 'standard');
   $id('tm-btn-dt-ael2').classList.toggle('active', sub === 'aerolite2');
   updateDTTip();
+  tmUpdateHint();
 }
 
 function updateDTTip() {
@@ -13738,7 +13775,7 @@ function tmOnSpokeChangeSide(side) {
   const sel = $id('tm-spoke-select-' + side);
   const key = sel ? (sel.value || null) : null;
   if (side === 'fa') tmSpokeFa = key; else tmSpokeFo = key;
-  tmAfterSpokeChange();
+  tmAfterSpokeChange(side);
 }
 
 function tmClearSpokeSide(side) {
@@ -13749,8 +13786,18 @@ function tmClearSpokeSide(side) {
 
 // Suite commune à tout changement de rayon : les relevés déjà saisis ont été
 // convertis avec l'ancienne charte, ils ne veulent plus rien dire.
-function tmAfterSpokeChange() {
-  tmResetData();
+// En différentiel (side fourni), seule la colonne dont la charte change est
+// périmée : l'autre a été convertie par une charte qui n'a pas bougé, et le
+// verrou par rangée (tmSpokeLocked) promet précisément de la préserver.
+function tmAfterSpokeChange(side) {
+  if (spokeDiff && side && tmHasData()) {
+    if (side === 'fa') { tmData.fa = tmData.fa.map(() => null); tmPrevFa = tmPrevFa.map(() => null); }
+    else               { tmData.fo = tmData.fo.map(() => null); tmPrevFo = tmPrevFo.map(() => null); }
+    if (tmActiveKey) tmSaveToStore();
+    _snapMarkDirty();
+  } else {
+    tmResetData();
+  }
   tmBuildTable();
   tmHideResult();
   tmUpdateConvBtn();
@@ -17782,19 +17829,19 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 <!-- ── Pavé numérique ── -->
 <div id="ef-numpad">
   <div class="ef-numpad">
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('7');event.preventDefault()">7</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('8');event.preventDefault()">8</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('9');event.preventDefault()">9</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('4');event.preventDefault()">4</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('5');event.preventDefault()">5</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('6');event.preventDefault()">6</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('1');event.preventDefault()">1</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('2');event.preventDefault()">2</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('3');event.preventDefault()">3</button>
-    <button class="ef-numpad-key key-dot" ontouchstart="efNumpadKey('.');event.preventDefault()">.</button>
-    <button class="ef-numpad-key" ontouchstart="efNumpadKey('0');event.preventDefault()">0</button>
-    <button class="ef-numpad-key key-del" ontouchstart="efNumpadDel();event.preventDefault()">⌫</button>
-    <button class="ef-numpad-key key-enter" ontouchstart="efNext();event.preventDefault()" id="ef-numpad-enter">Entrée ↵</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('7');event.preventDefault()" onclick="efNumpadKey('7')">7</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('8');event.preventDefault()" onclick="efNumpadKey('8')">8</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('9');event.preventDefault()" onclick="efNumpadKey('9')">9</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('4');event.preventDefault()" onclick="efNumpadKey('4')">4</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('5');event.preventDefault()" onclick="efNumpadKey('5')">5</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('6');event.preventDefault()" onclick="efNumpadKey('6')">6</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('1');event.preventDefault()" onclick="efNumpadKey('1')">1</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('2');event.preventDefault()" onclick="efNumpadKey('2')">2</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('3');event.preventDefault()" onclick="efNumpadKey('3')">3</button>
+    <button class="ef-numpad-key key-dot" ontouchstart="efNumpadKey('.');event.preventDefault()" onclick="efNumpadKey('.')">.</button>
+    <button class="ef-numpad-key" ontouchstart="efNumpadKey('0');event.preventDefault()" onclick="efNumpadKey('0')">0</button>
+    <button class="ef-numpad-key key-del" ontouchstart="efNumpadDel();event.preventDefault()" onclick="efNumpadDel()">⌫</button>
+    <button class="ef-numpad-key key-enter" ontouchstart="efNext();event.preventDefault()" onclick="efNext()" id="ef-numpad-enter">Entrée ↵</button>
   </div>
 </div><!-- /ef-numpad -->
 
@@ -17855,8 +17902,7 @@ function blinkTitleSide(titleEl) {
 function efOpen(sideMode) {
   var isTouch = efIsTouchDevice();
   var isFront = wtype === 'avant';
-  // Démarre sur le côté fort (NDS avant / DS arrière), sauf restauration crash
-  // qui passe le sideMode sauvegardé — sinon efOpen l'écraserait (cf. efRestoreState).
+  // Démarre sur le côté fort (NDS avant / DS arrière).
   efSideMode = sideMode || 'fo';
   efBuildSteps();
   if (!efSteps.length) return;
@@ -17959,6 +18005,9 @@ function efClose() {
     };
   }
   $id('ef-overlay').classList.remove('show');
+  // Une sous-modale encore ouverte lancerait le micro sur un Easy Fill fermé.
+  efCloseFeedbackModal();
+  efCloseMicLangModal();
   efHideNumpad();
   efSetBtMode(false);
   document.body.style.overflow = '';
@@ -18013,9 +18062,6 @@ function efRenderStep() {
   nextBtn.textContent = t('efNext');
   nextBtn.classList.remove('done');
   efUpdatePrevKgf();
-  // Micro actif : rafraîchir le flag de restauration (ts pour le TTL +
-  // efCurrent pour reprendre au bon rayon après un crash-relaunch).
-  if (typeof efMicActive !== 'undefined' && efMicActive) efSaveState();
   if (efDiagMode) efPulseDot();
 }
 
@@ -18283,18 +18329,29 @@ function efUpdateOrientation() {
 function efAttachBtKeyHandler(wrapper) {
   if (wrapper._btKeyHandler) return; // déjà attaché
   wrapper._btKeyHandler = function(e) {
+    // Sous-modale (type de retour, langue) ouverte : Échap la ferme, elle
+    // seule ; les autres touches n'atteignent pas la saisie.
+    var fbM = $id('ef-fb-modal'), mlM = $id('ef-mic-lang-modal');
+    var fbOpen = fbM && fbM.classList.contains('show'), mlOpen = mlM && mlM.classList.contains('show');
+    if (fbOpen || mlOpen) {
+      if (e.key === 'Escape') { e.preventDefault(); if (fbOpen) efCloseFeedbackModal(); else efCloseMicLangModal(); }
+      return;
+    }
     if (e.key >= '0' && e.key <= '9') { e.preventDefault(); efNumpadKey(e.key); return; }
     if (e.key === '.' || e.key === ',') { e.preventDefault(); efNumpadKey('.'); return; }
     if (e.key === 'Backspace')  { e.preventDefault(); efNumpadDel(); return; }
     if (e.key === 'Enter')      { e.preventDefault(); efNext(); return; }
     if (e.key === 'Escape')     { e.preventDefault(); efClose(); return; }
   };
-  document.addEventListener('keydown', wrapper._btKeyHandler);
+  // Capture : le handler global du bloc principal (enregistré plus tôt, même
+  // cible) ferme ef-mic-lang-modal sur Échap ; s'il passait avant, la garde
+  // sous-modale ci-dessus trouverait la modale déjà fermée et fermerait EF.
+  document.addEventListener('keydown', wrapper._btKeyHandler, true);
 }
 
 function efDetachBtKeyHandler(wrapper) {
   if (!wrapper._btKeyHandler) return;
-  document.removeEventListener('keydown', wrapper._btKeyHandler);
+  document.removeEventListener('keydown', wrapper._btKeyHandler, true);
   wrapper._btKeyHandler = null;
 }
 
@@ -18684,8 +18741,7 @@ var efSessionGranted = false; // true dès que le micro capture réellement (ona
                               // (en PWA standalone elle masque la page) et NON à un vrai passage
                               // en arrière-plan. Il ne faut alors NI abort() la reco (WebKit
                               // crashe WebContent en livrant le grant à une reco détruite —
-                              // écran blanc puis relance), NI effacer ef_restore (sinon la
-                              // relance après crash retombe sur l'accueil).
+                              // écran blanc puis relance).
 var efForcedLang     = null;  // langue forcée via la modale — iOS recrée l'instance SR à chaque onend
 var efLangFallbackTried = false; // repli en-US déjà tenté après language-not-supported (un seul par choix de langue)
                               // sans repasser forceLang : sans cette mémo, le choix en-US serait perdu après 2-3s
@@ -18716,52 +18772,6 @@ var EF_ECHO_MS_DESKTOP = 800; // Chrome desktop : même dédup, fenêtre plus co
                               // « quelle que soit la confiance » de la garde 2e forme ci-dessous, avec
                               // laquelle cette valeur reste donc cohérente.
 
-
-function efSaveState() {
-  try {
-    // localStorage (et non sessionStorage) : seul support qui survit de façon
-    // fiable au relancement après crash du process WebContent en PWA standalone.
-    // ts rafraîchi à chaque changement de step (efRenderStep) pour le TTL.
-    localStorage.setItem('ef_restore', JSON.stringify({
-      active: true,
-      current: efCurrent,
-      sideMode: efSideMode,
-      ts: Date.now()
-    }));
-  } catch(e) {}
-}
-
-// Sortie propre (stop micro, fermeture, pagehide) : on efface le flag.
-// Seul un crash — qui ne passe par aucun de ces chemins — le laisse derrière lui.
-function efClearState() {
-  try { localStorage.removeItem('ef_restore'); } catch(e) {}
-}
-
-function efRestoreState() {
-  try {
-    var s = localStorage.getItem('ef_restore');
-    if (!s) return;
-    localStorage.removeItem('ef_restore');
-    var state = JSON.parse(s);
-    if (!state.active) return;
-    // TTL 30s : plus vieux = pas un crash-relaunch immédiat (kill brutal de
-    // l'app, vieille session) → accueil plutôt que rouvrir un état périmé.
-    if (!state.ts || (Date.now() - state.ts) > 30000) return;
-    // sideMode passé à efOpen() — l'affectation préalable était écrasée par
-    // le 'fo' forcé d'efOpen, rouvrant la mauvaise nappe (commits sur fo
-    // alors que le crash avait eu lieu sur fa).
-    efOpen(state.sideMode);
-    // Relaunch avec formulaire vide : efBuildSteps n'a rien produit,
-    // efOpen a renoncé avant d'ouvrir la modale → ne pas restaurer l'index.
-    if (!efSteps.length) return;
-    // Clamp : un crash en mode 'both' (2×perSide steps) restauré sur une
-    // grille plus courte donnerait efSteps[efCurrent] === undefined →
-    // TypeError dans efRenderStep/efCommitCurrent (modale zombie).
-    efCurrent = Math.max(0, Math.min(state.current || 0, efSteps.length - 1));
-    efRenderStep();
-    // efStartMic() retiré — sans geste utilisateur Safari refuse le micro sur iOS
-  } catch(e) {}
-}
 
 // Détecte tout appareil iOS (iPhone + iPad) — Safari ne supporte pas continuous=true,
 // onend se déclenche normalement toutes les 2-3s sans qu'il y ait d'erreur réelle.
@@ -19211,6 +19221,28 @@ function efReleaseMic() {
   efHoldStream = null;
 }
 
+// Feedback hors plage (bip grave, liseré, plage min–max) : rendu par le timer
+// de stabilisation, ou immédiatement si un final l'a coupé (efOorPending).
+var efOorShowRange = true;
+function efOorRender() {
+  efFeedbackError();
+  var inp = $id('ef-inp');
+  inp.classList.add('out-of-range');
+  setTimeout(function() { inp.classList.remove('out-of-range'); }, 400);
+  var prev = $id('ef-kgf-preview');
+  var range = tmGetRange(efSide());
+  if (range && efOorShowRange) {
+    prev.textContent = tmDisplayValue(range.min) + ' – ' + tmDisplayValue(range.max);
+    prev.classList.add('oor');
+    if (efOorTimer) clearTimeout(efOorTimer);
+    efOorTimer = setTimeout(function() {
+      efOorTimer = null;
+      prev.classList.remove('oor');
+      efUpdateKgf();
+    }, OOR_DISPLAY_MS);
+  }
+}
+
 function efStartMic(forceLang) {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
@@ -19471,25 +19503,12 @@ function efStartMic(forceLang) {
             // efOorFired posé ICI (avant le timer) pour bloquer tout isFinal rapide
             // arrivant pendant les 500ms — évite le double beep + double liseré rouge.
             efOorFired = true;
+            // Valeur trop précise mais EN PLAGE (fusion moteur) : afficher
+            // min–max serait trompeur — beep + liseré suffisent.
+            efOorShowRange = !(efTooPrecise && kgfInterim !== null);
             efBeepTimer = setTimeout(function() {
               efBeepTimer = null;
-              efFeedbackError();
-              var inp = $id('ef-inp');
-              inp.classList.add('out-of-range');
-              setTimeout(function() { inp.classList.remove('out-of-range'); }, 400);
-              var prev = $id('ef-kgf-preview');
-              var range = tmGetRange(efSide());
-              // Valeur trop précise mais EN PLAGE (fusion moteur) : afficher
-              // min–max serait trompeur — beep + liseré suffisent.
-              if (range && !(efTooPrecise && kgfInterim !== null)) {
-                prev.textContent = tmDisplayValue(range.min) + ' – ' + tmDisplayValue(range.max);
-                prev.classList.add('oor');
-                efOorTimer = setTimeout(function() {
-                  efOorTimer = null;
-                  prev.classList.remove('oor');
-                  efUpdateKgf();
-                }, OOR_DISPLAY_MS);
-              }
+              efOorRender();
             }, efStableDelay);
           }
         }
@@ -19525,6 +19544,10 @@ function efStartMic(forceLang) {
       var efEchoNum = efVoiceToNumber(txt);
       if (efEchoNum && tmParseInput(efEchoNum) === efEchoLastCommitVal) return;
     }
+    // Final arrivé AVANT la stabilisation : efBeepTimer porte encore le
+    // feedback hors plage, qu'on annule ici : il doit alors être rendu tout de
+    // suite (voir la branche efOorFired), sans quoi la valeur est rejetée en silence.
+    var efOorPending = efOorFired && !!efBeepTimer;
     if (efBeepTimer)   { clearTimeout(efBeepTimer);   efBeepTimer = null; }
     if (efOorTimer) { clearTimeout(efOorTimer); efOorTimer = null; }
     if (['suivant','next'].some(function(w){return txt.includes(w);}))    { if (efNavExecuted !== 'next')  efNext(); efNavExecuted = null; return; }
@@ -19562,6 +19585,7 @@ function efStartMic(forceLang) {
       if (efOorRevised === null || !tmInRange(efOorRevised, efSide()) ||
           efDecTooPrecise(efOorRevisedNum)) {
         efLastInterimNum = null;
+        if (efOorPending) efOorRender();
         return;
       }
       $id('ef-kgf-preview').classList.remove('oor');
@@ -19613,10 +19637,11 @@ function efStartMic(forceLang) {
           efPendingQueue = null;
         }
         var committedRaw = inp.value.trim(); // valeur commitée AVANT que efNext avance le champ
+        var committedSide = efSide();       // nappe du rayon commité, avant l'avance
         var ok = efNext();
         if (ok) {
           if (efTtsMode) {
-            efSpeakValue(committedRaw);
+            efSpeakValue(committedRaw, committedSide);
           } else {
             efBeepOk();
           }
@@ -19715,9 +19740,6 @@ function efStartMic(forceLang) {
   }
   var _startNow = function() {
     if (r !== efMicRecog) return;
-    // AVANT start() : si WebContent crashe pendant l'octroi de permission
-    // micro, le flag de restauration est déjà écrit.
-    efSaveState();
     r.start();
     efSetMicActive(true);
     efRequestWakeLock();
@@ -19869,9 +19891,9 @@ function efSpeechWord(key) {
 }
 
 // Prononce le kgf correspondant à une lecture brute (ou beep si hors table)
-function efSpeakValue(raw) {
+function efSpeakValue(raw, side) {
   var parsed = tmParseInput(String(raw).trim());
-  var kgf = parsed !== null ? toKgf(parsed, efSide()) : null;
+  var kgf = parsed !== null ? toKgf(parsed, side || efSide()) : null;
   if (kgf !== null) efSpeak(kgf + ' ' + efSpeechWord('kilos'));
   else efBeepOk();
 }
@@ -20048,7 +20070,6 @@ function efStopMic() {
   efTtsSpokenNum  = null;
   efSetMicActive(false);
   efReleaseWakeLock();
-  efClearState();
 }
 
 // Afficher le bouton micro seulement si supporté et online
@@ -20064,7 +20085,6 @@ function efStopMic() {
   window.addEventListener('offline', efMicUpdateBtn);
   document.addEventListener('DOMContentLoaded', function() {
     efMicUpdateBtn();
-    efRestoreState();
   });
 
   window.addEventListener('pagehide', function() {
@@ -20077,8 +20097,7 @@ function efStopMic() {
       // iOS PWA standalone : l'alerte système de permission micro masque la page
       // (hidden) alors que l'app n'est PAS en arrière-plan. Abort() ici détruit la
       // reco pendant que la demande de permission est en vol → crash WebContent à
-      // l'octroi (écran blanc ~2s puis relance), et efClearState() efface le flag
-      // de restauration → retour à l'accueil. Tant que la session n'a jamais
+      // l'octroi (écran blanc ~2s puis relance). Tant que la session n'a jamais
       // capturé d'audio, ce hidden EST l'alerte de permission : ne rien faire.
       if (efIsIOS() && efMicActive && !efSessionGranted) return;
       // Même logique que efClose() : capturer l'instance avant abort() pour préchauffer
@@ -20543,7 +20562,7 @@ function efStopMic() {
     <div class="diag-field">
       <div class="diag-field-label" id="diag-obs-label">Observations</div>
       <div class="diag-inp-wrap" style="align-items:flex-start">
-        <textarea class="diag-textarea" id="diag-obs" rows="4" maxlength="600" oninput="diagLimitLines(this,4);diagSaveWheel(wtype)"></textarea>
+        <textarea class="diag-textarea" id="diag-obs" rows="4" maxlength="450" oninput="diagLimitLines(this,4);diagSaveWheel(wtype)"></textarea>
         <button class="diag-clear-btn" onclick="diagClearField('diag-obs')" title="Effacer" style="margin-top:.3rem">✕</button>
       </div>
     </div>
@@ -21184,6 +21203,7 @@ function hrApplyRim(d) {
   // Posé avant setErdMode(), qui repeint la card par syncErdUI().
   erdDiff = !!d.erdDiff;
   if (typeof setErdMode === 'function') setErdMode(mode);
+  syncErdUI(); // setErdMode() sort sans repeindre si le mode est inchangé
   document.getElementById('erd-direct').value    = d.erdDirect    || '';
   document.getElementById(ERD_SIDE_IDS.direct.L).value = d.erdDirectNds    || '';
   document.getElementById(ERD_SIDE_IDS.direct.R).value = d.erdDirectDs     || '';
@@ -21323,11 +21343,8 @@ window.updateCalcBtn = function() {
     // Pas de listener sur les pastilles de type de moyeu : setHubType() traite
     // le nom via hrSwapHubName() (veille, pas effacement). Un hrClearLoadedHub()
     // sur clic tuerait la veille avant même qu'elle soit posée.
-    // Boutons mode ERD
-    ['btn-erd-direct','btn-erd-nsd'].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) el.addEventListener('click', function() { if (!_hrApplying) hrClearLoadedRim(); });
-    });
+    // Pas de listener sur les pastilles de mode ERD : setErdMode() éteint le
+    // badge jante lui-même, sur changement réel de mode seulement.
   }
 
   if (document.readyState === 'loading') {
@@ -21387,18 +21404,26 @@ function confirmHrSave() {
   }
   var type = _hrModalType;
   var arr  = hrLoadAll(type);
-  var existing = arr.findIndex(function(e) { return e.name.toLowerCase() === name.toLowerCase(); });
+  // Moyeux : un nom par côté (la liste de chargement filtre par wtype), sinon
+  // un moyeu arrière homonyme écrase le moyeu avant.
+  var sameSlot = function(e) {
+    if (e.name.toLowerCase() !== name.toLowerCase()) return false;
+    return type !== 'hub' || ((e.data && e.data.wtype) || 'avant') === wtype;
+  };
+  var existing = arr.findIndex(sameSlot);
 
   function doHrSave() {
     var data  = type === 'hub' ? hrReadHub() : hrReadRim();
     var arr2  = hrLoadAll(type);
-    var ei2   = arr2.findIndex(function(e) { return e.name.toLowerCase() === name.toLowerCase(); });
+    var ei2   = arr2.findIndex(sameSlot);
     var entry = { name: name, data: data, ts: Date.now() };
     if (ei2 >= 0) arr2.splice(ei2, 1, entry);
     else arr2.unshift(entry);
     hrPersist(type, arr2);
     closeHrSaveModal();
-    if (type === 'hub') hrSetLoadedHub(name);
+    // Le moyeu enregistré est celui du type AFFICHÉ : un nom en veille pour
+    // l'autre type (homonyme écrasé depuis l'autre pastille) mentirait au retour.
+    if (type === 'hub') { hrForgetHubNameStash(); hrSetLoadedHub(name); }
     else hrSetLoadedRim(name);
     hrUpdateButtons();
     if (typeof showCacheToast === 'function') showCacheToast();
@@ -21713,8 +21738,19 @@ function hrRenderLoadList(type) {
       if (_loadedConfigName[wtype] && !_cfgFilling()) {
         tmClearTensio();
         tmPurgeStore();
+        // Les infos roue et le journal de notes appartenaient à la roue
+        // désaffectée : même purge que markModified(), sinon ils migrent
+        // dans la prochaine roue enregistrée.
+        ['wi-discipline','wi-size','wi-brake','wi-material'].forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) { el.value = ''; if (typeof syncSelectPlaceholder === 'function') syncSelectPlaceholder(el); }
+        });
+        if (typeof wiNotesSet === 'function') wiNotesSet(null, '');
         _loadedConfigName[wtype] = null;
+        _cfgFillMode[wtype] = false;
         _refreshLoadedBadges();
+        // Le cache d'historique de snapshots suit la roue affectée.
+        if (typeof snapRefreshBtn === 'function') snapRefreshBtn();
       }
       if (type === 'hub') {
         // hrApplyHub écrit nb-rayons sans événement : aucun listener ne peut
