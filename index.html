@@ -18661,6 +18661,9 @@ var efTtsSpeaking    = false; // true pendant la TTS + tail → gate sourde dans
 var efTtsTail        = null;  // timer prolongeant la fenêtre sourde après onend
 var efTtsGuard       = null;  // FILET : referme la fenêtre même si onend ne vient jamais
 var efTtsUtter       = null;  // énoncé courant : les événements d'un énoncé remplacé (cancel) sont ignorés
+var efTtsFails       = 0;     // échecs CONSÉCUTIFS de la synthèse (moteur en erreur, voix absentes, énoncé jeté)
+var EF_TTS_MAX_FAILS = 2;     // au 2e échec d'affilée la séance bascule en bip : plus de tentative vocale
+                              // (donc plus de latence) à chaque valeur, le choix se refait au prochain micro
 var efTtsLastSpoken  = '';    // dernier énoncé TTS normalisé (filtre anti-écho « phrase »)
 var efTtsSpokenNum   = null;  // nombre exact prononcé (garde anti-écho déterministe)
 var efVoicesReady    = false; // true dès que la liste des voix TTS est chargée
@@ -19728,6 +19731,23 @@ function efStartMic(forceLang) {
 }
 
 // ── Retour vocal (TTS) ───────────────────────────────────────────────────────
+// Bascule de séance vers le bip. Sans elle, un moteur de synthèse en panne
+// (tablette Android après mise à jour du moteur Google, énoncé jeté par le
+// système…) coûterait une tentative ET son délai d'échec à chaque valeur :
+// 1,2 s si la liste de voix reste vide, jusqu'à 5 s si l'énoncé est accepté
+// puis jamais joué. Au EF_TTS_MAX_FAILS-ième échec consécutif, efTtsMode passe
+// à false : le bip est immédiat pour le reste de la séance. Un énoncé qui
+// démarre réellement (onstart) remet le compteur à zéro. La modale bip/voix
+// repropose la voix à la prochaine ouverture du micro.
+function efTtsFailure() {
+  efTtsFails++;
+  if (efTtsFails < EF_TTS_MAX_FAILS || !efTtsMode) return;
+  efTtsMode = false;
+  var isFr = (typeof lang !== 'undefined' && lang === 'fr');
+  showImportToast(isFr ? 'Lecture vocale indisponible : passage en bip'
+                       : 'Voice readout unavailable: switching to beep', true);
+}
+
 // efTtsSpeaking est posé AVANT speak() et rebaissé après onend + un tail (le
 // moteur de reco a un retard de traitement : l'écho de la synthèse peut tomber
 // après onend). onresult avale tout pendant cette fenêtre (gate en tête).
@@ -19741,7 +19761,7 @@ function efSpeak(text) {
     var done = false;
     var fire = function() { if (done) return; done = true; efVoicesReady = true; efSpeak(text); };
     try { synth.addEventListener('voiceschanged', fire, { once: true }); } catch(e) {}
-    setTimeout(function() { if (!done) { done = true; efBeepOk(); } }, 1200);
+    setTimeout(function() { if (!done) { done = true; efBeepOk(); efTtsFailure(); } }, 1200);
     return;
   }
   try {
@@ -19761,6 +19781,12 @@ function efSpeak(text) {
     if (efTtsGuard) { clearTimeout(efTtsGuard); efTtsGuard = null; }
     efTtsSpeaking = true; // ouvrir la fenêtre sourde
     efTtsUtter = u;
+    // started : l'énoncé a réellement démarré (onstart). Un onend SANS onstart en
+    // moins de 300 ms est un énoncé jeté par le système (mesuré sur iPhone :
+    // end à 36 ms, ni voix ni événement d'erreur) : bip de secours + échec
+    // compté, comme une erreur. Une vraie lecture dure ≥ 700 ms.
+    var started = false, tSpeak = Date.now();
+    u.onstart = function() { if (u !== efTtsUtter) return; started = true; efTtsFails = 0; };
     // Un énoncé REMPLACÉ (synth.cancel() en tête de l'appel suivant) reçoit son
     // 'interrupted' APRÈS que le nouvel énoncé a ouvert sa fenêtre : sans cette
     // garde, il refermait la fenêtre du suivant en pleine lecture (reco exposée
@@ -19776,7 +19802,11 @@ function efSpeak(text) {
         setTimeout(function() { efTtsLastSpoken = ''; efTtsSpokenNum = null; }, 250);
       }, EF_TTS_TAIL_MS);
     };
-    u.onend = closeWindow;
+    u.onend = function() {
+      if (u !== efTtsUtter) return;
+      closeWindow();
+      if (!started && Date.now() - tSpeak < 300) { efBeepOk(); efTtsFailure(); }
+    };
     // Échec réel du moteur (synthesis-failed, not-allowed, audio-busy, moteur
     // TTS système absent…) : la valeur est déjà commitée par efNext, sans le
     // bip l'utilisateur n'aurait AUCUN accusé de réception. 'interrupted' et
@@ -19786,14 +19816,21 @@ function efSpeak(text) {
     u.onerror = function(ev) {
       if (u !== efTtsUtter) return;
       closeWindow();
-      if (ev && ev.error !== 'interrupted' && ev.error !== 'canceled') efBeepOk();
+      if (ev && ev.error !== 'interrupted' && ev.error !== 'canceled') { efBeepOk(); efTtsFailure(); }
     };
     // FILET DE SÉCURITÉ : si onend/onerror ne se déclenche jamais (voix non
     // chargée, énoncé abandonné), la fenêtre sourde resterait ouverte et la reco
     // deviendrait muette en permanence. On force la fermeture après un plafond.
-    efTtsGuard = setTimeout(function() { efTtsGuard = null; closeWindow(); }, 5000);
+    // Sans onstart au bout du plafond, l'énoncé n'a jamais été joué : bip de
+    // secours et échec compté (un énoncé démarré mais sans onend, cas Safari
+    // connu, a bien été entendu : fermeture seule).
+    efTtsGuard = setTimeout(function() {
+      efTtsGuard = null;
+      closeWindow();
+      if (!started) { efBeepOk(); efTtsFailure(); }
+    }, 5000);
     synth.speak(u);
-  } catch(e) { efTtsSpeaking = false; efBeepOk(); }
+  } catch(e) { efTtsSpeaking = false; efBeepOk(); efTtsFailure(); }
 }
 
 // Choisit une voix correspondant à la langue (sinon voix par défaut du moteur)
@@ -19908,6 +19945,7 @@ function efCloseFeedbackModal() {
 function efPickFeedback(mode) {
   efCloseFeedbackModal();
   efTtsMode = (mode === 'voice');
+  efTtsFails = 0;               // nouvelle séance : la voix a de nouveau droit à ses essais
   if (efTtsMode) efUnlockTts(); // ce clic est un geste utilisateur → armer la TTS
   efOpenMicLangModal();         // poursuivre vers la langue / le démarrage micro
 }
