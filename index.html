@@ -817,6 +817,13 @@ html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
 .ateliermgr-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
 .ateliermgr-header-left { display:flex; align-items:center; gap:.5rem; min-width:0 }
 .ateliermgr-title-icon { color:var(--accent); opacity:.85; flex-shrink:0 }
+/* Icône de titre commune aux modales qui n'en avaient pas (audit du 21 sept.
+   2026). Posée AVANT le titre, jamais dedans : applyLang réécrit les titres
+   par textContent. Le margin-right:auto du titre qui suit garde la croix à
+   droite dans les en-têtes en space-between. */
+.mt-icon { color:var(--accent); opacity:.85; flex-shrink:0 }
+.mt-icon + * { margin-right:auto }
+.tou-header, .slen-header, .hr-save-header, .hr-load-header, .wheel-save-header, .wheel-load-header, .outlier-header, .hooke-header, .snap-header { gap:.5rem }
 .ateliermgr-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .ateliermgr-close:hover { border-color:rgba(var(--warm-rgb),.6); color:var(--warm) }
 .ateliermgr-field { display:flex; flex-direction:column; gap:.35rem; min-width:0 }
@@ -1194,6 +1201,9 @@ html[data-fond="alu"] .ateliermgr-logo-wrap.has-logo:hover, html[data-fond="alu"
 
 /* ── Grid ──────────────────────────────────────────────────────────────────── */
 .g2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem }
+/* Le champ se cale en bas de sa colonne : quand le libellé voisin passe sur
+   deux lignes (mobile), les deux champs restent sur la même ligne. */
+.g2 > .f { justify-content:flex-end }
 
 /* ── Fields ────────────────────────────────────────────────────────────────── */
 .f     { display:flex; flex-direction:column; gap:.35rem }
@@ -1390,7 +1400,11 @@ select option             { background:var(--inp) }
 .help { font-size:.66rem; color:var(--text3); margin-top:.22rem; font-style:italic; line-height:1.4 }
 
 /* ── Tooltip ───────────────────────────────────────────────────────────────── */
-.tip-wrap  { position:relative; display:inline-flex; align-items:center; gap:.3rem }
+/* Flux normal, pas flex : quand le libellé se replie (« Section rayon (mm) »
+   à 390 px) la pastille reste collée au dernier mot au lieu d'être poussée
+   seule à droite de la colonne. */
+.tip-wrap  { position:relative; display:block }
+.tip-wrap > .tip-icon, .tip-wrap > .info-icon { vertical-align:middle; margin-left:.3rem }
 /* Pastille « ? ». Deux comportements, un seul dessin : .tip-icon déroule un
    tip au survol, .info-icon ouvre une modale. Le dessin est ici, les écarts
    juste en dessous — ne pas le recopier. */
@@ -1583,6 +1597,19 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 @keyframes fu { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:translateY(0) } }
 .rg       { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1rem; margin-bottom:1rem }
 .rc       { border-radius:var(--rs); padding:1.4rem 1.5rem }
+/* Les deux tuiles partagent leurs rangées : étiquette, CIBLE, nombre, unité,
+   lignes d'élongation. Une étiquette qui se replie sur une ligne de plus
+   agrandit la rangée des DEUX tuiles, et les deux longueurs restent à la
+   même hauteur. Sans subgrid le navigateur ignore le bloc : mise en page
+   d'origine. */
+@supports (grid-template-rows: subgrid) {
+  .rg > .rc { display:grid; grid-template-rows:subgrid; grid-row:span 5; row-gap:0; align-content:start }
+  /* Même écart nombre → lignes d'élongation qu'en flux normal, mais porté
+     par la rangée du bas : posé sur l'unité, il laissait la rangée vide à
+     8 px de plus que la tuile d'origine. */
+  .rg > .rc > .runit { margin-bottom:0 }
+  .rg > .rc > .rrows { margin-top:.9rem }
+}
 .rc.fo    { background:var(--card-alt); border:1px solid rgba(var(--warm-rgb),.28) }
 .rc.fa    { background:var(--card-alt); border:1px solid rgba(var(--accent-rgb),.28) }
 .rc.fo:hover { background:linear-gradient(145deg,rgba(var(--warm-rgb),.07),rgba(var(--warm-rgb),.025)) }
@@ -1742,15 +1769,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-screenshot-btn:active { opacity:.75 }
 .tm-screenshot-btn.flash { border-color: var(--success); color: var(--success) }
 
-.tm-play-mode-btn {
-  display: flex; align-items: center; gap: .6rem;
-  padding: .7rem 1rem; width: 100%; text-align: left;
-  background: transparent; border: 1px solid var(--border-s); border-radius: var(--rs);
-  color: var(--text2); font-family: 'DM Sans',sans-serif; font-size: .82rem; font-weight: 500;
-  cursor: pointer; transition: background .22s, border-color .22s, color .22s, opacity .22s, transform .22s, box-shadow .22s;
-}
-.tm-play-mode-btn:hover { border-color: rgba(var(--accent-rgb),.45); color: var(--accent); background: rgba(var(--accent-rgb),.04) }
-
 /* ── Snapshots ─────────────────────────────────────────────────────────────── */
 .snap-overlay { position:fixed; inset:0; background:var(--scrim-2); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
 
@@ -1852,8 +1870,8 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 /* Grille de saisie des déflections */
 .tm-grid-wrap    { overflow-x:auto; border-radius:var(--rs); border:1px solid var(--border) }
 .tm-table        { width:100%; border-collapse:collapse; table-layout:fixed; font-family:'DM Mono',monospace; font-size:.82rem; min-width:300px }
-.tm-table th     { padding:.55rem .6rem; font-family:'DM Sans',sans-serif; font-size:.6rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; text-align:center; border-bottom:1px solid var(--border) }
-.tm-table th.th-rayon { background:rgba(var(--accent-rgb),.06); color:var(--accent); border-right:1px solid rgba(var(--accent-rgb),.1) }
+.tm-table th     { padding:.55rem .6rem; font-family:'DM Sans',sans-serif; font-size:.6rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; text-align:center; vertical-align:bottom; border-bottom:1px solid var(--border) }
+.tm-table th.th-rayon { background:rgba(var(--accent-rgb),.06); color:var(--accent); border-right:1px solid rgba(var(--accent-rgb),.1); vertical-align:middle }
 .tm-table th.th-fo    { background:rgba(var(--warm-rgb),.06); color:var(--warm); border-right:1px solid rgba(var(--ink-rgb),.05) }
 .tm-table th.th-fa    { background:rgba(var(--accent-rgb),.06); color:var(--accent) }
 .tm-table td     { padding:.28rem .4rem; text-align:center; border-bottom:1px solid rgba(var(--ink-rgb),.035) }
@@ -1882,7 +1900,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .defl-result.fa  { color:rgba(var(--accent-rgb),.6) }
 
 /* ── Radar chart */
-.radar-wrap      { width:100%; max-width:440px; margin:0 auto }
+.radar-wrap      { width:100%; max-width:440px; margin:0 auto; position:relative }
 .radar-canvas    { display:block; margin:0 auto }
 
 /* flex-wrap: seul conteneur à deux rangées qui peut s'empiler sans media
@@ -1891,6 +1909,13 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
    ligne dès 320px dans les deux langues (~224px requis) et le gap est déjà
    réduit en mobile pour ça — à revérifier si les libellés s'allongent. */
 .radar-legend    { display:flex; gap:1.2rem; justify-content:center; margin-top:.75rem; flex-wrap:wrap }
+/* Légende du module tension dans la bande vide du bas du canvas ; la place
+   libérée est rendue au wrap (margin-bottom = ancien margin-top + hauteur
+   de la légende) pour que les stats restent exactement à leur place. */
+#tm-radar-legend { position:absolute; left:0; right:0; bottom:0; margin-top:0 }
+/* + 1rem : le margin-top de .tm-stats fusionne avec ce margin-bottom (marges
+   de blocs), il faut donc l'inclure pour retomber au pixel d'avant. */
+#tm-result-card .radar-wrap { margin-bottom:calc(.75rem + 1.06rem + 1rem) }
 .radar-leg-item  { display:flex; align-items:center; gap:.38rem; font-size:.68rem; color:var(--text2); font-family:'DM Sans',sans-serif }
 .radar-leg-dot   { width:10px; height:10px; border-radius:50%; flex-shrink:0 }
 
@@ -2288,7 +2313,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ef-back-btn {
   flex:1; background:transparent; border:1px solid var(--border-s);
   border-radius:var(--rs); color:var(--text2);
-  font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500;
+  font-family:'DM Sans',sans-serif; font-size:.72rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
   padding:.55rem 1.3rem; cursor:pointer; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s;
   touch-action:manipulation;
 }
@@ -2298,7 +2323,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .ef-next-btn {
   flex:1; background:transparent; border:1px solid var(--border-s);
   border-radius:var(--rs); color:var(--text2);
-  font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500;
+  font-family:'DM Sans',sans-serif; font-size:.72rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
   padding:.55rem 1.3rem; cursor:pointer; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s;
   touch-action:manipulation;
 }
@@ -2331,6 +2356,9 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
   content:'✕'; position:absolute; right:.45em; top:50%;
   transform:translateY(-50%); font-size:.85em; opacity:.55;
 }
+/* Modale Play : le même sélecteur, mais un re-clic n'efface rien, donc pas
+   de croix sur le bouton actif. */
+#tm-play-modal .ef-sw-btn.active::after { content:none }
 /* Flash de confirmation à l'effacement (même pattern que sb-flash, halo neutre blanc) */
 @keyframes ef-sw-clear-flash {
   0%   { box-shadow:0 0 0 1px rgba(var(--ink-rgb),.55), 0 0 18px rgba(var(--ink-rgb),.35) }
@@ -2814,7 +2842,14 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
 /* ── Tension module: wheel toggle buttons ─────────────────────────────── */
 .tm-select.locked { opacity:.45; pointer-events:none; cursor:not-allowed }
 #nb-rayons.locked { opacity:.45; pointer-events:none; cursor:not-allowed }
-.tm-clear-tensio { background:none; border:none; color:var(--text3); font-size:.8rem; cursor:pointer; padding:.2rem .4rem; line-height:1; transition:color .2s, opacity .2s; flex-shrink:0 }
+.tm-clear-tensio { background:none; border:none; color:var(--text3); font-size:.8rem; cursor:pointer; padding:.2rem .4rem; line-height:1; transition:color .2s, opacity .2s; flex-shrink:0; position:relative }
+/* Zones de toucher élargies (audit du 21 sept. 2026) : le dessin ne change
+   pas, seul le ::before invisible agrandit la surface cliquable. */
+.tm-clear-tensio::before { content:''; position:absolute; inset:-8px -8px -8px -6px }
+.tm-th-reset, .tm-th-invert { position:relative }
+.tm-th-reset::before, .tm-th-invert::before { content:''; position:absolute; inset:-7px -3px }
+.tip-icon, .info-icon { position:relative }
+.tip-icon::before, .info-icon::before { content:''; position:absolute; inset:-8px -8px -5px -8px }
 .tm-clear-tensio:hover { color:var(--warm) }
 .tm-clear-tensio.inactive { opacity:0; pointer-events:none }
 
@@ -2840,6 +2875,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
   .tm-stat-label    { font-size: .6rem; }
   .tm-outlier-bar { padding: .6rem .8rem; }
   .radar-legend { gap: .7rem; margin-top: .5rem; }
+  #tm-radar-legend { margin-top: 0; }
+  #tm-result-card .radar-wrap { margin-bottom: calc(.5rem + 1.06rem + 1rem); }
 }
 
 /* Très petits écrans (≤359px) : desserre les cards de résultat sans toucher aux iPhone (375+) ni aux Android larges. Police .rnum inchangée. */
@@ -3242,6 +3279,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 <div class="tou-overlay" id="tou-overlay" onclick="closeTou()"></div>
 <div class="tou-modal" id="tou-modal">
   <div class="tou-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
     <div class="tou-title" data-i18n="touTitle">Conditions d'utilisation</div>
   </div>
   <div class="tou-body" id="tou-body"></div>
@@ -3252,6 +3290,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 <div class="tou-overlay" id="install-overlay" onclick="closeInstall()"></div>
 <div class="tou-modal" id="install-modal">
   <div class="tou-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
     <div class="tou-title" data-i18n="installTitle">Installation</div>
   </div>
   <div class="tou-body" id="install-body"></div>
@@ -3262,6 +3301,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 <div class="tou-overlay" id="priv-overlay" onclick="closePriv()"></div>
 <div class="tou-modal" id="priv-modal">
   <div class="tou-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     <div class="tou-title" data-i18n="privTitle">Confidentialité</div>
   </div>
   <div class="tou-body" id="priv-body"></div>
@@ -3272,6 +3312,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 <div class="tou-overlay" id="sect-overlay" onclick="closeSpokeSect()"></div>
 <div class="tou-modal" id="sect-modal" role="dialog" aria-modal="true" aria-labelledby="sect-title">
   <div class="tou-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="9" ry="5.5"/></svg>
     <div class="tou-title" id="sect-title" data-i18n="sectTitle">Modélisation section de rayon</div>
   </div>
   <div class="tou-body" id="sect-body"></div>
@@ -3952,6 +3993,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 <div class="slen-overlay" id="slen-overlay" onclick="slenClose()"></div>
 <div class="slen-modal" id="slen-modal">
   <div class="slen-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l14-14 4 4L7 21z"/><line x1="7" y1="10" x2="9" y2="12"/><line x1="10" y1="7" x2="12" y2="9"/><line x1="13" y1="4" x2="15" y2="6"/></svg>
     <span class="slen-title" id="slen-title"></span>
     <button class="slen-close" onclick="slenClose()">✕</button>
   </div>
@@ -4310,17 +4352,18 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     </div>
 
     <!-- ── Barre Play + icônes ── -->
-    <div id="tm-play-bar" style="display:none;align-items:center;justify-content:space-between;margin-top:.55rem">
-      <button id="tm-snap-open-btn" onclick="snapOpen()" class="tm-screenshot-btn" style="gap:.42rem;padding:.32rem .75rem;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.68rem;font-weight:500;letter-spacing:.1em">
+    <div id="tm-play-bar" style="display:none;align-items:center;grid-template-columns:1fr auto 1fr;margin-top:.55rem">
+      <button id="tm-snap-open-btn" onclick="snapOpen()" class="tm-screenshot-btn" style="gap:.42rem;padding:.32rem .75rem;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.68rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;justify-self:start">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
         </svg>
         <span data-i18n="snapBtn">Snapshots</span>
       </button>
-      <div style="display:flex;gap:.4rem">
-        <button id="tm-play-btn" onclick="tmOpenPlayModal()" title="Animer les points" class="tm-screenshot-btn">
-          <svg id="tm-play-icon" width="14" height="14" viewBox="0 0 12 12" fill="currentColor"><polygon points="2,1 11,6 2,11"/></svg>
-        </button>
+      <!-- Play seul au centre : dans l'axe du rayon 1 du radar -->
+      <button id="tm-play-btn" onclick="tmOpenPlayModal()" title="Animer les points" class="tm-screenshot-btn">
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="currentColor"><polygon points="2,1 11,6 2,11"/></svg>
+      </button>
+      <div style="display:flex;gap:.4rem;justify-self:end">
         <button class="tm-screenshot-btn" id="tm-diag-btn" onclick="openDiagModal(event)" title="Diagnostic">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4.5 6.5 C4.5 6.5 4.5 4 7 4 C9.5 4 9.5 6.5 9.5 6.5 L9.5 14 C9.5 16.5 11.5 18.5 14 18.5 C16.5 18.5 18.5 16.5 18.5 14"/>
@@ -4356,52 +4399,14 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       </div>
     </div>
 
-    <!-- ── Modale choix du mode d'animation ── -->
-    <div id="tm-play-overlay" onclick="tmClosePlayModal()" style="position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:9990;display:none;opacity:0;transition:opacity .2s"></div>
-    <div id="tm-play-modal" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.97);z-index:9991;background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:1.4rem 1.4rem 1.1rem;box-shadow:var(--sh-modal);width:88%;max-width:300px;display:none;flex-direction:column;gap:.75rem;opacity:0;transition:opacity .2s,transform .2s">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div style="display:flex;align-items:center;gap:.55rem;min-width:0">
-          <svg width="14" height="14" viewBox="0 0 12 12" fill="currentColor" style="color:var(--accent);opacity:.85;flex-shrink:0"><polygon points="2,1 11,6 2,11"/></svg>
-          <div style="font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)">Animation</div>
-        </div>
-        <button onclick="tmClosePlayModal()" class="ateliermgr-close">✕</button>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:.4rem">
-        <button id="tm-play-mode-fo"   onclick="tmStartPlay('fo')"   class="tm-play-mode-btn">
-          <span style="width:8px;height:8px;border-radius:50%;background:rgba(var(--warm-rgb),.9);flex-shrink:0;display:inline-block"></span>
-          <span id="tm-play-fo-label">DS</span>
-        </button>
-        <button id="tm-play-mode-fa"   onclick="tmStartPlay('fa')"   class="tm-play-mode-btn">
-          <span style="width:8px;height:8px;border-radius:50%;background:rgba(var(--accent-rgb),.9);flex-shrink:0;display:inline-block"></span>
-          <span id="tm-play-fa-label">NDS</span>
-        </button>
-        <button id="tm-play-mode-both" onclick="tmStartPlay('both')" class="tm-play-mode-btn">
-          <span style="display:inline-flex;gap:3px;flex-shrink:0">
-            <span style="width:8px;height:8px;border-radius:50%;background:rgba(var(--warm-rgb),.9);display:inline-block"></span>
-            <span style="width:8px;height:8px;border-radius:50%;background:rgba(var(--accent-rgb),.9);display:inline-block"></span>
-          </span>
-          <span id="tm-play-both-label">DS + NDS</span>
-        </button>
-      </div>
-    </div>
-
     <div id="tm-result-card-body" style="display:none;margin-top:.75rem">
     <div class="radar-wrap">
       <canvas class="radar-canvas" id="tm-radar"></canvas>
-    </div>
-
-    <!-- Étiquettes animation Play : hors du canvas, hauteur fixe pour éviter tout décalage -->
-    <div id="tm-anim-display" style="height:3.8rem;display:flex;align-items:center;justify-content:center;margin:.4rem 0 0;pointer-events:none;visibility:hidden">
-      <div id="tm-anim-inner" style="display:flex;flex-direction:column;align-items:center;gap:.18rem">
-        <div id="tm-anim-title" style="font-size:.56rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;font-family:'DM Mono',monospace;color:var(--text3)">—</div>
-        <div id="tm-anim-val"   style="font-family:'DM Mono',monospace;font-size:1.35rem;font-weight:500;line-height:1">—</div>
-        <div id="tm-anim-idx"  style="font-size:.58rem;font-family:'DM Mono',monospace;color:var(--text3)">—</div>
+      <!-- Légende dans la bande vide du bas du canvas (voir #tm-radar-legend) -->
+      <div class="radar-legend" id="tm-radar-legend">
+        <div class="radar-leg-item"><span class="radar-leg-dot" style="background:rgba(var(--warm-rgb),.9)"></span><span id="radar-leg-fo">Côté Gauche (NDS)</span></div>
+        <div class="radar-leg-item"><span class="radar-leg-dot" style="background:rgba(var(--accent-rgb),.9)"></span><span id="radar-leg-fa">Côté Droit (DS)</span></div>
       </div>
-    </div>
-
-    <div class="radar-legend" id="tm-radar-legend">
-      <div class="radar-leg-item"><span class="radar-leg-dot" style="background:rgba(var(--warm-rgb),.9)"></span><span id="radar-leg-fo">Côté Gauche (NDS)</span></div>
-      <div class="radar-leg-item"><span class="radar-leg-dot" style="background:rgba(var(--accent-rgb),.9)"></span><span id="radar-leg-fa">Côté Droit (DS)</span></div>
     </div>
 
     <div class="tm-stats" id="tm-stats"></div>
@@ -4418,6 +4423,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
   <div class="tm-conv-overlay" id="tm-conv-overlay" onclick="tmCloseConvTable()"></div>
   <div class="tm-conv-modal" id="tm-conv-modal">
     <div class="tm-conv-header">
+      <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="12" y1="9" x2="12" y2="20"/></svg>
       <div class="tm-conv-title" data-i18n="tmConvTitle">Charte de conversion</div>
       <button class="tm-conv-close" onclick="tmCloseConvTable()">✕</button>
     </div>
@@ -4432,7 +4438,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
           <line x1="9" y1="9" x2="10" y2="9"/>
         </svg>
       </button>
-      <button id="tm-conv-view-btn" onclick="tmConvToggleView()" style="background:transparent;border:1px solid rgba(var(--accent-rgb),.45);border-radius:7px;color:var(--accent);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;padding:.22rem .75rem;cursor:pointer;transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s;outline:none"></button>
+      <button id="tm-conv-view-btn" onclick="tmConvToggleView()" style="background:transparent;border:1px solid rgba(var(--accent-rgb),.45);border-radius:7px;color:var(--accent);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;padding:.22rem .75rem;cursor:pointer;transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s;outline:none"></button>
     </div>
     <div class="tm-conv-scroll" id="tm-conv-table-wrap">
       <table class="tm-conv-table">
@@ -4454,6 +4460,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
   <div class="tm-conv-overlay" id="tm-tc-overlay" onclick="tmTcClose()"></div>
   <div class="tm-conv-modal" id="tm-tc-modal">
     <div class="tm-conv-header">
+      <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><line x1="12" y1="2.5" x2="12" y2="6.2"/><line x1="19.5" y1="6.9" x2="16.9" y2="8.4"/><line x1="19.5" y1="17.1" x2="16.9" y2="15.6"/><line x1="12" y1="21.5" x2="12" y2="17.8"/><line x1="4.5" y1="17.1" x2="7.1" y2="15.6"/><line x1="4.5" y1="6.9" x2="7.1" y2="8.4"/><line x1="12" y1="12" x2="9.2" y2="6.8"/></svg>
       <div class="tm-conv-title" data-i18n="tmTcTitle">Contrôle tensiomètre</div>
       <button class="tm-conv-close" onclick="tmTcClose()">✕</button>
     </div>
@@ -4491,13 +4498,14 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
   <div class="cc-overlay" id="cc-overlay" onclick="ccClose()"></div>
   <div class="cc-modal" id="cc-modal" onclick="event.stopPropagation()">
     <div class="cc-header">
+      <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
       <div class="cc-title" data-i18n="ccTitle">Charte personnalisée</div>
       <button class="cc-close" onclick="ccClose()">✕</button>
     </div>
 
     <!-- Aperçu courbe : même bouton que #tm-conv-view-btn de la modale conversion -->
     <div style="display:flex;justify-content:flex-end;margin-bottom:.9rem">
-      <button id="cc-curve-btn" onclick="ccPreviewCurve()" data-i18n="tmConvCurve" disabled style="background:transparent;border:1px solid rgba(var(--accent-rgb),.45);border-radius:7px;color:var(--accent);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;padding:.22rem .75rem;cursor:pointer;transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s;outline:none">Courbe</button>
+      <button id="cc-curve-btn" onclick="ccPreviewCurve()" data-i18n="tmConvCurve" disabled style="background:transparent;border:1px solid rgba(var(--accent-rgb),.45);border-radius:7px;color:var(--accent);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;padding:.22rem .75rem;cursor:pointer;transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s;outline:none">Courbe</button>
     </div>
 
     <!-- Étape 1 : Tensiomètre -->
@@ -4574,6 +4582,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
   <div class="tm-conv-overlay" id="ec-overlay" onclick="ecClose()"></div>
   <div class="tm-conv-modal" id="ec-modal">
     <div class="tm-conv-header">
+      <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>
       <div class="tm-conv-title" data-i18n="ecTitle">Easy Chart</div>
       <button class="tm-conv-close" onclick="ecClose()">✕</button>
     </div>
@@ -4646,7 +4655,8 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 <div class="ct-overlay" id="ct-overlay" onclick="ctClose()"></div>
 <div class="ct-modal" id="ct-modal" onclick="event.stopPropagation()">
   <div class="ct-header">
-    <div class="ct-title" id="ct-modal-title" data-i18n="ctTitle">★ Tensiomètre personnalisé</div>
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><line x1="12" y1="2.5" x2="12" y2="6.2"/><line x1="19.5" y1="6.9" x2="16.9" y2="8.4"/><line x1="19.5" y1="17.1" x2="16.9" y2="15.6"/><line x1="12" y1="21.5" x2="12" y2="17.8"/><line x1="4.5" y1="17.1" x2="7.1" y2="15.6"/><line x1="4.5" y1="6.9" x2="7.1" y2="8.4"/><line x1="12" y1="12" x2="9.2" y2="6.8"/></svg>
+    <div class="ct-title" id="ct-modal-title" data-i18n="ctTitle">Tensiomètre personnalisé</div>
     <button class="ct-close" onclick="ctClose()">✕</button>
   </div>
 
@@ -4673,6 +4683,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 <div class="hr-save-overlay" id="hr-save-overlay" onclick="closeHrSaveModal()"></div>
 <div class="hr-save-modal" id="hr-save-modal" onclick="event.stopPropagation()">
   <div class="hr-save-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
     <div class="hr-save-title" id="hr-save-title">Enregistrer le moyeu</div>
     <button class="hr-save-close" onclick="closeHrSaveModal()">✕</button>
   </div>
@@ -4688,6 +4699,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 <div class="hr-load-overlay" id="hr-load-overlay" onclick="closeHrLoadModal()"></div>
 <div class="hr-load-modal" id="hr-load-modal" onclick="event.stopPropagation()">
   <div class="hr-load-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     <div class="hr-load-title" id="hr-load-title">Charger un moyeu</div>
     <button class="hr-load-close" onclick="closeHrLoadModal()">✕</button>
   </div>
@@ -4705,6 +4717,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 <div class="wheel-save-overlay" id="wheel-save-overlay" onclick="closeWheelSaveModal()"></div>
 <div class="wheel-save-modal" id="wheel-save-modal" onclick="event.stopPropagation()">
   <div class="wheel-save-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
     <div class="wheel-save-title" id="wheel-save-title">Enregistrer la roue</div>
     <button class="wheel-save-close" onclick="closeWheelSaveModal()">✕</button>
   </div>
@@ -4728,6 +4741,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 <div class="wheel-load-overlay" id="wheel-load-overlay" onclick="closeWheelLoadModal()"></div>
 <div class="wheel-load-modal" id="wheel-load-modal" onclick="event.stopPropagation()">
   <div class="wheel-load-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     <div class="wheel-load-title" id="wheel-load-title">Charger une roue</div>
     <button class="wheel-load-close" onclick="closeWheelLoadModal()">✕</button>
   </div>
@@ -4746,6 +4760,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 <div class="wheel-save-overlay" id="wheel-info-overlay" onclick="closeWheelInfoModal()"></div>
 <div class="wheel-save-modal" id="wheel-info-modal" onclick="event.stopPropagation()">
   <div class="wheel-save-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11.5"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
     <div class="wheel-save-title" id="wheel-info-title">Informations Roue</div>
     <button class="wheel-save-close" onclick="closeWheelInfoModal()">✕</button>
   </div>
@@ -4822,6 +4837,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
 <div class="wheel-save-overlay" id="wi-note-overlay" onclick="closeWiNoteModal()"></div>
 <div class="wheel-save-modal" id="wi-note-modal" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="wi-note-title">
   <div class="wheel-save-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
     <div class="wheel-save-title" id="wi-note-title" data-i18n="wiNoteModalTitle">Nouvelle note</div>
     <button class="wheel-save-close" onclick="closeWiNoteModal()">✕</button>
   </div>
@@ -5324,6 +5340,7 @@ window.wiNotesFlat = function() {
 <div class="wheel-load-overlay" id="riderload-overlay" onclick="closeRiderLoad()"></div>
 <div class="wheel-load-modal" id="riderload-modal" onclick="event.stopPropagation()">
   <div class="wheel-load-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     <div class="wheel-load-title" data-i18n="riderLoadTitle">Charger un rider</div>
     <button class="wheel-load-close" onclick="closeRiderLoad()">✕</button>
   </div>
@@ -5334,6 +5351,7 @@ window.wiNotesFlat = function() {
 <div class="wheel-load-overlay" id="riderassign-overlay" onclick="closeRiderAssign()"></div>
 <div class="wheel-load-modal" id="riderassign-modal" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="riderassign-title">
   <div class="wheel-load-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     <div class="wheel-load-title" id="riderassign-title" data-i18n="riderAssignWheels">Affecter roues</div>
     <button class="wheel-load-close" onclick="closeRiderAssign()">✕</button>
   </div>
@@ -5355,6 +5373,7 @@ window.wiNotesFlat = function() {
 <div class="wsr-overlay" id="wsr-overlay" onclick="closeWheelSaveRiderModal()"></div>
 <div class="wsr-modal" id="wsr-modal" onclick="event.stopPropagation()">
   <div class="wheel-load-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     <div class="wheel-load-title" data-i18n="riderAssign">Affecter à un rider</div>
     <button class="wheel-load-close" onclick="closeWheelSaveRiderModal()">✕</button>
   </div>
@@ -6151,6 +6170,7 @@ const i18n = {
     snapAnimReplayTitle:'Rejouer',
     delTitle:'Supprimer', clearValuesTitle:'Effacer les valeurs', clearFieldTitle:'Effacer',
     tmRecShare:'Partager la vidéo', tmRecSave:'Télécharger la vidéo',
+    tmPlayVideo:'Animation',
     tmCVMaxLabel:'Seuil outliers',
     tmOutlierModalTitle:'Seuil de détection',
     tmOutlierModalDesc:'Si la dispersion globale de la nappe dépasse ce seuil, les rayons les plus éloignés de la tension médiane sont mis en évidence.',
@@ -6200,7 +6220,7 @@ const i18n = {
     ccManageTitle:'Chartes personnalisées',
     cacheToast:'⚠︎ Données sauvegardées en cache navigateur',
     appUpdated:'✓ Nouvelle version installée',
-    ctTitle:'★ Tensiomètre perso',
+    ctTitle:'Tensiomètre perso',
     ctLabel:'Nom du tensiomètre',
     ctPlaceholder:'Ex : Mon Tensiomètre',
     ctSave:'✓ Créer',
@@ -6430,6 +6450,7 @@ const i18n = {
     snapAnimReplayTitle:'Replay',
     delTitle:'Delete', clearValuesTitle:'Clear values', clearFieldTitle:'Clear',
     tmRecShare:'Share video', tmRecSave:'Download video',
+    tmPlayVideo:'Animation',
     tmCVMaxLabel:'Outliers threshold',
     tmOutlierModalTitle:'Detection threshold',
     tmOutlierModalDesc:'If the overall spread of the nappe exceeds this threshold, the spokes furthest from the median tension are highlighted.',
@@ -6479,7 +6500,7 @@ const i18n = {
     ccManageTitle:'Custom charts',
     cacheToast:'⚠︎ Data saved in browser cache',
     appUpdated:'✓ New version installed',
-    ctTitle:'★ Custom tensiometer',
+    ctTitle:'Custom tensiometer',
     ctLabel:'Tensiometer name',
     ctPlaceholder:'E.g.: My Tensiometer',
     ctSave:'✓ Create',
@@ -9552,6 +9573,8 @@ function slenOpen(side) {
   const inpEl   = $id('slen-inp');
   titleEl.textContent = lbl;
   titleEl.className   = 'slen-title ' + (isOrange ? 'warm' : 'accent');
+  const slenIco = titleEl.previousElementSibling;
+  if (slenIco && slenIco.classList.contains('mt-icon')) slenIco.style.color = isOrange ? 'var(--warm)' : 'var(--accent)';
   inpEl.className     = 'slen-inp '   + (isOrange ? 'warm' : '');
   inpEl.value = (val !== null && val !== undefined) ? val : '';
   $id('slen-overlay').classList.add('show');
@@ -10011,7 +10034,7 @@ function toggleTmResultCard() {
   body.style.display = open ? 'none' : 'block';
   chev.style.transform = open ? '' : 'rotate(180deg)';
   if (!open) tmTryRenderRadar();
-  if (open) { tmStopAnimation(); tmUpdateResultCardState(); } // stopper l'animation si on ferme
+  if (open) tmUpdateResultCardState();
 }
 function toggleArbCard() {
   const body = $id('arb-card-body'), chevron = $id('arb-card-chevron'), wrap = $id('arb-wrap');
@@ -11026,6 +11049,31 @@ function closePriv() {
   $id('priv-overlay').classList.remove('show');
   $id('priv-modal').classList.remove('show');
 }
+
+// Échap pour les modales d'information qui n'avaient pas d'écouteur propre
+// (audit du 21 sept. 2026 : elles ne se fermaient qu'à la croix ou au voile).
+// Une seule modale de cette liste peut être ouverte à la fois ; on parcourt
+// dans l'ordre d'empilement et on s'arrête à la première trouvée.
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  const playMo = $id('tm-play-modal');
+  if (playMo && playMo.style.display !== 'none' && playMo.style.display !== '') {
+    e.preventDefault(); tmClosePlayModal(); return;
+  }
+  const stack = [
+    ['snapanim-modal', () => snapAnimClose()],
+    ['diag-modal',    () => closeDiagModal()],
+    ['pdfopt-modal',  () => closePdfOptModal()],
+    ['sect-modal',    () => closeSpokeSect()],
+    ['install-modal', () => closeInstall()],
+    ['priv-modal',    () => closePriv()],
+    ['tou-modal',     () => closeTou()]
+  ];
+  for (const [id, close] of stack) {
+    const el = $id(id);
+    if (el && el.classList.contains('show')) { e.preventDefault(); close(); return; }
+  }
+});
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SOCLE COMMUN — partage & backup
@@ -16350,7 +16398,7 @@ function tmUpdateResultCardState() {
   const cardBody = $id('tm-result-card-body');
   if (playBar) {
     const bodyOpen = cardBody && cardBody.style.display !== 'none';
-    playBar.style.display = (hasData && bodyOpen) ? 'flex' : 'none';
+    playBar.style.display = (hasData && bodyOpen) ? 'grid' : 'none';
   }
 }
 
@@ -16371,7 +16419,6 @@ function tmHideResult() {
   if (body) body.style.display = 'none';
   if (chev) chev.style.transform = '';
   tmHighlightOn = false;
-  if (typeof tmStopAnimation === 'function') tmStopAnimation();
   const btn = $id('tm-hl-btn');
   if (btn) btn.classList.remove('active');
   document.querySelectorAll('.defl-inp, .defl-result').forEach(el => {
@@ -17968,6 +18015,7 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
 
   <!-- Header -->
   <div class="ef-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="20" x2="21" y2="20"/><rect x="4" y="10" width="4" height="10" rx="1"/><rect x="10" y="5" width="4" height="15" rx="1"/><rect x="16" y="13" width="4" height="7" rx="1"/></svg>
     <div class="ef-title" id="ef-title">Easy Fill</div>
     <div style="display:flex;align-items:center;gap:.6rem">
       <button class="ef-bt-btn" id="ef-mic-btn" ontouchend="efToggleMic();event.preventDefault()" onclick="efToggleMic()" title="Saisie vocale">
@@ -20411,25 +20459,44 @@ function efStopMic() {
 // ── Patch toggleCard ─────────────────────────────────────────────────────────
 
 
-// ── Animation Play — Diagramme de tension ────────────────────────────────────
+// ── Modale Play — Diagramme de tension ──────────────────────────────────────
+// Le bouton Play ouvre une modale : le sélecteur de nappe d'Easy Fill choisit
+// le côté à animer, le bouton Animation lance la vidéo (tmPlayAnimVideo,
+// dans la modale d'Évolution). Rien ne se joue dans la card.
 (function() {
-  var tmAnimTimer   = null;
-  var tmAnimRunning = false;
-  var tmAnimStep    = 0;
+  // Nappe à animer : 'fo' | 'fa' | 'both', comme efSideMode. Le choix survit
+  // d'une ouverture à l'autre.
+  var tmPlayMode = 'both';
+  // Même rendu que l'écran de saisie d'Easy Fill : libellés courts par
+  // diffSideLabel, « NDS + DS » avec chaque côté dans la couleur de sa rangée,
+  // boutons réordonnés NDS | DS | NDS + DS selon la roue (efReorderSwitcher).
+  function tmPlayModeRender() {
+    var sw = $id('tm-play-side-switch');
+    if (!sw) return;
+    var isFront = (wtype === 'avant');
+    $id('tm-play-sw-fo-label').textContent = diffSideLabel('fo', wtype);
+    $id('tm-play-sw-fa-label').textContent = diffSideLabel('fa', wtype);
+    $id('tm-play-sw-both-first').className  = isFront ? 'color-fo' : 'color-fa';
+    $id('tm-play-sw-both-second').className = isFront ? 'color-fa' : 'color-fo';
+    sw.appendChild($id(isFront ? 'tm-play-sw-fo' : 'tm-play-sw-fa'));   // NDS
+    sw.appendChild($id(isFront ? 'tm-play-sw-fa' : 'tm-play-sw-fo'));   // DS
+    sw.appendChild($id('tm-play-sw-both'));                              // NDS + DS
+    ['fo', 'fa', 'both'].forEach(function(m) {
+      $id('tm-play-sw-' + m).classList.toggle('active', tmPlayMode === m);
+    });
+  }
+  window.tmPlaySide = function(mode) {
+    tmPlayMode = mode;
+    tmPlayModeRender();
+  };
+  window.tmPlayVideoFromModal = function() {
+    var mode = tmPlayMode;
+    tmClosePlayModal();
+    setTimeout(function() { tmPlayAnimVideo(mode); }, 230);
+  };
 
-  // ── Modale choix du mode ────────────────────────────────────────────────────
   window.tmOpenPlayModal = function() {
-    if (tmAnimRunning) { tmStopAnimation(); return; }
-    // Libellés repris de la légende courante — via le point de lecture unique,
-    // qui garantit un repli correct si la légende n'a pas encore été rendue.
-    var leg = radarLegLabels(wtype);
-    var lFo = $id('tm-play-fo-label');
-    var lFa = $id('tm-play-fa-label');
-    var lBoth = $id('tm-play-both-label');
-    if (lFo)   lFo.textContent   = leg.fo;
-    if (lFa)   lFa.textContent   = leg.fa;
-    if (lBoth) lBoth.textContent = leg.fo + ' + ' + leg.fa;
-    // Afficher overlay + modale
+    tmPlayModeRender();
     var ov = $id('tm-play-overlay');
     var mo = $id('tm-play-modal');
     if (ov) { ov.style.display = 'block'; setTimeout(function(){ ov.style.opacity='1'; }, 10); }
@@ -20442,197 +20509,6 @@ function efStopMic() {
     if (ov) { ov.style.opacity='0'; setTimeout(function(){ ov.style.display='none'; }, 220); }
     if (mo) { mo.style.opacity='0'; mo.style.transform='translate(-50%,-50%) scale(.97)'; setTimeout(function(){ mo.style.display='none'; }, 220); }
   };
-
-  window.tmStartPlay = function(mode) {
-    tmClosePlayModal();
-    setTimeout(function() { tmPlayAnimation(mode); }, 230);
-  };
-
-  // ── tmStopAnimation ─────────────────────────────────────────────────────────
-  window.tmStopAnimation = function() {
-    if (tmAnimTimer) {
-      if (typeof tmAnimTimer === 'object' && tmAnimTimer.cancel) tmAnimTimer.cancel();
-      else clearTimeout(tmAnimTimer);
-      tmAnimTimer = null;
-    }
-    tmAnimRunning = false;
-    tmAnimStep    = 0;
-    var ico = $id('tm-play-icon');
-    var btn = $id('tm-play-btn');
-    if (ico) ico.innerHTML   = '<polygon points="2,1 11,6 2,11"/>';
-    if (btn) btn.onclick = function(){ tmOpenPlayModal(); };
-    var disp = $id('tm-anim-display');
-    if (disp) disp.style.visibility = 'hidden';
-    tmTryRenderRadar();
-  };
-
-  // ── Affichage centré sous le radar ─────────────────────────────────────────
-  function tmShowSingle(foKgfs, faKgfs, spokeIdx, subStep, perSide) {
-    var disp  = $id('tm-anim-display');
-    var title = $id('tm-anim-title');
-    var val   = $id('tm-anim-val');
-    var idx   = $id('tm-anim-idx');
-    if (!disp) return;
-
-    var spokeLabel = (lang === 'fr') ? 'Rayon' : 'Spoke';
-    var isFo = (subStep === 0);
-    var label = radarLegLabels(wtype)[isFo ? 'fo' : 'fa'];
-    var kgfV  = isFo ? foKgfs[spokeIdx] : faKgfs[spokeIdx];
-    // Même accent que le point animé et le radar : lu dans le jeton du sol,
-    // et non plus le pastel ardoise figé, qui ne tenait pas sur un sol clair.
-    // L'intitulé, atténué, l'est moins sur la famille claire, où l'alpha
-    // coûte plus de contraste.
-    var _clr  = (typeof fondClair === 'function') && fondClair();
-    var rgb   = (typeof fondJetonRgb === 'function')
-                  ? fondJetonRgb(isFo ? '--warm' : '--accent', isFo ? '232,146,124' : '126,200,227')
-                  : (isFo ? '232,146,124' : '126,200,227');
-    var color = 'rgba(' + rgb + (_clr ? ',1)' : ',.95)');
-    var colorDim = 'rgba(' + rgb + (_clr ? ',.8)' : ',.55)');
-
-    disp.style.visibility = 'visible';
-    if (title) { title.textContent = label; title.style.color = colorDim; }
-    if (val)   { val.textContent   = kgfV !== null ? kgfV + ' kg' : '—'; val.style.color = color; }
-    if (idx)   {
-      idx.textContent = spokeLabel + ' ' + (spokeIdx + 1) + ' / ' + perSide;
-      idx.style.color = 'var(--text3)';
-    }
-  }
-
-  // ── Séquence : fo puis fa pour chaque rayon ──────────────────────────────
-  var STEP_MS = 1100;
-  var FADE_MS = 280;
-
-  function tmEase(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
-
-  function tmRunStepSeq(foKgfs, faKgfs, sequence) {
-    if (!tmAnimRunning) return;
-    if (tmAnimStep >= sequence.length) { tmStopAnimation(); return; }
-
-    var item     = sequence[tmAnimStep];
-    var spokeIdx = item.spokeIdx;
-    var isFo     = (item.side === 'fo');
-    var subStep  = isFo ? 0 : 1;
-    var val      = isFo ? foKgfs[spokeIdx] : faKgfs[spokeIdx];
-    // Le point animé prend l'accent du sol, lu dans le jeton comme le radar
-    // qu'il surligne : en pastel ardoise figé, il ne suivait ni le papier
-    // ni l'alu. Son liseré blanc reste : sur sol clair il détache le point
-    // de la nappe comme il le fait du sol sombre.
-    var color    = ((typeof fondJetonRgb === 'function')
-                     ? fondJetonRgb(isFo ? '--warm' : '--accent', isFo ? '232,146,124' : '126,200,227')
-                     : (isFo ? '232,146,124' : '126,200,227')).split(',').map(Number);
-    var perSide  = foKgfs.length;
-
-    // Géométrie du point — seule la partie indépendante de la taille
-    // (angle, échelle) est calculée une fois par step. px/py dépendent de
-    // la taille du canvas et sont recalculés à chaque frame dans
-    // tmDrawFrame : voir commentaire là-bas.
-    var canvas      = $id('tm-radar');
-    var N           = foKgfs.length * 2;
-    var aStep       = (2*Math.PI)/N;
-    var allVals     = foKgfs.concat(faKgfs).filter(function(v){return v!==null;});
-    var scaleMax    = Math.ceil(Math.max.apply(null,allVals)/20)*20||20;
-    var angleOffset = isFo ? 0 : 1;
-    var a   = (spokeIdx*2 + angleOffset)*aStep - Math.PI/2;
-
-    var startTime = null;
-    var rafId     = null;
-
-    function tmDrawFrame(alpha) {
-      tmDrawRadar(foKgfs, faKgfs, null);
-      if (val === null) return;
-      // px/py recalculés APRÈS tmDrawRadar : une rotation en cours de step
-      // redimensionne le canvas (_lastPx), des coordonnées figées au début
-      // du step laisseraient le dot décalé jusqu'au step suivant.
-      var dpr  = window.devicePixelRatio || 1;
-      var size = parseFloat(canvas.style.width) || (canvas.width / dpr);
-      var cx = size/2, cy = size/2, R = size*0.38;
-      var rr = (val/scaleMax)*R;
-      var px = cx + rr*Math.cos(a);
-      var py = cy + rr*Math.sin(a);
-      var ctx = canvas.getContext('2d');
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      var glowA = 'rgba('+color[0]+','+color[1]+','+color[2]+','+(0.45*alpha)+')';
-      var grad = ctx.createRadialGradient(px,py,2,px,py,18);
-      grad.addColorStop(0, glowA);
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.beginPath(); ctx.arc(px,py,18,0,2*Math.PI);
-      ctx.fillStyle = grad; ctx.fill();
-      ctx.beginPath(); ctx.arc(px,py,7,0,2*Math.PI);
-      ctx.fillStyle = 'rgba('+color[0]+','+color[1]+','+color[2]+',1)';
-      ctx.fill();
-      ctx.beginPath(); ctx.arc(px,py,7,0,2*Math.PI);
-      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-      ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.restore();
-    }
-
-    function tmAnimLabel(alpha) {
-      var disp  = $id('tm-anim-display');
-      var inner = $id('tm-anim-inner');
-      if (disp)  disp.style.visibility = 'visible';
-      if (inner) inner.style.opacity   = alpha;
-    }
-
-    tmShowSingle(foKgfs, faKgfs, spokeIdx, subStep, perSide);
-
-    function frame(ts) {
-      if (!tmAnimRunning) return;
-      if (!startTime) startTime = ts;
-      var elapsed   = ts - startTime;
-      var progress  = Math.min(elapsed / STEP_MS, 1);
-      var fadeRatio = FADE_MS / STEP_MS;
-      var alpha;
-      if (progress < fadeRatio)          { alpha = tmEase(progress / fadeRatio); }
-      else if (progress > 1 - fadeRatio) { alpha = tmEase((1 - progress) / fadeRatio); }
-      else                               { alpha = 1; }
-      tmDrawFrame(alpha);
-      tmAnimLabel(alpha);
-      if (progress < 1) {
-        rafId = requestAnimationFrame(frame);
-      } else {
-        tmAnimStep++;
-        tmAnimTimer = setTimeout(function() {
-          tmRunStepSeq(foKgfs, faKgfs, sequence);
-        }, 80);
-      }
-    }
-
-    tmAnimTimer = { cancel: function() { if (rafId) cancelAnimationFrame(rafId); } };
-    rafId = requestAnimationFrame(frame);
-  }
-
-  // ── Bouton Play / Stop ──────────────────────────────────────────────────────
-  window.tmPlayAnimation = function(mode) {
-    if (tmAnimRunning) { tmStopAnimation(); return; }
-
-    var nb = parseInt($id('nb-rayons').value) || 0;
-    var perSide = Math.floor(nb / 2);
-    if (perSide < 1) return;
-
-    var foKgfs = tmData.fo.slice(0, perSide).map(function(v) { return toKgf(v, 'fo'); });
-    var faKgfs = tmData.fa.slice(0, perSide).map(function(v) { return toKgf(v, 'fa'); });
-    var allVals = foKgfs.concat(faKgfs).filter(function(v) { return v !== null; });
-    if (!allVals.length) return;
-
-    var sequence = [];
-    for (var i = 0; i < perSide; i++) {
-      if (mode === 'fo')      { sequence.push({spokeIdx:i, side:'fo'}); }
-      else if (mode === 'fa') { sequence.push({spokeIdx:i, side:'fa'}); }
-      else                    { sequence.push({spokeIdx:i, side:'fo'}); sequence.push({spokeIdx:i, side:'fa'}); }
-    }
-
-    tmAnimRunning = true;
-    tmAnimStep    = 0;
-
-    var ico = $id('tm-play-icon');
-    var btn = $id('tm-play-btn');
-    if (ico) ico.innerHTML   = '<rect x="2" y="1" width="3" height="10"/><rect x="7" y="1" width="3" height="10"/>';
-    if (btn) btn.onclick = function() { tmStopAnimation(); };
-
-    tmRunStepSeq(foKgfs, faKgfs, sequence);
-  };
-
 })();
 
 // ── Export vidéo — animation Évolution (snapshots) ───────────────────────────
@@ -22306,6 +22182,7 @@ function hrClearLoadedRim() {
 <div class="outlier-overlay" id="outlier-overlay" onclick="tmCloseOutlierModal()"></div>
 <div class="outlier-modal" id="outlier-modal">
   <div class="outlier-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
     <div class="outlier-title" data-i18n="tmOutlierModalTitle">Seuil de détection</div>
     <button class="ateliermgr-close" onclick="tmCloseOutlierModal()">✕</button>
   </div>
@@ -24395,6 +24272,385 @@ async function snapCompareAnim() {
   if (replayBtn) replayBtn.onclick = startPlayback;
   startPlayback();
 }
+
+// ── Vidéo de l'animation Play (bouton Play → Animation) ─────────────────────
+// Même modale, même enregistreur, même liseré et même carton de fin (logo de
+// l'atelier) que l'Évolution ci-dessus : seule la scène change. Le point
+// parcourt les rayons (STEP_MS par rayon, fondu FADE_MS, pause GAP_MS), la
+// zone sous le radar porte la valeur du rayon en cours, puis le récap
+// (moyenne et écart-type par côté) une fois le tour achevé. Palette vidéo
+// fixe, comme l'Évolution : la vidéo ne suit pas le sol de l'écran.
+async function tmPlayAnimVideo(mode) {
+  var nb = parseInt($id('nb-rayons').value) || 0;
+  var perSide = Math.floor(nb / 2);
+  if (perSide < 1) return;
+  function padArr(arr, len) { var o = arr.slice(0, len); while (o.length < len) o.push(null); return o; }
+  var foK = padArr(tmData.fo, perSide).map(function(v) { return toKgf(v, 'fo'); });
+  var faK = padArr(tmData.fa, perSide).map(function(v) { return toKgf(v, 'fa'); });
+  var allVals = foK.concat(faK).filter(function(v) { return v !== null; });
+  if (!allVals.length) return;
+  var seq = [];
+  for (var si = 0; si < perSide; si++) {
+    if (mode === 'fo')      { seq.push({ i: si, side: 'fo' }); }
+    else if (mode === 'fa') { seq.push({ i: si, side: 'fa' }); }
+    else                    { seq.push({ i: si, side: 'fo' }); seq.push({ i: si, side: 'fa' }); }
+  }
+
+  await document.fonts.ready;
+
+  var FRAME_M = 0;
+  // Cadence : 550 ms par rayon (montée et descente du point sur 140 ms,
+  // pause de 40 ms), soit un tour d'un côté en 9 s sur 32 rayons.
+  var STEP_MS = 550, FADE_MS = 140, GAP_MS = 40;
+  var STEP_T  = STEP_MS + GAP_MS;
+  var TOUR_MS = seq.length * STEP_T;          // fin du dernier rayon (pause comprise)
+  var RECAP_FADE_MS = 400;
+  var REVEAL_MS = TOUR_MS - GAP_MS;           // le dernier point est éteint : le récap monte
+  var TOTAL_MS  = REVEAL_MS + RECAP_FADE_MS;  // récap plein : état final
+  var HOLD_END_MS = 3200;
+  var CARD_READ_MS = 3000, CARD_DIM_MS = 400;
+  var CARD_AT_MS   = CARD_READ_MS + CARD_DIM_MS, CARD_IN_MS = 500;
+  var CARD_END_MS  = CARD_AT_MS + CARD_IN_MS + 2200;
+
+  var logoCv = null;
+  (function() {
+    var src = ((typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {}).logo;
+    if (!src) return;
+    var im = new Image();
+    im.onload = function() { logoCv = _snapAnimLogoCanvas(im); };
+    im.src = src;
+  })();
+
+  var canvasEl = document.getElementById('snapanim-canvas');
+  var dpr = window.devicePixelRatio || 1;
+  var VW = 0, VH = 0;
+  var SCREEN = { cv: canvasEl, ctx: canvasEl.getContext('2d'), k: dpr, vw: 0, vh: 0, m: 0 };
+  var EXPORT = null;
+  var cv = SCREEN.cv, ctx = SCREEN.ctx, k = SCREEN.k;
+  function useSurface(sf) { cv = sf.cv; ctx = sf.ctx; k = sf.k; VW = sf.vw; VH = sf.vh; FRAME_M = sf.m; }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, cv.width, cv.height);
+
+  var scaleMax = Math.ceil(Math.max.apply(null, allVals) / 20) * 20 || 20;
+  var N = perSide * 2, step = (2 * Math.PI) / N;
+  var PAL = { fo: [232,146,124], fa: [126,200,227] };
+  function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+  var ord = diffRowOrder(wtype);
+  var legLabels = radarLegLabels(wtype);
+  var spokeWord = (lang === 'fr') ? 'Rayon' : 'Spoke';
+  var avgWord   = (lang === 'fr') ? 'Moyenne' : 'Average';
+  var dateStr   = fmtDMY(Date.now());
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function ease(t) { return t < 0.5 ? 2*t*t : -1 + (4 - 2*t) * t; }
+
+  // Radar complet, sans le point : fond, anneaux, axes, numéros, les deux
+  // nappes, la mention et la date. Même dessin que drawFrame de l'Évolution.
+  function drawRadar() {
+    var w = VW, cx = w/2, cy = w/2, R = w*0.38;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#0d1017'; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.setTransform(k, 0, 0, k, FRAME_M * k, FRAME_M * k);
+    for (var r = 1; r <= 5; r++) {
+      var rr = (r/5)*R;
+      ctx.beginPath();
+      for (var i = 0; i < N; i++) { var a = i*step - Math.PI/2; i===0 ? ctx.moveTo(cx+rr*Math.cos(a), cy+rr*Math.sin(a)) : ctx.lineTo(cx+rr*Math.cos(a), cy+rr*Math.sin(a)); }
+      ctx.closePath(); ctx.strokeStyle = 'rgba(80,100,130,0.33)'; ctx.lineWidth = 1; ctx.stroke();
+      if (r===2||r===4||r===5) { ctx.fillStyle='rgba(100,120,150,0.8)'; ctx.font=Math.round(w*0.026)+'px DM Mono,monospace'; ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillText(Math.round(scaleMax*r/5), cx, cy-rr-2); }
+    }
+    ctx.lineWidth = 1;
+    for (var pass = 0; pass < 2; pass++) {
+      ctx.beginPath();
+      for (var i3 = pass; i3 < N; i3 += 2) { var a3 = i3*step - Math.PI/2; ctx.moveTo(cx, cy); ctx.lineTo(cx+R*Math.cos(a3), cy+R*Math.sin(a3)); }
+      ctx.strokeStyle = pass === 0 ? 'rgba(232,146,124,0.25)' : 'rgba(126,200,227,0.25)';
+      ctx.stroke();
+    }
+    for (var i4 = 0; i4 < N; i4++) {
+      if (perSide > 16 && i4%2 !== 0) continue;
+      var a4 = i4*step - Math.PI/2, isFo4 = i4%2===0;
+      var lr = R+Math.max(10,w*0.032);
+      ctx.fillStyle = isFo4 ? 'rgba(232,146,124,0.8)' : 'rgba(126,200,227,0.7)';
+      ctx.font = Math.round(w*0.023)+'px DM Mono,monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(Math.floor(i4/2)+1, cx+lr*Math.cos(a4), cy+lr*Math.sin(a4));
+    }
+    function poly(arr, aOff, c) {
+      var pts = arr.map(function(v, i) { var a = (i*2+aOff)*step - Math.PI/2, rp = v !== null ? (v/scaleMax)*R : 0; return [cx+rp*Math.cos(a), cy+rp*Math.sin(a), v]; });
+      ctx.beginPath(); pts.forEach(function(p, i) { i===0 ? ctx.moveTo(p[0],p[1]) : ctx.lineTo(p[0],p[1]); }); ctx.closePath();
+      ctx.fillStyle = rgba(c, 0.07); ctx.fill(); ctx.strokeStyle = rgba(c, 0.9); ctx.lineWidth = 1.8; ctx.stroke();
+      pts.forEach(function(p) { if (p[2] === null) return; ctx.beginPath(); ctx.arc(p[0], p[1], 3.5, 0, 2*Math.PI); ctx.fillStyle = rgba(c, 0.9); ctx.fill(); });
+    }
+    poly(faK, 1, PAL.fa);
+    poly(foK, 0, PAL.fo);
+    ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 2*Math.PI); ctx.fillStyle = 'rgba(150,170,190,0.35)'; ctx.fill();
+    var PAD = Math.round(w*0.025);
+    ctx.font = '500 ' + Math.round(w*0.022) + 'px DM Mono,monospace'; ctx.textBaseline = 'top';
+    ctx.globalAlpha = 1; ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.textAlign = 'left'; ctx.fillText('Powered by spokeit.fr', PAD, PAD);
+    ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(126,200,227,1)'; ctx.fillText(dateStr, w-PAD, PAD);
+  }
+
+  // Le point animé : halo dégradé, disque plein, liseré blanc, en unités de
+  // la surface (halo 0,05 w, disque 0,02 w).
+  function drawDot(item, alpha) {
+    var val = (item.side === 'fo' ? foK : faK)[item.i];
+    if (val === null || alpha <= 0) return;
+    var w = VW, cx = w/2, cy = w/2, R = w*0.38;
+    var a  = (item.i*2 + (item.side === 'fo' ? 0 : 1))*step - Math.PI/2;
+    var rr = (val/scaleMax)*R, px = cx+rr*Math.cos(a), py = cy+rr*Math.sin(a);
+    var c  = PAL[item.side], glowR = w*0.05, dotR = w*0.02;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    var grad = ctx.createRadialGradient(px, py, 2, px, py, glowR);
+    grad.addColorStop(0, rgba(c, 0.45*alpha)); grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath(); ctx.arc(px, py, glowR, 0, 2*Math.PI); ctx.fillStyle = grad; ctx.fill();
+    ctx.beginPath(); ctx.arc(px, py, dotR, 0, 2*Math.PI); ctx.fillStyle = rgba(c, 1); ctx.fill();
+    ctx.beginPath(); ctx.arc(px, py, dotR, 0, 2*Math.PI); ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.restore();
+  }
+
+  // Zone sous le radar pendant le tour : côté, valeur, numéro du rayon.
+  function drawHud(item, alpha) {
+    if (alpha <= 0) return;
+    var w = VW, h = VH, radarH = w, zoneH = h - radarH;
+    var val = (item.side === 'fo' ? foK : faK)[item.i];
+    var c = PAL[item.side];
+    // Trois lignes posées par leur haut, interlignes en multiples de la
+    // taille de police : la valeur (0,08 w) garde de l'air au-dessus et en
+    // dessous, ses jambages ne touchent plus le numéro du rayon.
+    var fsL = Math.round(w*0.03), fsV = Math.round(w*0.08), fsI = Math.round(w*0.03);
+    var yV = fsL*1.6, yI = yV + fsV*1.35;
+    var totalH = yI + fsI, y = radarH + (zoneH - totalH)/2;
+    ctx.save();
+    ctx.globalAlpha = alpha; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.font = '600 ' + fsL + 'px DM Mono,monospace'; ctx.fillStyle = rgba(c, 0.75);
+    ctx.fillText(legLabels[item.side].toUpperCase(), w/2, y);
+    ctx.font = '500 ' + fsV + 'px DM Mono,monospace'; ctx.fillStyle = rgba(c, 1);
+    ctx.fillText(val !== null ? Math.round(val) + ' kgf' : '—', w/2, y + yV);
+    ctx.font = fsI + 'px DM Mono,monospace'; ctx.fillStyle = 'rgba(143,160,176,1)';
+    ctx.fillText(spokeWord + ' ' + (item.i+1) + ' / ' + perSide, w/2, y + yI);
+    ctx.restore();
+  }
+
+  // Récap de fin : moyenne et écart-type par côté, NDS à gauche, DS à droite,
+  // chacun dans la couleur de sa rangée (celle du radar).
+  var stat = { fo: { avg: _snapEvoAvg(foK), std: _snapEvoStd(foK) }, fa: { avg: _snapEvoAvg(faK), std: _snapEvoStd(faK) } };
+  function statLines(s) {
+    if (s.avg === null) return ['—', '—'];
+    var cvp = s.avg ? (s.std / s.avg * 100) : 0;
+    return [avgWord + ' ' + s.avg.toFixed(1) + ' kgf', 'σ ± ' + s.std.toFixed(1) + ' kgf  (' + cvp.toFixed(1) + ' %)'];
+  }
+  function drawRecap(alpha) {
+    if (alpha <= 0) return;
+    var w = VW, h = VH, radarH = w, zoneH = h - radarH;
+    var fs = Math.round(w*0.036), fsLbl = Math.round(w*0.028), lineH = fs*1.5;
+    var totalH = fsLbl + lineH*2, startY = radarH + (zoneH - totalH)/2 + fsLbl;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#0d1017'; ctx.fillRect(0, radarH, w, zoneH);
+    ctx.strokeStyle = 'rgba(80,100,130,0.4)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(w*0.1, radarH); ctx.lineTo(w*0.9, radarH); ctx.stroke();
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+    function side(cx, label, row) {
+      var ln = statLines(stat[row]);
+      ctx.font = '600 ' + fsLbl + 'px DM Mono,monospace'; ctx.fillStyle = rgba(PAL[row], 1);
+      ctx.fillText(label, cx, startY);
+      ctx.font = '500 ' + fs + 'px DM Sans,sans-serif'; ctx.fillStyle = 'rgba(220,228,237,0.92)';
+      ctx.fillText(ln[0], cx, startY + lineH);
+      ctx.fillText(ln[1], cx, startY + lineH*2);
+    }
+    side(w*0.27, 'NDS', ord.nds);
+    side(w*0.73, 'DS',  ord.ds);
+    ctx.globalAlpha = 1;
+  }
+
+  function drawBorder() {
+    var W = cv.width, H = cv.height;
+    var lw = Math.max(2, Math.round(k)), m = Math.round(FRAME_M * k / 2), r = Math.round(FRAME_M * k), o = lw / 2;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = lw;
+    roundRect(ctx, m + o, m + o, W - 2*(m + o), H - 2*(m + o), r);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Carton de fin : identique à celui de l'Évolution (fond refermé sur le
+  // récap, mention préservée, logo centré, agrandissement plafonné).
+  function drawEndCard(dim, la) {
+    if (!logoCv || dim <= 0) return;
+    var w = VW, h = VH, PAD = Math.round(w*0.025), fsB = Math.round(w*0.022);
+    ctx.save();
+    ctx.font = '500 ' + fsB + 'px DM Mono,monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    var m = ctx.measureText('Powered by spokeit.fr');
+    var bx = m.actualBoundingBoxRight != null ? m.actualBoundingBoxRight : m.width;
+    var by = m.actualBoundingBoxDescent != null ? m.actualBoundingBoxDescent : fsB * 1.35;
+    ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.rect(PAD - 2, PAD - 2, Math.ceil(bx) + 4, Math.ceil(by) + 4); ctx.clip('evenodd');
+    ctx.globalAlpha = dim; ctx.fillStyle = '#0d1017'; ctx.fillRect(0, 0, w, h);
+    if (la > 0) {
+      var s = Math.min(w * 0.62 / logoCv.width, h * 0.26 / logoCv.height, 2 / k);
+      var lw = logoCv.width * s, lh = logoCv.height * s;
+      ctx.globalAlpha = la; ctx.imageSmoothingEnabled = true;
+      try { ctx.imageSmoothingQuality = 'high'; } catch(e) {}
+      ctx.drawImage(logoCv, (w - lw) / 2, (h - lh) / 2, lw, lh);
+    }
+    ctx.restore();
+  }
+
+  // Modale, puis mise en page 4:5 : même calcul que l'Évolution.
+  document.getElementById('snapanim-overlay').classList.add('show');
+  var modal = document.getElementById('snapanim-modal');
+  modal.classList.add('show');
+  await new Promise(function(r) { requestAnimationFrame(r); });
+  var isLandscape = window.innerWidth > window.innerHeight;
+  var headerH = 60;
+  canvasEl.style.width  = '100%';
+  canvasEl.style.height = '0px';
+  var maxW = canvasEl.offsetWidth || 340;
+  var maxH = Math.round((window.innerHeight - headerH) * (isLandscape ? 0.88 : 0.78));
+  var OW = Math.min(maxW, Math.floor(maxH / 1.25));
+  var OH = OW * 1.25;
+  FRAME_M = Math.max(6, Math.round(OW * 0.035));
+  var SIZE2 = OW - 2 * FRAME_M;
+  var RECAP_H = OH - OW;
+  canvasEl.width  = Math.floor(OW * dpr);
+  canvasEl.height = Math.floor(OH * dpr);
+  canvasEl.style.width  = (canvasEl.width  / dpr) + 'px';
+  canvasEl.style.height = (canvasEl.height / dpr) + 'px';
+  canvasEl.style.display = 'block';
+  var mlPx = Math.floor((maxW - canvasEl.width / dpr) / 2 * dpr) / dpr;
+  canvasEl.style.margin  = '0 0 0 ' + Math.max(0, mlPx) + 'px';
+  SCREEN.vw = SIZE2; SCREEN.vh = SIZE2 + RECAP_H; SCREEN.m = FRAME_M;
+  useSurface(SCREEN);
+  var EXP = _snapExportSize();
+  if (window.tmRecSupported && tmRecSupported()) {
+    var EOW = 360, EM = Math.max(6, Math.round(EOW * 0.035));
+    var expCv = _snapExportCanvas(EXP.w, EXP.h);
+    EXPORT = { cv: expCv, ctx: expCv.getContext('2d'), k: EXP.w / EOW, vw: EOW - 2 * EM, vh: EOW * 1.25 - 2 * EM, m: EM };
+  }
+
+  var EXPORT_MIN_GAP = 1000 / 30 - 4;
+  var exportOn = false, lastExportTs = -Infinity, expStat = null;
+  function paint(scene, withExport) {
+    useSurface(SCREEN);
+    scene();
+    if (!withExport || !exportOn || !EXPORT) return;
+    var now = performance.now();
+    if (now - lastExportTs < EXPORT_MIN_GAP) return;
+    lastExportTs = now;
+    useSurface(EXPORT);
+    scene();
+    useSurface(SCREEN);
+    tmRecCanvasFrame();
+    if (expStat.last) { var gap = now - expStat.last; if (gap > expStat.max) expStat.max = gap; if (gap > 40) expStat.slow++; }
+    expStat.last = now; expStat.n++;
+  }
+
+  // Étape courante à l'instant el : rayon, et opacité du point (montée sur
+  // FADE_MS, plateau, descente sur FADE_MS, puis pause de GAP_MS à 0).
+  function stepAt(el) {
+    var s = Math.floor(el / STEP_T);
+    if (s < 0 || s >= seq.length) return null;
+    var p = (el - s * STEP_T) / STEP_MS;
+    if (p > 1) return { item: seq[s], alpha: 0 };
+    var fr = FADE_MS / STEP_MS;
+    var alpha = p < fr ? ease(p / fr) : p > 1 - fr ? ease((1 - p) / fr) : 1;
+    return { item: seq[s], alpha: alpha };
+  }
+  var sceneEl = 0, sceneRecapT = 0, sceneDim = 0, sceneLa = 0, sceneLogo = false;
+  function scenePlay() {
+    drawRadar();
+    var st = stepAt(sceneEl);
+    if (st) { drawDot(st.item, st.alpha); drawHud(st.item, st.alpha); }
+    if (sceneRecapT > 0) drawRecap(sceneRecapT);
+    drawBorder();
+  }
+  function sceneFinal() {
+    drawRadar();
+    drawRecap(1);
+    if (sceneLogo) drawEndCard(sceneDim, sceneLa);
+    drawBorder();
+  }
+  function backToRecap(gen) {
+    var t1 = performance.now();
+    (function fadeLoop() {
+      if (gen !== _snapAnimGen) return;
+      var mo = document.getElementById('snapanim-modal');
+      if (!mo || !mo.classList.contains('show')) return;
+      var u = clamp01((performance.now() - t1) / RECAP_FADE_MS);
+      sceneLogo = true; sceneDim = 1 - u; sceneLa = 1 - u;
+      paint(sceneFinal, false);
+      _snapAnimRAF = u < 1 ? requestAnimationFrame(fadeLoop) : null;
+    })();
+  }
+  function play(onDone) {
+    if (_snapAnimRAF) { cancelAnimationFrame(_snapAnimRAF); _snapAnimRAF = null; }
+    var startTime = null;
+    function loop(ts) {
+      if (!startTime) startTime = ts;
+      var elapsed = ts - startTime;
+      sceneEl = elapsed;
+      sceneRecapT = clamp01((elapsed - REVEAL_MS) / RECAP_FADE_MS);
+      paint(scenePlay, true);
+      if (elapsed < TOTAL_MS) { _snapAnimRAF = requestAnimationFrame(loop); }
+      else { _snapAnimRAF = null; if (typeof onDone === 'function') onDone(); }
+    }
+    _snapAnimRAF = requestAnimationFrame(loop);
+  }
+
+  var saveBtn = document.getElementById('snapanim-save');
+  var isMobileUA = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (saveBtn) {
+    saveBtn.title   = isMobileUA ? t('tmRecShare') : t('tmRecSave');
+    saveBtn.onclick = function() { this.blur(); tmRecShareOrSave(); };
+  }
+  var replayBtn = document.getElementById('snapanim-replay');
+  function btnsReady() { if (replayBtn) { replayBtn.disabled = false; replayBtn.classList.add('rec-ready'); } }
+  function startPlayback() {
+    var gen = ++_snapAnimGen;
+    if (saveBtn) { saveBtn.style.display = ''; saveBtn.disabled = true; saveBtn.classList.remove('rec-ready'); }
+    if (replayBtn) { replayBtn.disabled = true; replayBtn.classList.remove('rec-ready'); }
+    exportOn = !!EXPORT;
+    lastExportTs = -Infinity;
+    expStat = { n: 0, last: 0, max: 0, slow: 0 };
+    sceneEl = 0; sceneRecapT = 0;
+    paint(scenePlay, true);
+    var capturing = exportOn && tmRecCanvasStart(EXPORT.cv, 'tension-animation', { bitrate: EXP.bitrate });
+    exportOn = !!capturing;
+    if (!capturing && saveBtn) saveBtn.style.display = 'none';
+    play(function() {
+      if (!capturing) { btnsReady(); return; }
+      var t0 = performance.now();
+      var withLogo = !!logoCv;
+      var endMs = withLogo ? CARD_END_MS : HOLD_END_MS;
+      (function holdLoop() {
+        if (gen !== _snapAnimGen) return;
+        var mo = document.getElementById('snapanim-modal');
+        if (!mo || !mo.classList.contains('show')) return;
+        var el = performance.now() - t0;
+        sceneLogo = withLogo;
+        sceneDim  = clamp01((el - CARD_READ_MS) / CARD_DIM_MS);
+        sceneLa   = clamp01((el - CARD_AT_MS) / CARD_IN_MS);
+        paint(sceneFinal, true);
+        if (el < endMs) { _snapAnimRAF = requestAnimationFrame(holdLoop); }
+        else {
+          exportOn = false;
+          tmRecCanvasFinish(function(ok) {
+            try {
+              console.info('[Spokeit] Export Animation : ' + EXP.w + ' × ' + EXP.h +
+                (EXP.modest ? ' (repli appareil modeste)' : '') + ', ' + capturing +
+                ', ' + Math.round(EXP.bitrate / 1e5) / 10 + ' Mb/s visés, ' +
+                expStat.n + ' images, ' + expStat.slow + ' écart(s) > 40 ms, max ' +
+                Math.round(expStat.max) + ' ms' + (ok ? '' : ' (échec : aucune vidéo produite)'));
+            } catch (e) {}
+            if (saveBtn) { if (ok) { saveBtn.disabled = false; saveBtn.classList.add('rec-ready'); } else saveBtn.style.display = 'none'; }
+            btnsReady();
+            if (withLogo) backToRecap(gen);
+          });
+        }
+      })();
+    });
+  }
+  if (replayBtn) replayBtn.onclick = startPlayback;
+  startPlayback();
+}
 </script>
 <!-- ── Modale Évolution Tension ── -->
 <div class="snap-overlay" id="snapcompare-overlay" onclick="snapCompareClose()"></div>
@@ -24429,10 +24685,41 @@ async function snapCompareAnim() {
   </button>
 </div>
 
+<!-- ── Modale Play : côté à animer, puis Animation (vidéo) ──
+     Hors du module tension à dessein : le délégué markModified écoute tout
+     <input> de #tension-module, et le curseur y passait pour une saisie
+     (désaffectation de la roue, purge des relevés). Hors de la card aussi :
+     elle y disparaissait avec elle. -->
+<div id="tm-play-overlay" onclick="tmClosePlayModal()" style="position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:9990;display:none;opacity:0;transition:opacity .2s"></div>
+<div id="tm-play-modal" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.97);z-index:9991;background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:1.4rem 1.4rem 1.1rem;box-shadow:var(--sh-modal);width:88%;max-width:300px;display:none;flex-direction:column;gap:.75rem;opacity:0;transition:opacity .2s,transform .2s">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:.55rem;min-width:0">
+      <svg width="14" height="14" viewBox="0 0 12 12" fill="currentColor" style="color:var(--accent);opacity:.85;flex-shrink:0"><polygon points="2,1 11,6 2,11"/></svg>
+      <div style="font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)">Animation</div>
+    </div>
+    <button onclick="tmClosePlayModal()" class="ateliermgr-close">✕</button>
+  </div>
+  <!-- Sélecteur de nappe, le même qu'Easy Fill (classes, ordre NDS | DS |
+       NDS + DS, couleurs de rangée, bouton bicolore) : tmPlayModeRender le
+       renseigne et le réordonne selon la roue comme efReorderSwitcher. -->
+  <div class="ef-side-switch" id="tm-play-side-switch">
+    <button class="ef-sw-btn fo" id="tm-play-sw-fo" onclick="tmPlaySide('fo')"><span id="tm-play-sw-fo-label">—</span></button>
+    <button class="ef-sw-btn fa" id="tm-play-sw-fa" onclick="tmPlaySide('fa')"><span id="tm-play-sw-fa-label">—</span></button>
+    <button class="ef-sw-btn both" id="tm-play-sw-both" onclick="tmPlaySide('both')">
+      <span id="tm-play-sw-both-first" class="color-fo">NDS</span><span class="sep-part"> + </span><span id="tm-play-sw-both-second" class="color-fa">DS</span>
+    </button>
+  </div>
+  <button id="tm-play-video" class="pdfopt-generate" onclick="tmPlayVideoFromModal()" style="display:flex;align-items:center;justify-content:center;gap:.45rem">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+    <span data-i18n="tmPlayVideo">Animation</span>
+  </button>
+</div>
+
 <!-- ── Modale Animation Évolution ── -->
 <div class="snap-overlay" id="snapanim-overlay" onclick="snapAnimClose()"></div>
 <div class="snap-modal" id="snapanim-modal" style="max-width:420px;max-height:92vh;overflow-y:auto">
   <div class="snap-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
     <div class="snap-title">Animation</div>
     <div style="display:flex;align-items:center;gap:.4rem">
       <button id="snapanim-save" class="snap-close" title="Partager la vidéo" style="display:none">
@@ -24476,7 +24763,8 @@ async function snapCompareAnim() {
 <!-- ── Modale choix fond JPEG évolution ── -->
 <div class="screenshot-overlay" id="snapcmp-bg-overlay" onclick="snapCmpBgClose()"></div>
 <div class="screenshot-modal" id="snapcmp-bg-modal">
-  <div style="display:flex;align-items:center;justify-content:space-between">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
     <div style="font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)" data-i18n="screenshotTitle">Screenshot</div>
     <button onclick="snapCmpBgClose()" style="background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--text3);font-size:.8rem;cursor:pointer;padding:.25rem .5rem;line-height:1;transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s">✕</button>
   </div>
@@ -24550,6 +24838,7 @@ document.addEventListener('keydown', function(e) {
 <div class="hooke-overlay" id="hooke-overlay" onclick="closeHookeModal()"></div>
 <div class="hooke-modal" id="hooke-modal">
   <div class="hooke-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
     <div class="hooke-title" id="hooke-modal-title">Loi de Hooke (rayons aciers)</div>
     <button class="hooke-close" onclick="closeHookeModal()">&#x2715;</button>
   </div>
