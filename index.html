@@ -739,7 +739,10 @@ header        { text-align:center; padding:.5rem 1rem 1.25rem }
    flash et le fondu hérités de l'ancien titre ont tous été retirés. */
 .brand        { margin:0; color:var(--text3); display:flex; justify-content:center; line-height:0 }
 .brand-svg    { width:min(252px, 66vw); height:auto; display:block }
-.brand-tag    { font-family:'DM Mono',monospace; font-size:50px; letter-spacing:18px; fill:currentColor }
+/* Graisse déclarée : sans elle la signature hérite du 700 du h1, que la
+   famille embarquée (300/400/500) ne couvre pas, et le moteur épaissit la
+   500 lui-même. Chasse fixe : l'avance est la même, l'en-tête ne bouge pas. */
+.brand-tag    { font-family:'DM Mono',monospace; font-weight:500; font-size:50px; letter-spacing:18px; fill:currentColor }
 /* Sous le logo : l'icône Instagram seule, centrée. Le logo dit déjà
    « spokeit.fr », le répéter faisait doublon. */
 .sub          { display:flex; justify-content:center; margin-top:calc(min(252px, 66vw) * -.05) }
