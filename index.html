@@ -24276,10 +24276,11 @@ async function snapCompareAnim() {
 // ── Vidéo de l'animation Play (bouton Play → Animation) ─────────────────────
 // Même modale, même enregistreur, même liseré et même carton de fin (logo de
 // l'atelier) que l'Évolution ci-dessus : seule la scène change. Le point
-// parcourt les rayons (STEP_MS par rayon, fondu FADE_MS, pause GAP_MS), la
-// zone sous le radar porte la valeur du rayon en cours, puis le récap
-// (moyenne et écart-type par côté) une fois le tour achevé. Palette vidéo
-// fixe, comme l'Évolution : la vidéo ne suit pas le sol de l'écran.
+// parcourt les rayons relevés (STEP_MS par rayon, fondu FADE_MS, pause
+// GAP_MS), les deux nappes ensemble en NDS + DS quand elles ont les mêmes
+// rayons relevés ; la zone sous le radar porte la valeur du rayon en cours,
+// puis le récap (moyenne et écart-type par côté) une fois le tour achevé.
+// Palette vidéo fixe, comme l'Évolution : la vidéo ne suit pas le sol.
 async function tmPlayAnimVideo(mode) {
   var nb = parseInt($id('nb-rayons').value) || 0;
   var perSide = Math.floor(nb / 2);
@@ -24289,19 +24290,27 @@ async function tmPlayAnimVideo(mode) {
   var faK = padArr(tmData.fa, perSide).map(function(v) { return toKgf(v, 'fa'); });
   var allVals = foK.concat(faK).filter(function(v) { return v !== null; });
   if (!allVals.length) return;
+  // Un rayon sans relevé n'entre pas dans la séquence : on passe au suivant
+  // de la nappe. NDS + DS : les deux rayons de même numéro s'allument
+  // ensemble (side 'both') si les deux nappes ont exactement les mêmes rayons
+  // relevés ; sinon alternance fo puis fa, rayon relevé par rayon relevé.
+  var parallel = (mode === 'both') && foK.every(function(v, i) { return (v === null) === (faK[i] === null); });
   var seq = [];
   for (var si = 0; si < perSide; si++) {
-    if (mode === 'fo')      { seq.push({ i: si, side: 'fo' }); }
-    else if (mode === 'fa') { seq.push({ i: si, side: 'fa' }); }
-    else                    { seq.push({ i: si, side: 'fo' }); seq.push({ i: si, side: 'fa' }); }
+    var hasFo = foK[si] !== null, hasFa = faK[si] !== null;
+    if (mode === 'fo')      { if (hasFo) seq.push({ i: si, side: 'fo' }); }
+    else if (mode === 'fa') { if (hasFa) seq.push({ i: si, side: 'fa' }); }
+    else if (parallel)      { if (hasFo) seq.push({ i: si, side: 'both' }); }
+    else { if (hasFo) seq.push({ i: si, side: 'fo' }); if (hasFa) seq.push({ i: si, side: 'fa' }); }
   }
+  if (!seq.length) return;
 
   await document.fonts.ready;
 
   var FRAME_M = 0;
-  // Cadence : 550 ms par rayon (montée et descente du point sur 140 ms,
-  // pause de 40 ms), soit un tour d'un côté en 9 s sur 32 rayons.
-  var STEP_MS = 550, FADE_MS = 140, GAP_MS = 40;
+  // Cadence : 815 ms par rayon (montée et descente du point sur 205 ms,
+  // pause de 60 ms), soit un tour d'un côté en 14 s sur 32 rayons.
+  var STEP_MS = 815, FADE_MS = 205, GAP_MS = 60;
   var STEP_T  = STEP_MS + GAP_MS;
   var TOUR_MS = seq.length * STEP_T;          // fin du dernier rayon (pause comprise)
   var RECAP_FADE_MS = 400;
@@ -24391,8 +24400,13 @@ async function tmPlayAnimVideo(mode) {
   // Le point animé : halo dégradé, disque plein, liseré blanc, en unités de
   // la surface (halo 0,05 w, disque 0,02 w).
   function drawDot(item, alpha) {
-    var val = (item.side === 'fo' ? foK : faK)[item.i];
-    if (val === null || alpha <= 0) return;
+    if (item.side === 'both') {
+      drawDot({ i: item.i, side: 'fo' }, alpha);
+      drawDot({ i: item.i, side: 'fa' }, alpha);
+      return;
+    }
+    if (alpha <= 0) return;
+    var val = (item.side === 'fo' ? foK : faK)[item.i];   // jamais null : cf. seq
     var w = VW, cx = w/2, cy = w/2, R = w*0.38;
     var a  = (item.i*2 + (item.side === 'fo' ? 0 : 1))*step - Math.PI/2;
     var rr = (val/scaleMax)*R, px = cx+rr*Math.cos(a), py = cy+rr*Math.sin(a);
@@ -24407,12 +24421,14 @@ async function tmPlayAnimVideo(mode) {
     ctx.restore();
   }
 
-  // Zone sous le radar pendant le tour : côté, valeur, numéro du rayon.
+  // Zone sous le radar pendant le tour : côté, valeur, numéro du rayon. En
+  // parallèle, une colonne par côté, NDS à gauche et DS à droite comme
+  // partout dans l'app (la couleur suit la rangée, donc la roue), et un seul
+  // numéro de rayon centré sous les deux. Les libellés et « Rayon n / N »
+  // sont peints à pleine opacité tant que le tour dure ; seules les valeurs
+  // suivent le fondu du point (alpha), et le numéro change d'un coup.
   function drawHud(item, alpha) {
-    if (alpha <= 0) return;
     var w = VW, h = VH, radarH = w, zoneH = h - radarH;
-    var val = (item.side === 'fo' ? foK : faK)[item.i];
-    var c = PAL[item.side];
     // Trois lignes posées par leur haut, interlignes en multiples de la
     // taille de police : la valeur (0,08 w) garde de l'air au-dessus et en
     // dessous, ses jambages ne touchent plus le numéro du rayon.
@@ -24420,11 +24436,20 @@ async function tmPlayAnimVideo(mode) {
     var yV = fsL*1.6, yI = yV + fsV*1.35;
     var totalH = yI + fsI, y = radarH + (zoneH - totalH)/2;
     ctx.save();
-    ctx.globalAlpha = alpha; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    ctx.font = '600 ' + fsL + 'px DM Mono,monospace'; ctx.fillStyle = rgba(c, 0.75);
-    ctx.fillText(legLabels[item.side].toUpperCase(), w/2, y);
-    ctx.font = '500 ' + fsV + 'px DM Mono,monospace'; ctx.fillStyle = rgba(c, 1);
-    ctx.fillText(val !== null ? Math.round(val) + ' kgf' : '—', w/2, y + yV);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    function column(cx, row) {
+      var val = (row === 'fo' ? foK : faK)[item.i], c = PAL[row];
+      ctx.globalAlpha = 1;
+      ctx.font = '600 ' + fsL + 'px DM Mono,monospace'; ctx.fillStyle = rgba(c, 0.75);
+      ctx.fillText(legLabels[row].toUpperCase(), cx, y);
+      if (alpha <= 0) return;
+      ctx.globalAlpha = alpha;
+      ctx.font = '500 ' + fsV + 'px DM Mono,monospace'; ctx.fillStyle = rgba(c, 1);
+      ctx.fillText(Math.round(val) + ' kgf', cx, y + yV);
+    }
+    if (item.side === 'both') { column(w*0.27, ord.nds); column(w*0.73, ord.ds); }
+    else column(w/2, item.side);
+    ctx.globalAlpha = 1;
     ctx.font = fsI + 'px DM Mono,monospace'; ctx.fillStyle = 'rgba(143,160,176,1)';
     ctx.fillText(spokeWord + ' ' + (item.i+1) + ' / ' + perSide, w/2, y + yI);
     ctx.restore();
@@ -24559,6 +24584,7 @@ async function tmPlayAnimVideo(mode) {
     drawRadar();
     var st = stepAt(sceneEl);
     if (st) { drawDot(st.item, st.alpha); drawHud(st.item, st.alpha); }
+    else drawHud(seq[seq.length - 1], 0);   // après le dernier rayon : libellés jusqu'au récap
     if (sceneRecapT > 0) drawRecap(sceneRecapT);
     drawBorder();
   }
