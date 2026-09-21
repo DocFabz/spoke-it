@@ -24430,9 +24430,9 @@ async function tmPlayAnimVideo(mode) {
   function drawHud(item, alpha) {
     var w = VW, h = VH, radarH = w, zoneH = h - radarH;
     // Trois lignes posées par leur haut, interlignes en multiples de la
-    // taille de police : la valeur (0,08 w) garde de l'air au-dessus et en
-    // dessous, ses jambages ne touchent plus le numéro du rayon.
-    var fsL = Math.round(w*0.03), fsV = Math.round(w*0.08), fsI = Math.round(w*0.03);
+    // taille de police : la valeur (0,068 w) garde de l'air au-dessus et en
+    // dessous, ses jambages ne touchent pas le numéro du rayon.
+    var fsL = Math.round(w*0.03), fsV = Math.round(w*0.068), fsI = Math.round(w*0.03);
     var yV = fsL*1.6, yI = yV + fsV*1.35;
     var totalH = yI + fsI, y = radarH + (zoneH - totalH)/2;
     ctx.save();
