@@ -1119,15 +1119,14 @@ html[data-fond="alu"] .ateliermgr-logo-wrap.has-logo:hover, html[data-fond="alu"
 /* Les deux chooseurs à boutons empilés (Rider, et « Données » ouvert par la
    disquette) partagent .ridermgr-chooser et ces règles de bouton. Le bouton
    « Affecter roues » de la modale Rider les reprend : icône + libellé. */
-#riderchoose-modal .ct-save-btn, #datapicker-modal .ct-save-btn, #reglages-modal .ct-save-btn, #fondpicker-modal .ct-save-btn, #rideredit-modal .rider-assign-btn { display:flex; align-items:center; justify-content:center; gap:.5rem }
-/* Réglages et chooser de fond : alignement à gauche, pas centré. Les lignes
-   qui portent une valeur à droite (.reglages-val, la coche du chooser) ont une
-   marge automatique qui repousse déjà leur icône contre le bord gauche ; celles
-   qui n'en portent pas — Mode d'emploi — restaient centrées et cassaient la
-   colonne d'icônes. En posant flex-start, les deux cas se rejoignent : l'icône
-   au même fer à gauche pour toutes les lignes, la valeur toujours à droite. */
-#reglages-modal .ct-save-btn,
-#fondpicker-modal .ct-save-btn { justify-content:flex-start }
+#riderchoose-modal .ct-save-btn, #datapicker-modal .ct-save-btn, #reglages-modal .ct-save-btn, #rideredit-modal .rider-assign-btn { display:flex; align-items:center; justify-content:center; gap:.5rem }
+/* Réglages : alignement à gauche, pas centré. Les lignes qui portent une
+   valeur à droite (.reglages-val) ont une marge automatique qui repousse déjà
+   leur icône contre le bord gauche ; celles qui n'en portent pas — Mode
+   d'emploi — restaient centrées et cassaient la colonne d'icônes. En posant
+   flex-start, les deux cas se rejoignent : l'icône au même fer à gauche pour
+   toutes les lignes, la valeur toujours à droite. */
+#reglages-modal .ct-save-btn { justify-content:flex-start }
 #riderchoose-modal .ct-save-btn svg, #datapicker-modal .ct-save-btn svg, #reglages-modal .ct-save-btn svg, #rideredit-modal .rider-assign-btn svg { flex-shrink:0; opacity:.85 }
 .rider-wheels-list { max-height:30vh; max-height:30dvh }
 .rider-wheels-list .wheel-load-empty { padding:.3rem }
@@ -1435,27 +1434,38 @@ select option             { background:var(--inp) }
 .pdfopt-generate:active { transform:scale(.98) }
 .screenshot-overlay { position:fixed; inset:0; background:var(--scrim-2); backdrop-filter:blur(4px); z-index:9992; opacity:0; transition:opacity .22s; display:none }
 .screenshot-overlay.show { display:block; opacity:1 }
-.screenshot-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9993; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.4rem 1.4rem 1.1rem; box-shadow:var(--sh-modal); width:88%; max-width:300px; max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; display:none; flex-direction:column; gap:.9rem; opacity:0; transition:opacity .2s, transform .2s }
+.screenshot-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9993; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.4rem 1.4rem 1.1rem; box-shadow:var(--sh-modal); width:88%; max-width:300px; max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; display:none; flex-direction:column; gap:1.4rem; opacity:0; transition:opacity .2s, transform .2s }
 .screenshot-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
-/* Choix du sol d'export, dans les deux modales JPEG : le curseur du contraste
-   (.contrast-range, piste et pouce compris), avec les pastilles du chooser de
-   fond en guise de crans, et le nom du sol choisi en tête de ligne. Il a
-   remplacé la pilule Dark / Light, puis une liste de cinq boutons, trop haute
-   sur un téléphone, puis un <select> natif, trop terne.
+/* Curseur de sol, dans les deux modales JPEG et dans la modale Apparence : le
+   curseur du contraste (.contrast-range, piste et pouce compris), avec les
+   pastilles .fond-swatch en guise de crans, et le nom du sol choisi en tête
+   de ligne. Né pour les exports, où il a remplacé la pilule Dark / Light,
+   puis une liste de cinq boutons, trop haute sur un téléphone, puis un
+   <select> natif, trop terne ; il a ensuite remplacé la liste à coche des
+   Réglages, pour que le sol se choisisse partout de la même manière.
    La piste n'est pas remplie : le choix est catégoriel, une partie « pleine »
    n'y voudrait rien dire. --contrast-fill à 0 suffit pour Chrome et Safari ;
    Firefox peint le remplissage avec son propre pseudo-élément, d'où la règle
-   ::-moz-range-progress qui l'efface. */
-.fond-export-head { display:flex; align-items:baseline; justify-content:space-between; gap:.6rem; margin-bottom:.2rem }
-.fond-export-val  { font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:600; color:var(--accent); white-space:nowrap }
+   ::-moz-range-progress qui l'efface.
+   La tête de ligne (.fond-range-head) sert aussi au curseur de contraste de
+   la modale Apparence, pour que les deux blocs y soient bâtis pareil. */
+/* Modale Apparence : 1.4rem entre l'en-tête, le bloc Fond et le bloc
+   Contraste, le double du gap de la coque (.7rem, taillé pour des boutons
+   empilés) : les pastilles du sol et le libellé du contraste se touchaient
+   presque, et les deux réglages se lisaient comme un seul. Les modales JPEG
+   (.screenshot-modal) prennent le même 1.4rem partout, en-tête, bloc Fond et
+   bouton Générer, pour que les trois modales à curseur respirent pareil. */
+#apparence-modal { gap:1.4rem }
+.fond-range-head { display:flex; align-items:baseline; justify-content:space-between; gap:.6rem; margin-bottom:.2rem }
+.fond-range-val  { font-family:'DM Sans',sans-serif; font-size:.82rem; font-weight:600; color:var(--accent); white-space:nowrap }
 /* Les crans sont ceux du contraste (.contrast-range-tick : le trait de 5 px
    sous la piste, allumé à l'accent quand il est sur le cran), avec une
    pastille à la place du libellé. Même hauteur de légende que le contraste,
    plus ce que la pastille prend de plus que sa ligne de texte. */
-.fond-export-legend { position:relative; height:calc(.5rem + 20px); margin:.45rem calc(var(--contrast-thumb) / 2) 0 }
-.fond-export-range::-moz-range-progress { background:transparent }
-.fond-export-tick { cursor:pointer; touch-action:manipulation }
-.fond-export-tick .fond-swatch { display:block; width:20px; height:20px }
+.fond-range-legend { position:relative; height:calc(.5rem + 20px); margin:.45rem calc(var(--contrast-thumb) / 2) 0 }
+.fond-range::-moz-range-progress { background:transparent }
+.fond-range-tick { cursor:pointer; touch-action:manipulation }
+.fond-range-tick .fond-swatch { display:block; width:20px; height:20px }
 
 
 /* ── Modale Diagnostic ─────────────────────────────────────────────────────── */
@@ -2490,13 +2500,14 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .reglages-val { font-family:'DM Mono',monospace; font-size:.68rem; font-weight:400;
   letter-spacing:.04em; text-transform:none; color:var(--accent); margin-left:auto;
   padding-left:.6rem; flex-shrink:0 }
-/* ── Chooser de fond ──────────────────────────────────────────────────────
-   La pastille montre le sol, la carte ET l'accent du thème, en trois tiers et
+/* ── Pastille de sol ─────────────────────────────────────────────────────
+   Les crans du curseur de sol (modale Apparence, modales JPEG). Elle montre
+   le sol, la carte ET l'accent du thème, en trois tiers et
    dans leurs couleurs réelles : c'est ce qui distingue un sol de l'autre bien
    plus vite qu'un nom, et l'accent est ce qui sépare le papier de l'alu, dont
    les deux sols clairs se ressemblent de loin. Elle est peinte en littéral et
-   NON en jetons, puisqu'elle doit montrer les quatre thèmes pendant qu'un
-   seul est actif.
+   NON en jetons, puisqu'elle doit montrer tous les thèmes pendant qu'un seul
+   est actif.
    Le liseré appartient au sol MONTRÉ et non au sol ACTIF : écrit en
    rgba(var(--ink-rgb),…), il était blanc pour tout le monde sur une carte
    sombre et noir pour tout le monde sur une carte claire, donc invisible une
@@ -2540,12 +2551,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
       var(--sw-sol) 0 33.34%, var(--sw-card) 33.34% 66.67%, var(--sw-acc) 66.67% 100%);
   box-shadow:inset 0 0 0 1px var(--sw-rim);
 }
-/* L'état sélectionné : le liseré et la coche, pas une couleur de fond, pour ne
-   pas concurrencer la pastille juste à côté. */
-.fond-opt[aria-checked="true"] { border-color:rgba(var(--accent-rgb),.75); color:var(--accent) }
-.fond-opt-check { margin-left:auto; padding-left:.6rem; flex-shrink:0; visibility:hidden }
-.fond-opt[aria-checked="true"] .fond-opt-check { visibility:visible }
-.fond-opt-name { text-align:left }
 /* ── Curseur de contraste ─────────────────────────────────────────────────
    Un input range natif habillé, et non un faux curseur : il porte déjà le
    rôle slider, les flèches, Origine / Fin, le pas et le glissement tactile.
@@ -2559,15 +2564,6 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
    devrait rester lisible à la fois sur la partie remplie (l'accent) et sur la
    partie vide (le champ), ce qu'aucune couleur ne fait dans les deux familles
    de sol à la fois. Sous la piste il se détache de la carte, toujours. ── */
-/* Le seul voile transparent de l'app, et c'est la raison d'être de la modale :
-   un curseur de contraste sert à VOIR le palier changer. Derrière le voile
-   commun (--scrim-2 plus un flou de 4 px) on ne voyait plus rien de l'app, et
-   le curseur ne valait pas mieux que trois boutons.
-   Le retrait de la modale est alors porté par sa seule ombre et son liseré, ce
-   qui suffit : elle fait 300 px au milieu d'une page qui, elle, bouge à chaque
-   cran. L'overlay reste en place, sans peinture, pour continuer de capter le
-   clic de fermeture. */
-#contrastpicker-overlay { background:transparent; backdrop-filter:none }
 .contrast-range-wrap {
   /* Les DEUX valeurs qui commandent le bloc. Tout le reste en découle par
      calc() : le rayon de la piste, le recentrage vertical du pouce, les
@@ -3043,52 +3039,52 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
   </button>
 </div>
 
-<!-- ── Fond : chooser de thème. Mêmes codes visuels que le chooser Rider et
-     que la modale Données (.ateliermgr-modal.ridermgr-chooser + .ct-save-btn
-     superposés). La liste est construite par fondPickerRender() à partir de
-     FONDS_DISPO, pour qu'un sol ajouté ou retiré n'ait pas à être répercuté
-     dans le markup. ── -->
-<div class="ateliermgr-overlay" id="fondpicker-overlay" onclick="closeFondPicker()"></div>
-<div class="ateliermgr-modal ridermgr-chooser" id="fondpicker-modal" style="max-width:300px" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="fondpicker-title">
+<!-- ── Apparence : le fond et le contraste dans une seule modale, ouverte
+     depuis la ligne « Apparence » des Réglages. Même coque que la modale
+     Données (.ateliermgr-modal.ridermgr-chooser), deux curseurs empilés :
+       - le SOL, en haut, sur le curseur à pastilles des deux modales JPEG
+         (fondRangeRender, sans le cran Neutre, qui est un sol d'export
+         seulement) : le choix est catégoriel, la piste n'est donc pas
+         remplie et chaque pastille vaut un cran ;
+       - le CONTRASTE, en dessous, sur le curseur à trois crans : là c'est un
+         AXE, du plus doux au plus franc, et la piste se remplit.
+     Les deux sont construits à l'ouverture par apparenceRender() à partir de
+     FONDS_DISPO et CONTRASTES_DISPO, pour qu'un sol ou un palier ajouté ou
+     retiré n'ait pas à être répercuté dans le markup. Les max et value
+     ci-dessous ne sont donc PAS l'inventaire : ce sont des valeurs de repli,
+     pour que les inputs soient cohérents avant le premier rendu.
+     Les deux réglages s'appliquent PENDANT le glissement : la modale, peinte
+     dans le sol et le palier choisis, suffit à s'en rendre compte, et le voile
+     flou commun laisse deviner le reste de la page. ── -->
+<div class="ateliermgr-overlay" id="apparence-overlay" onclick="closeApparence()"></div>
+<div class="ateliermgr-modal ridermgr-chooser" id="apparence-modal" style="max-width:300px" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="apparence-title">
   <div class="ateliermgr-header">
     <span class="ateliermgr-header-left">
       <svg class="ateliermgr-title-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="M3 14.5l4.5-4 3.5 3 3-2.5 7 5.5"/>
+        <path d="M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1.1.9-2 2-2H17a4 4 0 0 0 4-4c0-4.1-4-7.5-9-7.5z"/>
+        <circle cx="7.5" cy="12" r="1.1" fill="currentColor" stroke="none"/>
+        <circle cx="9.5" cy="8" r="1.1" fill="currentColor" stroke="none"/>
+        <circle cx="14" cy="7.5" r="1.1" fill="currentColor" stroke="none"/>
       </svg>
-      <span class="ateliermgr-title" id="fondpicker-title" data-i18n="fondLabel">Fond</span>
+      <span class="ateliermgr-title" id="apparence-title" data-i18n="apparenceLabel">Apparence</span>
     </span>
-    <button class="ateliermgr-close" onclick="closeFondPicker()" aria-label="Fermer">&#x2715;</button>
+    <button class="ateliermgr-close" onclick="closeApparence()" aria-label="Fermer">&#x2715;</button>
   </div>
-  <div id="fondpicker-list" role="radiogroup" aria-labelledby="fondpicker-title" style="display:flex;flex-direction:column;gap:.7rem"></div>
-</div>
-
-<!-- ── Contraste : sélecteur à curseur. Même coque que le chooser de fond, mais
-     un curseur et non une liste : le contraste est un AXE, du plus doux au
-     plus franc, quand les quatre sols ne s'ordonnent pas. Les trois crans et
-     leurs libellés sont construits par contrastPickerRender() à partir de
-     CONTRASTES_DISPO, pour qu'un palier ajouté ou retiré n'ait pas à être
-     répercuté dans le markup.
-     Les max et value ci-dessous ne sont donc PAS l'inventaire : ce sont des
-     valeurs de repli, pour que l'input soit cohérent avant le premier rendu.
-     contrastPickerRender() réécrit les deux à chaque ouverture, et c'est lui
-     l'écrivain. Un palier ajouté à CONTRASTES_DISPO n'a rien à faire ici.
-     Le palier s'applique pendant le glissement : la modale est étroite, on
-     voit donc l'app changer derrière elle. ── -->
-<div class="ateliermgr-overlay" id="contrastpicker-overlay" onclick="closeContrastPicker()"></div>
-<div class="ateliermgr-modal ridermgr-chooser" id="contrastpicker-modal" style="max-width:300px" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="contrastpicker-title">
-  <div class="ateliermgr-header">
-    <span class="ateliermgr-header-left">
-      <svg class="ateliermgr-title-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/>
-      </svg>
-      <span class="ateliermgr-title" id="contrastpicker-title" data-i18n="contrastLabel">Contraste</span>
-    </span>
-    <button class="ateliermgr-close" onclick="closeContrastPicker()" aria-label="Fermer">&#x2715;</button>
+  <div>
+    <div class="fond-range-head"><span class="fld-label" id="apparence-fond-label" data-i18n="fondLabel">Fond</span><span class="fond-range-val" id="apparence-fond-val"></span></div>
+    <div class="contrast-range-wrap">
+      <input class="contrast-range fond-range" id="apparence-fond-range" type="range" min="0" max="3" step="1" value="0"
+             aria-labelledby="apparence-fond-label" oninput="fondRangeInput('apparence')">
+      <div class="fond-range-legend" id="apparence-fond-legend"></div>
+    </div>
   </div>
-  <div class="contrast-range-wrap">
-    <input class="contrast-range" id="contrastpicker-range" type="range" min="0" max="2" step="1" value="1"
-           aria-labelledby="contrastpicker-title" oninput="contrastPickerInput(event)">
-    <div class="contrast-range-legend" id="contrastpicker-legend"></div>
+  <div>
+    <div class="fond-range-head"><span class="fld-label" id="apparence-contrast-label" data-i18n="contrastLabel">Contraste</span><span class="fond-range-val" id="apparence-contrast-val"></span></div>
+    <div class="contrast-range-wrap">
+      <input class="contrast-range" id="apparence-contrast-range" type="range" min="0" max="2" step="1" value="1"
+             aria-labelledby="apparence-contrast-label" oninput="contrastRangeInput(event)">
+      <div class="contrast-range-legend" id="apparence-contrast-legend"></div>
+    </div>
   </div>
 </div>
 
@@ -3111,15 +3107,10 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5v11"/><path d="M12 7.5C12 6.4 10.9 5.5 9.5 5.5H4.5A.5.5 0 0 0 4 6v10a.5.5 0 0 0 .5.5h5c1.4 0 2.5.9 2.5 2"/><path d="M12 7.5c0-1.1 1.1-2 2.5-2h5a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-.5.5h-5c-1.4 0-2.5.9-2.5 2"/></svg>
     <span data-i18n="helpBtnTitle">Mode d'emploi</span>
   </button>
-  <button class="ct-save-btn" id="fond-btn" type="button" onclick="closeReglages();openFondPicker()">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="M3 14.5h18" fill="currentColor" opacity=".18"/><path d="M3 14.5l4.5-4 3.5 3 3-2.5 7 5.5"/></svg>
-    <span data-i18n="fondLabel">Fond</span>
-    <span class="reglages-val" id="fond-val">Ardoise</span>
-  </button>
-  <button class="ct-save-btn" id="contrast-btn" type="button" onclick="closeReglages();openContrastPicker()">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>
-    <span data-i18n="contrastLabel">Contraste</span>
-    <span class="reglages-val" id="contrast-val">Normal</span>
+  <button class="ct-save-btn" id="apparence-btn" type="button" onclick="closeReglages();openApparence()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.2 0-1.1.9-2 2-2H17a4 4 0 0 0 4-4c0-4.1-4-7.5-9-7.5z"/><circle cx="7.5" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="9.5" cy="8" r="1.1" fill="currentColor" stroke="none"/><circle cx="14" cy="7.5" r="1.1" fill="currentColor" stroke="none"/></svg>
+    <span data-i18n="apparenceLabel">Apparence</span>
+    <span class="reglages-val" id="apparence-val">Ardoise</span>
   </button>
   <button class="ct-save-btn" id="reglages-lang" type="button" onclick="closeReglages();toggleLang()">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/></svg>
@@ -6142,9 +6133,10 @@ const i18n = {
     // la map id→clé d'applyLang ou au rendu — cf. delTitle/clearValuesTitle)
     hookeBtnTitle:'Courbe de Hooke',
     helpBtnTitle:'Mode d\'emploi',
-    contrastLabel:'Contraste', contrastBtnTitle:'Choisir le contraste',
+    apparenceLabel:'Apparence', apparenceBtnTitle:'Choisir le fond et le contraste',
+    contrastLabel:'Contraste',
     contrastValBas:'Bas', contrastValNormal:'Normal', contrastValHaut:'Élevé',
-    fondLabel:'Fond', fondBtnTitle:'Choisir le fond',
+    fondLabel:'Fond',
     fondArdoise:'Ardoise', fondCarbone:'Carbone', fondPapier:'Papier', fondAlu:'Alu', fondNeutre:'Neutre',
     langLabel:'Langue', reglagesBtnTitle:'Réglages',
     helpSheetTitle:'Mode d\'emploi',
@@ -6420,9 +6412,10 @@ const i18n = {
     // id→key map or at render time — cf. delTitle/clearValuesTitle)
     hookeBtnTitle:'Hooke curve',
     helpBtnTitle:'User manual',
-    contrastLabel:'Contrast', contrastBtnTitle:'Choose contrast',
+    apparenceLabel:'Appearance', apparenceBtnTitle:'Choose background and contrast',
+    contrastLabel:'Contrast',
     contrastValBas:'Low', contrastValNormal:'Normal', contrastValHaut:'High',
-    fondLabel:'Background', fondBtnTitle:'Choose background',
+    fondLabel:'Background',
     fondArdoise:'Slate', fondCarbone:'Carbon', fondPapier:'Paper', fondAlu:'Alu', fondNeutre:'Neutral',
     langLabel:'Language', reglagesBtnTitle:'Settings',
     helpSheetTitle:'User manual',
@@ -7344,8 +7337,7 @@ function applyLang() {
   var pkBtn = $id('save-mgr-btn'); if (pkBtn) { pkBtn.title = t('pickerMenuBtn'); pkBtn.setAttribute('aria-label', t('pickerMenuBtn')); }
   var rgBtn = $id('reglages-btn');
   if (rgBtn) { rgBtn.title = t('reglagesBtnTitle'); rgBtn.setAttribute('aria-label', t('reglagesBtnTitle')); }
-  if (typeof contrastSync === 'function') contrastSync();
-  if (typeof fondSync === 'function') fondSync();
+  if (typeof apparenceSync === 'function') apparenceSync();
   var cfgFb = $id('cfg-fill-badge'); if (cfgFb) cfgFb.title = t('cfgFillHint');
   if (typeof helpSync === 'function') helpSync();
   // Tooltips des boutons d'icône de card (load/save/info) : title figé FR dans
@@ -10485,7 +10477,7 @@ function contrastNormalise() {
 // sol change un jour de couleur. Le <meta> statique du head ne vaut que pour
 // le premier rendu, avant que cette fonction ne passe.
 // Nom volontairement neutre, et non contrastSyncMeta : --bg dépend du COUPLE
-// sol + palier, c'est pourquoi fondSync l'appelle autant que contrastSync.
+// sol + palier, c'est pourquoi apparenceSync l'appelle, après l'un comme l'autre.
 // Elle vit dans ce module parce qu'elle y est née, pas parce qu'elle lui
 // appartient : douze combinaisons y passent, pas trois.
 function themeSyncMeta() {
@@ -10494,25 +10486,10 @@ function themeSyncMeta() {
   var bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
   if (bg) m.setAttribute('content', bg);
 }
-// contrastSync : écrivain unique de l'état du bouton, appelé au démarrage et
-// par applyLang (le nom du palier est traduit, il suit donc la langue).
-// Le bouton n'est plus un interrupteur mais l'entrée d'un sélecteur à trois
-// crans : plus d'aria-pressed, qui ne sait dire que deux états et annoncerait
-// « non pressé » sur deux paliers distincts.
-function contrastSync() {
-  var p = contrastActuel();
-  var btn = $id('contrast-btn');
-  // l'aria-label annonce l'ACTION, le texte visible l'ÉTAT
-  if (btn) btn.setAttribute('aria-label', t('contrastBtnTitle'));
-  var val = $id('contrast-val');
-  if (val) val.textContent = t(CONTRAST_I18N[p]);
-  // Sélecteur déjà ouvert au moment d'une bascule FR/EN : on le reconstruit
-  // plutôt que de laisser ses libellés dans l'ancienne langue. Même schéma que
-  // fondSync pour le sol.
-  var modal = $id('contrastpicker-modal');
-  if (modal && modal.classList.contains('show')) contrastPickerRender();
-  themeSyncMeta();
-}
+// L'état affiché (la ligne Apparence des Réglages, la modale si elle est
+// ouverte, la barre système) n'a qu'un seul écrivain, apparenceSync(), dans le
+// module Fond plus bas : il porte le COUPLE sol + palier, et c'est pourquoi
+// setContrast comme setFond l'appellent.
 // Écrivain unique de l'URL du manuel. Il s'ouvre en iframe au milieu de l'app :
 // il doit donc arriver dans la même langue, le même palier et le même sol,
 // sinon il tranche. guide.html recopie les trois blocs de jetons et lit les
@@ -10548,7 +10525,7 @@ function setContrast(p) {
   // touche pas à spokeit_lastModif : changer de palier n'est pas une
   // modification de données et ne doit pas armer le rappel de sauvegarde.
   lsSet('spokeit_contrast', p);
-  contrastSync();
+  apparenceSync();
   // Le manuel ne peut pas être ouvert en même temps que ce curseur : il
   // s'ouvre depuis les Réglages, qui se referment avant, et son iframe couvre
   // alors le bouton. L'appel ne fait donc rien aujourd'hui, mais il est la
@@ -10558,26 +10535,24 @@ function setContrast(p) {
   contrastSyncGuide();
   // Les canvas ne réagissent ni au changement d'attribut ni à une transition
   // CSS : ils gardent la palette de l'ancien palier jusqu'au prochain rendu.
-  // Ici l'appel PORTE, là où celui de setFond était surtout prudent : le voile
-  // de cette modale est transparent, et le radar du module tension vit dans
-  // #tm-result-card, sur la page et non dans une modale. Il est donc en clair
-  // derrière le curseur pendant qu'on le déplace, et sans ce repeint il serait
-  // le seul élément de l'écran resté au palier précédent.
+  // Le radar du module tension vit dans #tm-result-card, sur la page et non
+  // dans une modale : il reste visible, flouté, derrière le voile, et sans ce
+  // repeint il serait le seul élément de l'écran resté au palier précédent.
   fondRepeintCanvas();
 }
 
-// ── Sélecteur de contraste ──────────────────────────────────────────────────
+// ── Curseur de contraste ────────────────────────────────────────────────────
 // Un curseur à trois crans plutôt que trois boutons : le contraste est un axe,
-// pas une liste de thèmes, et c'est la différence avec le sélecteur de sol
-// juste au-dessus, dont les quatre entrées ne s'ordonnent pas.
+// pas une liste de thèmes. Il vit dans la modale Apparence, sous le curseur de
+// sol (voir apparenceRender dans le module Fond).
 // Le palier s'applique PENDANT le glissement (événement input et non change) :
-// la modale ne couvre qu'une partie de l'écran, on voit donc le palier changer
-// derrière elle, et c'est tout l'intérêt d'un curseur ici.
+// la modale elle-même change de palier sous le doigt, c'est tout l'intérêt
+// d'un curseur ici.
 // L'input range natif porte déjà le rôle slider, les flèches, Origine / Fin et
 // le glissement tactile ; il ne lui manque que aria-valuetext, sans quoi un
 // lecteur d'écran annoncerait « 0 » au lieu de « Bas ».
-function contrastPickerRender() {
-  var input = $id('contrastpicker-range');
+function contrastRangeRender() {
+  var input = $id('apparence-contrast-range');
   if (!input) return;
   var n = CONTRASTES_DISPO.length;
   var p = contrastActuel(), i = CONTRASTES_DISPO.indexOf(p);
@@ -10591,7 +10566,10 @@ function contrastPickerRender() {
   // exactement ce qu'on veut — au cran du bas la piste est entièrement vide,
   // au cran du haut entièrement pleine.
   input.style.setProperty('--contrast-fill', (n > 1 ? (i / (n - 1)) * 100 : 0) + '%');
-  var legend = $id('contrastpicker-legend');
+  // Nom du palier en tête de ligne, comme le nom du sol au-dessus.
+  var val = $id('apparence-contrast-val');
+  if (val) val.textContent = t(CONTRAST_I18N[p]);
+  var legend = $id('apparence-contrast-legend');
   if (!legend) return;
   legend.innerHTML = '';
   CONTRASTES_DISPO.forEach(function(c, k) {
@@ -10605,36 +10583,14 @@ function contrastPickerRender() {
     legend.appendChild(s);
   });
 }
-function contrastPickerInput(e) {
+function contrastRangeInput(e) {
   var i = parseInt(e.target.value, 10);
   if (isNaN(i) || !CONTRASTES_DISPO[i]) return;
-  // setContrast appelle contrastSync, qui reconstruit le sélecteur ouvert :
-  // pas de contrastPickerRender() ici, ce serait un second rendu pour rien.
+  // setContrast appelle apparenceSync, qui reconstruit la modale ouverte :
+  // pas de contrastRangeRender() ici, ce serait un second rendu pour rien.
   setContrast(CONTRASTES_DISPO[i]);
 }
-// Escape seulement : les flèches et le glissement appartiennent à l'input
-// natif, qui les traite mieux qu'un raccourci maison ne le ferait.
-function contrastPickerKey(e) {
-  var modal = $id('contrastpicker-modal');
-  if (!modal || !modal.classList.contains('show')) return;
-  if (e.key === 'Escape') { e.preventDefault(); closeContrastPicker(); }
-}
-document.addEventListener('keydown', contrastPickerKey);
-function openContrastPicker() {
-  contrastPickerRender();
-  $id('contrastpicker-overlay').classList.add('show');
-  $id('contrastpicker-modal').classList.add('show');
-  var input = $id('contrastpicker-range');
-  if (input) input.focus();
-}
-function closeContrastPicker() {
-  $id('contrastpicker-overlay').classList.remove('show');
-  $id('contrastpicker-modal').classList.remove('show');
-  if (document.activeElement && document.activeElement !== document.body)
-    document.activeElement.blur();
-}
 contrastNormalise();
-contrastSync();
 
 // ── Fond ────────────────────────────────────────────────────────────────────
 // Quatre sols, portés par html[data-fond], posé une première fois par le
@@ -10643,8 +10599,8 @@ contrastSync();
 // qu'aucun bloc ne s'interpose. C'est ce qui garantit zéro régression.
 //
 // Deux d'entre eux ne réécrivent que le sol ; les deux clairs, Papier et Alu,
-// basculent tout le jeu de jetons. Le sélecteur ne fait pas la distinction :
-// la pastille de chaque ligne montre le sol et la carte, ce qui la dit mieux
+// basculent tout le jeu de jetons. Le curseur ne fait pas la distinction :
+// la pastille de chaque cran montre le sol et la carte, ce qui la dit mieux
 // qu'un groupe.
 // CETTE LISTE EST LA SEULE : la feuille décrit les sols, ce tableau les
 // ordonne et les nomme, et rien d'autre n'en tient d'inventaire.
@@ -10709,27 +10665,38 @@ function fondNormalise() {
   try { lsSet('spokeit_fond', 'ardoise'); } catch (e) {}
 }
 
-// fondSync : écrivain unique de l'état du bouton, appelé au démarrage et par
-// applyLang (le nom du sol est traduit, il suit donc la langue).
-function fondSync() {
-  var btn = $id('fond-btn');
+// apparenceSync : écrivain unique de l'état affiché du thème, appelé au
+// démarrage, par setFond, setContrast et applyLang (les noms du sol et du
+// palier sont traduits, ils suivent donc la langue).
+// La ligne Apparence des Réglages n'affiche que le SOL, pas le couple sol ·
+// palier : « Ardoise · Normal » demande 128 px là où la ligne, une fois
+// l'icône et le libellé posés, n'en laisse qu'une centaine, en FR comme en
+// EN, et déborderait du bouton. Le sol est la propriété qu'on voit, le palier
+// se lit dans la modale.
+// La ligne n'est pas un interrupteur mais l'entrée d'une modale à deux
+// curseurs : pas d'aria-pressed, qui ne sait dire que deux états.
+function apparenceSync() {
+  var btn = $id('apparence-btn');
   // l'aria-label annonce l'ACTION, le texte visible l'ÉTAT
-  if (btn) btn.setAttribute('aria-label', t('fondBtnTitle'));
-  var val = $id('fond-val');
+  if (btn) btn.setAttribute('aria-label', t('apparenceBtnTitle'));
+  var val = $id('apparence-val');
   if (val) val.textContent = t(FOND_I18N[fondActuel()]);
-  // Sélecteur déjà ouvert au moment d'une bascule FR/EN : on le reconstruit
-  // plutôt que de laisser ses libellés dans l'ancienne langue. Même schéma que
-  // helpSync pour le manuel. Le cas n'est pas atteignable depuis l'interface
-  // (la langue se change depuis les Réglages, qui se referment avant), mais
-  // fondSync est l'écrivain unique de l'état affiché du fond : le sélecteur en
-  // fait partie.
-  var modal = $id('fondpicker-modal');
-  if (modal && modal.classList.contains('show')) fondPickerRender();
+  // Modale déjà ouverte : on la reconstruit, pour que les crans allumés et les
+  // noms en tête de ligne suivent la valeur, et qu'une bascule FR/EN ne laisse
+  // pas ses libellés dans l'ancienne langue (le cas n'est pas atteignable
+  // depuis l'interface, la langue se change depuis les Réglages qui se
+  // referment avant, mais apparenceSync est l'écrivain unique de l'état
+  // affiché : la modale en fait partie). Les inputs ne sont pas recréés, seuls
+  // leurs valeurs et leurs légendes le sont : le focus et le glissement en
+  // cours ne sont pas interrompus.
+  var modal = $id('apparence-modal');
+  if (modal && modal.classList.contains('show')) apparenceRender();
   // La barre système Android suit le fond réel : themeSyncMeta relit --bg
-  // après bascule, elle couvre donc les quatre sols sans rien savoir d'eux.
+  // après bascule, elle couvre donc les douze combinaisons sans rien savoir
+  // d'elles.
   themeSyncMeta();
 }
-// Écrivain unique du sol. Appelé par le chooser, jamais ailleurs.
+// Écrivain unique du sol. Appelé par le curseur, jamais ailleurs.
 function setFond(f) {
   if (FONDS_DISPO.indexOf(f) === -1) return;
   if (f === 'ardoise') document.documentElement.removeAttribute('data-fond');
@@ -10739,7 +10706,7 @@ function setFond(f) {
   // pas à spokeit_lastModif : changer de sol n'est pas une modification de
   // données et ne doit pas armer le rappel de sauvegarde.
   lsSet('spokeit_fond', f);
-  fondSync();
+  apparenceSync();
   contrastSyncGuide();
   // Les canvas ne se repeignent pas tout seuls : ils ne réagissent ni au
   // changement d'attribut ni à une transition CSS. Le radar, la courbe de
@@ -10748,10 +10715,10 @@ function setFond(f) {
   fondRepeintCanvas();
 }
 // Redessine les canvas VISIBLES avec la palette du nouveau sol. Seuls ceux
-// qui peuvent être affichés au moment du changement sont concernés : le
-// chooser s'ouvre depuis les Réglages, donc la courbe de Hooke et le radar EF,
+// qui peuvent être affichés au moment du changement sont concernés : la modale
+// Apparence s'ouvre depuis les Réglages, donc la courbe de Hooke et le radar EF,
 // qui vivent dans leurs propres modales, ne peuvent pas être à l'écran en même
-// temps que lui. Ils seront repeints à leur prochaine ouverture.
+// temps qu'elle. Ils seront repeints à leur prochaine ouverture.
 // tmTryRenderRadar porte déjà sa propre garde (il ne fait rien si la carte de
 // résultat est masquée), et efDiagramRender n'est appelé que par son module.
 function fondRepeintCanvas() {
@@ -10762,16 +10729,22 @@ function fondRepeintCanvas() {
   } catch (e) {}
 }
 
-// Pastilles du chooser : le sol, la carte et l'accent de chaque thème, au
-// palier normal. Littéraux assumés, puisqu'il faut montrer les QUATRE pendant
-// qu'un seul est actif : des jetons donneraient quatre fois la même pastille.
+// Pastilles du curseur de sol : le sol, la carte et l'accent de chaque thème,
+// au palier normal. Littéraux assumés, puisqu'il faut montrer TOUS les sols
+// pendant qu'un seul est actif : des jetons donneraient partout la même
+// pastille.
 // Quatrième valeur : 1 si le sol appartient à la famille claire. Elle ne sert
 // qu'à choisir le liseré de la pastille ET sa coupe sol / carte, sombres sur
 // un sol clair et clairs sur un sol sombre, pour qu'ils restent lisibles
 // quelle que soit la carte sous elle.
 // Elle double --fond-clair à dessein : ce drapeau-ci décrit le sol MONTRÉ,
-// l'autre le sol ACTIF, et le chooser a justement besoin des deux.
+// l'autre le sol ACTIF, et le curseur a justement besoin des deux.
+// Le neutre est un sol d'EXPORT seulement (voir FOND_JPEG et FONDS_EXPORT) :
+// sa pastille est une gamme de gris, avec deux éclats, orange et bleu, à la
+// fin du tiers foncé (voir --sw-hint dans .fond-swatch). Elle vit ici pour
+// que fondRangeRender n'ait qu'une table à lire.
 var FOND_PASTILLE = {
+  neutre:  ['#ffffff', '#d9d9d9', '#4a4a4a', 1],
   ardoise: ['#181c24', '#232a38', '#7ec8e3', 0],
   carbone: ['#0d1119', '#3c4048', '#7ec8e3', 0],
   papier:  ['#edeae2', '#fdfcfa', '#196c79', 1],
@@ -10874,74 +10847,108 @@ function _exportPalLegacy(whiteBg, colored) {
     fillFa: whiteBg ? 'rgba(126,200,227,0.18)' : 'rgba(126,200,227,0.06)'
   };
 }
-function fondPickerRender() {
-  var list = $id('fondpicker-list');
-  if (!list) return;
-  var actuel = fondActuel();
-  list.innerHTML = '';
-  FONDS_DISPO.forEach(function(f) {
-    var sw = FOND_PASTILLE[f] || ['#181c24', '#232a38', '#7ec8e3', 0];
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'ct-save-btn fond-opt';
-    b.setAttribute('role', 'radio');
-    b.setAttribute('aria-checked', f === actuel ? 'true' : 'false');
-    b.setAttribute('data-fond-opt', f);
-    b.style.marginTop = '0';
-    b.innerHTML =
-      '<span class="fond-swatch" style="--sw-sol:' + sw[0] + ';--sw-card:' + sw[1] +
-        ';--sw-acc:' + sw[2] + ';--sw-rim:' +
-        (sw[3] ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.26)') + ';--sw-cut:' +
-        (sw[3] ? 'rgba(0,0,0,.42)' : 'rgba(255,255,255,.42)') + '"></span>' +
-      '<span class="fond-opt-name"></span>' +
-      '<svg class="fond-opt-check" width="15" height="15" viewBox="0 0 24 24" fill="none" ' +
-        'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" ' +
-        'aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
-    b.querySelector('.fond-opt-name').textContent = t(FOND_I18N[f]);
-    // Tabulation mouvante : un radiogroup n'a qu'un seul arrêt de tabulation,
-    // celui de l'option cochée. Les flèches déplacent la sélection à
-    // l'intérieur, la tabulation sort du groupe.
-    b.tabIndex = (f === actuel) ? 0 : -1;
-    b.addEventListener('click', function() { setFond(f); closeFondPicker(); });
-    list.appendChild(b);
+
+// ── Curseur de sol ──────────────────────────────────────────────────────────
+// Le sol se choisit sur un curseur à pastilles, le même partout : dans la
+// modale Apparence (liste FONDS_DISPO, application immédiate par setFond) et
+// dans les deux modales JPEG (liste FONDS_EXPORT, avec le Neutre en tête, et
+// un état local par modale). C'est le curseur du contraste, piste et pouce
+// compris, avec les pastilles de FOND_PASTILLE pour crans : même vocabulaire
+// des deux côtés, l'utilisateur ne l'apprend qu'une fois.
+// La piste n'est pas remplie : le choix est catégoriel, une partie « pleine »
+// n'y voudrait rien dire (--contrast-fill à 0, et .fond-range efface le
+// remplissage de Firefox). Un tap sur une pastille vaut un cran : plus direct
+// que de glisser.
+// Les éléments d'un curseur partagent un préfixe d'id (<prefix>-fond-range,
+// -fond-legend, -fond-val) ; la liste, ses libellés et le rappel de sélection
+// sont retenus par préfixe, pour que fondRangeInput retrouve les siens.
+var _fondRange = {};
+function fondRangeRender(prefix, liste, libelles, actuel, onPick) {
+  var input = $id(prefix + '-fond-range');
+  if (!input) return;
+  var n = liste.length, i = Math.max(0, liste.indexOf(actuel));
+  _fondRange[prefix] = { liste: liste, libelles: libelles, onPick: onPick };
+  input.max = String(n - 1);
+  input.value = String(i);
+  input.style.setProperty('--contrast-fill', '0%');
+  var legend = $id(prefix + '-fond-legend');
+  if (legend) {
+    legend.innerHTML = '';
+    liste.forEach(function(f, k) {
+      var c = FOND_PASTILLE[f] || FOND_PASTILLE.ardoise;
+      var tick = document.createElement('span');
+      tick.className = 'contrast-range-tick fond-range-tick';
+      // aria-hidden : l'input porte déjà le nom du sol courant dans son
+      // aria-valuetext, et les pastilles n'ont pas de texte à lire.
+      tick.setAttribute('aria-hidden', 'true');
+      tick.style.left = (n > 1 ? (k / (n - 1)) * 100 : 50) + '%';
+      tick.innerHTML = '<span class="fond-swatch" style="--sw-sol:' + c[0] + ';--sw-card:' + c[1] +
+        ';--sw-acc:' + c[2] + ';--sw-rim:' + (c[3] ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.26)') +
+        ';--sw-cut:' + (c[3] ? 'rgba(0,0,0,.42)' : 'rgba(255,255,255,.42)') +
+        (f === 'neutre' ? ';--sw-hint-w:6%;--sw-hint1:#c4703a;--sw-hint2:#3e76a8' : '') + '"></span>';
+      tick.addEventListener('click', function() { input.value = String(k); fondRangeInput(prefix); });
+      legend.appendChild(tick);
+    });
+  }
+  fondRangeSync(prefix, i);
+}
+// Nom du sol en tête, cran allumé, aria-valuetext : tout ce qui suit la valeur.
+function fondRangeSync(prefix, i) {
+  var r = _fondRange[prefix];
+  if (!r) return;
+  var f = r.liste[i];
+  var input = $id(prefix + '-fond-range');
+  if (input) input.setAttribute('aria-valuetext', t(r.libelles[f]));
+  var val = $id(prefix + '-fond-val');
+  if (val) val.textContent = t(r.libelles[f]);
+  var legend = $id(prefix + '-fond-legend');
+  if (legend) legend.querySelectorAll('.fond-range-tick').forEach(function(tk, k) {
+    tk.classList.toggle('is-on', k === i);
   });
 }
-// Flèches : déplacement circulaire dans le groupe, avec application immédiate
-// du sol, comme le fait un vrai groupe de boutons radio. La modale reste
-// ouverte, on peut donc comparer les sols à la flèche sans la rouvrir.
-function fondPickerKey(e) {
-  var modal = $id('fondpicker-modal');
+function fondRangeInput(prefix) {
+  var r = _fondRange[prefix];
+  var input = $id(prefix + '-fond-range');
+  var i = input ? parseInt(input.value, 10) : NaN;
+  if (!r || isNaN(i) || !r.liste[i]) return;
+  fondRangeSync(prefix, i);
+  if (r.onPick) r.onPick(r.liste[i]);
+}
+
+// ── Modale Apparence ────────────────────────────────────────────────────────
+// Le sol et le contraste, deux curseurs dans une seule modale, ouverte depuis
+// la ligne Apparence des Réglages. Calquée sur openReglages / closeReglages :
+// même paire voile + boîte, même blur en sortie pour qu'iOS ne laisse pas le
+// bouton marqué.
+function apparenceRender() {
+  // Le curseur de sol applique en direct : setFond est le rappel, et il
+  // rappelle apparenceSync, qui ne recrée pas l'input (voir plus haut).
+  fondRangeRender('apparence', FONDS_DISPO, FOND_I18N, fondActuel(), setFond);
+  contrastRangeRender();
+}
+// Escape seulement : les flèches et le glissement appartiennent aux inputs
+// natifs, qui les traitent mieux qu'un raccourci maison ne le ferait.
+function apparenceKey(e) {
+  var modal = $id('apparence-modal');
   if (!modal || !modal.classList.contains('show')) return;
-  if (e.key === 'Escape') { e.preventDefault(); closeFondPicker(); return; }
-  var pas = (e.key === 'ArrowDown' || e.key === 'ArrowRight') ?  1
-          : (e.key === 'ArrowUp'   || e.key === 'ArrowLeft')  ? -1 : 0;
-  if (!pas) return;
-  e.preventDefault();
-  var n = FONDS_DISPO.length;
-  var suivant = FONDS_DISPO[(FONDS_DISPO.indexOf(fondActuel()) + pas + n) % n];
-  // setFond appelle fondSync, qui reconstruit le sélecteur ouvert : pas de
-  // fondPickerRender() ici, ce serait un second rendu pour rien. Le focus se
-  // repose ensuite, puisque les boutons ont été recréés entre-temps.
-  setFond(suivant);
-  var btn = $id('fondpicker-list').querySelector('[data-fond-opt="' + suivant + '"]');
-  if (btn) btn.focus();
+  if (e.key === 'Escape') { e.preventDefault(); closeApparence(); }
 }
-document.addEventListener('keydown', fondPickerKey);
-function openFondPicker() {
-  fondPickerRender();
-  $id('fondpicker-overlay').classList.add('show');
-  $id('fondpicker-modal').classList.add('show');
-  var coche = $id('fondpicker-list').querySelector('[aria-checked="true"]');
-  if (coche) coche.focus();
+document.addEventListener('keydown', apparenceKey);
+function openApparence() {
+  apparenceRender();
+  $id('apparence-overlay').classList.add('show');
+  $id('apparence-modal').classList.add('show');
+  var input = $id('apparence-fond-range');
+  if (input) input.focus();
 }
-function closeFondPicker() {
-  $id('fondpicker-overlay').classList.remove('show');
-  $id('fondpicker-modal').classList.remove('show');
+function closeApparence() {
+  $id('apparence-overlay').classList.remove('show');
+  $id('apparence-modal').classList.remove('show');
   if (document.activeElement && document.activeElement !== document.body)
     document.activeElement.blur();
 }
 fondNormalise();
-fondSync();
+apparenceSync();
 
 // helpSync : écrivain unique des libellés du bouton et du panneau, appelé au
 // démarrage et par applyLang.
@@ -17423,19 +17430,15 @@ function tmRenderRadarOffscreen(w, h, whiteBg, outliers, scale, pal) {
 }
 
 // ── Choix du sol d'export ────────────────────────────────────────────────────
-// Les deux modales JPEG (screenshot tension, évolution) proposent les sols
-// sur un curseur, celui du contraste, avec les pastilles du chooser de fond
-// pour crans : même vocabulaire que les Réglages, l'utilisateur les connaît
-// déjà. La sélection est pré-posée sur le sol ACTIF à chaque ouverture, sans
-// mémoire d'une fois sur l'autre : on exporte d'abord ce qu'on voit, et on
-// change si on veut. Un seul curseur rendu par fondExportRender, un état par
-// modale ; les éléments d'une modale partagent un préfixe d'id.
-// La liste est le neutre, sol d'export seulement (voir FOND_JPEG), suivi de
-// FONDS_DISPO ; sa pastille est une gamme de gris, avec deux éclats, orange
-// et bleu, à la fin du tiers foncé (voir --sw-hint dans .fond-swatch).
+// Les deux modales JPEG (screenshot tension, évolution) proposent les sols sur
+// le curseur à pastilles de la modale Apparence (fondRangeRender, module Fond).
+// La sélection est pré-posée sur le sol ACTIF à chaque ouverture, sans mémoire
+// d'une fois sur l'autre : on exporte d'abord ce qu'on voit, et on change si
+// on veut. Un état par modale.
+// La liste est le neutre, sol d'export seulement (voir FOND_JPEG, et sa
+// pastille dans FOND_PASTILLE), suivi de FONDS_DISPO.
 var FONDS_EXPORT = ['neutre'].concat(FONDS_DISPO);
 var FOND_I18N_EXPORT = Object.assign({ neutre: 'fondNeutre' }, FOND_I18N);
-var FOND_PASTILLE_NEUTRE = ['#ffffff', '#d9d9d9', '#4a4a4a', 1];
 var _screenshotFond = 'ardoise';
 var _snapCmpFond    = 'ardoise';
 
@@ -17451,60 +17454,10 @@ function fondExportI18n(modalId) {
   });
 }
 
-var _fondExportPick = {};
-function fondExportRender(prefix, actuel, onPick) {
-  var input = $id(prefix + '-fond-range');
-  if (!input) return;
-  var n = FONDS_EXPORT.length, i = Math.max(0, FONDS_EXPORT.indexOf(actuel));
-  _fondExportPick[prefix] = onPick;
-  input.max = String(n - 1);
-  input.value = String(i);
-  input.setAttribute('aria-label', t('fondLabel'));
-  input.style.setProperty('--contrast-fill', '0%');
-  var legend = $id(prefix + '-fond-legend');
-  if (legend) {
-    legend.innerHTML = '';
-    FONDS_EXPORT.forEach(function(f, k) {
-      var c = FOND_PASTILLE[f] || FOND_PASTILLE_NEUTRE;
-      var tick = document.createElement('span');
-      tick.className = 'contrast-range-tick fond-export-tick';
-      tick.setAttribute('aria-hidden', 'true');
-      tick.style.left = (n > 1 ? (k / (n - 1)) * 100 : 50) + '%';
-      tick.innerHTML = '<span class="fond-swatch" style="--sw-sol:' + c[0] + ';--sw-card:' + c[1] +
-        ';--sw-acc:' + c[2] + ';--sw-rim:' + (c[3] ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.26)') +
-        ';--sw-cut:' + (c[3] ? 'rgba(0,0,0,.42)' : 'rgba(255,255,255,.42)') +
-        (f === 'neutre' ? ';--sw-hint-w:6%;--sw-hint1:#c4703a;--sw-hint2:#3e76a8' : '') + '"></span>';
-      // Un tap sur une pastille vaut un cran : plus direct que de glisser.
-      tick.addEventListener('click', function() { input.value = String(k); fondExportInput(prefix); });
-      legend.appendChild(tick);
-    });
-  }
-  fondExportSync(prefix, i);
-}
-// Nom du sol en tête, cran allumé, aria-valuetext : tout ce qui suit la valeur.
-function fondExportSync(prefix, i) {
-  var f = FONDS_EXPORT[i];
-  var input = $id(prefix + '-fond-range');
-  if (input) input.setAttribute('aria-valuetext', t(FOND_I18N_EXPORT[f]));
-  var val = $id(prefix + '-fond-val');
-  if (val) val.textContent = t(FOND_I18N_EXPORT[f]);
-  var legend = $id(prefix + '-fond-legend');
-  if (legend) legend.querySelectorAll('.fond-export-tick').forEach(function(tk, k) {
-    tk.classList.toggle('is-on', k === i);
-  });
-}
-function fondExportInput(prefix) {
-  var input = $id(prefix + '-fond-range');
-  var i = input ? parseInt(input.value, 10) : NaN;
-  if (isNaN(i) || !FONDS_EXPORT[i]) return;
-  fondExportSync(prefix, i);
-  if (_fondExportPick[prefix]) _fondExportPick[prefix](FONDS_EXPORT[i]);
-}
-
 function snapCmpBgOpen() {
   snapCompareClose();
   _snapCmpFond = fondActuel();
-  fondExportRender('snapcmp', _snapCmpFond, function(f) { _snapCmpFond = f; });
+  fondRangeRender('snapcmp', FONDS_EXPORT, FOND_I18N_EXPORT, _snapCmpFond, function(f) { _snapCmpFond = f; });
   fondExportI18n('snapcmp-bg-modal');
   $id('snapcmp-bg-overlay').classList.add('show');
   $id('snapcmp-bg-modal').classList.add('show');
@@ -17524,7 +17477,7 @@ async function snapCmpBgGo() {
 function tmScreenshotOpen(e) {
   if (e) e.stopPropagation();
   _screenshotFond = fondActuel();
-  fondExportRender('screenshot', _screenshotFond, function(f) { _screenshotFond = f; });
+  fondRangeRender('screenshot', FONDS_EXPORT, FOND_I18N_EXPORT, _screenshotFond, function(f) { _screenshotFond = f; });
   fondExportI18n('tm-screenshot-modal');
   $id('tm-screenshot-overlay').classList.add('show');
   $id('tm-screenshot-modal').classList.add('show');
@@ -24508,10 +24461,10 @@ async function snapCompareAnim() {
     <button onclick="tmScreenshotClose()" style="background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--text3);font-size:.8rem;cursor:pointer;padding:.25rem .5rem;line-height:1;transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s">✕</button>
   </div>
   <div>
-    <div class="fond-export-head"><span class="fld-label" data-i18n="fondLabel">Fond</span><span class="fond-export-val" id="screenshot-fond-val"></span></div>
+    <div class="fond-range-head"><span class="fld-label" id="screenshot-fond-label" data-i18n="fondLabel">Fond</span><span class="fond-range-val" id="screenshot-fond-val"></span></div>
     <div class="contrast-range-wrap">
-      <input class="contrast-range fond-export-range" id="screenshot-fond-range" type="range" min="0" max="4" step="1" value="0" oninput="fondExportInput('screenshot')">
-      <div class="fond-export-legend" id="screenshot-fond-legend"></div>
+      <input class="contrast-range fond-range" id="screenshot-fond-range" type="range" min="0" max="4" step="1" value="0" aria-labelledby="screenshot-fond-label" oninput="fondRangeInput('screenshot')">
+      <div class="fond-range-legend" id="screenshot-fond-legend"></div>
     </div>
   </div>
   <button class="pdfopt-generate" onclick="tmScreenshotGo()" style="display:flex;align-items:center;justify-content:center;gap:.45rem">
@@ -24528,10 +24481,10 @@ async function snapCompareAnim() {
     <button onclick="snapCmpBgClose()" style="background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--text3);font-size:.8rem;cursor:pointer;padding:.25rem .5rem;line-height:1;transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s">✕</button>
   </div>
   <div>
-    <div class="fond-export-head"><span class="fld-label" data-i18n="fondLabel">Fond</span><span class="fond-export-val" id="snapcmp-fond-val"></span></div>
+    <div class="fond-range-head"><span class="fld-label" id="snapcmp-fond-label" data-i18n="fondLabel">Fond</span><span class="fond-range-val" id="snapcmp-fond-val"></span></div>
     <div class="contrast-range-wrap">
-      <input class="contrast-range fond-export-range" id="snapcmp-fond-range" type="range" min="0" max="4" step="1" value="0" oninput="fondExportInput('snapcmp')">
-      <div class="fond-export-legend" id="snapcmp-fond-legend"></div>
+      <input class="contrast-range fond-range" id="snapcmp-fond-range" type="range" min="0" max="4" step="1" value="0" aria-labelledby="snapcmp-fond-label" oninput="fondRangeInput('snapcmp')">
+      <div class="fond-range-legend" id="snapcmp-fond-legend"></div>
     </div>
   </div>
   <button id="snapcmp-generate-btn" class="pdfopt-generate" onclick="snapCmpBgGo()" style="display:flex;align-items:center;justify-content:center;gap:.45rem">
