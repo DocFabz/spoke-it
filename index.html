@@ -685,13 +685,10 @@ html[data-contrast="bas"][data-fond="alu"] {
 }
 
 /* ── Règles de FAMILLE ────────────────────────────────────────────────────
-   Trois endroits, ici et plus bas, ne peuvent pas passer par les jetons et
-   nomment donc le sol clair directement. Ce sont les seuls : un sol clair
-   ajouté un jour se déclare dans ces trois sélecteurs, plus --fond-clair dans
-   son propre bloc pour la partie JS. Tout le reste suit tout seul.
-     1. color-scheme, juste en dessous
-     2. .hline, juste en dessous
-     3. .brand-letter, avec les keyframes letter-glow-clair
+   Un seul endroit, juste en dessous, ne peut pas passer par les jetons et
+   nomme donc le sol clair directement : color-scheme. Un sol clair ajouté un
+   jour se déclare dans ce sélecteur, plus --fond-clair dans son propre bloc
+   pour la partie JS. Tout le reste suit tout seul.
    ── */
 
 /* Les fonds clairs annoncent leur palier natif au navigateur : sans ça, les
@@ -700,16 +697,6 @@ html[data-contrast="bas"][data-fond="alu"] {
    :root color-scheme:dark plus bas, qui vaut pour les sols sombres. */
 html[data-fond="papier"],
 html[data-fond="alu"] { color-scheme: light }
-
-/* Le liseret tricolore sous spokeit.fr est peint en dur : son blanc central
-   s'évapore sur un sol clair et coupe le trait en deux. Sur un sol clair il
-   passe à un gris qui tient, la lecture bleu / blanc / rouge est conservée
-   par la valeur et non par la clarté pure. */
-html[data-fond="papier"] .hline { --h1:#31538f; --h2:#9a9188; --h3:#a03b4c }
-
-/* Variante froide du liseret : même lecture bleu / gris / rouge, sur des
-   valeurs neutres qui vont avec le gris de système. */
-html[data-fond="alu"] .hline { --h1:#2f5fae; --h2:#a4a8b0; --h3:#b0384a }
 
 
 /* ── Reset ─────────────────────────────────────────────────────────────────── */
@@ -740,42 +727,29 @@ body {
    en rgba(255,255,255,.035) et rgba(255,255,255,.022). */
 html[data-fond="carbone"] body { background-image:none }
 /* ── Header ────────────────────────────────────────────────────────────────── */
-header        { text-align:center; padding:1.4rem 1rem 1.6rem }
-.brand        { margin:0; font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:.18em; text-transform:uppercase; color:var(--text) }
-.brand em     { font-style:normal; color:var(--accent) }
-.brand-letter { display:inline-block; animation:letter-glow 0.6s ease calc(var(--i, 0) * 0.12s) both }
-.brand-letter-space { width:.25em }
-/* Composité GPU (Lighthouse) : opacity+filter au lieu de color+text-shadow.
-   Attente -> opacity .45 + saturate(0), qui désature aussi les lettres
-   cyan de l'em en gris (équivalent du color:var(--text3) d'origine, sinon
-   creux de luminosité entre Spoke et It) ; flash blanc -> brightness ;
-   halo -> drop-shadow. Timing inchangé, plus aucun repaint au boot. */
-/* Variante claire : sur un sol clair, le brightness(2.2) de letter-glow
-   pousse les lettres vers le blanc et les efface au lieu de les allumer. Ici
-   le flash va dans l'autre sens, vers l'encre, et le halo prend l'accent
-   sombre. Même timing, mêmes étapes, seul le sens du contraste s'inverse. */
-@keyframes letter-glow-clair {
-  0%   { opacity:.45; filter:saturate(0) }
-  40%  { opacity:1; filter:brightness(.5) drop-shadow(0 0 9px rgba(var(--accent-rgb),.5)) drop-shadow(0 0 22px rgba(var(--accent-rgb),.28)) }
-  100% { opacity:1; filter:none }
-}
-html[data-fond="papier"] .brand-letter,
-html[data-fond="alu"] .brand-letter { animation-name: letter-glow-clair }
-
-@keyframes letter-glow {
-  0%   { opacity:.45; filter:saturate(0) }
-  40%  { opacity:1; filter:brightness(2.2) drop-shadow(0 0 9px rgba(var(--accent-rgb),.95)) drop-shadow(0 0 22px rgba(var(--accent-rgb),.45)) }
-  100% { opacity:1; filter:none }
-}
-.sub          { font-family:'DM Mono',monospace; font-size:.67rem; font-weight:300; color:var(--text3); letter-spacing:.2em; margin-top:.1rem }
-.insta-link   { display:inline-flex; align-items:center; gap:.35rem; color:var(--text3); text-decoration:none; letter-spacing:.15em; transition:color .2s }
+header        { text-align:center; padding:.5rem 1rem 1.25rem }
+/* Encre et taille réglées ensemble, sur l'encre TOTALE et non sur la
+   couleur : à couleur égale et à la taille de départ, l'aplat du
+   mot-symbole émet près de 6 fois la lumière de l'ancien titre en
+   Cormorant 300, d'où un logo qui paraissait plus lumineux sur les sols
+   sombres et plus noir sur les sols clairs. 252 px et --text3 le ramènent
+   à 2 fois, mesuré sur le bloc en lumière linéaire. currentColor suit donc
+   --text3 sur chaque sol, et le niveau d'encre se règle ici, sur color.
+   Le logo est peint tel quel : aucune animation d'apparition, le halo, le
+   flash et le fondu hérités de l'ancien titre ont tous été retirés. */
+.brand        { margin:0; color:var(--text3); display:flex; justify-content:center; line-height:0 }
+.brand-svg    { width:min(252px, 66vw); height:auto; display:block }
+.brand-tag    { font-family:'DM Mono',monospace; font-size:50px; letter-spacing:18px; fill:currentColor }
+/* Sous le logo : l'icône Instagram seule, centrée. Le logo dit déjà
+   « spokeit.fr », le répéter faisait doublon. */
+.sub          { display:flex; justify-content:center; margin-top:calc(min(252px, 66vw) * -.05) }
+.insta-link   { display:inline-flex; align-items:center; justify-content:center;
+                width:40px; height:40px; margin:-10px 0; color:var(--text3);
+                text-decoration:none; transition:color .2s }
 .insta-link:hover { color:var(--accent) }
-.insta-icon   { width:13px; height:13px; flex-shrink:0; vertical-align:middle }
-/* Liseret sous spokeit.fr : tricolore en FR, bleu accent adouci en EN (via html[lang]). translateY plutôt que margin pour ne pas déplacer .header-actions. */
-.hline        { --h1:#4f7bc4; --h2:#c9d3dc; --h3:#c9586a; width:44px; height:1px; background:linear-gradient(90deg,transparent,var(--h1) 30%,var(--h2) 50%,var(--h3) 70%,transparent); margin:1.3rem auto 0; transform:translateY(-.5rem) }
-html[lang="en"] .hline { --h1:#79b9cf; --h2:#79b9cf; --h3:#79b9cf }
+.insta-icon   { width:17px; height:17px; flex-shrink:0; display:block }
 
-.header-actions { display:flex; align-items:center; justify-content:center; gap:.5rem; margin-top:1.1rem }
+.header-actions { display:flex; align-items:center; justify-content:center; gap:.5rem; margin-top:1.65rem }
 
 .save-mgr-btn { background:transparent; border:1px solid var(--border-s); border-radius:7px; color:var(--text2); padding:.28rem .9rem; cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s; display:inline-flex; align-items:center; justify-content:center; line-height:1 }
 .save-mgr-btn:hover { border-color:var(--accent); color:var(--accent) }
@@ -2937,18 +2911,22 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
     <span class="header-links-sep mobile-only">–</span>
     <span class="tou-link mobile-only" onclick="openInstall()" data-i18n="installLink">Installation</span>
   </div>
-  <h1 class="brand"><span class="brand-letter" style="--i:0">S</span><span class="brand-letter" style="--i:1">p</span><span class="brand-letter" style="--i:2">o</span><span class="brand-letter" style="--i:3">k</span><span class="brand-letter" style="--i:4">e</span><span class="brand-letter brand-letter-space"> </span><em><span class="brand-letter" style="--i:5">I</span><span class="brand-letter" style="--i:6">t</span><span class="brand-letter" style="--i:7">!</span></em></h1>
+  <h1 class="brand" aria-label="Spoke It">
+    <svg class="brand-svg" viewBox="87 57 1600 766" role="img" aria-hidden="true">
+      <path d="m1417,517l1,29l32-1l0-27l-2-2l-28,0l-1,1zm269-85l-67,0l-11,3l-8,4l-8,7l-3,4l-3,6l-2,6l-1,6l0,76l2,2l34-1l0-72l3-6l3-3l5-3l9-2l26,1l21-1l1-2zm-117-40l-44,0l-15,4l-8,4l-7,5l-9,10l-4,8l-2,6l-1,5l0,9l-2,2l-12,1l0,27l13,1l1,2l1,70l31,0l2-2l0-62l-1-7l2-2l54,0l0-6l1-1l-1-9l0-5l1-1l0-4l-1-2l-55-1l0-9l2-5l7-7l6-3l6-1l26,1l10-2zm-397-17l-2,2l0,167l2,2l37-1l-1-170l-12,0l-1-1l-11,0zm-225,27l-5,10l-4,15l0,63l3,13l5,11l4,6l11,11l11,7l7,3l14,4l9,1l138,0l2-1l-1-31l-136,0l-8-2l-9-5l-6-6l-2-3l-3-7l-1-6l0-6l1-2l138-1l5-1l11-4l9-6l3-3l5-7l3-6l2-7l0-21l-3-12l-4-8l-4-6l-10-9l-6-4l-9-4l-17-4l-104,0l-11,2l-17,7l-9,6l-9,9zm29,34l1-1l0-7l2-6l4-6l7-6l6-3l4-1l97,0l10,5l5,5l4,8l0,18l-2,2l-136,0l-2-2zm-879-44l-6,11l-3,11l0,20l3,10l3,6l4,6l9,8l12,6l15,3l101,0l5,2l7,7l2,5l0,10l-2,5l-7,7l-8,3l-145,1l1,30l148,0l11-2l14-6l7-5l10-11l4-8l3-12l0-15l-3-12l-5-9l-8-9l-7-5l-9-4l-12-3l-103,0l-6-2l-7-7l-2-5l0-10l2-5l5-6l3-2l6-2l139-1l-1-30l-143,0l-6,1l-9,3l-10,5zm407-7l-12-7l-11-4l-9-2l-107-1l-16,3l-6,2l-10,5l-9,6l-8,8l-3,4l-7,13l-3,10l-1,8l1,11l-1,19l0,26l1,1l-1,8l1,16l0,71l-1,2l1,5l0,62l-1,9l1,2l35,0l1-2l2-126l2,2l8,4l6,2l11,2l96,0l9-1l8-2l14-6l13-9l9-10l6-10l3-8l2-9l0-65l-2-9l-6-13l-5-7l-7-7zm-160,34l9-9l3-2l11-4l96,0l10,3l5,3l7,7l4,7l1,4l1,9l-1,50l-5,11l-7,7l-9,5l-7,2l-94,0l-7-2l-6-3l-8-7l-3-4l-4-9l0-59zm903-91l-1,2l0,154l3,15l7,15l8,10l7,6l6,4l12,6l13,4l13,2l79-1l-1-30l-74,0l-5-1l-11-5l-8-7l-3-4l-3-6l-2-6l0-79l2-2l88,0l1-2l0-27l-1-2l-90-1l0-44l-2-2l-36,0zm-76,0l-1,34l2,2l37-1l0-35l-2-1l-34,0zm-520-271l-7,7l0,289l-3,3l-25,7l-24,15l-5-1l-171-164l-13-1l-5,7l0,6l177,170l-13,32l-3,18l4,33l12,27l-159,144l0,8l5,6l10,0l157-141l5,0l24,15l24,6l3,4l0,269l3,5l11,2l7-5l1-22l-1-248l4-5l25-7l22-14l5,0l160,142l11-4l2-11l-114-103l36-1l2-70l85,69l46,1l-104-87l98-84l-46,2l-79,66l-3-68l-33,0l-3,172l-45-41l12-24l5-21l-2-30l-15-33l1-4l175-166l1-8l-7-8l-8,0l-176,167l-27-15l-23-6l-4-4l0-288l-3-6zm-2,326l13,0l14,3l15,7l7,5l10,10l7,10l6,14l2,9l0,18l-2,9l-5,12l-9,13l-7,7l-8,6l-7,4l-10,4l-8,2l-10,1l-6,0l-13-2l-9-3l-8-4l-9-6l-10-10l-8-12l-4-10l-2-8l0-7l-1-1l1-15l2-8l5-12l6-9l14-14l8-5l12-5z" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"/>
+      <text class="brand-tag" x="974" y="660">PRECISION</text>
+      <text class="brand-tag" x="974" y="726">AT EVERY SPOKE</text>
+    </svg>
+  </h1>
   <div class="sub">
-    <a href="https://www.instagram.com/spokeit.fr" target="_blank" rel="noopener noreferrer" class="insta-link">
-      <svg class="insta-icon" viewBox="0 0 24 24" fill="none" aria-label="Instagram">
+    <a href="https://www.instagram.com/spokeit.fr" target="_blank" rel="noopener noreferrer" class="insta-link" aria-label="Instagram spokeit.fr" title="Instagram spokeit.fr">
+      <svg class="insta-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <rect x="2" y="2" width="20" height="20" rx="5.5" stroke="currentColor" stroke-width="1.5"/>
         <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.5"/>
         <circle cx="17.5" cy="6.5" r="1" fill="currentColor"/>
       </svg>
-      spokeit.fr
     </a>
   </div>
-  <div class="hline"></div>
   <div class="header-actions">
     <button class="save-mgr-btn" onclick="openReglages()" id="reglages-btn" type="button" title="Réglages" aria-label="Réglages">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
