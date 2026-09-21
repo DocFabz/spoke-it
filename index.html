@@ -1404,7 +1404,8 @@ select option             { background:var(--inp) }
    à 390 px) la pastille reste collée au dernier mot au lieu d'être poussée
    seule à droite de la colonne. */
 .tip-wrap  { position:relative; display:block }
-.tip-wrap > .tip-icon, .tip-wrap > .info-icon { vertical-align:middle; margin-left:.3rem }
+.tip-wrap > .tip-icon, .tip-wrap > .info-icon { vertical-align:middle }
+.tip-wrap > .tip-icon:not(:first-child), .tip-wrap > .info-icon:not(:first-child) { margin-left:.3rem }
 /* Pastille « ? ». Deux comportements, un seul dessin : .tip-icon déroule un
    tip au survol, .info-icon ouvre une modale. Le dessin est ici, les écarts
    juste en dessous — ne pas le recopier. */
@@ -2359,6 +2360,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 /* Modale Play : le même sélecteur, mais un re-clic n'efface rien, donc pas
    de croix sur le bouton actif. */
 #tm-play-modal .ef-sw-btn.active::after { content:none }
+#tm-play-modal .ef-sw-btn:disabled { opacity:.35; cursor:default; pointer-events:none }
 /* Flash de confirmation à l'effacement (même pattern que sb-flash, halo neutre blanc) */
 @keyframes ef-sw-clear-flash {
   0%   { box-shadow:0 0 0 1px rgba(var(--ink-rgb),.55), 0 0 18px rgba(var(--ink-rgb),.35) }
@@ -20481,18 +20483,32 @@ function efStopMic() {
     sw.appendChild($id(isFront ? 'tm-play-sw-fo' : 'tm-play-sw-fa'));   // NDS
     sw.appendChild($id(isFront ? 'tm-play-sw-fa' : 'tm-play-sw-fo'));   // DS
     sw.appendChild($id('tm-play-sw-both'));                              // NDS + DS
+    // Une nappe sans relevé n'a rien à animer : bouton grisé, et un choix
+    // devenu impossible retombe sur ce qui reste (la modale ne s'ouvre qu'avec
+    // des relevés, donc au moins une nappe est disponible).
+    var has = { fo: tmData.fo.some(function(v) { return v !== null; }),
+                fa: tmData.fa.some(function(v) { return v !== null; }) };
+    has.both = has.fo && has.fa;
+    if (!has[tmPlayMode]) tmPlayMode = has.both ? 'both' : (has.fo ? 'fo' : 'fa');
     ['fo', 'fa', 'both'].forEach(function(m) {
-      $id('tm-play-sw-' + m).classList.toggle('active', tmPlayMode === m);
+      var b = $id('tm-play-sw-' + m);
+      b.disabled = !has[m];
+      b.classList.toggle('active', tmPlayMode === m);
     });
   }
   window.tmPlaySide = function(mode) {
     tmPlayMode = mode;
     tmPlayModeRender();
   };
+  // Un seul lancement par appui : pendant le fondu de fermeture (230 ms) le
+  // bouton reste cliquable, et deux appels ouvraient deux captures.
+  var tmPlayLaunching = false;
   window.tmPlayVideoFromModal = function() {
+    if (tmPlayLaunching) return;
+    tmPlayLaunching = true;
     var mode = tmPlayMode;
     tmClosePlayModal();
-    setTimeout(function() { tmPlayAnimVideo(mode); }, 230);
+    setTimeout(function() { tmPlayLaunching = false; tmPlayAnimVideo(mode); }, 230);
   };
 
   window.tmOpenPlayModal = function() {
@@ -24712,10 +24728,11 @@ async function tmPlayAnimVideo(mode) {
 </div>
 
 <!-- ── Modale Play : côté à animer, puis Animation (vidéo) ──
-     Hors du module tension à dessein : le délégué markModified écoute tout
-     <input> de #tension-module, et le curseur y passait pour une saisie
-     (désaffectation de la roue, purge des relevés). Hors de la card aussi :
-     elle y disparaissait avec elle. -->
+     Hors du module tension à dessein : au chargement, markModified est posé
+     sur chaque input et select de #tension-module, et un contrôle de cette
+     modale qui y vivrait passerait pour une saisie (désaffectation de la
+     roue, purge des relevés). Hors de la card aussi : elle y disparaissait
+     avec elle. -->
 <div id="tm-play-overlay" onclick="tmClosePlayModal()" style="position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:9990;display:none;opacity:0;transition:opacity .2s"></div>
 <div id="tm-play-modal" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.97);z-index:9991;background:var(--card);border:1px solid var(--border-s);border-radius:var(--r);padding:1.4rem 1.4rem 1.1rem;box-shadow:var(--sh-modal);width:88%;max-width:300px;display:none;flex-direction:column;gap:.75rem;opacity:0;transition:opacity .2s,transform .2s">
   <div style="display:flex;align-items:center;justify-content:space-between">
