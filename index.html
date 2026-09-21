@@ -750,6 +750,9 @@ header        { text-align:center; padding:.5rem 1rem 1.25rem }
                 width:40px; height:40px; margin:-10px 0; color:var(--text3);
                 text-decoration:none; transition:color .2s }
 .insta-link:hover { color:var(--accent) }
+/* Tactile : iOS fige :hover après le tap (l'icône restait allumée au retour
+   d'Instagram). Même convention que les autres boutons du fichier. */
+@media (hover: none) { .insta-link:hover { color:var(--text3) } .insta-link:active { color:var(--accent) } }
 .insta-icon   { width:17px; height:17px; flex-shrink:0; display:block }
 
 .header-actions { display:flex; align-items:center; justify-content:center; gap:.5rem; margin-top:1.65rem }
