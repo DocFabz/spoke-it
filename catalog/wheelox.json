@@ -8,7 +8,7 @@
   },
   "savedHubs": [
     {
-      "name": "Wheelox D2W MTB 15x110 J-Bend",
+      "name": "WHEELOX MTB 15x110 J-Bend",
       "data": {
         "wtype": "avant",
         "hubType": "jbend",
@@ -19,11 +19,16 @@
         "offsetLeft": "27.4",
         "offsetRight": "35",
         "soLeft": "",
-        "soRight": ""
+        "soRight": "",
+        "holes": [
+          24,
+          28,
+          32
+        ]
       }
     },
     {
-      "name": "Wheelox D2W MTB 12x148 J-Bend",
+      "name": "WHEELOX MTB 12x148 J-Bend",
       "data": {
         "wtype": "arriere",
         "hubType": "jbend",
@@ -34,11 +39,16 @@
         "offsetLeft": "36.3",
         "offsetRight": "24",
         "soLeft": "",
-        "soRight": ""
+        "soRight": "",
+        "holes": [
+          24,
+          28,
+          32
+        ]
       }
     },
     {
-      "name": "Wheelox D2W MTB 12x157 J-Bend",
+      "name": "WHEELOX MTB 12x157 J-Bend",
       "data": {
         "wtype": "arriere",
         "hubType": "jbend",
@@ -49,11 +59,16 @@
         "offsetLeft": "40.9",
         "offsetRight": "28.7",
         "soLeft": "",
-        "soRight": ""
+        "soRight": "",
+        "holes": [
+          24,
+          28,
+          32
+        ]
       }
     },
     {
-      "name": "Wheelox D2W Road 12x100 J-Bend",
+      "name": "WHEELOX Road 12x100 J-Bend",
       "data": {
         "wtype": "avant",
         "hubType": "jbend",
@@ -64,11 +79,15 @@
         "offsetLeft": "22.4",
         "offsetRight": "35.5",
         "soLeft": "",
-        "soRight": ""
+        "soRight": "",
+        "holes": [
+          24,
+          28
+        ]
       }
     },
     {
-      "name": "Wheelox D2W Road 12x142 J-Bend",
+      "name": "WHEELOX Road 12x142 J-Bend",
       "data": {
         "wtype": "arriere",
         "hubType": "jbend",
@@ -79,11 +98,15 @@
         "offsetLeft": "34.7",
         "offsetRight": "20.5",
         "soLeft": "",
-        "soRight": ""
+        "soRight": "",
+        "holes": [
+          24,
+          28
+        ]
       }
     },
     {
-      "name": "Wheelox D2W Road 12x100 SP",
+      "name": "WHEELOX Road 12x100 SP",
       "data": {
         "wtype": "avant",
         "hubType": "straightpull",
@@ -94,11 +117,14 @@
         "offsetLeft": "24.6",
         "offsetRight": "33.3",
         "soLeft": "1.95",
-        "soRight": "0.25"
+        "soRight": "0.25",
+        "holes": [
+          24
+        ]
       }
     },
     {
-      "name": "Wheelox D2W Road 12x142 SP",
+      "name": "WHEELOX Road 12x142 SP",
       "data": {
         "wtype": "arriere",
         "hubType": "straightpull",
@@ -109,7 +135,10 @@
         "offsetLeft": "34.8",
         "offsetRight": "19",
         "soLeft": "0.3",
-        "soRight": "3.25"
+        "soRight": "3.25",
+        "holes": [
+          24
+        ]
       }
     }
   ],
