@@ -1,0 +1,117 @@
+{
+  "spokeit": true,
+  "catalog": {
+    "brand": "Wheelox",
+    "revision": "R01",
+    "source": "wheelox.fr",
+    "updated": "2026-09-22"
+  },
+  "savedHubs": [
+    {
+      "name": "Wheelox D2W MTB 15x110 J-Bend",
+      "data": {
+        "wtype": "avant",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "58",
+        "pcdRight": "58",
+        "offsetLeft": "27.4",
+        "offsetRight": "35",
+        "soLeft": "",
+        "soRight": ""
+      }
+    },
+    {
+      "name": "Wheelox D2W MTB 12x148 J-Bend",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "58",
+        "pcdRight": "58",
+        "offsetLeft": "36.3",
+        "offsetRight": "24",
+        "soLeft": "",
+        "soRight": ""
+      }
+    },
+    {
+      "name": "Wheelox D2W MTB 12x157 J-Bend",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "58",
+        "pcdRight": "58",
+        "offsetLeft": "40.9",
+        "offsetRight": "28.7",
+        "soLeft": "",
+        "soRight": ""
+      }
+    },
+    {
+      "name": "Wheelox D2W Road 12x100 J-Bend",
+      "data": {
+        "wtype": "avant",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "42",
+        "pcdRight": "44",
+        "offsetLeft": "22.4",
+        "offsetRight": "35.5",
+        "soLeft": "",
+        "soRight": ""
+      }
+    },
+    {
+      "name": "Wheelox D2W Road 12x142 J-Bend",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "56",
+        "pcdRight": "44",
+        "offsetLeft": "34.7",
+        "offsetRight": "20.5",
+        "soLeft": "",
+        "soRight": ""
+      }
+    },
+    {
+      "name": "Wheelox D2W Road 12x100 SP",
+      "data": {
+        "wtype": "avant",
+        "hubType": "straightpull",
+        "nbRayons": "",
+        "diamTrou": "",
+        "pcdLeft": "33.5",
+        "pcdRight": "39",
+        "offsetLeft": "24.6",
+        "offsetRight": "33.3",
+        "soLeft": "1.95",
+        "soRight": "0.25"
+      }
+    },
+    {
+      "name": "Wheelox D2W Road 12x142 SP",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "straightpull",
+        "nbRayons": "",
+        "diamTrou": "",
+        "pcdLeft": "51",
+        "pcdRight": "39",
+        "offsetLeft": "34.8",
+        "offsetRight": "19",
+        "soLeft": "0.3",
+        "soRight": "3.25"
+      }
+    }
+  ],
+  "savedRims": []
+}
