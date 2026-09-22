@@ -3064,7 +3064,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
     <span data-i18n="pickerDataMgr">Data manager</span>
   </button>
-  <button class="ct-save-btn" id="ob-picker-btn" type="button" onclick="closeDataPicker();openOnlineBase()">
+  <button class="ct-save-btn" type="button" onclick="closeDataPicker();openOnlineBase()">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16.6A4.5 4.5 0 0 0 18.5 8h-1.3A7 7 0 1 0 5 15.3"/><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/></svg>
     <span data-i18n="pickerOnlineBase">Online base</span>
   </button>
@@ -10600,14 +10600,15 @@ function obImportBrand(b) {
       });
       if (nr && !hrPersist('rim', rims)) throw _lsWriteFail();
     }
-    try { hrUpdateButtons(); } catch(e) {}
+    // Le moyeu affecté a pu être remplacé par l'import (même nom, même côté) :
+    // badge et filtre de perçage sont recalculés sur l'entrée neuve.
+    try { hrUpdateButtons(); hrRefreshBadges(); } catch(e) {}
     // Fichier valide mais rien de retenu (collections absentes ou entrées
     // toutes rejetées) : c'est une erreur de catalogue, pas un succès vert.
     if (!nh && !nr) throw new Error('empty');
     // Modale fermée puis rouverte pendant le téléchargement : la liste
-    // rouverte reste, on rend seulement ses boutons.
-    if (seq !== _obSeq) { _reenable(); return; }
-    closeOnlineBase();
+    // rouverte reste (boutons rendus), le toast part dans tous les cas.
+    if (seq !== _obSeq) _reenable(); else closeOnlineBase();
     // Toast : seules les collections importées sont nommées (« Wheelox : 7
     // moyeux importés »), pluriel par collection et sur le participe.
     var parts = [];
@@ -21533,9 +21534,11 @@ function hrApplyHub(d) {
   // Moyeu sans nombre de rayons (catalogue Online base) : le perçage déjà
   // saisi est conservé, la géométrie seule est appliquée.
   if (d.nbRayons) document.getElementById('nb-rayons').value = d.nbRayons;
-  else if (Array.isArray(d.holes) && d.holes.length === 1 && !document.getElementById('nb-rayons').value) {
-    // Perçage unique et champ vide : le seul choix possible est posé d'office.
-    document.getElementById('nb-rayons').value = String(d.holes[0]);
+  else if (Array.isArray(d.holes) && d.holes.length === 1 && Number(d.holes[0]) > 0 &&
+           !document.getElementById('nb-rayons').value) {
+    // Perçage unique et champ vide : le seul choix possible est posé d'office
+    // (même normalisation numérique que hrHolesOf).
+    document.getElementById('nb-rayons').value = String(Number(d.holes[0]));
   }
   document.getElementById('diam-trou').value    = d.diamTrou    || '2.55';
   document.getElementById('pcd-left').value     = d.pcdLeft     || '';
