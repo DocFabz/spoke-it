@@ -1106,15 +1106,19 @@ html[data-fond="alu"] .ateliermgr-logo-wrap.has-logo:hover, html[data-fond="alu"
 /* Les deux chooseurs à boutons empilés (Rider, et « Données » ouvert par la
    disquette) partagent .ridermgr-chooser et ces règles de bouton. Le bouton
    « Affecter roues » de la modale Rider les reprend : icône + libellé. */
-#riderchoose-modal .ct-save-btn, #datapicker-modal .ct-save-btn, #reglages-modal .ct-save-btn, #rideredit-modal .rider-assign-btn { display:flex; align-items:center; justify-content:center; gap:.5rem }
+#riderchoose-modal .ct-save-btn, #datapicker-modal .ct-save-btn, #reglages-modal .ct-save-btn, #onlinebase-modal .ct-save-btn, #rideredit-modal .rider-assign-btn { display:flex; align-items:center; justify-content:center; gap:.5rem }
 /* Réglages : alignement à gauche, pas centré. Les lignes qui portent une
    valeur à droite (.reglages-val) ont une marge automatique qui repousse déjà
    leur icône contre le bord gauche ; celles qui n'en portent pas — Mode
    d'emploi — restaient centrées et cassaient la colonne d'icônes. En posant
    flex-start, les deux cas se rejoignent : l'icône au même fer à gauche pour
    toutes les lignes, la valeur toujours à droite. */
-#reglages-modal .ct-save-btn { justify-content:flex-start }
-#riderchoose-modal .ct-save-btn svg, #datapicker-modal .ct-save-btn svg, #reglages-modal .ct-save-btn svg, #rideredit-modal .rider-assign-btn svg { flex-shrink:0; opacity:.85 }
+#reglages-modal .ct-save-btn, #onlinebase-modal .ct-save-btn { justify-content:flex-start }
+#riderchoose-modal .ct-save-btn svg, #datapicker-modal .ct-save-btn svg, #reglages-modal .ct-save-btn svg, #onlinebase-modal .ct-save-btn svg, #rideredit-modal .rider-assign-btn svg { flex-shrink:0; opacity:.85 }
+/* Online base : ligne d'état (chargement, hors ligne, erreur) sous le titre. */
+#onlinebase-modal .ob-status { font-size:.72rem; color:var(--text3); font-style:italic; text-align:center; padding:.5rem }
+#onlinebase-modal .ct-save-btn[disabled] { opacity:.5; pointer-events:none }
+#ob-list { display:flex; flex-direction:column; gap:.7rem }
 .rider-wheels-list { max-height:30vh; max-height:30dvh }
 .rider-wheels-list .wheel-load-empty { padding:.3rem }
 /* Roue en attente dans « Roues affectées » (choisie via « Affecter roues »,
@@ -3060,6 +3064,29 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
     <span data-i18n="pickerDataMgr">Data manager</span>
   </button>
+  <button class="ct-save-btn" id="ob-picker-btn" onclick="closeDataPicker();openOnlineBase()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16.6A4.5 4.5 0 0 0 18.5 8h-1.3A7 7 0 1 0 5 15.3"/><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/></svg>
+    <span data-i18n="pickerOnlineBase">Online base</span>
+  </button>
+</div>
+
+<!-- ── Online base : catalogue de composants hébergé avec l'app (dossier
+     catalog/ du dépôt). Même coque que la modale Données ; la liste des
+     marques est construite à l'ouverture depuis catalog/index.json, un
+     fichier par marque au format backup partiel (spokeit:true, savedHubs,
+     savedRims), donc aussi importable par le Backup manager. ── -->
+<div class="ateliermgr-overlay" id="onlinebase-overlay" onclick="closeOnlineBase()"></div>
+<div class="ateliermgr-modal ridermgr-chooser" id="onlinebase-modal" style="max-width:300px" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="onlinebase-title">
+  <div class="ateliermgr-header">
+    <span class="ateliermgr-header-left">
+      <svg class="ateliermgr-title-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 16.6A4.5 4.5 0 0 0 18.5 8h-1.3A7 7 0 1 0 5 15.3"/><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/>
+      </svg>
+      <span class="ateliermgr-title" id="onlinebase-title" data-i18n="pickerOnlineBase">Online base</span>
+    </span>
+    <button class="ateliermgr-close" onclick="closeOnlineBase()" aria-label="Fermer">&#x2715;</button>
+  </div>
+  <div id="ob-list"></div>
 </div>
 
 <!-- ── Apparence : le fond et le contraste dans une seule modale, ouverte
@@ -6216,6 +6243,14 @@ const i18n = {
     ctMyTensios:'★ MES TENSIOS',
     pickerBackup:'Backup manager',
     pickerDataMgr:'Data manager',
+    pickerOnlineBase:'Online base',
+    obLoading:'Chargement du catalogue…',
+    obOffline:'Connexion requise.',
+    obError:'Catalogue indisponible.',
+    obEmpty:'Aucune marque disponible.',
+    obImported:'{b} : {h} moyeu(x), {r} jante(s) importé(s)',
+    obHubs:'moyeux',
+    obRims:'jantes',
     pickerMenuBtn:'Gestion des données',
     pickerTitle:'Données',
     atelierTitle:'Atelier',
@@ -6496,6 +6531,14 @@ const i18n = {
     ctMyTensios:'★ MY TENSIOS',
     pickerBackup:'Backup manager',
     pickerDataMgr:'Data manager',
+    pickerOnlineBase:'Online base',
+    obLoading:'Loading catalog…',
+    obOffline:'Connection required.',
+    obError:'Catalog unavailable.',
+    obEmpty:'No brand available.',
+    obImported:'{b}: {h} hub(s), {r} rim(s) imported',
+    obHubs:'hubs',
+    obRims:'rims',
     pickerMenuBtn:'Data management',
     pickerTitle:'Data',
     atelierTitle:'Workshop',
@@ -10443,6 +10486,118 @@ function closeReglages() {
   $id('reglages-modal').classList.remove('show');
   if (document.activeElement && document.activeElement !== document.body)
     document.activeElement.blur();
+}
+
+// ── Online base ─────────────────────────────────────────────────────────────
+// Catalogue de composants servi à côté de l'app (OB_BASE, relatif à la page :
+// même origine, donc ni CORS ni clé). index.json liste les marques, chaque
+// marque est un fichier au format backup partiel. Fonction en ligne
+// seulement : hors connexion la modale l'annonce et n'appelle rien.
+// cache:'no-cache' force la revalidation : GitHub Pages sert avec
+// max-age=600, un catalogue mis à jour serait sinon invisible dix minutes.
+var OB_BASE = 'catalog/';
+var _obBusy = false;
+var _obSeq = 0; // jeton de rendu : une réponse arrivée après une réouverture ne repeint pas
+
+function openOnlineBase() {
+  $id('onlinebase-overlay').classList.add('show');
+  $id('onlinebase-modal').classList.add('show');
+  obRenderIndex();
+}
+function closeOnlineBase() {
+  _obSeq++; // une réponse en vol ne repeint pas une modale fermée
+  $id('onlinebase-overlay').classList.remove('show');
+  $id('onlinebase-modal').classList.remove('show');
+  if (document.activeElement && document.activeElement !== document.body)
+    document.activeElement.blur();
+}
+function _obStatus(key) {
+  $id('ob-list').innerHTML = '<div class="ob-status">' + escHtml(t(key)) + '</div>';
+}
+function obFetch(file) {
+  return fetch(OB_BASE + file, { cache: 'no-cache' }).then(function(r) {
+    if (!r.ok) throw new Error('http ' + r.status);
+    return r.json();
+  });
+}
+function obRenderIndex() {
+  var seq = ++_obSeq;
+  if (!navigator.onLine) { _obStatus('obOffline'); return; }
+  _obStatus('obLoading');
+  obFetch('index.json').then(function(list) {
+    if (seq !== _obSeq) return;
+    if (!Array.isArray(list)) throw new Error('index');
+    list = list.filter(function(b) { return b && typeof b.name === 'string' && typeof b.file === 'string'; });
+    if (!list.length) { _obStatus('obEmpty'); return; }
+    var box = $id('ob-list');
+    box.innerHTML = '';
+    list.forEach(function(b) {
+      var btn = document.createElement('button');
+      btn.className = 'ct-save-btn';
+      btn.type = 'button';
+      var parts = [];
+      if (b.hubs) parts.push(b.hubs + ' ' + t('obHubs'));
+      if (b.rims) parts.push(b.rims + ' ' + t('obRims'));
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16.6A4.5 4.5 0 0 0 18.5 8h-1.3A7 7 0 1 0 5 15.3"/><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/></svg>'
+        + '<span>' + escHtml(b.name) + '</span>'
+        + '<span class="reglages-val">' + escHtml(parts.join(' · ')) + '</span>';
+      btn.addEventListener('click', function() { obImportBrand(b); });
+      box.appendChild(btn);
+    });
+  }).catch(function() { if (seq === _obSeq) _obStatus('obError'); });
+}
+
+// Import d'une marque. Même clé d'unicité que confirmHrSave et le backup :
+// moyeux (nom, côté), jantes nom — une entrée déjà présente est REMPLACÉE,
+// c'est ce qui permet de rejouer l'import après une révision du catalogue.
+// Horodatage posé à l'import (comme wshareImport) : l'entrée est datée du
+// jour dans les listes et le filtre Période. Aucun autre champ du fichier
+// n'est écrit (pas de roues, riders, chartes ni atelier par ce chemin).
+function obImportBrand(b) {
+  if (_obBusy) return;
+  _obBusy = true;
+  var box = $id('ob-list');
+  box.querySelectorAll('button').forEach(function(x) { x.disabled = true; });
+  obFetch(b.file).then(function(data) {
+    if (!data || !data.spokeit) throw new Error('format');
+    var nh = 0, nr = 0, now = Date.now();
+    if (Array.isArray(data.savedHubs)) {
+      var hubs = hrLoadAll('hub');
+      data.savedHubs.forEach(function(e) {
+        if (!e || typeof e.name !== 'string' || !e.name.trim() || !e.data || typeof e.data !== 'object') return;
+        var side = e.data.wtype === 'arriere' ? 'arriere' : 'avant';
+        if (e.data.hubType !== 'jbend' && e.data.hubType !== 'straightpull') return;
+        var entry = { name: e.name.slice(0, NAME_MAX), data: e.data, ts: now };
+        entry.data.wtype = side;
+        var idx = hubs.findIndex(function(h) {
+          return h.name.toLowerCase() === entry.name.toLowerCase() &&
+                 ((h.data && h.data.wtype) || 'avant') === side;
+        });
+        if (idx >= 0) hubs.splice(idx, 1, entry); else hubs.unshift(entry);
+        nh++;
+      });
+      if (nh && !hrPersist('hub', hubs)) throw _lsWriteFail();
+    }
+    if (Array.isArray(data.savedRims)) {
+      var rims = hrLoadAll('rim');
+      data.savedRims.forEach(function(e) {
+        if (!e || typeof e.name !== 'string' || !e.name.trim() || !e.data || typeof e.data !== 'object') return;
+        var entry = { name: e.name.slice(0, NAME_MAX), data: e.data, ts: now };
+        var idx = rims.findIndex(function(r) { return r.name.toLowerCase() === entry.name.toLowerCase(); });
+        if (idx >= 0) rims.splice(idx, 1, entry); else rims.unshift(entry);
+        nr++;
+      });
+      if (nr && !hrPersist('rim', rims)) throw _lsWriteFail();
+    }
+    try { hrUpdateButtons(); } catch(e) {}
+    closeOnlineBase();
+    showImportToast(t('obImported').replace('{b}', b.name).replace('{h}', nh).replace('{r}', nr), false);
+  }).catch(function(err) {
+    // lsSet a déjà prévenu en cas de refus du stockage (même règle que
+    // importConfigs) : on ne double pas le message.
+    if (!(err && err._lsWrite)) _obStatus('obError');
+    else closeOnlineBase();
+  }).then(function() { _obBusy = false; });
 }
 
 // ── Contraste ───────────────────────────────────────────────────────────────
@@ -14880,6 +15035,9 @@ document.addEventListener('keydown', function(e) {
   }
   if (e.key === 'Escape' && $id('reglages-modal') && $id('reglages-modal').classList.contains('show')) {
     closeReglages();
+  }
+  if (e.key === 'Escape' && $id('onlinebase-modal') && $id('onlinebase-modal').classList.contains('show')) {
+    closeOnlineBase();
   }
   if (e.key === 'Escape' && $id('ef-mic-lang-modal') && $id('ef-mic-lang-modal').classList.contains('show')) {
     efCloseMicLangModal();
