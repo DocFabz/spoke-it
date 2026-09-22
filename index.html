@@ -21537,19 +21537,15 @@ function hrApplyHub(d) {
   // tombent. Le nom du moyeu chargé est posé par l'appelant, après.
   if (typeof hubStashForget === 'function') hubStashForget();
   if (d.hubType) { hubType = d.hubType; hubTypeByWheel[wtype] = d.hubType; setHubType(d.hubType, true); }
-  // Moyeu sans nombre enregistré (catalogue Online base) : la valeur affichée
-  // n'est gardée que si ses perçages la proposent, sinon le champ repart comme
-  // sur une card vierge (vide, ou perçage unique posé d'office). Sans liste de
-  // perçages, tout nb est admis : rien à retirer.
+  // Le nb de rayons appartient au moyeu chargé, jamais au précédent : sans
+  // nombre enregistré (catalogue Online base), le champ repart vide, comme
+  // sur une card vierge, quelle que soit la valeur affichée. Seul cas rempli
+  // d'office : un perçage unique, qui est de fait le nombre du moyeu.
   var nbEl = document.getElementById('nb-rayons');
-  if (d.nbRayons) nbEl.value = d.nbRayons;
-  else {
-    // Même normalisation numérique que hrHolesOf.
-    var holes = Array.isArray(d.holes)
-      ? d.holes.map(Number).filter(function(n) { return n > 0; }) : [];
-    if (holes.length && holes.indexOf(Number(nbEl.value)) < 0)
-      nbEl.value = holes.length === 1 ? String(holes[0]) : '';
-  }
+  // Même normalisation numérique que hrHolesOf.
+  var holes = Array.isArray(d.holes)
+    ? d.holes.map(Number).filter(function(n) { return n > 0; }) : [];
+  nbEl.value = d.nbRayons || (holes.length === 1 ? String(holes[0]) : '');
   // Écriture sans événement : le gris du « — » suit à la main.
   if (typeof syncSelectPlaceholder === 'function') syncSelectPlaceholder(nbEl);
   document.getElementById('diam-trou').value    = d.diamTrou    || '2.55';
@@ -22329,8 +22325,8 @@ function hrRefreshBadges() {
 // édité, bascule de type, autre moyeu chargé, changement de roue). Un moyeu
 // enregistré par l'app n'a pas de holes (hrReadHub ne le lit pas) : menu
 // complet. Le filtre ne touche jamais à la valeur : c'est hrApplyHub qui
-// l'aligne au chargement (gardée si le moyeu la propose, sinon repart de
-// vide). Une option hors liste ne reste donc sélectionnée, grisée, que si
+// la pose au chargement (nombre enregistré, perçage unique, sinon vide).
+// Une option hors liste ne reste donc sélectionnée, grisée, que si
 // l'appelant l'a imposée (complétion avec relevés : le nb de la roue prime).
 // Lecture par le mémo anti-reparse de hrUpdateButtons : hrRefreshBadges est
 // aussi appelé à chaque frappe dans un champ jante (hrClearLoadedRim).
