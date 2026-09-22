@@ -21533,6 +21533,10 @@ function hrApplyHub(d) {
   // Moyeu sans nombre de rayons (catalogue Online base) : le perçage déjà
   // saisi est conservé, la géométrie seule est appliquée.
   if (d.nbRayons) document.getElementById('nb-rayons').value = d.nbRayons;
+  else if (Array.isArray(d.holes) && d.holes.length === 1 && !document.getElementById('nb-rayons').value) {
+    // Perçage unique et champ vide : le seul choix possible est posé d'office.
+    document.getElementById('nb-rayons').value = String(d.holes[0]);
+  }
   document.getElementById('diam-trou').value    = d.diamTrou    || '2.55';
   document.getElementById('pcd-left').value     = d.pcdLeft     || '';
   document.getElementById('pcd-right').value    = d.pcdRight    || '';
@@ -21673,7 +21677,7 @@ window.updateCalcBtn = function() {
   // veille de l'autre type. Champs PROPRES à un type : le badge affiché seul,
   // cf. hrForgetHubNameStash.
   // Le nombre de rayons n'en fait pas partie : c'est le perçage, pas la
-  // géométrie du moyeu — un même moyeu se vend en 24, 28 ou 32 trous (cf. les
+  // géométrie du moyeu : un même moyeu se vend en 24, 28 ou 32 trous (cf. les
   // moyeux du catalogue Online base, enregistrés sans perçage). Le choisir
   // désaffecte la roue (markModified), jamais le moyeu.
   var hubCommonIds = ['pcd-left','pcd-right','offset-left','offset-right'];
@@ -21775,6 +21779,11 @@ function confirmHrSave() {
     var data  = type === 'hub' ? hrReadHub() : hrReadRim();
     var arr2  = hrLoadAll(type);
     var ei2   = arr2.findIndex(sameSlot);
+    // Perçages d'un moyeu de catalogue (data.holes) : hrReadHub ne les lit pas,
+    // l'entrée remplacée les transmet pour que le filtre survive au « Remplacer ».
+    if (type === 'hub' && ei2 >= 0 && arr2[ei2].data && Array.isArray(arr2[ei2].data.holes)) {
+      data.holes = arr2[ei2].data.holes;
+    }
     var entry = { name: name, data: data, ts: Date.now() };
     if (ei2 >= 0) arr2.splice(ei2, 1, entry);
     else arr2.unshift(entry);
@@ -22293,6 +22302,41 @@ function _setHrBadge(badgeId, textId, name) {
 function hrRefreshBadges() {
   _setHrBadge('hub-loaded-name', 'hub-loaded-text', _loadedHubName[wtype]);
   _setHrBadge('rim-loaded-name', 'rim-loaded-text', _loadedRimName[wtype]);
+  hrApplyHoleFilter();
+}
+
+// ── Perçages d'un moyeu de catalogue ─────────────────────────────────────────
+// Un moyeu importé par Online base peut porter data.holes (ex. [24, 28, 32]) :
+// les autres options du nombre de rayons sont alors grisées et masquées, dans
+// le calculateur comme dans le module tension. La règle est DÉRIVÉE du badge,
+// sans état propre : elle suit le nom affecté et tombe avec lui (champ commun
+// édité, bascule de type, autre moyeu chargé, changement de roue). Un moyeu
+// enregistré par l'app n'a pas de holes (hrReadHub ne le lit pas) : menu
+// complet. La valeur déjà choisie n'est jamais forcée : une option hors
+// liste reste sélectionnée, grisée, jusqu'au prochain choix.
+// Lecture par le mémo anti-reparse de hrUpdateButtons : hrRefreshBadges est
+// aussi appelé à chaque frappe dans un champ jante (hrClearLoadedRim).
+function hrHolesOf(name) {
+  if (!name) return null;
+  var e = _hrBtnRead(_hrBtnMemo.hub, LS_HUBS).find(function(h) {
+    return h && h.name === name && ((h.data && h.data.wtype) || 'avant') === wtype;
+  });
+  var holes = e && e.data && e.data.holes;
+  if (!Array.isArray(holes)) return null;
+  holes = holes.map(Number).filter(function(n) { return n > 0; });
+  return holes.length ? holes : null;
+}
+function hrApplyHoleFilter() {
+  var holes = hrHolesOf(_loadedHubName[wtype]);
+  ['nb-rayons', 'tm-nb-select'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    if (!sel) return;
+    Array.prototype.forEach.call(sel.options, function(o) {
+      var off = !!holes && o.value !== '' && holes.indexOf(Number(o.value)) < 0;
+      o.disabled = off;
+      o.hidden = off;
+    });
+  });
 }
 
 function hrSetLoadedHub(name) {
