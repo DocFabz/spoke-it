@@ -6668,6 +6668,9 @@ function t(key) { return (i18n[lang] && i18n[lang][key]) || key; }
 //        'pref'      = préférence d'interface (survit à « Tout effacer »)
 //        'meta'      = horloges internes du rappel / détection de version
 //        'transient' = état éphémère de reprise (auto-nettoyé par son module)
+//        'external'  = clé d'un outil voisin partageant l'origine (jamais lue
+//                      ni écrite par l'app : déclarée pour que l'audit se taise,
+//                      et hors « Tout effacer », qui ne doit pas y toucher)
 // erase : purgée par le filet de sécurité de « Tout effacer ». L'orchestration
 //         métier de eraseMgrEraseAll reste responsable des effets de bord
 //         (UI, TM_TABLES, tensio actif…) ; le filet garantit seulement
@@ -6694,6 +6697,9 @@ const LS_REGISTRY = [
   { key:'spoke-it-lang',          kind:'pref',      erase:false, exportField:null,            owner:'i18n' },
   { key:'spokeit_contrast',       kind:'pref',      erase:false, exportField:null,            owner:'palier de contraste (par appareil)' },
   { key:'spokeit_fond',           kind:'pref',      erase:false, exportField:null,            owner:'fond (par appareil)' },
+  // Brouillon de catalog-editor.html (outil de saisie Online base, hors app) :
+  // même origine quand il est ouvert depuis le même dossier ou le même site.
+  { key:'spokeit_catalog_editor', kind:'external',  erase:false, exportField:null,            owner:'catalog-editor.html (brouillon)' },
 ];
 // Clés « données » précalculées pour le test à chaud dans lsSet.
 const LS_DATA_KEYS = (function() {
@@ -21531,15 +21537,21 @@ function hrApplyHub(d) {
   // tombent. Le nom du moyeu chargé est posé par l'appelant, après.
   if (typeof hubStashForget === 'function') hubStashForget();
   if (d.hubType) { hubType = d.hubType; hubTypeByWheel[wtype] = d.hubType; setHubType(d.hubType, true); }
-  // Moyeu sans nombre de rayons (catalogue Online base) : le perçage déjà
-  // saisi est conservé, la géométrie seule est appliquée.
-  if (d.nbRayons) document.getElementById('nb-rayons').value = d.nbRayons;
-  else if (Array.isArray(d.holes) && d.holes.length === 1 && Number(d.holes[0]) > 0 &&
-           !document.getElementById('nb-rayons').value) {
-    // Perçage unique et champ vide : le seul choix possible est posé d'office
-    // (même normalisation numérique que hrHolesOf).
-    document.getElementById('nb-rayons').value = String(Number(d.holes[0]));
+  // Moyeu sans nombre enregistré (catalogue Online base) : la valeur affichée
+  // n'est gardée que si ses perçages la proposent, sinon le champ repart comme
+  // sur une card vierge (vide, ou perçage unique posé d'office). Sans liste de
+  // perçages, tout nb est admis : rien à retirer.
+  var nbEl = document.getElementById('nb-rayons');
+  if (d.nbRayons) nbEl.value = d.nbRayons;
+  else {
+    // Même normalisation numérique que hrHolesOf.
+    var holes = Array.isArray(d.holes)
+      ? d.holes.map(Number).filter(function(n) { return n > 0; }) : [];
+    if (holes.length && holes.indexOf(Number(nbEl.value)) < 0)
+      nbEl.value = holes.length === 1 ? String(holes[0]) : '';
   }
+  // Écriture sans événement : le gris du « — » suit à la main.
+  if (typeof syncSelectPlaceholder === 'function') syncSelectPlaceholder(nbEl);
   document.getElementById('diam-trou').value    = d.diamTrou    || '2.55';
   document.getElementById('pcd-left').value     = d.pcdLeft     || '';
   document.getElementById('pcd-right').value    = d.pcdRight    || '';
@@ -22131,15 +22143,16 @@ function hrRenderLoadList(type) {
         // les relevés qu'il dimensionnait ne veulent plus rien dire, on les
         // invalide. Les deux s'excluent — après restauration, le nb n'a pas
         // bougé et l'invalidation ne se déclenche pas.
-        var _keepNb = (_cfgFilling() && tmAnyReadings())
-          ? document.getElementById('nb-rayons').value : null;
-        var _nbBefore = document.getElementById('nb-rayons').value;
+        var _nbSel = document.getElementById('nb-rayons');
+        var _keepNb = (_cfgFilling() && tmAnyReadings()) ? _nbSel.value : null;
+        var _nbBefore = _nbSel.value;
         hrApplyHub(entry.data);
-        if (_keepNb !== null && document.getElementById('nb-rayons').value !== _keepNb) {
-          document.getElementById('nb-rayons').value = _keepNb;
+        if (_keepNb !== null && _nbSel.value !== _keepNb) {
+          _nbSel.value = _keepNb;
+          if (typeof syncSelectPlaceholder === 'function') syncSelectPlaceholder(_nbSel);
           window.updateCalcBtn();
         }
-        if (document.getElementById('nb-rayons').value !== _nbBefore) {
+        if (_nbSel.value !== _nbBefore) {
           tmInvalidateOnNbChange();
         }
         hrSetLoadedHub(entry.name);
@@ -22315,8 +22328,10 @@ function hrRefreshBadges() {
 // sans état propre : elle suit le nom affecté et tombe avec lui (champ commun
 // édité, bascule de type, autre moyeu chargé, changement de roue). Un moyeu
 // enregistré par l'app n'a pas de holes (hrReadHub ne le lit pas) : menu
-// complet. La valeur déjà choisie n'est jamais forcée : une option hors
-// liste reste sélectionnée, grisée, jusqu'au prochain choix.
+// complet. Le filtre ne touche jamais à la valeur : c'est hrApplyHub qui
+// l'aligne au chargement (gardée si le moyeu la propose, sinon repart de
+// vide). Une option hors liste ne reste donc sélectionnée, grisée, que si
+// l'appelant l'a imposée (complétion avec relevés : le nb de la roue prime).
 // Lecture par le mémo anti-reparse de hrUpdateButtons : hrRefreshBadges est
 // aussi appelé à chaque frappe dans un champ jante (hrClearLoadedRim).
 function hrHolesOf(name) {
