@@ -1,0 +1,420 @@
+{
+  "spokeit": true,
+  "catalog": {
+    "brand": "Hope",
+    "revision": "R01",
+    "source": "hopefrance.com",
+    "updated": "2026-09-23"
+  },
+  "savedHubs": [
+    {
+      "name": "HOPE PRO5 FRONT 100 6 BOLT",
+      "data": {
+        "wtype": "avant",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "58",
+        "pcdRight": "52",
+        "offsetLeft": "20",
+        "offsetRight": "34",
+        "soLeft": "",
+        "soRight": "",
+        "holes": [
+          24,
+          28,
+          32
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 FRONT 110 6 BOLT",
+      "data": {
+        "wtype": "avant",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "58",
+        "pcdRight": "52",
+        "offsetLeft": "25",
+        "offsetRight": "34",
+        "soLeft": "",
+        "soRight": "",
+        "holes": [
+          24,
+          28,
+          32
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 FRONT 100 CL",
+      "data": {
+        "wtype": "avant",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "43",
+        "pcdRight": "43",
+        "offsetLeft": "22",
+        "offsetRight": "33",
+        "soLeft": "",
+        "soRight": "",
+        "holes": [
+          24,
+          28,
+          32
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 FRONT 110 CL",
+      "data": {
+        "wtype": "avant",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "43",
+        "pcdRight": "43",
+        "offsetLeft": "27",
+        "offsetRight": "35.6",
+        "soLeft": "",
+        "soRight": "",
+        "holes": [
+          24,
+          28,
+          32
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 FRONT 100 CL SP",
+      "data": {
+        "wtype": "avant",
+        "hubType": "straightpull",
+        "nbRayons": "",
+        "diamTrou": "",
+        "pcdLeft": "46",
+        "pcdRight": "46",
+        "offsetLeft": "21",
+        "offsetRight": "33",
+        "soLeft": "2",
+        "soRight": "2",
+        "holes": [
+          24
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 FRONT 110 CL SP",
+      "data": {
+        "wtype": "avant",
+        "hubType": "straightpull",
+        "nbRayons": "",
+        "diamTrou": "",
+        "pcdLeft": "46",
+        "pcdRight": "46",
+        "offsetLeft": "26",
+        "offsetRight": "33",
+        "soLeft": "2",
+        "soRight": "2",
+        "holes": [
+          24
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 REAR 135 6 BOLT",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "57",
+        "pcdRight": "59",
+        "offsetLeft": "32",
+        "offsetRight": "19.6",
+        "soLeft": "",
+        "soRight": "",
+        "holes": [
+          24,
+          28,
+          32,
+          36
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 REAR 12X142 6 BOLT",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "57",
+        "pcdRight": "59",
+        "offsetLeft": "32",
+        "offsetRight": "19.6",
+        "soLeft": "",
+        "soRight": "",
+        "holes": [
+          24,
+          28,
+          32,
+          36
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 REAR 148 6 BOLT",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "57",
+        "pcdRight": "59",
+        "offsetLeft": "35",
+        "offsetRight": "22.6",
+        "soLeft": "",
+        "soRight": "",
+        "holes": [
+          24,
+          28,
+          32,
+          36
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 REAR 141 QR 6 BOLT",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "57",
+        "pcdRight": "59",
+        "offsetLeft": "35",
+        "offsetRight": "22.6",
+        "soLeft": "",
+        "soRight": "",
+        "holes": [
+          24,
+          28,
+          32,
+          36
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 REAR 150 6 BOLT",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "57",
+        "pcdRight": "59",
+        "offsetLeft": "28",
+        "offsetRight": "26.8",
+        "soLeft": "",
+        "soRight": "",
+        "holes": [
+          28,
+          32
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 REAR 157 SB 6 BOLT",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "57",
+        "pcdRight": "59",
+        "offsetLeft": "39.6",
+        "offsetRight": "27",
+        "soLeft": "",
+        "soRight": "",
+        "holes": [
+          28,
+          32
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 REAR SS T 6 BOLT",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "57",
+        "pcdRight": "59",
+        "offsetLeft": "32",
+        "offsetRight": "30.6",
+        "soLeft": "",
+        "soRight": "",
+        "holes": [
+          28,
+          32
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 REAR 148 DH 6 BOLT",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "60",
+        "pcdRight": "64",
+        "offsetLeft": "28.5",
+        "offsetRight": "28.5",
+        "soLeft": "",
+        "soRight": "",
+        "holes": [
+          28,
+          32
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 REAR 150 DH 6 BOLT",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "60",
+        "pcdRight": "64",
+        "offsetLeft": "33",
+        "offsetRight": "33",
+        "soLeft": "",
+        "soRight": "",
+        "holes": [
+          28,
+          32
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 REAR 135 CL",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "51",
+        "pcdRight": "59",
+        "offsetLeft": "32",
+        "offsetRight": "19.6",
+        "soLeft": "",
+        "soRight": "",
+        "holes": [
+          24,
+          28,
+          32,
+          36
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 REAR 148 CL",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "jbend",
+        "nbRayons": "",
+        "diamTrou": "2.6",
+        "pcdLeft": "51",
+        "pcdRight": "59",
+        "offsetLeft": "35",
+        "offsetRight": "22.6",
+        "soLeft": "",
+        "soRight": "",
+        "holes": [
+          24,
+          28,
+          32
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 REAR 135 CL SP",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "straightpull",
+        "nbRayons": "",
+        "diamTrou": "",
+        "pcdLeft": "46",
+        "pcdRight": "61",
+        "offsetLeft": "31.5",
+        "offsetRight": "17.5",
+        "soLeft": "2.3",
+        "soRight": "2",
+        "holes": [
+          24
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 REAR 12X142 CL SP",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "straightpull",
+        "nbRayons": "",
+        "diamTrou": "",
+        "pcdLeft": "46",
+        "pcdRight": "61",
+        "offsetLeft": "31.5",
+        "offsetRight": "17.5",
+        "soLeft": "2.3",
+        "soRight": "2",
+        "holes": [
+          24
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 REAR 148 CL SP",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "straightpull",
+        "nbRayons": "",
+        "diamTrou": "",
+        "pcdLeft": "46",
+        "pcdRight": "61",
+        "offsetLeft": "34.5",
+        "offsetRight": "21",
+        "soLeft": "2",
+        "soRight": "2",
+        "holes": [
+          24
+        ]
+      }
+    },
+    {
+      "name": "HOPE PRO5 REAR 141 QR CL SP",
+      "data": {
+        "wtype": "arriere",
+        "hubType": "straightpull",
+        "nbRayons": "",
+        "diamTrou": "",
+        "pcdLeft": "46",
+        "pcdRight": "61",
+        "offsetLeft": "34.5",
+        "offsetRight": "21",
+        "soLeft": "2",
+        "soRight": "2",
+        "holes": [
+          24
+        ]
+      }
+    }
+  ],
+  "savedRims": []
+}
