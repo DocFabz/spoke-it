@@ -152,6 +152,14 @@
   --text2:    #c8d6e2;
   --text3:    #8fa0b0;
   --text3-dim:#84959f; /* label d'état inactif — minimum 4.5:1 sur --card */
+  /* Unité posée DANS le champ (« mm » à droite de la valeur). Elle vit sur
+     --inp, pas sur --card : c'est là que son contraste se mesure, et --inp est
+     le palier le plus creusé. --text3-dim n'y tient pas (3,75:1 sur l'alu
+     normal), --text3 si, sur les douze couples sol × palier : 4,80:1 au pire
+     (papier bas), 10,57:1 au mieux (carbone élevé). Alias et non valeur : il
+     suit donc chaque bloc de contraste et de sol sans en déclarer aucun, et
+     c'est aussi l'encre des libellés, d'où vient l'unité. */
+  --unit:     var(--text3);
   /* Encre renforcée : le nom dans une liste, l'avertissement en ligne, la
      sélection. Volontairement plus clair que --text sur un sol sombre, pour
      que le nom ressorte de sa ligne. Sur un sol clair le rôle s'inverse : il
@@ -1271,6 +1279,89 @@ select.placeholder        { color:var(--text2) }
 select option             { background:var(--inp) }
 .inp-readonly             { opacity:.55; cursor:not-allowed }
 .inp-disabled             { opacity:.35; cursor:not-allowed; pointer-events:none }
+/* Unité dans le champ. L'enveloppe prend la place du champ dans le flux (les
+   règles de mise en page visent donc .u-wrap, plus l'input ou le select). Le
+   champ et l'unité partagent sa seule cellule de grille : le champ la
+   remplit, l'unité se cale à droite et au centre, peinte par-dessus parce
+   qu'elle vient après. La marge droite du champ réserve la place de l'unité,
+   pour qu'une valeur longue ne passe jamais dessous.
+   L'unité est transparente au pointeur : un clic dessus tombe dans le champ.
+   Elle suit l'atténuation du champ qu'elle qualifie, sinon « mm » resterait
+   plein à côté d'une valeur grisée : .55 en lecture seule, .35 quand le clone
+   radial du Spoke Offset remplace la saisie (classe posée par syncSoRadial).
+   Le lecteur d'écran lit l'unité dans le libellé (.vh), pas ici. */
+.u-wrap                   { display:grid; grid-template-columns:minmax(0,1fr); min-width:0 }
+.u-wrap > *               { grid-area:1 / 1 }
+/* Réserve à droite = retrait de l'unité + largeur de « mm » (20,7 px à
+   .67rem) + écart de 6 px, bordure comprise. */
+.u-wrap > input[type=number], .u-wrap > select { padding-right:2.5rem }
+/* Ligne de base : « mm » se pose sur celle des chiffres, pas au centre du
+   champ (centré sur sa propre police, il flottait de 1 à 3 px au-dessus).
+   L'unité reproduit donc la structure du champ, qui centre dans sa boîte un
+   bloc d'une ligne de DM Mono à interligne normale : même police, même
+   taille, même centrage, donc même ligne de base, au pixel près à 13,6 et à
+   16 px. Le « mm », plus petit, s'y pose. Une interligne explicite égale à la
+   hauteur du champ ne suffit pas : la demi-interligne ne place pas l'écart
+   de ligne de la police comme le fait l'interligne normale, d'où 1 px. */
+.u-wrap > .unit           { align-self:center; justify-self:end; margin-right:.9rem; font-family:'DM Mono',monospace; font-size:.85rem; font-weight:300; line-height:normal; white-space:nowrap; pointer-events:none; user-select:none; -webkit-user-select:none }
+.u-wrap > .unit > span    { font-family:'DM Sans',sans-serif; font-size:.67rem; font-weight:500; letter-spacing:.03em; line-height:1; color:var(--unit) }
+.u-wrap:has(> .inp-readonly) > .unit { opacity:.55 }
+.u-wrap.u-rad > .unit     { opacity:.35 }
+/* Champ désactivé (ASYM. JANTE quand les deux déports sont égaux,
+   updateAsymField) : même .35 que sa valeur. Les clones radiaux (-rad),
+   présents mais masqués dans les enveloppes du Spoke Offset, sont exclus :
+   leur cas passe par .u-rad, posé seulement quand ils s'affichent. */
+.u-wrap:has(> input.inp-disabled:not([id$="-rad"])) > .unit { opacity:.35 }
+/* iOS impose 16 px à la valeur (règle @supports plus haut) : la cale de ligne
+   de base doit suivre, sinon « mm » remonte d'un pixel. Posée ici, après la
+   règle de l'unité, parce qu'à spécificité égale c'est l'ordre qui tranche. */
+@supports (-webkit-touch-callout: none) {
+  .u-wrap > .unit { font-size:16px }
+}
+/* Téléphone : la réserve se paie sur des champs de 91 à 138 px (colonnes du
+   moyeu, section de rayon), et iOS y impose 16 px à la valeur. Les marges
+   se resserrent et l'unité perd un cran, pour que les valeurs les plus
+   longues tiennent encore en 16 px : « 33.25 » dans un déport à 360 px,
+   « 1.25×2.25 » dans la section à 375 px, avec 1 px et 0,4 px de marge
+   (DM Mono avance de .625em par caractère : 50 et 90 px de texte).
+   Réserve : .5rem de retrait + 18,4 px de « mm » + 3 px d'écart, moins le
+   pixel de bordure que l'unité, posée sur l'enveloppe, enjambe.
+   Les deux champs sans unité qui partagent leur rangée avec un champ en mm
+   (nombre de rayons à côté du Ø de bride, matériau à côté de la section)
+   prennent le même retrait gauche : sinon, sur une même ligne, les deux
+   valeurs démarraient à 5 px l'une de l'autre. */
+@media (max-width: 520px) {
+  .u-wrap > input[type=number], .u-wrap > select,
+  #nb-rayons, #spoke-mat-select { padding-left:.6rem }
+  .u-wrap > input[type=number], .u-wrap > select { padding-right:1.78rem }
+  .u-wrap > .unit { margin-right:.5rem }
+  .u-wrap > .unit > span { font-size:.62rem; letter-spacing:.02em }
+}
+/* Très petits écrans (≤359 px) : les colonnes du moyeu tombent à 71 px et
+   la section de rayon à 103 px ; elles ne peuvent plus loger à la fois
+   « 33.25 » ou « 0.95×2.2 » et « mm ». L'unité y quitte le champ et revient
+   dans le libellé, comme avant : le « (mm) » masqué du libellé (.vh)
+   redevient visible, et le champ rend sa réserve droite. Seuls ces champs
+   basculent ; le Ø de bride, l'ERD, le NSD, l'ADDON et l'asymétrie, qui
+   ont la place, gardent l'unité dedans. */
+@media (max-width: 359px) {
+  .hub-side .u-wrap > .unit,
+  #spoke-section-field .u-wrap > .unit,
+  #spoke-sec-row .u-wrap > .unit { display:none }
+  .hub-side .u-wrap > input[type=number],
+  #spoke-section-field .u-wrap > select,
+  #spoke-sec-row .u-wrap > select { padding-right:.6rem }
+  .hub-side label > .vh,
+  #spoke-section-unit, #spoke-section-diff-unit { position:static; width:auto; height:auto; margin:0; overflow:visible; clip:auto; clip-path:none; white-space:normal }
+  /* Dans l'ancien libellé « PCD (mm) », texte nu, la pastille était le
+     premier enfant et ne prenait pas la marge de .tip-wrap : texte (56 px)
+     et pastille (13 px) tenaient dans les 71 px de la colonne. Le span .vh
+     la fait passer deuxième ; à .3rem de marge elle partait seule à la
+     ligne et la carte grandissait de 14 px. 1,5 px la garde sur la ligne. */
+  .hub-side label > .vh + .tip-icon { margin-left:1.5px }
+}
+/* Masqué à l'écran, lu par les technologies d'assistance. */
+.vh { position:absolute; width:1px; height:1px; margin:-1px; padding:0; border:0; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap }
 /* En-tête du champ Notes : libellé à gauche, « + » aligné sur le bord droit de
    la modale comme la croix de fermeture au-dessus. */
 .wi-note-head { display:flex; align-items:center; justify-content:space-between; gap:.5rem }
@@ -1393,7 +1484,7 @@ select option             { background:var(--inp) }
    gouttière que .erd-pair, dont il reprend le calcul (1rem d'écart partagé en
    deux). Le libellé, lui, garde toute la largeur : il n'a aucune colonne à
    respecter et s'épargne un repli de ligne sur téléphone. */
-#erd-diff-nsd > #erd-addon-field > select { width:calc(50% - .5rem) }
+#erd-diff-nsd > #erd-addon-field > .u-wrap { width:calc(50% - .5rem) }
 /* Cale d'alignement sous ADDON. Le champ ne porte pas de puces NDS/DS — un
    seul écrou pour les deux côtés — mais sans elles l'ERD calculé remonte d'une
    ligne et le bloc perd son rythme : la paire NSD occupe champ + puces, ADDON
@@ -1409,7 +1500,8 @@ select option             { background:var(--inp) }
    ASYM. JANTE reste seul, à gauche, dans les deux modes — en NSD, ADDON a
    rejoint le bloc ERD différentiel, sous la paire NSD (erdAddonPlace).
    Placement explicite sur trois rangées (libellé, champ, avertissement) : un
-   libellé qui passe sur deux lignes (« ASYM. JANTE (MM) » sur téléphone)
+   libellé qui passerait sur deux lignes (plus aucun ne le fait depuis que
+   « (mm) » a quitté les libellés, mais une traduction plus longue le ferait)
    agrandit la rangée des libellés, pas sa seule cellule : les champs restent
    alignés, et chaque libellé se cale sur le sien.
    row-gap reprend l'écart libellé/champ de .f, que display:contents efface. */
@@ -1446,8 +1538,8 @@ select option             { background:var(--inp) }
 .help { font-size:.66rem; color:var(--text3); margin-top:.22rem; font-style:italic; line-height:1.4 }
 
 /* ── Tooltip ───────────────────────────────────────────────────────────────── */
-/* Flux normal, pas flex : quand le libellé se replie (« Section rayon (mm) »
-   à 390 px) la pastille reste collée au dernier mot au lieu d'être poussée
+/* Flux normal, pas flex : quand le libellé se replie (« Section rayon »
+   à 320 px) la pastille reste collée au dernier mot au lieu d'être poussée
    seule à droite de la colonne. */
 .tip-wrap  { position:relative; display:block }
 .tip-wrap > .tip-icon, .tip-wrap > .info-icon { vertical-align:middle }
@@ -3570,8 +3662,8 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         </select>
       </div>
       <div class="f" id="field-diam-trou">
-        <label data-i18n="holeDiam" for="diam-trou">Ø trous de bride (mm)</label>
-        <input type="number" id="diam-trou" value="2.55" step="0.05" min="2" max="2.7" inputmode="decimal" oninput="checkDiamTrou()" onblur="resetDiamTrouIfInvalid()">
+        <label for="diam-trou"><span data-i18n="holeDiam">Ø trous de bride</span><span class="vh"> (mm)</span></label>
+        <div class="u-wrap"><input type="number" id="diam-trou" value="2.55" step="0.05" min="2" max="2.7" inputmode="decimal" oninput="checkDiamTrou()" onblur="resetDiamTrouIfInvalid()"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
         <p class="inline-warn" id="diam-trou-warn" data-i18n="diamTrouWarn">⚠ Valeur incohérente</p>
       </div>
     </div>
@@ -3580,36 +3672,36 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <div class="hub-side">
         <div class="plabel color-fo" id="hub-plabel-L"><div class="pdot"></div><span data-i18n="left">Gauche</span></div>
         <div class="f">
-          <label class="tip-wrap" for="pcd-left">PCD (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="pcdTipLeft">Pitch Circle Diameter Gauche</span></label>
-          <input type="number" id="pcd-left" step="0.1" inputmode="decimal" placeholder="—">
+          <label class="tip-wrap" for="pcd-left">PCD<span class="vh"> (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="pcdTipLeft">Pitch Circle Diameter Gauche</span></label>
+          <div class="u-wrap"><input type="number" id="pcd-left" step="0.1" inputmode="decimal" placeholder="—"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
         </div>
         <div class="f">
-          <label class="tip-wrap" for="offset-left"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="offsetTipLeft">Centre-Flasque Gauche</span></label>
-          <input type="number" id="offset-left" step="0.1" inputmode="decimal" placeholder="—" oninput="onTension()" onblur="checkOffsetCoherence()" onkeydown="if(event.key==='-')event.preventDefault()">
+          <label class="tip-wrap" for="offset-left"><span data-i18n="offset">Déport</span><span class="vh"> (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="offsetTipLeft">Centre-Flasque Gauche</span></label>
+          <div class="u-wrap"><input type="number" id="offset-left" step="0.1" inputmode="decimal" placeholder="—" oninput="onTension()" onblur="checkOffsetCoherence()" onkeydown="if(event.key==='-')event.preventDefault()"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
         </div>
         <div class="f" id="field-sp-so-left" style="display:none">
-          <label class="tip-wrap" for="sp-so-left"><span data-i18n="soLeft">SO G</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Spoke Offset</span></label>
-          <input type="number" id="sp-so-left" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—" oninput="syncRadialLock()">
+          <label class="tip-wrap" for="sp-so-left"><span data-i18n="soLeft">SO G</span><span class="vh"> (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Spoke Offset</span></label>
+          <div class="u-wrap"><input type="number" id="sp-so-left" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—" oninput="syncRadialLock()">
           <!-- Radial : SO = 0 imposé. Clone affiché à la place de l'input, qui garde la valeur saisie -->
-          <input type="number" id="sp-so-left-rad" class="inp-disabled" value="0" disabled aria-label="Spoke Offset" style="display:none">
+          <input type="number" id="sp-so-left-rad" class="inp-disabled" value="0" disabled aria-label="Spoke Offset (mm)" style="display:none"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
         </div>
       </div>
       <div class="hub-divider"></div>
       <div class="hub-side">
         <div class="plabel color-fa" id="hub-plabel-R"><div class="pdot"></div><span data-i18n="right">Droit</span></div>
         <div class="f">
-          <label class="tip-wrap" for="pcd-right">PCD (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="pcdTipRight">Pitch Circle Diameter Droit</span></label>
-          <input type="number" id="pcd-right" step="0.1" inputmode="decimal" placeholder="—">
+          <label class="tip-wrap" for="pcd-right">PCD<span class="vh"> (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="pcdTipRight">Pitch Circle Diameter Droit</span></label>
+          <div class="u-wrap"><input type="number" id="pcd-right" step="0.1" inputmode="decimal" placeholder="—"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
         </div>
         <div class="f">
-          <label class="tip-wrap" for="offset-right"><span data-i18n="offset">Déport</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="offsetTipRight">Centre-Flasque Droite</span></label>
-          <input type="number" id="offset-right" step="0.1" inputmode="decimal" placeholder="—" oninput="onTension()" onblur="checkOffsetCoherence()" onkeydown="if(event.key==='-')event.preventDefault()">
+          <label class="tip-wrap" for="offset-right"><span data-i18n="offset">Déport</span><span class="vh"> (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="offsetTipRight">Centre-Flasque Droite</span></label>
+          <div class="u-wrap"><input type="number" id="offset-right" step="0.1" inputmode="decimal" placeholder="—" oninput="onTension()" onblur="checkOffsetCoherence()" onkeydown="if(event.key==='-')event.preventDefault()"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
         </div>
         <div class="f" id="field-sp-so-right" style="display:none">
-          <label class="tip-wrap" for="sp-so-right"><span data-i18n="soRight">SO D</span> (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Spoke Offset</span></label>
-          <input type="number" id="sp-so-right" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—" oninput="syncRadialLock()">
+          <label class="tip-wrap" for="sp-so-right"><span data-i18n="soRight">SO D</span><span class="vh"> (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Spoke Offset</span></label>
+          <div class="u-wrap"><input type="number" id="sp-so-right" step="0.1" min="0" max="5" inputmode="decimal" placeholder="—" oninput="syncRadialLock()">
           <!-- Radial : SO = 0 imposé. Clone affiché à la place de l'input, qui garde la valeur saisie -->
-          <input type="number" id="sp-so-right-rad" class="inp-disabled" value="0" disabled aria-label="Spoke Offset" style="display:none">
+          <input type="number" id="sp-so-right-rad" class="inp-disabled" value="0" disabled aria-label="Spoke Offset (mm)" style="display:none"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
         </div>
       </div>
     </div>
@@ -3644,8 +3736,8 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
         </select>
       </div>
       <div class="f" id="spoke-section-field" style="flex:0 0 calc(50% - .5rem)">
-        <label class="tip-wrap" for="spoke-select"><span id="spoke-section-label" data-i18n="spokeSection">Section rayon (mm)</span><span class="info-icon" role="button" tabindex="0" aria-label="Modélisation section de rayon" data-i18n-aria="sectTitle" onclick="event.preventDefault();event.stopPropagation();openSpokeSect()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSpokeSect()}">?</span></label>
-        <select id="spoke-select" aria-labelledby="spoke-section-label" onchange="setSpokeFromSelect(this)">
+        <label class="tip-wrap" for="spoke-select"><span id="spoke-section-label" data-i18n="spokeSection">Section rayon</span><span class="vh" id="spoke-section-unit"> (mm)</span><span class="info-icon" role="button" tabindex="0" aria-label="Modélisation section de rayon" data-i18n-aria="sectTitle" onclick="event.preventDefault();event.stopPropagation();openSpokeSect()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSpokeSect()}">?</span></label>
+        <div class="u-wrap"><select id="spoke-select" aria-labelledby="spoke-section-label spoke-section-unit" onchange="setSpokeFromSelect(this)">
           <option value="" selected>—</option>
           <optgroup data-i18n-label="spokeGrpRound" label="ROND">
             <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
@@ -3671,7 +3763,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
             <option value="1.4|2.2">1.4×2.2</option>
             <option value="1.45|2.3">1.45×2.3</option>
           </optgroup>
-        </select>
+        </select><span class="unit" aria-hidden="true"><span>mm</span></span></div>
       </div>
       <div id="spoke-other-info" style="display:none;flex:0 0 calc(50% - .5rem);font-size:.67rem;font-style:italic;color:var(--text3);line-height:1.4;align-self:flex-end" data-i18n="spokeMaterialOtherInfo">L'estimation de l'élongation des rayons par la loi de Hooke n'est disponible que pour les rayons aciers.</div>
     </div>
@@ -3684,10 +3776,10 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
          qu'à sa gauche, pour que les deux champs occupent toute leur colonne et
          que celui de gauche s'aligne sous le titre. -->
     <div id="spoke-section-diff" style="display:none;margin-top:.85rem">
-      <div class="fld-label tip-wrap" style="margin-bottom:.35rem"><span id="spoke-section-diff-label" data-i18n="spokeSection">Section rayon (mm)</span><span class="info-icon" role="button" tabindex="0" aria-label="Modélisation section de rayon" data-i18n-aria="sectTitle" onclick="event.preventDefault();event.stopPropagation();openSpokeSect()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSpokeSect()}">?</span></div>
-      <div id="spoke-sec-row" role="group" aria-labelledby="spoke-section-diff-label" style="display:flex;gap:.7rem;align-items:flex-start">
+      <div class="fld-label tip-wrap" style="margin-bottom:.35rem"><span id="spoke-section-diff-label" data-i18n="spokeSection">Section rayon</span><span class="vh" id="spoke-section-diff-unit"> (mm)</span><span class="info-icon" role="button" tabindex="0" aria-label="Modélisation section de rayon" data-i18n-aria="sectTitle" onclick="event.preventDefault();event.stopPropagation();openSpokeSect()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSpokeSect()}">?</span></div>
+      <div id="spoke-sec-row" role="group" aria-labelledby="spoke-section-diff-label spoke-section-diff-unit" style="display:flex;gap:.7rem;align-items:flex-start">
         <div id="spoke-sec-col-fo" style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:.3rem">
-          <select id="spoke-select-fo" aria-labelledby="spoke-diff-label-fo" onchange="setSpokeFromSelectSide(this,'fo')">
+          <div class="u-wrap"><select id="spoke-select-fo" aria-labelledby="spoke-diff-label-fo" onchange="setSpokeFromSelectSide(this,'fo')">
             <option value="" selected>—</option>
             <optgroup data-i18n-label="spokeGrpRound" label="ROND">
               <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
@@ -3713,11 +3805,11 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
               <option value="1.4|2.2">1.4×2.2</option>
               <option value="1.45|2.3">1.45×2.3</option>
             </optgroup>
-          </select>
+          </select><span class="unit" aria-hidden="true"><span>mm</span></span></div>
           <span class="diff-side-label diff-side-fo" id="spoke-diff-label-fo">DS</span>
         </div>
         <div id="spoke-sec-col-fa" style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:.3rem">
-          <select id="spoke-select-fa" aria-labelledby="spoke-diff-label-fa" onchange="setSpokeFromSelectSide(this,'fa')">
+          <div class="u-wrap"><select id="spoke-select-fa" aria-labelledby="spoke-diff-label-fa" onchange="setSpokeFromSelectSide(this,'fa')">
             <option value="" selected>—</option>
             <optgroup data-i18n-label="spokeGrpRound" label="ROND">
               <option value="1.6|">1.6</option>  <option value="1.65|">1.65</option>
@@ -3743,7 +3835,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
               <option value="1.4|2.2">1.4×2.2</option>
               <option value="1.45|2.3">1.45×2.3</option>
             </optgroup>
-          </select>
+          </select><span class="unit" aria-hidden="true"><span>mm</span></span></div>
           <span class="diff-side-label diff-side-fa" id="spoke-diff-label-fa">NDS</span>
         </div>
       </div>
@@ -3797,18 +3889,18 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <div id="erd-diff" class="erd-diff" style="display:none">
       <div class="erd-diff-groups">
         <div class="f" id="erd-diff-direct">
-          <div class="fld-label tip-wrap"><span id="erd-diff-direct-label">ERD (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="erdDiffTip">Jante wave : un ERD par côté</span></div>
+          <div class="fld-label tip-wrap"><span id="erd-diff-direct-label">ERD</span><span class="vh" id="erd-diff-direct-unit"> (mm)</span><span class="tip-icon">?</span><span class="tip-box" data-i18n="erdDiffTip">Jante wave : un ERD par côté</span></div>
           <div class="erd-pair">
-            <input type="number" id="erd-direct-nds" step="0.1" inputmode="decimal" placeholder="—" aria-labelledby="erd-diff-direct-label erd-diff-chip-nds">
-            <input type="number" id="erd-direct-ds"  step="0.1" inputmode="decimal" placeholder="—" aria-labelledby="erd-diff-direct-label erd-diff-chip-ds">
+            <div class="u-wrap"><input type="number" id="erd-direct-nds" step="0.1" inputmode="decimal" placeholder="—" aria-labelledby="erd-diff-direct-label erd-diff-direct-unit erd-diff-chip-nds"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
+            <div class="u-wrap"><input type="number" id="erd-direct-ds"  step="0.1" inputmode="decimal" placeholder="—" aria-labelledby="erd-diff-direct-label erd-diff-direct-unit erd-diff-chip-ds"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
           </div>
         </div>
         <div class="erd-diff-groups" id="erd-diff-nsd" style="display:none">
           <div class="f">
-            <div class="fld-label tip-wrap"><span id="erd-diff-nsd-label">NSD (mm)</span><span class="tip-icon">?</span><span class="tip-box">Nipple Seat Diameter</span></div>
+            <div class="fld-label tip-wrap"><span id="erd-diff-nsd-label">NSD</span><span class="vh" id="erd-diff-nsd-unit"> (mm)</span><span class="tip-icon">?</span><span class="tip-box">Nipple Seat Diameter</span></div>
             <div class="erd-pair">
-              <input type="number" id="nsd-val-nds" step="0.1" inputmode="decimal" placeholder="—" oninput="calcNsd()" aria-labelledby="erd-diff-nsd-label erd-diff-chip-nsd-nds">
-              <input type="number" id="nsd-val-ds"  step="0.1" inputmode="decimal" placeholder="—" oninput="calcNsd()" aria-labelledby="erd-diff-nsd-label erd-diff-chip-nsd-ds">
+              <div class="u-wrap"><input type="number" id="nsd-val-nds" step="0.1" inputmode="decimal" placeholder="—" oninput="calcNsd()" aria-labelledby="erd-diff-nsd-label erd-diff-nsd-unit erd-diff-chip-nsd-nds"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
+              <div class="u-wrap"><input type="number" id="nsd-val-ds"  step="0.1" inputmode="decimal" placeholder="—" oninput="calcNsd()" aria-labelledby="erd-diff-nsd-label erd-diff-nsd-unit erd-diff-chip-nsd-ds"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
             </div>
             <div class="erd-pair erd-pair-chips">
               <span class="diff-side-label diff-side-fo erd-chip-nds" id="erd-diff-chip-nsd-nds">NDS</span>
@@ -3816,10 +3908,10 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
             </div>
           </div>
           <div class="f" id="erd-diff-result">
-            <div class="fld-label" id="erd-diff-result-label" data-i18n="erdCalc">ERD calculé (mm)</div>
+            <div class="fld-label"><span id="erd-diff-result-label" data-i18n="erdCalc">ERD calculé</span><span class="vh" id="erd-diff-result-unit"> (mm)</span></div>
             <div class="erd-pair">
-              <input type="number" id="erd-nsd-result-nds" readonly tabindex="-1" class="inp-readonly" aria-labelledby="erd-diff-result-label erd-diff-chip-nds">
-              <input type="number" id="erd-nsd-result-ds"  readonly tabindex="-1" class="inp-readonly" aria-labelledby="erd-diff-result-label erd-diff-chip-ds">
+              <div class="u-wrap"><input type="number" id="erd-nsd-result-nds" readonly tabindex="-1" class="inp-readonly" aria-labelledby="erd-diff-result-label erd-diff-result-unit erd-diff-chip-nds"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
+              <div class="u-wrap"><input type="number" id="erd-nsd-result-ds"  readonly tabindex="-1" class="inp-readonly" aria-labelledby="erd-diff-result-label erd-diff-result-unit erd-diff-chip-ds"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
             </div>
           </div>
         </div>
@@ -3836,18 +3928,18 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <div class="f" id="rim-col-erd">
         <!-- ERD direct -->
         <div id="erd-direct-section" class="f">
-          <label class="tip-wrap" for="erd-direct">ERD (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Effective Rim Diameter</span></label>
-          <input type="number" id="erd-direct" step="0.1" inputmode="decimal" placeholder="—">
+          <label class="tip-wrap" for="erd-direct">ERD<span class="vh"> (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Effective Rim Diameter</span></label>
+          <div class="u-wrap"><input type="number" id="erd-direct" step="0.1" inputmode="decimal" placeholder="—"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
         </div>
         <!-- NSD (mode NSD) -->
         <div id="erd-nsd-section" style="display:none" class="f">
-          <label class="tip-wrap" for="nsd-val">NSD (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Nipple Seat Diameter</span></label>
-          <input type="number" id="nsd-val" step="0.1" inputmode="decimal" placeholder="—" oninput="calcNsd()">
+          <label class="tip-wrap" for="nsd-val">NSD<span class="vh"> (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box">Nipple Seat Diameter</span></label>
+          <div class="u-wrap"><input type="number" id="nsd-val" step="0.1" inputmode="decimal" placeholder="—" oninput="calcNsd()"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
         </div>
         <!-- ERD calculé (mode NSD) -->
         <div id="erd-nsd-result-field" style="display:none" class="f">
-          <label data-i18n="erdCalc" for="erd-nsd-result">ERD calculé (mm)</label>
-          <input type="number" id="erd-nsd-result" readonly tabindex="-1" class="inp-readonly">
+          <label for="erd-nsd-result"><span data-i18n="erdCalc">ERD calculé</span><span class="vh"> (mm)</span></label>
+          <div class="u-wrap"><input type="number" id="erd-nsd-result" readonly tabindex="-1" class="inp-readonly"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
         </div>
       </div>
 
@@ -3857,8 +3949,8 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
       <div class="f" id="rim-col-side">
         <!-- ADDON (mode NSD) -->
         <div id="erd-addon-field" style="display:none" class="f">
-          <label class="tip-wrap" for="ecrou-type">ADDON (mm)<span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="addonTip">Dépend de l'ecrou utilisé</span></label>
-          <select id="ecrou-type" onchange="calcNsd()">
+          <label class="tip-wrap" for="ecrou-type">ADDON<span class="vh"> (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="addonTip">Dépend de l'ecrou utilisé</span></label>
+          <div class="u-wrap"><select id="ecrou-type" onchange="calcNsd()">
             <option value="" selected>—</option>
             <option value="1.0">1.0</option><option value="1.1">1.1</option>
             <option value="1.2">1.2</option><option value="1.3">1.3</option>
@@ -3873,13 +3965,13 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
             <option value="3.2">3.2</option><option value="3.3">3.3</option>
             <option value="3.4">3.4</option><option value="3.5">3.5</option>
             <option value="3.6">3.6</option>
-          </select>
+          </select><span class="unit" aria-hidden="true"><span>mm</span></span></div>
           <div class="erd-pair erd-pair-chips addon-chip-gap" aria-hidden="true"><span class="diff-side-label">&nbsp;</span></div>
         </div>
         <!-- ASYM. JANTE -->
         <div class="f" id="rim-asym-field">
-          <label class="tip-wrap" for="asym"><span id="asym-label" data-i18n="rimAsym">ASYM. JANTE (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="asymTip">Offset Spoke Bed for Asymmetric Rim</span></label>
-          <input type="number" id="asym" aria-labelledby="asym-label" value="0" step="0.5" min="0" inputmode="decimal" onkeydown="if(event.key==='-')event.preventDefault()">
+          <label class="tip-wrap" for="asym"><span id="asym-label" data-i18n="rimAsym">ASYM. JANTE</span><span class="vh" id="asym-unit"> (mm)</span><span class="tip-icon" onclick="event.preventDefault()">?</span><span class="tip-box" data-i18n="asymTip">Offset Spoke Bed for Asymmetric Rim</span></label>
+          <div class="u-wrap"><input type="number" id="asym" aria-labelledby="asym-label asym-unit" value="0" step="0.5" min="0" inputmode="decimal" onkeydown="if(event.key==='-')event.preventDefault()"><span class="unit" aria-hidden="true"><span>mm</span></span></div>
           <p class="inline-warn" id="asym-warn" data-i18n="asymWarn">⚠ Moyeu symétrique : jante asymétrique déconseillée</p>
         </div>
       </div>
@@ -6165,12 +6257,12 @@ const i18n = {
     hubLoadBtnTitle:'Charger un moyeu', hubSaveBtnTitle:'Enregistrer ce moyeu',
     rimLoadBtnTitle:'Charger une jante', rimSaveBtnTitle:'Enregistrer cette jante',
     frontWheel:'ROUE AVANT', rearWheel:'ROUE ARRIÈRE',
-    totalSpokes:'Nb total de rayons', holeDiam:'Ø trous de bride (mm)',
+    totalSpokes:'Nb total de rayons', holeDiam:'Ø trous de bride',
     left:'Gauche', right:'Droit',
     pcdTipLeft:'Pitch Circle Diameter Gauche', pcdTipRight:'Pitch Circle Diameter Droit', offset:'Déport', offsetTipLeft:'Centre-Flasque Gauche', offsetTipRight:'Centre-Flasque Droite',
     soLeft:'SO G', soRight:'SO D',
     erdDirect:'ERD DIRECT', addonTip:"Dépend de l'ecrou utilisé", erdDiffTip:'Jante wave : un ERD par côté', erdDiffLabel:'Wave différentiel', erdDiffLabelShort:'Wave diff.', erdDiffLabelTiny:'Wave',
-    erdCalc:'ERD calculé (mm)', rimAsym:'ASYM. JANTE (mm)', spokeSection:'Section rayon (mm)', cross:'Croisement',
+    erdCalc:'ERD calculé', rimAsym:'ASYM. JANTE', spokeSection:'Section rayon', cross:'Croisement',
     spokeCard:'Rayons', spokeMaterialSteel:'ACIER', spokeMaterialOther:'AUTRE', spokeMaterial:'Matériau',
     spokeMaterialOtherInfo:"L'estimation de l'élongation des rayons par la loi de Hooke n'est disponible que pour les rayons aciers.",
     elongHintSection:"Sélectionner la section du rayon permet d'accéder à l'élongation pour arbitrage fin.",
@@ -6457,12 +6549,12 @@ const i18n = {
   en: {
     hub:'Hub', rim:'Rim', targetTensions:'Target Tensions', results:'Results',
     frontWheel:'FRONT WHEEL', rearWheel:'REAR WHEEL',
-    totalSpokes:'Total spoke count', holeDiam:'Flange hole Ø (mm)',
+    totalSpokes:'Total spoke count', holeDiam:'Flange hole Ø',
     left:'Left', right:'Right',
     pcdTipLeft:'Left Pitch Circle Diameter', pcdTipRight:'Right Pitch Circle Diameter', offset:'Offset', offsetTipLeft:'Left Flange to Center', offsetTipRight:'Right Flange to Center',
     soLeft:'SO L', soRight:'SO R',
     erdDirect:'ERD DIRECT', addonTip:'Depends on the nipple used', erdDiffTip:'Wave rim: one ERD per side', erdDiffLabel:'Wave differential', erdDiffLabelShort:'Wave diff.', erdDiffLabelTiny:'Wave',
-    erdCalc:'Calculated ERD (mm)', rimAsym:'RIM ASYM. (mm)', spokeSection:'Spoke section (mm)', cross:'Lacing',
+    erdCalc:'Calculated ERD', rimAsym:'RIM ASYM.', spokeSection:'Spoke section', cross:'Lacing',
     spokeCard:'Spokes', spokeMaterialSteel:'STEEL', spokeMaterialOther:'OTHER', spokeMaterial:'Material',
     spokeMaterialOtherInfo:'Spoke elongation estimation using Hooke\'s law is only available for steel spokes.',
     elongHintSection:'Selecting the spoke section gives access to elongation for fine-tuning the suggested rounding.',
@@ -9310,6 +9402,9 @@ function syncSoRadial() {
     if (!inp || !clone) return;
     inp.style.display   = on ? 'none' : '';
     clone.style.display = on ? '' : 'none';
+    // L'unité « mm » partage l'enveloppe des deux champs : elle s'atténue
+    // avec le clone grisé, comme sa valeur.
+    if (inp.parentElement.classList.contains('u-wrap')) inp.parentElement.classList.toggle('u-rad', on);
     // Un rouge errSO posé avant le passage en radial ne doit pas survivre,
     // invisible, sur l'input masqué — ni maintenir #err affiché.
     if (on && inp.classList.contains('invalid')) {
