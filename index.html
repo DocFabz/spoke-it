@@ -1115,36 +1115,36 @@ html[data-fond="alu"] .ateliermgr-logo-wrap.has-logo:hover, html[data-fond="alu"
    toutes les lignes, la valeur toujours à droite. */
 #reglages-modal .ct-save-btn, #onlinebase-modal .ct-save-btn { justify-content:flex-start }
 #riderchoose-modal .ct-save-btn svg, #datapicker-modal .ct-save-btn svg, #reglages-modal .ct-save-btn svg, #onlinebase-modal .ct-save-btn svg, #rideredit-modal .rider-assign-btn svg { flex-shrink:0; opacity:.85 }
-/* Online base : ligne d'état (chargement, hors ligne, erreur) sous le titre. */
-#onlinebase-modal .ob-status { font-size:.72rem; color:var(--text3); font-style:italic; text-align:center; padding:.5rem }
+/* Online base : ligne d'état (chargement, hors ligne, erreur), dans la liste
+   des marques comme dans la modale de choix. */
+#onlinebase-modal .ob-status, #obsel-modal .ob-status { font-size:.72rem; color:var(--text3); font-style:italic; text-align:center; padding:.5rem }
 #ob-list { display:flex; flex-direction:column; gap:.7rem }
 /* Online base, choix des composants d'une marque : modale empilée au-dessus
    de la liste des marques (voile 9982, boîte 9983), groupes Avant / Arrière /
-   Jantes, une ligne par composant qu'on coche ou décoche. */
+   Jantes, une ligne par composant à sélectionner. */
 #obsel-overlay { z-index:9982 }
 #obsel-modal { z-index:9983 }
-#obsel-modal .ob-status { font-size:.72rem; color:var(--text3); font-style:italic; text-align:center; padding:.5rem }
 #obsel-body { display:flex; flex-direction:column; gap:.9rem }
-.ob-hint { font-size:.72rem; color:var(--text3); margin:-.2rem 0 0 }
-.ob-group { display:flex; flex-direction:column; gap:.35rem }
+.ob-hint { font-size:.72rem; color:var(--text2); line-height:1.5; margin:-.2rem 0 0 }
+.ob-group { display:flex; flex-direction:column; gap:.45rem }
 .ob-group-head { display:flex; align-items:center; gap:.5rem; min-height:22px }
 .ob-group-label { font-size:.6rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent2) }
 .ob-group-count { font-family:'DM Mono',monospace; font-size:.6rem; color:var(--accent); flex:1 }
 .ob-group-all { background:none; border:1px solid var(--border); border-radius:var(--rs); font-family:'DM Mono',monospace; font-size:.56rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text3); padding:.22rem .5rem; line-height:1; cursor:pointer; touch-action:manipulation; transition:border-color .2s, color .2s }
 .ob-group-all:hover { border-color:rgba(var(--accent-rgb),.5); color:var(--accent2) }
 .ob-item { width:100%; font:inherit; color:inherit; text-align:left }
-.ob-item.sel { border-color:rgba(var(--accent-rgb),.55); background:rgba(var(--accent-rgb),.07) }
-.ob-check { width:14px; height:14px; flex-shrink:0; border:1px solid var(--border-s); border-radius:3px; display:grid; place-items:center; color:transparent; transition:background .2s, border-color .2s, color .2s }
-.ob-item.sel .ob-check { background:var(--accent); border-color:var(--accent); color:var(--card) }
-.ob-item-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:.15rem }
-.ob-item-sub { font-family:'DM Mono',monospace; font-size:.6rem; color:var(--text3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
-.ob-item-sub .ob-owned { color:var(--accent) }
+/* Sélection calquée sur celle des snapshots (Évolution) : ligne .snap-item,
+   coche ✓ à droite, liseré et teinte d'accent. Coche grise = composant déjà
+   enregistré (comme « Affecter roues ») ; la ligne reste cliquable pour le
+   remplacer par la version du catalogue, la coche passe alors à l'accent. */
+#obsel-body .ob-item.sel { border-color:rgba(var(--accent-rgb),.6); background:rgba(var(--accent-rgb),.06) }
+.ob-chk { flex-shrink:0; font-size:1rem; line-height:1; color:var(--accent); visibility:hidden }
+.ob-item.sel .ob-chk { visibility:visible }
+.ob-item.owned:not(.sel) .ob-chk { visibility:visible; color:var(--text3) }
 #obsel-go[disabled] { opacity:.45; pointer-events:none }
-/* Survol accroché après un appui (iOS) : retour à la couleur de repos, la
-   ligne cochée garde sa teinte .sel. */
+/* Survol accroché après un appui (iOS) : retour à la couleur de repos (le
+   survol des lignes .snap-item est déjà réservé à hover: hover). */
 @media (hover: none) {
-  .ob-item:hover { border-color:var(--border); background:var(--card-alt) }
-  .ob-item.sel:hover { border-color:rgba(var(--accent-rgb),.55); background:rgba(var(--accent-rgb),.07) }
   .ob-group-all:hover { border-color:var(--border); color:var(--text3) }
 }
 .rider-wheels-list { max-height:30vh; max-height:30dvh }
@@ -3119,8 +3119,8 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
 
 <!-- ── Online base, composants d'une marque : ouverte par un clic sur une
      marque, empilée au-dessus de la liste (qui reste ouverte dessous : la
-     croix ou Échap y ramènent). On coche les composants voulus, le bouton
-     n'importe que ceux-là. ── -->
+     croix ou Échap y ramènent). On sélectionne les composants voulus, le
+     bouton n'importe que ceux-là. ── -->
 <div class="ateliermgr-overlay" id="obsel-overlay" onclick="obCloseBrand()"></div>
 <div class="ateliermgr-modal" id="obsel-modal" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="obsel-title">
   <div class="ateliermgr-header">
@@ -6305,13 +6305,13 @@ const i18n = {
     obHubs:'moyeux',
     obRim:'jante',
     obRims:'jantes',
-    obSelHint:'Cochez les composants à télécharger.',
+    obSelHint:'Sélectionner les composants à télécharger.',
     obSelAll:'Tout',
     obSelNone:'Aucun',
     obSelRims:'Jantes',
-    obSelHoles:'trous',
-    obSelOwned:'déjà enregistré',
+    obSelOwned:'Déjà enregistré',
     obSelGo:'Télécharger',
+    obSelEmpty:'Aucun composant disponible.',
     pickerMenuBtn:'Gestion des données',
     pickerTitle:'Données',
     atelierTitle:'Atelier',
@@ -6604,13 +6604,13 @@ const i18n = {
     obHubs:'hubs',
     obRim:'rim',
     obRims:'rims',
-    obSelHint:'Tick the components to download.',
+    obSelHint:'Select the components to download.',
     obSelAll:'All',
     obSelNone:'None',
     obSelRims:'Rims',
-    obSelHoles:'holes',
-    obSelOwned:'already saved',
+    obSelOwned:'Already saved',
     obSelGo:'Download',
+    obSelEmpty:'No component available.',
     pickerMenuBtn:'Data management',
     pickerTitle:'Data',
     atelierTitle:'Workshop',
@@ -10627,13 +10627,14 @@ function obRenderIndex() {
 
 // ── Composants d'une marque ─────────────────────────────────────────────────
 // Un clic sur une marque télécharge son fichier et ouvre la modale de choix,
-// empilée sur la liste. Rien n'est coché d'office : on importe exactement ce
-// qu'on a coché. _obSel porte le fichier chargé et les coches ; _obSelSeq est
+// empilée sur la liste. Rien n'est sélectionné d'office : on importe exactement
+// ce qu'on a choisi. _obSel porte le fichier chargé et la sélection ; _obSelSeq est
 // le jeton de rendu de cette modale (réponse arrivée après fermeture : jetée).
 var _obSel = null;
 var _obSelSeq = 0;
 
-// Mêmes filtres que ceux de l'import : une entrée rejetée n'est pas proposée.
+// Filtres de validité : une entrée invalide n'est pas proposée, donc jamais
+// importée (nom vide, data absente, type de moyeu inconnu).
 function _obHubOk(e) {
   return !!(e && typeof e.name === 'string' && e.name.trim() && e.data && typeof e.data === 'object' &&
             (e.data.hubType === 'jbend' || e.data.hubType === 'straightpull'));
@@ -10648,6 +10649,10 @@ function obOpenBrand(b) {
   $id('obsel-title').textContent = b.name;
   $id('obsel-body').innerHTML = '<div class="ob-status">' + escHtml(t('obLoading')) + '</div>';
   obSyncSel();
+  // Le bouton de la marque garderait le focus sous le voile : un second
+  // Entrée relancerait le téléchargement et viderait la sélection.
+  if (document.activeElement && document.activeElement !== document.body)
+    document.activeElement.blur();
   $id('obsel-overlay').classList.add('show');
   $id('obsel-modal').classList.add('show');
   var _st = function(key) { $id('obsel-body').innerHTML = '<div class="ob-status">' + escHtml(t(key)) + '</div>'; };
@@ -10656,15 +10661,24 @@ function obOpenBrand(b) {
     if (seq !== _obSelSeq) return;
     if (!data || !data.spokeit) throw new Error('format');
     var sel = { b: b, hubs: [], rims: [], picked: {} };
+    // Doublon dans le fichier (même clé que l'import) : une seule ligne, dont
+    // le contenu est celui de la dernière occurrence, comme le donnerait
+    // l'import de toutes.
+    var _push = function(arr, o, id) {
+      var k = arr.findIndex(function(x) { return x._id === id; });
+      o._id = id;
+      if (k >= 0) { o.key = arr[k].key; arr[k] = o; } else arr.push(o);
+    };
     (Array.isArray(data.savedHubs) ? data.savedHubs : []).forEach(function(e, i) {
       if (!_obHubOk(e)) return;
-      sel.hubs.push({ key: 'h' + i, e: e, side: e.data.wtype === 'arriere' ? 'arriere' : 'avant' });
+      var side = e.data.wtype === 'arriere' ? 'arriere' : 'avant';
+      _push(sel.hubs, { key: 'h' + i, e: e, side: side }, e.name.slice(0, NAME_MAX).toLowerCase() + '|' + side);
     });
     (Array.isArray(data.savedRims) ? data.savedRims : []).forEach(function(e, i) {
       if (!_obRimOk(e)) return;
-      sel.rims.push({ key: 'r' + i, e: e });
+      _push(sel.rims, { key: 'r' + i, e: e }, e.name.slice(0, NAME_MAX).toLowerCase());
     });
-    if (!sel.hubs.length && !sel.rims.length) { _st('obNothing'); return; }
+    if (!sel.hubs.length && !sel.rims.length) { _st('obSelEmpty'); return; }
     _obSel = sel;
     obRenderBrand();
   }).catch(function() { if (seq === _obSelSeq) _st(navigator.onLine ? 'obError' : 'obOffline'); });
@@ -10685,7 +10699,7 @@ function obRenderBrand() {
   if (!s) return;
   box.innerHTML = '<p class="ob-hint">' + escHtml(t('obSelHint')) + '</p>';
   // Déjà présent en local (même clé que l'import : nom + côté pour un moyeu,
-  // nom pour une jante) : signalé, l'import le remplacera.
+  // nom pour une jante) : coche grise, l'import le remplacera.
   var hubsLoc = hrLoadAll('hub'), rimsLoc = hrLoadAll('rim');
   var ownedHub = function(o) {
     var n = o.e.name.slice(0, NAME_MAX).toLowerCase();
@@ -10700,7 +10714,6 @@ function obRenderBrand() {
     { label: t('rearLabel'),  items: s.hubs.filter(function(o) { return o.side === 'arriere'; }), owned: ownedHub },
     { label: t('obSelRims'),  items: s.rims, owned: ownedRim }
   ];
-  var chk = '<span class="ob-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>';
   groups.forEach(function(g) {
     if (!g.items.length) return;
     var wrap = document.createElement('div');
@@ -10718,19 +10731,22 @@ function obRenderBrand() {
       obSyncSel();
     });
     all._obItems = g.items;
+    all._obLabel = g.label;
     head.appendChild(all);
     wrap.appendChild(head);
     g.items.forEach(function(o) {
       var it = document.createElement('button');
       it.type = 'button';
-      it.className = 'hr-load-item ob-item';
+      var owned = g.owned(o);
+      it.className = 'snap-item ob-item' + (owned ? ' owned' : '');
       it.dataset.key = o.key;
-      var sub = [];
       var holes = o.e.data.holes;
-      if (Array.isArray(holes) && holes.length) sub.push(escHtml(holes.join(' · ') + ' ' + t('obSelHoles')));
-      if (g.owned(o)) sub.push('<span class="ob-owned">' + escHtml(t('obSelOwned')) + '</span>');
-      it.innerHTML = chk + '<span class="ob-item-info"><span class="hr-load-item-name">' + escHtml(o.e.name) + '</span>'
-                   + (sub.length ? '<span class="ob-item-sub">' + sub.join(' · ') + '</span>' : '') + '</span>';
+      holes = Array.isArray(holes) ? holes.map(Number).filter(function(n) { return n > 0; }) : [];
+      var meta = holes.join(' · ');
+      it.innerHTML = '<span class="snap-item-info"><span class="snap-item-label">' + escHtml(o.e.name) + '</span>'
+                   + (meta ? '<span class="snap-item-meta">' + escHtml(meta) + '</span>' : '') + '</span>'
+                   + '<span class="ob-chk"' + (owned ? ' title="' + escHtml(t('obSelOwned')) + '"' : '') + ' aria-hidden="true">&#10003;</span>';
+      if (owned) it.setAttribute('aria-label', o.e.name + (meta ? ', ' + meta : '') + ' (' + t('obSelOwned') + ')');
       it.addEventListener('click', function() {
         s.picked[o.key] = !s.picked[o.key];
         obSyncSel();
@@ -10742,7 +10758,8 @@ function obRenderBrand() {
   obSyncSel();
 }
 
-// Coches, libellés « Tout / Aucun » des groupes et bouton, depuis s.picked.
+// Sélection des lignes, libellés « Tout / Aucun » des groupes et bouton,
+// depuis s.picked.
 function obSyncSel() {
   var s = _obSel, n = 0;
   if (s) {
@@ -10755,14 +10772,15 @@ function obSyncSel() {
     $id('obsel-body').querySelectorAll('.ob-group-all').forEach(function(bt) {
       var every = bt._obItems.every(function(o) { return s.picked[o.key]; });
       bt.textContent = t(every ? 'obSelNone' : 'obSelAll');
+      bt.setAttribute('aria-label', bt._obLabel + ' : ' + bt.textContent);
     });
   }
   $id('obsel-go-lbl').textContent = t('obSelGo') + (n ? ' (' + n + ')' : '');
   $id('obsel-go').disabled = !n;
 }
 
-// Import des composants cochés. Même clé d'unicité que confirmHrSave et le
-// backup : moyeux (nom, côté), jantes nom — une entrée déjà présente est
+// Import des composants sélectionnés. Même clé d'unicité que confirmHrSave et le
+// backup : moyeux (nom, côté), jantes nom ; une entrée déjà présente est
 // REMPLACÉE, c'est ce qui permet de rejouer l'import après une révision du
 // catalogue. Horodatage posé à l'import (comme wshareImport) : l'entrée est
 // datée du jour dans les listes et le filtre Période. Aucun autre champ du
@@ -10799,6 +10817,8 @@ function obImportSelected() {
       if (!hrPersist('rim', rims)) throw _lsWriteFail();
     }
   } catch (err) {
+    // Les moyeux ont pu être écrits avant l'échec des jantes : badges à jour.
+    try { hrUpdateButtons(); hrRefreshBadges(); } catch(e) {}
     // lsSet a déjà prévenu en cas de refus du stockage (même règle que
     // importConfigs) : on ne double pas le message.
     if (err && err._lsWrite) { closeOnlineBase(); return; }
