@@ -1119,18 +1119,48 @@ html[data-fond="alu"] .ateliermgr-logo-wrap.has-logo:hover, html[data-fond="alu"
    des marques comme dans la modale de choix. */
 #onlinebase-modal .ob-status, #obsel-modal .ob-status { font-size:.72rem; color:var(--text3); font-style:italic; text-align:center; padding:.5rem }
 #ob-list { display:flex; flex-direction:column; gap:.7rem }
+/* Ligne de marque : le compte n'est jamais coupé, « moyeux » et « jantes »
+   s'empilent à droite quand la marque a les deux ; seul un nom trop long se
+   tronque (points de suspension) au lieu de passer sous le compte. */
+#ob-list .ct-save-btn > span:not(.reglages-val) { flex:1 1 auto; min-width:0; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+#ob-list .ct-save-btn > .reglages-val { flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; line-height:1.35; white-space:nowrap }
 /* Online base, choix des composants d'une marque : modale empilée au-dessus
    de la liste des marques (voile 9982, boîte 9983), groupes Avant / Arrière /
    Jantes, une ligne par composant à sélectionner. */
 #obsel-overlay { z-index:9982 }
-#obsel-modal { z-index:9983 }
-#obsel-body { display:flex; flex-direction:column; gap:.9rem }
-.ob-hint { font-size:.72rem; color:var(--text2); line-height:1.5; margin:-.2rem 0 0 }
+/* Ascenseur : gabarit des modales « Charger… » (hauteur bornée à 80dvh,
+   liste en flex:1 + overflow-y:auto). En-tête, phrase d'aide et bouton
+   Télécharger restent fixes ; seule .ob-scroll défile, et l'en-tête de
+   groupe (Avant / Arrière / Jantes + Tout, .ob-group-head plus bas) reste
+   collé en haut pendant le défilement de son groupe. */
+#obsel-modal { z-index:9983; max-height:80vh; max-height:80dvh; overflow:hidden }
+/* Téléphone en paysage : 80dvh ne laisse que deux lignes visibles ; même
+   relèvement que #wheel-info-modal. */
+@media (orientation: landscape) and (max-height: 520px) {
+  #obsel-modal { max-height:92vh; max-height:92dvh }
+}
+/* La boîte reçoit le focus à l'ouverture (tabindex=-1) : pas d'anneau sur
+   la boîte elle-même. */
+#obsel-modal:focus { outline:none }
+#obsel-modal > * { flex-shrink:0 }
+#obsel-modal > #obsel-body { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:.9rem }
+/* scroll-padding : une ligne atteinte au clavier ne s'arrête pas sous
+   l'en-tête de groupe collé. */
+.ob-scroll { flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; display:flex; flex-direction:column; gap:.9rem; scroll-padding-top:calc(22px + .375rem + 8px); scroll-padding-bottom:4px }
+.ob-hint { font-size:.72rem; color:var(--text2); line-height:1.5; margin:-.2rem 0 0; flex-shrink:0 }
 .ob-group { display:flex; flex-direction:column; gap:.45rem }
-.ob-group-head { display:flex; align-items:center; gap:.5rem; min-height:22px }
+/* En-tête collé : une bande de fond sous le libellé (padding compensé par
+   la marge négative, toujours inférieure au gap .45rem du groupe), pour que
+   les lignes qui passent dessous ne soient pas coupées au ras du texte, sans
+   changer l'espacement au repos. L'ombre d'1 px vers le haut masque le filet
+   de la ligne cachée qu'un arrondi de sous-pixel laissait voir au-dessus. */
+.ob-group-head { display:flex; align-items:center; gap:.5rem; min-height:calc(22px + .375rem); padding-bottom:.375rem; margin-bottom:-.375rem; position:sticky; top:0; z-index:1; background:var(--card); box-shadow:0 -1px 0 var(--card) }
 .ob-group-label { font-size:.6rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent2) }
 .ob-group-count { font-family:'DM Mono',monospace; font-size:.6rem; color:var(--accent); flex:1 }
-.ob-group-all { background:none; border:1px solid var(--border); border-radius:var(--rs); font-family:'DM Mono',monospace; font-size:.56rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text3); padding:.22rem .5rem; line-height:1; cursor:pointer; touch-action:manipulation; transition:border-color .2s, color .2s }
+/* Largeur mini : TOUT ↔ AUCUN (ALL ↔ NONE) ne fait plus sauter la pastille.
+   ::after élargit la zone de toucher sans toucher au layout (cf. section 6). */
+.ob-group-all { position:relative; min-width:3.4rem; text-align:center; background:none; border:1px solid var(--border); border-radius:var(--rs); font-family:'DM Mono',monospace; font-size:.56rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text3); padding:.22rem .5rem; line-height:1; cursor:pointer; touch-action:manipulation; transition:border-color .2s, color .2s }
+.ob-group-all::after { content:''; position:absolute; inset:-8px 0 }
 .ob-group-all:hover { border-color:rgba(var(--accent-rgb),.5); color:var(--accent2) }
 .ob-item { width:100%; font:inherit; color:inherit; text-align:left }
 /* Sélection calquée sur celle des snapshots (Évolution) : ligne .snap-item,
@@ -1141,7 +1171,11 @@ html[data-fond="alu"] .ateliermgr-logo-wrap.has-logo:hover, html[data-fond="alu"
 .ob-chk { flex-shrink:0; font-size:1rem; line-height:1; color:var(--accent); visibility:hidden }
 .ob-item.sel .ob-chk { visibility:visible }
 .ob-item.owned:not(.sel) .ob-chk { visibility:visible; color:var(--text3) }
-#obsel-go[disabled] { opacity:.45; pointer-events:none }
+#obsel-go[disabled] { opacity:.4; pointer-events:none }
+/* Anneau de focus rentré : la liste défilante (overflow) et l'en-tête collé
+   rognaient l'anneau global posé à 2 px à l'extérieur ; l'arrondi reste
+   celui de l'élément. */
+#obsel-body .ob-item:focus-visible, #obsel-body .ob-group-all:focus-visible { outline-offset:-2px; border-radius:var(--rs) }
 /* Survol accroché après un appui (iOS) : retour à la couleur de repos (le
    survol des lignes .snap-item est déjà réservé à hover: hover). */
 @media (hover: none) {
@@ -3122,7 +3156,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
      croix ou Échap y ramènent). On sélectionne les composants voulus, le
      bouton n'importe que ceux-là. ── -->
 <div class="ateliermgr-overlay" id="obsel-overlay" onclick="obCloseBrand()"></div>
-<div class="ateliermgr-modal" id="obsel-modal" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="obsel-title">
+<div class="ateliermgr-modal" id="obsel-modal" tabindex="-1" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="obsel-title">
   <div class="ateliermgr-header">
     <span class="ateliermgr-header-left">
       <svg class="ateliermgr-title-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -6300,7 +6334,8 @@ const i18n = {
     obEmpty:'Aucune marque disponible.',
     obImported:'{b} : {list} importé',
     obImportedPl:'{b} : {list} importés',
-    obNothing:'Aucun composant importé.',
+    obImportedF:'{b} : {list} importée',
+    obImportedFPl:'{b} : {list} importées',
     obHub:'moyeu',
     obHubs:'moyeux',
     obRim:'jante',
@@ -6599,7 +6634,8 @@ const i18n = {
     obEmpty:'No brand available.',
     obImported:'{b}: {list} imported',
     obImportedPl:'{b}: {list} imported',
-    obNothing:'No component imported.',
+    obImportedF:'{b}: {list} imported',
+    obImportedFPl:'{b}: {list} imported',
     obHub:'hub',
     obHubs:'hubs',
     obRim:'rim',
@@ -10618,7 +10654,7 @@ function obRenderIndex() {
       if (b.rims) parts.push(b.rims + ' ' + t(b.rims > 1 ? 'obRims' : 'obRim'));
       btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16.6A4.5 4.5 0 0 0 18.5 8h-1.3A7 7 0 1 0 5 15.3"/><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/></svg>'
         + '<span>' + escHtml(b.name) + '</span>'
-        + (parts.length ? '<span class="reglages-val">' + escHtml(parts.join(' · ')) + '</span>' : '');
+        + (parts.length ? '<span class="reglages-val">' + parts.map(function(x) { return '<span>' + escHtml(x) + '</span>'; }).join('') + '</span>' : '');
       btn.addEventListener('click', function() { obOpenBrand(b); });
       box.appendChild(btn);
     });
@@ -10649,12 +10685,13 @@ function obOpenBrand(b) {
   $id('obsel-title').textContent = b.name;
   $id('obsel-body').innerHTML = '<div class="ob-status">' + escHtml(t('obLoading')) + '</div>';
   obSyncSel();
-  // Le bouton de la marque garderait le focus sous le voile : un second
-  // Entrée relancerait le téléchargement et viderait la sélection.
-  if (document.activeElement && document.activeElement !== document.body)
-    document.activeElement.blur();
   $id('obsel-overlay').classList.add('show');
   $id('obsel-modal').classList.add('show');
+  // Focus DANS la modale et liste des marques inerte dessous : sans quoi Tab
+  // retombait sur une marque sous le voile, et Entrée remplaçait la modale
+  // ouverte (sélection perdue).
+  $id('onlinebase-modal').inert = true;
+  $id('obsel-modal').focus({ preventScroll: true });
   var _st = function(key) { $id('obsel-body').innerHTML = '<div class="ob-status">' + escHtml(t(key)) + '</div>'; };
   if (!navigator.onLine) { _st('obOffline'); return; }
   obFetch(b.file).then(function(data) {
@@ -10688,6 +10725,7 @@ function obCloseBrand() {
   _obSel = null;
   var ov = $id('obsel-overlay'), mo = $id('obsel-modal');
   if (!mo || !mo.classList.contains('show')) return;
+  $id('onlinebase-modal').inert = false;
   ov.classList.remove('show');
   mo.classList.remove('show');
   if (document.activeElement && document.activeElement !== document.body)
@@ -10697,17 +10735,18 @@ function obCloseBrand() {
 function obRenderBrand() {
   var s = _obSel, box = $id('obsel-body');
   if (!s) return;
-  box.innerHTML = '<p class="ob-hint">' + escHtml(t('obSelHint')) + '</p>';
+  box.innerHTML = '<p class="ob-hint">' + escHtml(t('obSelHint')) + '</p><div class="ob-scroll"></div>';
+  var scroller = box.lastChild;
   // Déjà présent en local (même clé que l'import : nom + côté pour un moyeu,
   // nom pour une jante) : coche grise, l'import le remplacera.
   var hubsLoc = hrLoadAll('hub'), rimsLoc = hrLoadAll('rim');
   var ownedHub = function(o) {
     var n = o.e.name.slice(0, NAME_MAX).toLowerCase();
-    return hubsLoc.some(function(h) { return h.name.toLowerCase() === n && ((h.data && h.data.wtype) || 'avant') === o.side; });
+    return hubsLoc.some(function(h) { return h && typeof h.name === 'string' && h.name.toLowerCase() === n && ((h.data && h.data.wtype) || 'avant') === o.side; });
   };
   var ownedRim = function(o) {
     var n = o.e.name.slice(0, NAME_MAX).toLowerCase();
-    return rimsLoc.some(function(r) { return r.name.toLowerCase() === n; });
+    return rimsLoc.some(function(r) { return r && typeof r.name === 'string' && r.name.toLowerCase() === n; });
   };
   var groups = [
     { label: t('frontLabel'), items: s.hubs.filter(function(o) { return o.side === 'avant'; }), owned: ownedHub },
@@ -10753,7 +10792,7 @@ function obRenderBrand() {
       });
       wrap.appendChild(it);
     });
-    box.appendChild(wrap);
+    scroller.appendChild(wrap);
   });
   obSyncSel();
 }
@@ -10772,11 +10811,13 @@ function obSyncSel() {
     $id('obsel-body').querySelectorAll('.ob-group-all').forEach(function(bt) {
       var every = bt._obItems.every(function(o) { return s.picked[o.key]; });
       bt.textContent = t(every ? 'obSelNone' : 'obSelAll');
-      bt.setAttribute('aria-label', bt._obLabel + ' : ' + bt.textContent);
+      bt.setAttribute('aria-label', bt._obLabel + (lang === 'fr' ? ' : ' : ': ') + bt.textContent);
     });
   }
   $id('obsel-go-lbl').textContent = t('obSelGo') + (n ? ' (' + n + ')' : '');
   $id('obsel-go').disabled = !n;
+  // Chargement, erreur, marque vide : pas de liste, donc pas de bouton.
+  $id('obsel-go').style.display = s ? '' : 'none';
 }
 
 // Import des composants sélectionnés. Même clé d'unicité que confirmHrSave et le
@@ -10800,7 +10841,7 @@ function obImportSelected() {
         data.wtype = o.side;
         var entry = { name: o.e.name.slice(0, NAME_MAX), data: data, ts: now };
         var idx = hubs.findIndex(function(h) {
-          return h.name.toLowerCase() === entry.name.toLowerCase() &&
+          return h && typeof h.name === 'string' && h.name.toLowerCase() === entry.name.toLowerCase() &&
                  ((h.data && h.data.wtype) || 'avant') === o.side;
         });
         if (idx >= 0) hubs.splice(idx, 1, entry); else hubs.unshift(entry);
@@ -10811,7 +10852,7 @@ function obImportSelected() {
       var rims = hrLoadAll('rim');
       pR.forEach(function(o) {
         var entry = { name: o.e.name.slice(0, NAME_MAX), data: JSON.parse(JSON.stringify(o.e.data)), ts: now };
-        var idx = rims.findIndex(function(r) { return r.name.toLowerCase() === entry.name.toLowerCase(); });
+        var idx = rims.findIndex(function(r) { return r && typeof r.name === 'string' && r.name.toLowerCase() === entry.name.toLowerCase(); });
         if (idx >= 0) rims.splice(idx, 1, entry); else rims.unshift(entry);
       });
       if (!hrPersist('rim', rims)) throw _lsWriteFail();
@@ -10834,7 +10875,10 @@ function obImportSelected() {
   var parts = [];
   if (nh) parts.push(nh + ' ' + t(nh > 1 ? 'obHubs' : 'obHub'));
   if (nr) parts.push(nr + ' ' + t(nr > 1 ? 'obRims' : 'obRim'));
-  showImportToast(t(nh + nr > 1 ? 'obImportedPl' : 'obImported')
+  // Jantes seules : participe au féminin (« 2 jantes importées ») ; dès
+  // qu'il y a un moyeu, le masculin l'emporte.
+  var _k = nh ? 'obImported' : 'obImportedF';
+  showImportToast(t(nh + nr > 1 ? _k + 'Pl' : _k)
                     .replace('{b}', function() { return s.b.name; })
                     .replace('{list}', function() { return parts.join(', '); }), false);
 }
