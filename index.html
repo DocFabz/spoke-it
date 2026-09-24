@@ -5458,8 +5458,12 @@ window.wiNotesSet = function(log, legacy) {
       var txt = typeof note === 'string' ? note
               : (typeof note.txt === 'string' ? note.txt : '');
       if (!txt.trim()) return;
-      out.push({ ts: wiNoteTs(note && note.ts),
-                 txt: wiNoteClamp(txt.slice(0, WI_NOTE_LEN)) });
+      // Note sans date = note d'une save d'avant le journal, migrée entière
+      // (branche legacy ci-dessous) : les bornes 140 car. / 4 lignes l'auraient
+      // amputée au chargement suivant. Même plafond de 500 que la migration.
+      var ts = wiNoteTs(note && note.ts);
+      out.push({ ts: ts,
+                 txt: ts === null ? txt.slice(0, 500) : wiNoteClamp(txt.slice(0, WI_NOTE_LEN)) });
     });
   } else if (typeof legacy === 'string' && legacy.trim()) {
     out.push({ ts: null, txt: legacy.slice(0, 500) });
@@ -5680,10 +5684,14 @@ function ensureJsPDF() {
       src.textContent = '';
       resolve();
     } else {
-      _jspdfPromise = null;
       reject(new Error('jsPDF injection failed'));
     }
   });
+  // Réarmement HORS de l'exécuteur : celui-ci tourne de façon synchrone, un
+  // `_jspdfPromise = null` posé dedans était aussitôt écrasé par l'affectation
+  // de la promesse rejetée, et plus aucun export ne retentait l'injection.
+  const p = _jspdfPromise;
+  p.catch(() => { if (_jspdfPromise === p) _jspdfPromise = null; });
   return _jspdfPromise;
 }
 // ── Sanitisation PDF partagée ─────────────────────────────────────────────────
@@ -6459,6 +6467,7 @@ const i18n = {
     ccErrSmoothRange:'Lissage impossible : la courbe ajustée passe par des kgf nuls ou négatifs.',
     ccErrSmoothMono:'Lissage impossible : après arrondi, les kgf ne sont pas strictement monotones. Vérifiez vos mesures ou ajoutez des points.',
     ccErrName:'Veuillez saisir un nom pour la charte.',
+    ccErrTensio:'Veuillez choisir un tensiomètre pour la charte.',
     ccErrValues:'Remplissez toutes les lignes (kgf et lecture).',
     ccErrIncomplete:'{n}/{max} points saisis. Complétez avant d\'enregistrer.',
     ccErrDuplicate2:'Deux valeurs de lecture identiques.',
@@ -6762,6 +6771,7 @@ const i18n = {
     ccErrSmoothRange:'Smoothing failed: the fitted curve reaches zero or negative kgf.',
     ccErrSmoothMono:'Smoothing failed: after rounding, kgf values are not strictly monotonic. Check your measurements or add more points.',
     ccErrName:'Please enter a name for the chart.',
+    ccErrTensio:'Please choose a tensiometer for the chart.',
     ccErrValues:'Fill in all rows (kgf and reading).',
     ccErrIncomplete:'{n}/{max} points entered. Complete before saving.',
     ccErrDuplicate2:'Two identical reading values.',
@@ -7607,6 +7617,35 @@ function showCacheToast() {
 }
 
 // ── i18n apply ───────────────────────────────────────────────────────────────
+// Tooltips des boutons d'icône : fonction à part, appelée par applyLang ET au
+// DOMContentLoaded. L'applyLang du démarrage tourne pendant l'analyse du HTML,
+// avant que les modales Easy Fill et Évolution existent (snapanim-replay,
+// ef-mic-btn) : leur title restait en français pour un anglophone.
+function applyLangIconTitles() {
+  // Tooltips des boutons d'icône de card (load/save/info) : title figé FR dans
+  // le HTML, retraduit ici — même mécanisme que bkp-snooze / save-mgr-btn.
+  Object.entries({
+    'wheel-load-btn':'wheelLoadBtnTitle',    'tm-wheel-load-btn':'wheelLoadBtnTitle',
+    'wheel-save-btn':'wheelSaveBtnTitle',    'tm-wheel-save-btn':'wheelSaveBtnTitle',
+    'wheel-info-btn':'wiInfoBtnTitle',       'tm-wheel-info-btn':'wiInfoBtnTitle',
+    'wheel-share-btn':'wshareBtnTitle',      'tm-wheel-share-btn':'wshareBtnTitle',
+    'cshare-btn':'cshareBtnTitle',       'ct-add-btn':'ctAddBtnTitle',
+    'hub-load-btn':'hubLoadBtnTitle',        'hub-save-btn':'hubSaveBtnTitle',
+    'rim-load-btn':'rimLoadBtnTitle',        'rim-save-btn':'rimSaveBtnTitle',
+    'hooke-btn':'hookeBtnTitle',
+    'tm-th-nds-invert':'tmInvertNdsTitle',   'tm-th-ds-invert':'tmInvertDsTitle',
+    'tm-th-nds-reset':'tmEraseNdsTitle',     'tm-th-ds-reset':'tmEraseDsTitle',
+    'tm-play-btn':'tmPlayBtnTitle',          'tm-snapcompare-btn':'tmSnapCompareBtnTitle',
+    'ef-diag-btn':'efDiagBtnTitle', 'ef-mic-btn':'efMicBtnTitle', 'ef-bt-btn':'efBtBtnTitle',
+    // snapanim-save absent à dessein : son title est contextuel (device),
+    // posé à l'affichage du bouton via tmRecShare/tmRecSave — cf. snapCompareAnim.
+    'snapanim-replay':'snapAnimReplayTitle',
+  }).forEach(([id, key]) => {
+    var b = $id(id); if (b) { b.title = t(key); b.setAttribute('aria-label', t(key)); }
+  });
+}
+document.addEventListener('DOMContentLoaded', applyLangIconTitles);
+
 function applyLang() {
   // Attribut lang du document : lecteurs d'écran et césure suivent la langue
   // active (sinon <html lang="fr"> figé, texte EN lu avec phonétique FR).
@@ -7663,27 +7702,7 @@ function applyLang() {
   if (typeof apparenceSync === 'function') apparenceSync();
   var cfgFb = $id('cfg-fill-badge'); if (cfgFb) cfgFb.title = t('cfgFillHint');
   if (typeof helpSync === 'function') helpSync();
-  // Tooltips des boutons d'icône de card (load/save/info) : title figé FR dans
-  // le HTML, retraduit ici — même mécanisme que bkp-snooze / save-mgr-btn.
-  Object.entries({
-    'wheel-load-btn':'wheelLoadBtnTitle',    'tm-wheel-load-btn':'wheelLoadBtnTitle',
-    'wheel-save-btn':'wheelSaveBtnTitle',    'tm-wheel-save-btn':'wheelSaveBtnTitle',
-    'wheel-info-btn':'wiInfoBtnTitle',       'tm-wheel-info-btn':'wiInfoBtnTitle',
-    'wheel-share-btn':'wshareBtnTitle',      'tm-wheel-share-btn':'wshareBtnTitle',
-    'cshare-btn':'cshareBtnTitle',       'ct-add-btn':'ctAddBtnTitle',
-    'hub-load-btn':'hubLoadBtnTitle',        'hub-save-btn':'hubSaveBtnTitle',
-    'rim-load-btn':'rimLoadBtnTitle',        'rim-save-btn':'rimSaveBtnTitle',
-    'hooke-btn':'hookeBtnTitle',
-    'tm-th-nds-invert':'tmInvertNdsTitle',   'tm-th-ds-invert':'tmInvertDsTitle',
-    'tm-th-nds-reset':'tmEraseNdsTitle',     'tm-th-ds-reset':'tmEraseDsTitle',
-    'tm-play-btn':'tmPlayBtnTitle',          'tm-snapcompare-btn':'tmSnapCompareBtnTitle',
-    'ef-diag-btn':'efDiagBtnTitle', 'ef-mic-btn':'efMicBtnTitle', 'ef-bt-btn':'efBtBtnTitle',
-    // snapanim-save absent à dessein : son title est contextuel (device),
-    // posé à l'affichage du bouton via tmRecShare/tmRecSave — cf. snapCompareAnim.
-    'snapanim-replay':'snapAnimReplayTitle',
-  }).forEach(([id, key]) => {
-    var b = $id(id); if (b) { b.title = t(key); b.setAttribute('aria-label', t(key)); }
-  });
+  applyLangIconTitles();
   // Boutons ✕ des champs du diagnostic (pas d'id, classe partagée)
   document.querySelectorAll('.diag-clear-btn').forEach(b => { b.title = t('clearFieldTitle'); });
   // La boucle [data-i18n] vient de remettre le libellé complet.
@@ -7854,6 +7873,11 @@ function readState() {
 // malformé venu d'un fichier édité à la main) le laissait armé pour toute la
 // session : les deux fonctions devenaient des no-op silencieux. Le corps vit
 // dans _applyStateBody pour que le finally reste chirurgical.
+// Posé par switchTo le temps d'applyState : la recréation automatique d'un
+// moyeu/jante absent sert à l'OUVERTURE d'une roue qui le cite, pas au retour
+// sur une roue dont l'utilisateur vient de supprimer le moyeu (Data manager,
+// Tout effacer, ✕ de la liste) : ce serait défaire la suppression.
+var _applyNoRecreate = false;
 function applyState(s) {
   if (!s) return;
   _applyingState = true;
@@ -8002,7 +8026,8 @@ function _applyStateBody(s) {
         summaryData.ratio = exactRatio(summaryData);
       }
       renderSummary(); $id('summary-wrap').classList.add('show');
-    } else { summaryData = null; }
+      updateSumCardState(); // état « done » propre à CETTE roue
+    } else { summaryData = null; resetSumCardState(); }
     if (s.arbData && s.arbData.fo && s.arbData.fa) {
       arbData = s.arbData;
       buildArb('fo', arbData.fo.exactLen, arbData.fo.elongation);
@@ -8015,9 +8040,21 @@ function _applyStateBody(s) {
       diffReorder(arbCols, arbColFo, arbColFa, wtype);
       $id('arb-wrap').classList.remove('show');
       $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
-    } else { arbData = { fo: null, fa: null }; arbSelected.fo = null; arbSelected.fa = null; }
+    } else {
+      arbData = { fo: null, fa: null }; arbSelected.fo = null; arbSelected.fa = null;
+      // La grille affichée appartenait à la roue quittée : la laisser ouverte
+      // permettait d'y choisir une longueur pour CETTE roue.
+      $id('arb-wrap').classList.remove('show');
+      $id('arb-card-body').style.display = 'none'; $id('arb-card-chevron').style.transform = '';
+    }
+    // Cartes de longueur cliquables ssi l'allongement est calculé : même règle
+    // que calc(), et même critère que le bouton Hooke restauré plus haut.
+    { const _el = !!(s.mFo || s.mFa);
+      document.querySelectorAll('.rc').forEach(rc => { rc.style.cursor = _el ? 'pointer' : 'default'; rc.style.pointerEvents = _el ? '' : 'none'; });
+      document.querySelectorAll('.rc-tap').forEach(x => { x.style.display = _el ? '' : 'none'; }); }
   } else {
     summaryData = null;
+    resetSumCardState();
     ['results','arb-wrap','summary-wrap'].forEach(id => $id(id).classList.remove('show'));
   }
 
@@ -8107,24 +8144,32 @@ function _applyStateBody(s) {
     if (s.loadedHubName) {
       var _hubs = hrLoadAll('hub');
       var _hubFound = _hubs.some(function(e) { return e.name === s.loadedHubName && ((e.data && e.data.wtype) || 'avant') === wtype; });
-      if (!_hubFound && typeof hrReadHub === 'function') {
-        var _hubData = hrReadHub();
-        _hubs.unshift({ name: s.loadedHubName, data: _hubData, ts: Date.now() });
-        hrPersist('hub', _hubs);
+      if (!_hubFound && _applyNoRecreate) {
+        hrClearLoadedHub();
+      } else {
+        if (!_hubFound && typeof hrReadHub === 'function') {
+          var _hubData = hrReadHub();
+          _hubs.unshift({ name: s.loadedHubName, data: _hubData, ts: Date.now() });
+          hrPersist('hub', _hubs);
+        }
+        hrSetLoadedHub(s.loadedHubName);
       }
-      hrSetLoadedHub(s.loadedHubName);
     } else {
       hrClearLoadedHub();
     }
     if (s.loadedRimName) {
       var _rims = hrLoadAll('rim');
       var _rimFound = _rims.some(function(e) { return e.name === s.loadedRimName; });
-      if (!_rimFound && typeof hrReadRim === 'function') {
-        var _rimData = hrReadRim();
-        _rims.unshift({ name: s.loadedRimName, data: _rimData, ts: Date.now() });
-        hrPersist('rim', _rims);
+      if (!_rimFound && _applyNoRecreate) {
+        hrClearLoadedRim();
+      } else {
+        if (!_rimFound && typeof hrReadRim === 'function') {
+          var _rimData = hrReadRim();
+          _rims.unshift({ name: s.loadedRimName, data: _rimData, ts: Date.now() });
+          hrPersist('rim', _rims);
+        }
+        hrSetLoadedRim(s.loadedRimName);
       }
-      hrSetLoadedRim(s.loadedRimName);
     } else {
       hrClearLoadedRim();
     }
@@ -8202,6 +8247,7 @@ function clearFormSilent() {
   $id('arb-card-body').style.display  = 'none'; $id('arb-card-chevron').style.transform  = '';
   $id('sum-card-body').style.display  = 'none'; $id('sum-card-chevron').style.transform  = '';
   summaryData = null; arbData.fo = null; arbData.fa = null; arbSelected.fo = null; arbSelected.fa = null;
+  resetSumCardState();
   saved[wtype] = null;
   renderConfigsList();
   updateAsymField();
@@ -8240,7 +8286,8 @@ function switchTo(wh) {
     // L'état reposé est celui que CETTE roue avait en la quittant : les mémoires
     // par type de moyeu restent vraies et traversent la purge d'applyState().
     const _stash = hubStashSnapshot(wh);
-    applyState(saved[wh]);
+    _applyNoRecreate = true;
+    try { applyState(saved[wh]); } finally { _applyNoRecreate = false; }
     hubStashRestore(wh, _stash);
   } else {
     // Roue jamais remplie : le formulaire repart vide. La purge vit dans
@@ -10304,9 +10351,10 @@ function _logoBuild(img) {
     if (url.length <= LOGO_MAX_LEN) break;      // image très détaillée
     k = 0.65;
   }
-  // Définition réellement obtenue à l'impression : la plus contraignante des
-  // deux dimensions, l'image étant posée « au contenu » dans son cadre.
-  var dpi = Math.min(out.width / LOGO_PRINT_W, out.height / LOGO_PRINT_H);
+  // Définition réellement obtenue à l'impression. L'image est posée « au
+  // contenu » dans son cadre (pdfAtelierLogo) : la dimension qui touche le
+  // cadre fixe l'échelle, et c'est celle qui donne le PLUS grand rapport.
+  var dpi = Math.max(out.width / LOGO_PRINT_W, out.height / LOGO_PRINT_H);
   return { url: url, detoured: detoured, hadAlpha: hadAlpha, lowRes: dpi < LOGO_MIN_DPI };
 }
 
@@ -10699,7 +10747,11 @@ function savemgrRenderLastBackup() {
   var backup = 0;
   try { backup = parseInt(localStorage.getItem('spokeit_lastBackup') || '0', 10) || 0; } catch(e) {}
   if (!backup) { el.textContent = t('lastBackupNever'); return; }
-  var days = Math.floor((Date.now() - backup) / DAY_MS);
+  // Jours du CALENDRIER (minuit local), pas tranches de 24 h : une sauvegarde
+  // d'hier 23 h lue ce matin est « hier ». round absorbe les jours de 23/25 h.
+  var d0 = new Date(backup); d0.setHours(0, 0, 0, 0);
+  var d1 = new Date();       d1.setHours(0, 0, 0, 0);
+  var days = Math.round((d1 - d0) / DAY_MS);
   if (days <= 0)      el.textContent = t('lastBackupToday');
   else if (days === 1) el.textContent = t('lastBackupYesterday');
   else                 el.textContent = t('lastBackupDays').replace('{n}', days);
@@ -11921,8 +11973,9 @@ function _importNormWheelInfo(entry) {
       var txt = typeof note === 'string' ? note
               : (typeof note.txt === 'string' ? note.txt : '');
       if (!txt.trim()) return;
-      out.push({ ts: wiNoteTs(note.ts),
-                 txt: wiNoteClamp(txt.slice(0, WI_NOTE_LEN)) });
+      var ts = wiNoteTs(note.ts);
+      out.push({ ts: ts,
+                 txt: ts === null ? txt.slice(0, 500) : wiNoteClamp(txt.slice(0, WI_NOTE_LEN)) });
     });
     // slice par la FIN, comme wiNotesSet : au-delà du plafond ce sont les notes
     // les plus RÉCENTES qu'on garde.
@@ -12762,6 +12815,7 @@ function _cshareSelect(tensioKey, ccName) {
   if (tmSpokeLocked(targetSide || 'fo')) return;
   var isCt = tensioKey.indexOf('ct_') === 0;
   var type = isCt ? tensioKey : (tensioKey.indexOf('dt_') === 0 ? 'dt' : tensioKey);
+  var switched = tmStoreKey() !== tensioKey;
   if (type === 'dt') {
     var sub = tensioKey.slice(3); // 'standard' | 'aerolite2'
     if (tmType !== 'dt') {
@@ -12780,6 +12834,19 @@ function _cshareSelect(tensioKey, ccName) {
   tmPopulateSpokeSelect(); // charte fraîchement injectée : options à jour
   var key = CC_PREFIX + ccName;
   if (tmSpokeFo === key || tmSpokeFa === key) return;
+  // Bascule de tensiomètre : tmSwitchActiveKey vient de restaurer les rayons
+  // et relevés PARQUÉS du tensiomètre de la charte. La rangée visée et son
+  // verrou, évalués plus haut sur le tensiomètre quitté, sont à refaire ici,
+  // sinon l'import écrase une rangée occupée et purge ses relevés.
+  if (switched) {
+    targetSide = null;
+    if (spokeDiff) {
+      if (!tmSpokeFo)      targetSide = 'fo';
+      else if (!tmSpokeFa) targetSide = 'fa';
+      else return;
+    } else if (tmSpokeFo && tmHasData()) return;
+    if (tmSpokeLocked(targetSide || 'fo')) return;
+  }
   if (targetSide) {
     var selSide = $id('tm-spoke-select-' + targetSide);
     if (selSide) {
@@ -14212,6 +14279,7 @@ function eraseMgrErasePeriod(per) {
   if (typeof hrLoadAll === 'function' && typeof hrPersist === 'function') {
     hrPersist('hub', hrLoadAll('hub').filter(e => !doomed(e.ts)));
     hrPersist('rim', hrLoadAll('rim').filter(e => !doomed(e.ts)));
+    if (typeof hrDropDeadBadges === 'function') hrDropDeadBadges();
     if (typeof hrUpdateButtons === 'function') hrUpdateButtons();
   }
 
@@ -14253,6 +14321,8 @@ function eraseMgrEraseAll() {
       ccPersist([]);
       ccInjectAll();
       if (activeIsCustom) { tmSpokeFo = null; tmSpokeFa = null; tmResetData(); tmHideResult(); }
+      // Toutes les chartes perso ont disparu : relevés parqués et autre roue aussi.
+      _ccPurgeDeadRefs(function(k) { return k.startsWith(CC_PREFIX); });
       tmPopulateSpokeSelect();
       tmBuildTable();
       ccRenderExisting();
@@ -14262,6 +14332,7 @@ function eraseMgrEraseAll() {
     if (typeof hrPersist === 'function') {
       hrPersist('hub', []);
       hrPersist('rim', []);
+      if (typeof hrDropDeadBadges === 'function') hrDropDeadBadges();
       if (typeof hrUpdateButtons === 'function') hrUpdateButtons();
     }
     // Filet de sécurité registre : toute clé déclarée effaçable qui
@@ -16173,6 +16244,41 @@ function ccLoadChart(idx) {
   $id('cc-feedback').textContent = '';
 }
 
+// Purge des relevés parqués (tmStore) et de l'état en mémoire de l'autre roue
+// dont la charte vient de disparaître. isDead(spokeKey, storeKey) désigne les
+// couples morts. En différentiel, une rangée morte seule ne vide que sa
+// colonne ; sinon l'entrée entière tombe. L'entrée du tensiomètre ACTIF est
+// laissée aux données vives, déjà traitées par l'appelant.
+function _ccPurgeDeadRefs(isDead) {
+  Object.keys(tmStore).forEach(function(k) {
+    const e = tmStore[k];
+    if (!e || k === tmActiveKey) return;
+    const dFo = !!e.spokeKey && isDead(e.spokeKey, k);
+    const dFa = !!e.spokeKeyFa && isDead(e.spokeKeyFa, k);
+    if (!dFo && !dFa) return;
+    if (e.spokeKeyFa && dFo !== dFa) {
+      if (dFo) { e.spokeKey = null;   e.fo = e.fo.map(() => null); e.prevFo = e.prevFo.map(() => null); }
+      else     { e.spokeKeyFa = null; e.fa = e.fa.map(() => null); e.prevFa = e.prevFa.map(() => null); }
+    } else {
+      delete tmStore[k];
+    }
+  });
+  ['avant', 'arriere'].forEach(function(wh) {
+    const s = saved[wh];
+    if (wh === wtype || !s) return;
+    const sk = _tmStoreKeyOf(s.tmType, s.tmDTSub);
+    const dFo = !!s.tmSpokeKey && isDead(s.tmSpokeKey, sk);
+    const dFa = !!s.tmSpokeFa  && isDead(s.tmSpokeFa, sk);
+    if (!dFo && !dFa) return;
+    if (s.tmSpokeFa && dFo !== dFa) {
+      if (dFo) { s.tmSpokeKey = null; s.tmDataFo = (s.tmDataFo || []).map(() => null); }
+      else     { s.tmSpokeFa  = null; s.tmDataFa = (s.tmDataFa || []).map(() => null); }
+    } else {
+      s.tmSpokeKey = null; s.tmSpokeFa = null; s.tmDataFo = []; s.tmDataFa = [];
+    }
+  });
+}
+
 // ── Supprimer une charte ─────────────────────────────────────────────────────
 // Identité figée à l'appel, index re-résolu à l'exécution : un splice différé
 // (fade 250 ms) ne peut plus viser une autre charte si la liste a bougé entre
@@ -16200,11 +16306,22 @@ function ccDeleteDirect(idx, itemEl) {
     };
     // Données vives : reset uniquement si le couple correspond (le nom seul
     // ne suffit pas — une charte homonyme peut exister sur un autre tensio).
-    if (refsDead(tmType, tmDTSub, tmSpokeFo) || (spokeDiff && refsDead(tmType, tmDTSub, tmSpokeFa))) {
+    // En différentiel, une seule rangée morte ne périme que SA colonne : même
+    // règle que le changement ou la ✕ de la charte d'une rangée.
+    const deadFo = refsDead(tmType, tmDTSub, tmSpokeFo);
+    const deadFa = spokeDiff && refsDead(tmType, tmDTSub, tmSpokeFa);
+    if (spokeDiff && deadFo !== deadFa) {
+      tmClearSpokeSide(deadFo ? 'fo' : 'fa');
+    } else if (deadFo || deadFa) {
       tmSpokeFo = null; tmSpokeFa = null;
       tmResetData();
       tmHideResult();
     }
+    // Relevés qui dorment ailleurs : parqués dans tmStore (autres tensiomètres
+    // de la roue affichée) et état en mémoire de l'autre roue. Oubliés, ils
+    // gardaient la clé de la charte supprimée et une charte homonyme recréée
+    // les reconvertissait en silence contre une autre courbe.
+    _ccPurgeDeadRefs(function(k, tp) { return k === deadKey && tp === deadTensio; });
     // Snapshots orphelins de TOUTES les roues : purgés et renumérotés —
     // même décision que l'export (_wshareFilterDeps), appliquée à la source.
     snapPurgeOrphans(function(sn) {
@@ -16607,6 +16724,9 @@ function ccSave() {
   if (!name) { fb.textContent = t('ccErrName'); return; }
 
   const tensioKey = $id('cc-tensio').value;
+  // Sans tensiomètre, la charte n'entre dans aucune table : invisible dans
+  // les dropdowns et rejetée à l'import. Refus explicite plutôt qu'un succès.
+  if (!tensioKey) { fb.textContent = t('ccErrTensio'); return; }
 
   // Vérifier qu'on a assez de points
   const requiredNb = parseInt($id('cc-nb-points').value) || 6;
@@ -17224,6 +17344,8 @@ function tmSyncResultAfterEdit() {
   // Vider la dernière cellule d'une colonne a le même effet qu'une ✕ : tous les
   // verrous qui dépendaient de ces relevés retombent, ici et maintenant.
   tmSyncLocks();
+  // ⇅ n'a de sens que sur une colonne complète (bloc ultérieur : typeof).
+  if (typeof tmUpdateInvertibleHeaders === 'function') tmUpdateInvertibleHeaders();
 }
 
 function tmHideResult() {
@@ -18887,10 +19009,10 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
     <div class="ef-prev-kgf" id="ef-prev-kgf"></div>
 
     <div class="ef-btn-row">
-      <button class="ef-back-btn" id="ef-back-btn" ontouchstart="efBack();event.preventDefault()" onclick="efBack()" disabled>
+      <button class="ef-back-btn" id="ef-back-btn" ontouchstart="efBackManual();event.preventDefault()" onclick="efBackManual()" disabled>
         <span id="ef-back-label">←</span>
       </button>
-      <button class="ef-next-btn" id="ef-next-btn" ontouchstart="efNext();event.preventDefault()" onclick="efNext()">Next →</button>
+      <button class="ef-next-btn" id="ef-next-btn" ontouchstart="efNextManual();event.preventDefault()" onclick="efNextManual()">Next →</button>
     </div>
 
   </div><!-- /ef-screen-fill -->
@@ -18911,7 +19033,7 @@ document.addEventListener('DOMContentLoaded', initSelectPlaceholders);
     <button class="ef-numpad-key key-dot" ontouchstart="efNumpadKey('.');event.preventDefault()" onclick="efNumpadKey('.')">.</button>
     <button class="ef-numpad-key" ontouchstart="efNumpadKey('0');event.preventDefault()" onclick="efNumpadKey('0')">0</button>
     <button class="ef-numpad-key key-del" ontouchstart="efNumpadDel();event.preventDefault()" onclick="efNumpadDel()">⌫</button>
-    <button class="ef-numpad-key key-enter" ontouchstart="efNext();event.preventDefault()" onclick="efNext()" id="ef-numpad-enter">Entrée ↵</button>
+    <button class="ef-numpad-key key-enter" ontouchstart="efNextManual();event.preventDefault()" onclick="efNextManual()" id="ef-numpad-enter">Entrée ↵</button>
   </div>
 </div><!-- /ef-numpad -->
 
@@ -19032,6 +19154,7 @@ function efUpdateSwitcher() {
 }
 
 function efSwitchSide(mode) {
+  efCancelPendingVoice();
   if (efSideMode === mode) {
     // Re-clic sur le bouton actif : effacer les valeurs de la (des) nappe(s)
     // correspondante(s). Réutilise tmResetSide (mêmes effets que les ✕ des
@@ -19208,6 +19331,7 @@ function efCommitCurrent() {
     // chemin ne reposait que le verrou du nb, comme la ✕ ne reposait que celui
     // du rayon. Même source pour les deux, maintenant.
     tmSyncLocks();
+    if (typeof tmUpdateInvertibleHeaders === 'function') tmUpdateInvertibleHeaders();
     efDiagramRender();
     return true;
   }
@@ -19337,6 +19461,34 @@ function efBack() {
   if (efCurrent > 0) { efCurrent--; efRenderStep(); }
 }
 
+// Navigation MANUELLE (boutons ← →, Entrée, pavé, sélecteur de nappe) : une
+// dictée en vol (stabilisation efBeepTimer, ou transition de 200 ms) visait le
+// rayon affiché au moment où elle a été prononcée. Sans annulation elle
+// s'écrivait après coup sur le rayon où l'on vient d'aller. La navigation
+// vocale fait déjà ce ménage (bloc navCmd d'onresult) ; le reste du segment
+// SR en cours est ignoré jusqu'à son final (efDropSeg).
+var efVoiceGen   = 0;   // génération : une avance vocale d'une génération périmée ne commite pas
+var efLastSegIdx = -1;  // index du dernier segment SR reçu
+var efLastSegFinal = false; // ce dernier segment était-il déjà final ?
+var efDropSeg    = -1;  // segment SR à ignorer (dictée abandonnée par navigation manuelle)
+function efCancelPendingVoice() {
+  var inFlight = !!efBeepTimer || efPendingNext;
+  if (efBeepTimer) { clearTimeout(efBeepTimer); efBeepTimer = null; }
+  if (efOorTimer)  { clearTimeout(efOorTimer);  efOorTimer  = null; }
+  if (!inFlight) return;
+  efVoiceGen++;
+  efPendingNext    = false;
+  efPendingQueue   = null;
+  efAutoAdvanced   = false;
+  efAutoStep       = null;
+  efLastInterimNum = null;
+  // Segment déjà final : rien à ignorer. Le marquer ferait taire la phrase
+  // suivante sur un moteur qui réutilise l'index (cf. efSegReset).
+  efDropSeg        = efLastSegFinal ? -1 : efLastSegIdx;
+}
+function efNextManual() { efCancelPendingVoice(); return efNext(); }
+function efBackManual() { efCancelPendingVoice(); efBack(); }
+
 // ── Clavier numérique ────────────────────────────────────────────────────────
 function efIsTouchDevice() {
   return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -19410,7 +19562,7 @@ function efAttachBtKeyHandler(wrapper) {
     if (e.key >= '0' && e.key <= '9') { e.preventDefault(); efNumpadKey(e.key); return; }
     if (e.key === '.' || e.key === ',') { e.preventDefault(); efNumpadKey('.'); return; }
     if (e.key === 'Backspace')  { e.preventDefault(); efNumpadDel(); return; }
-    if (e.key === 'Enter')      { e.preventDefault(); efNext(); return; }
+    if (e.key === 'Enter')      { e.preventDefault(); efNextManual(); return; }
     if (e.key === 'Escape')     { e.preventDefault(); efClose(); return; }
   };
   // Capture : le handler global du bloc principal (enregistré plus tôt, même
@@ -20375,7 +20527,7 @@ function efStartMic(forceLang) {
   r.interimResults = true;
   r.maxAlternatives = EF_MAX_ALTS; // hypothèses pour le repêchage isFinal
   // La capture audio démarre = la permission a été accordée pour cette session.
-  r.onstart = function() { efSegReset(); }; // nouvelle session SR = nouveaux index de segments
+  r.onstart = function() { efSegReset(); efDropSeg = -1; }; // nouvelle session SR = nouveaux index de segments
   r.onaudiostart = function() {
     efSessionGranted = true;
   };
@@ -20389,6 +20541,11 @@ function efStartMic(forceLang) {
     if (efTtsSpeaking) return;
     var result = e.results[e.results.length - 1];
     var segIdx = e.results.length - 1; // segment porteur (dédup 4e forme)
+    efLastSegIdx = segIdx;
+    efLastSegFinal = !!result.isFinal;
+    // Dictée abandonnée par une navigation manuelle (efCancelPendingVoice) :
+    // la suite de ce segment visait le rayon quitté.
+    if (segIdx === efDropSeg) { if (result.isFinal) efDropSeg = -1; return; }
     var txt = result[0].transcript.trim().toLowerCase();
     // Filtre anti-écho résiduel : un résultat arrivant juste après la fenêtre
     // peut encore être le tampon audio de la TTS. Deux gardes (libérées peu
@@ -20582,6 +20739,7 @@ function efStartMic(forceLang) {
             // Valeur valide : auto-avance après stabilisation (500ms, ou 850ms si décimale prolongeable)
             efBeepTimer = setTimeout(function() {
               efBeepTimer = null;
+              var efGen = efVoiceGen; // une navigation manuelle pendant la transition l'invalide
               efAutoAdvanced = true;
               if (efIsChromeDesktop()) efAutoAdvancedAt = Date.now();
               efAutoStep = efSteps[efCurrent]; // step qui va être commité par efNext()
@@ -20593,6 +20751,7 @@ function efStartMic(forceLang) {
               // Auto-avance dès la valeur stabilisée, sans attendre le résultat final
               efPendingNext = true;
               setTimeout(function() {
+                if (efGen !== efVoiceGen) return; // navigation manuelle entre-temps : état déjà nettoyé
                 efPendingNext = false;
                 if (!efMicActive) { efPendingQueue = null; return; }
                 // Final arrivé PENDANT la transition : c'est le transcript final de
@@ -20696,7 +20855,10 @@ function efStartMic(forceLang) {
         var efAltTxt = (result[efAi].transcript || '').trim().toLowerCase();
         var efAltNum = efVoiceToNumber(efAltTxt);
         var efAltVal = efAltNum ? tmParseInput(efAltNum) : null;
-        if (efAltVal !== null && tmInRange(efAltVal, efSide()) && !efDecTooPrecise(efAltNum)) { txt = efAltTxt; break; }
+        // Fenêtre de correction ouverte : le final vise le rayon DÉJÀ commité
+        // (efAutoStep), dont la nappe peut différer de l'étape courante.
+        var efAltSide = (efAutoAdvanced && efAutoStep) ? efAutoStep.side : efSide();
+        if (efAltVal !== null && tmInRange(efAltVal, efAltSide) && !efDecTooPrecise(efAltNum)) { txt = efAltTxt; break; }
       }
     }
     // Si le feedback hors plage a déjà été rendu en intermédiaire :
@@ -20732,7 +20894,9 @@ function efStartMic(forceLang) {
         var prevParsed = tmParseInput(numFinal);
         // efDecTooPrecise : un final fusionné ("0,498") ne doit pas écraser la
         // valeur déjà commitée — 3+ décimales = impossible sur un cadran.
-        if (prevParsed !== null && tmInRange(prevParsed, efSide()) && !efDecTooPrecise(numFinal)) {
+        // Plage de la nappe du rayon CORRIGÉ : en NDS + DS, l'auto-avance a déjà
+        // basculé efSide() sur l'autre nappe, et sa charte peut être différente.
+        if (prevParsed !== null && tmInRange(prevParsed, prevStep.side) && !efDecTooPrecise(numFinal)) {
           if (prevStep.side === 'fo') tmData.fo[prevStep.idx] = prevParsed;
           else                        tmData.fa[prevStep.idx] = prevParsed;
           if (efSegGuardOn() && segIdx === efSegIdx) { efSegVal = prevParsed; efSegCnt = efSegCount(txt, prevParsed); } // mémo 4e forme : valeur corrigée
@@ -20740,6 +20904,7 @@ function efStartMic(forceLang) {
           efSyncTableCell(prevStep);
           tmUpdateCell(prevStep.idx, prevStep.side);
           efUpdatePrevKgf(); // l'étiquette du rayon précédent doit refléter la correction
+          efDiagramRender();
         }
       }
       efAutoStep = null;
@@ -21173,6 +21338,7 @@ function efReset() {
   tmBuildTable();
   efCurrent = 0;
   efRenderStep();
+  efDiagramRender(); // efRenderStep ne redessine pas un diagramme vidé
   efBeepError(); // bip grave pour confirmer le reset
 }
 
@@ -21485,7 +21651,10 @@ function efStopMic() {
   // Fin naturelle de l'animation : clôt la capture puis signale onReady
   // (petite marge pour que l'encodeur écrive la dernière image reçue).
   window.tmRecCanvasFinish = function(onReady) {
-    if (!recCv) return;
+    // Recorder déjà arrêté de lui-même (panne d'encodeur, piste coupée) : son
+    // onstop est passé avant que le rappel soit posé. Le signaler quand même,
+    // sinon Rejouer et la disquette restent désactivés.
+    if (!recCv) { if (typeof onReady === 'function') onReady(!!recFile); return; }
     onReadyCb = onReady || null;
     // Référence CAPTURÉE, pas relue : un tmRecCanvasStart dans les 150 ms
     // remplace recCv (via tmRecCanvasAbort), et le timeout stopperait alors
@@ -22432,7 +22601,9 @@ function confirmHrSave() {
     var entry = { name: name, data: data, ts: Date.now() };
     if (ei2 >= 0) arr2.splice(ei2, 1, entry);
     else arr2.unshift(entry);
-    hrPersist(type, arr2);
+    // Écriture refusée (quota, stockage bloqué) : lsSet a affiché son toast ;
+    // ni badge ni toast de succès, rien n'a été enregistré.
+    if (!hrPersist(type, arr2)) return;
     closeHrSaveModal();
     // Le moyeu enregistré est celui du type AFFICHÉ : un nom en veille pour
     // l'autre type (homonyme écrasé depuis l'autre pastille) mentirait au retour.
@@ -22732,6 +22903,7 @@ function hrRenderLoadList(type) {
         if (!a[gi] || a[gi].name !== entry.name) { hrRenderLoadList(type); return; }
         a.splice(gi, 1);
         hrPersist(type, a);
+        hrDropDeadBadges();
         hrRenderLoadList(type);
         hrUpdateButtons();
         if (typeof renderEraseMgr === 'function') {
@@ -22858,6 +23030,7 @@ window.renderEraseMgr = function(openKeys) {
         if (!a[o.gi] || a[o.gi].name !== o.entry.name) return;
         a.splice(o.gi, 1);
         hrPersist('hub', a);
+        hrDropDeadBadges();
         hrUpdateButtons();
       },
       msg: function() { return hrDelMsg('hub', o.entry.name); }
@@ -22877,6 +23050,7 @@ window.renderEraseMgr = function(openKeys) {
         if (!a[o.gi] || a[o.gi].name !== o.entry.name) return;
         a.splice(o.gi, 1);
         hrPersist('rim', a);
+        hrDropDeadBadges();
         hrUpdateButtons();
       },
       msg: function() { return hrDelMsg('rim', o.entry.name); }
@@ -22950,6 +23124,31 @@ function hrSetLoadedHub(name) {
 }
 function hrClearLoadedHub() {
   _loadedHubName[wtype] = null;
+  hrRefreshBadges();
+}
+
+// Après toute SUPPRESSION de moyeu ou de jante (croix de la liste, Data
+// manager, effacement par période, Tout effacer) : un badge qui nomme une
+// entrée absente de la bibliothèque tombe, sur les deux roues, y compris le
+// nom en veille de l'autre type de moyeu et l'état mémorisé de l'autre roue.
+// Les champs du formulaire ne bougent pas : seul le badge change.
+function hrDropDeadBadges() {
+  var hubs = hrLoadAll('hub'), rims = hrLoadAll('rim');
+  var hubOk = function(name, wh) {
+    return hubs.some(function(e) { return e && e.name === name && ((e.data && e.data.wtype) || 'avant') === wh; });
+  };
+  var rimOk = function(name) { return rims.some(function(e) { return e && e.name === name; }); };
+  ['avant', 'arriere'].forEach(function(wh) {
+    if (_loadedHubName[wh] && !hubOk(_loadedHubName[wh], wh)) _loadedHubName[wh] = null;
+    if (_loadedRimName[wh] && !rimOk(_loadedRimName[wh]))     _loadedRimName[wh] = null;
+    var st = _hubNameByType[wh];
+    if (st) Object.keys(st).forEach(function(k) { if (st[k] && !hubOk(st[k], wh)) st[k] = null; });
+    var s = (typeof saved !== 'undefined') ? saved[wh] : null;
+    if (s) {
+      if (s.loadedHubName && !hubOk(s.loadedHubName, wh)) s.loadedHubName = null;
+      if (s.loadedRimName && !rimOk(s.loadedRimName))     s.loadedRimName = null;
+    }
+  });
   hrRefreshBadges();
 }
 
@@ -23257,7 +23456,10 @@ function snapRegisterAndSave() {
     } else {
       configs2.unshift(entry);
     }
-    persistConfigs(configs2);
+    // Écriture refusée : lsSet a affiché son toast. Poser le badge ferait
+    // passer la roue pour chargée, et la saisie suivante purgerait des relevés
+    // qui n'existent nulle part ailleurs (markModified).
+    if (!persistConfigs(configs2)) return;
     _loadedConfigName[wtype] = name;
     _cfgFillMode[wtype] = _cfgStateIncomplete(state);
     _refreshLoadedBadges();
@@ -23644,12 +23846,17 @@ function invColDirect(col) {
   // Flash "INV" sur le bouton
   const btn = $id('tm-th-' + col + '-invert');
   if (btn) {
-    const original = btn.textContent;
+    // Libellé d'origine mémorisé au PREMIER flash : un second appui pendant le
+    // flash lisait « INV » et le remettait pour de bon.
+    if (btn._invT) clearTimeout(btn._invT);
+    else btn._invLbl = btn.textContent;
+    const original = btn._invLbl;
     btn.classList.remove('flash');
     void btn.offsetWidth;
     btn.classList.add('flash');
     btn.textContent = 'INV';
-    setTimeout(() => {
+    btn._invT = setTimeout(() => {
+      btn._invT = null;
       btn.textContent = original;
       btn.classList.remove('flash');
     }, 620);
@@ -23750,7 +23957,9 @@ function _snapCompareUpdateUI() {
 // Conversion seule : les radars de snapshot sont dessinés par
 // _snapRenderRadarCanvasColored (JPEG et PDF) et l'animation.
 function _snapKgfs(snap) {
-  var perSide = Math.max(snap.fo.length, snap.fa.length);
+  // Fichier édité à la main : snapLoad tolère déjà l'absence de fo/fa.
+  var sFo = Array.isArray(snap.fo) ? snap.fo : [], sFa = Array.isArray(snap.fa) ? snap.fa : [];
+  var perSide = Math.max(sFo.length, sFa.length);
 
   // Convertir raw → kgf en utilisant la table du snapshot
   // side ('fo' | 'fa') est OBLIGATOIRE : un snapshot différentiel porte deux
@@ -23772,8 +23981,8 @@ function _snapKgfs(snap) {
     return interpolateFromPoints(reading, tbl[spokeKey]);
   }
 
-  var foKgfs = snap.fo.slice(0, perSide).map(function(v) { return snapToKgf(v, snap, 'fo'); });
-  var faKgfs = snap.fa.slice(0, perSide).map(function(v) { return snapToKgf(v, snap, 'fa'); });
+  var foKgfs = sFo.slice(0, perSide).map(function(v) { return snapToKgf(v, snap, 'fo'); });
+  var faKgfs = sFa.slice(0, perSide).map(function(v) { return snapToKgf(v, snap, 'fa'); });
 
   return { fo: foKgfs, fa: faKgfs };
 }
