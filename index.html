@@ -5834,6 +5834,7 @@ var PDF_A = {
   RULE:  [201, 206, 214],
   RULE2: [227, 231, 236],
   ROW:   [238, 241, 244],
+  ICON:  [150, 157, 167],  // pictogrammes (bandeau, identité, titres de section)
   FO:    [192, 93, 58],
   FA:    [47, 116, 168]
 };
@@ -5991,7 +5992,7 @@ function pdfAHeader(doc, g) {
     doc.text(it.t, right, yb, { align: 'right' });
     if (it.icon) {
       var ix = right - pdfTextWidth(doc, it.t) - 2.2 - iconS, iy = yb - iconS * 0.82;
-      doc.setDrawColor(A.TEXT3[0], A.TEXT3[1], A.TEXT3[2]); doc.setFillColor(A.TEXT3[0], A.TEXT3[1], A.TEXT3[2]);
+      doc.setDrawColor(A.ICON[0], A.ICON[1], A.ICON[2]); doc.setFillColor(A.ICON[0], A.ICON[1], A.ICON[2]);
       doc.setLineWidth(0.3);
       if (it.icon === 'email') {
         doc.rect(ix, iy + iconS * 0.14, iconS, iconS * 0.72, 'S');
@@ -6041,6 +6042,24 @@ function pdfAIconHub(doc, x, y, h) {
   doc.setLineWidth(sw); doc.circle(X(20), Y(10), 2 * k, 'S');
   doc.circle(X(20), Y(10), 0.7 * k, 'F');
   return 40 * k;
+}
+// Roue (card Roue, boîte 24 × 24) : jante, pneu estompé, moyeu, huit rayons.
+// Le pneu est à 35 % d'opacité dans le SVG : rendu par un mélange de A.ICON
+// avec le blanc, jsPDF n'ayant pas d'opacité de trait ici.
+function pdfAIconWheel(doc, x, y, h) {
+  var k = h / 24, cx = x + 12 * k, cy = y + 12 * k, col = PDF_A.ICON;
+  doc.setLineWidth(1.2 * k);
+  doc.circle(cx, cy, 10.5 * k, 'S');
+  doc.circle(cx, cy, 2 * k, 'S');
+  doc.circle(cx, cy, 0.7 * k, 'F');
+  [[12, 2.5, 12, 10], [12, 14, 12, 21.5], [21.5, 12, 14, 12], [10, 12, 2.5, 12],
+   [19.1, 5.1, 13.4, 10.6], [10.6, 13.4, 4.9, 18.9], [4.9, 5.1, 10.6, 10.6], [13.4, 13.4, 19.1, 18.9]]
+    .forEach(function(l) { doc.line(x + l[0] * k, y + l[1] * k, x + l[2] * k, y + l[3] * k); });
+  doc.setDrawColor(Math.round(255 - (255 - col[0]) * 0.35), Math.round(255 - (255 - col[1]) * 0.35), Math.round(255 - (255 - col[2]) * 0.35));
+  doc.setLineWidth(2 * k);
+  doc.circle(cx, cy, 8 * k, 'S');
+  doc.setDrawColor(col[0], col[1], col[2]);
+  return 24 * k;
 }
 // Pictogramme rider de la capsule rider (riderChipEl) : tête et épaules sur
 // une boîte 24 × 24, traits arrondis. Quarts de cercle des épaules en cubiques
@@ -6117,7 +6136,7 @@ function pdfAIconRadar(doc, x, y, h) {
   return 24 * k;
 }
 
-// Identité de la roue : nom en gras ; dessous « ROUE ARRIÈRE · [picto] RIDER »
+// Identité de la roue : nom en gras ; dessous « [picto] ROUE ARRIÈRE · [picto] RIDER »
 // en petites capitales ; puis « [picto moyeu] <nom> · [picto jante] <nom> »
 // quand un composant enregistré est affecté (g.hubName / g.rimName, cf.
 // pdfAComponents). Sans nom de roue, le type de roue prend la première ligne.
@@ -6127,30 +6146,35 @@ function pdfAIdentity(doc, y, g) {
   var A = PDF_A;
   var typeLabel = pdfAStr(g.wtype === 'arriere' ? 'wheelRear' : 'wheelFront');
   var title = g.wheelName ? pdfSanitize(g.wheelName) : typeLabel;
+  doc.setDrawColor(A.ICON[0], A.ICON[1], A.ICON[2]); doc.setFillColor(A.ICON[0], A.ICON[1], A.ICON[2]);
+  // Picto roue devant le type de roue : sur la première ligne quand il en
+  // tient lieu (pas de nom de roue), sinon sur la ligne de petites capitales.
+  var tx = A.ML;
+  if (!g.wheelName) tx += pdfAIconWheel(doc, A.ML, y - 0.3, pdfACapH(14) + 0.6) + 1.6;
   pdfAFont(doc, 14, true, A.INK);
-  var maxW = A.CW, k = title.length;
+  var maxW = A.CW - (tx - A.ML), k = title.length;
   while (k > 0 && pdfTextWidth(doc, title.slice(0, k) + (k < title.length ? '…' : '')) > maxW) k--;
   if (k < title.length) title = title.slice(0, k).replace(/\s+$/, '') + '…';
-  doc.text(title, A.ML, y + pdfACapH(14));
+  doc.text(title, tx, y + pdfACapH(14));
   y += pdfACapH(14);
   if (g.wheelName || g.riderName) {
-    // « ROUE ARRIÈRE · [picto rider] MARC DURAND » : le picto de la capsule
-    // rider précède le nom, dans le gris clair des pictos de composants.
+    // « [picto roue] ROUE ARRIÈRE · [picto rider] MARC DURAND », pictos dans
+    // le gris commun des pictos (A.ICON).
     pdfAFont(doc, 8.6, false, A.SUB);
     y += 5.4;
     var sx = A.ML, cs = pdfCapsSp(doc, 0.10);
     if (g.wheelName) {
+      sx += pdfAIconWheel(doc, sx, y - 2.9, 3.2) + 1.2;
       var tl = typeLabel.toUpperCase() + (g.riderName ? ' \u00b7 ' : '');
       pdfACaps(doc, tl, sx, y, { k: 0.10 });
       sx += pdfTextWidth(doc, tl) + cs * tl.length;
     }
     if (g.riderName) {
-      doc.setDrawColor(A.TEXT3[0], A.TEXT3[1], A.TEXT3[2]);
       sx += pdfAIconRider(doc, sx, y - 2.9, 3.2) + 1.2;
       pdfACaps(doc, g.riderName, sx, y, { k: 0.10 });
     }
   }
-  // Composants : pictogramme de la card (gris clair) puis le nom dans le gris
+  // Composants : pictogramme de la card (A.ICON) puis le nom dans le gris
   // du sous-titre ; un seul si un seul est connu, rien sinon. Chaque nom est
   // borné à la moitié de la largeur.
   var parts = [];
@@ -6159,7 +6183,6 @@ function pdfAIdentity(doc, y, g) {
   if (parts.length) {
     y += 5.0;
     pdfAFont(doc, 9, false, A.SUB);
-    doc.setDrawColor(A.TEXT3[0], A.TEXT3[1], A.TEXT3[2]); doc.setFillColor(A.TEXT3[0], A.TEXT3[1], A.TEXT3[2]);
     var x = A.ML, sep = ' \u00b7 ', ih = 3.2, roomEach = (A.CW - pdfTextWidth(doc, sep)) / parts.length;
     parts.forEach(function(p, i) {
       x += p.icon(doc, x, y - ih + 0.3, ih) + 1.6;
@@ -6190,7 +6213,7 @@ function pdfAComponents(wh, cfg) {
 }
 
 // Titre de section : petites capitales en gras à gauche ; à droite le picto
-// carré de la card correspondante (icon, boîte 24 × 24, gris moyen) et/ou une
+// carré de la card correspondante (icon, boîte 24 × 24, A.ICON) et/ou une
 // légende ; filet fin. Renvoie le Y du filet.
 function pdfASection(doc, x, y, w, title, right, icon) {
   var A = PDF_A;
@@ -6199,7 +6222,7 @@ function pdfASection(doc, x, y, w, title, right, icon) {
   pdfACaps(doc, title, x, base);
   if (icon) {
     var ih = 3.4;
-    doc.setDrawColor(A.TEXT2[0], A.TEXT2[1], A.TEXT2[2]); doc.setFillColor(A.TEXT2[0], A.TEXT2[1], A.TEXT2[2]);
+    doc.setDrawColor(A.ICON[0], A.ICON[1], A.ICON[2]); doc.setFillColor(A.ICON[0], A.ICON[1], A.ICON[2]);
     icon(doc, rx - ih, base - ih + 0.5, ih);
     rx -= ih + 2.2;
   }
