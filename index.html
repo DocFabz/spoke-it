@@ -1873,6 +1873,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .slen-title { font-size:.6rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase }
 .slen-title.warm   { color:var(--warm) }
 .slen-title.accent { color:var(--accent) }
+.slen-title.neutral { color:var(--text2) }
 .slen-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; touch-action:manipulation; padding:.22rem .48rem; line-height:1; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .slen-close:hover { border-color:rgba(var(--warm-rgb),.6); color:var(--warm) }
 .slen-inp-wrap { display:flex; align-items:center; gap:.5rem }
@@ -4251,6 +4252,21 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
   </div>
 </div>
 
+<!-- ── Modale saisie poids de la roue (card Résumé) ── -->
+<div class="slen-overlay" id="wgt-overlay" onclick="wgtClose()"></div>
+<div class="slen-modal" id="wgt-modal">
+  <div class="slen-header">
+    <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text2)"><circle cx="12" cy="5" r="3"/><path d="M6.5 8a2 2 0 00-1.905 1.46L2.1 18.5A2 2 0 004 21h16a2 2 0 001.925-2.54L19.4 9.5A2 2 0 0017.48 8z"/></svg>
+    <span class="slen-title neutral" id="wgt-title"></span>
+    <button class="slen-close" onclick="wgtClose()">✕</button>
+  </div>
+  <div class="slen-inp-wrap">
+    <input class="slen-inp" id="wgt-inp" aria-labelledby="wgt-title" type="number" step="1" inputmode="numeric">
+    <span class="slen-unit">g</span>
+    <button class="slen-ok" onclick="wgtConfirm()">OK</button>
+  </div>
+</div>
+
 </div><!-- /.wrap -->
 </div><!-- /#calc-module -->
 
@@ -5696,7 +5712,7 @@ function ensureJsPDF() {
 }
 // ── Sanitisation PDF partagée ─────────────────────────────────────────────────
 // helvetica WinAnsi (jsPDF) n'a pas de glyphes →, Δ, ★ : correspondances
-// ASCII (→ et Δ sont dessinés en vectoriel par pdfTextRich là où ils portent
+// ASCII (→, Δ et σ sont dessinés en vectoriel par pdfTextRich là où ils portent
 // du sens ; ± est dans WinAnsi, 0xB1, et sort tel quel). Source unique pour les quatre exports PDF (charte de conversion,
 // tension, diagnostic, comparaison de snapshots) — toute nouvelle
 // correspondance s'ajoute ici, jamais dans les délégués locaux `sanitize`.
@@ -5782,8 +5798,8 @@ function pdfTextRich(doc, s, x, y, opts) {
   opts = opts || {};
   var em = doc.getFontSize() * 25.4 / 72;
   var cs = opts.charSpace || 0;
-  var adv = { '\u2192': 0.80, '\u0394': 0.66 };
-  var runs = String(s == null ? '' : s).split(/([\u2192\u0394])/).filter(Boolean).map(function(p) {
+  var adv = { '\u2192': 0.80, '\u0394': 0.66, '\u03C3': 0.62 };
+  var runs = String(s == null ? '' : s).split(/([\u2192\u0394\u03C3])/).filter(Boolean).map(function(p) {
     if (adv[p]) return { g: p, w: adv[p] * em + cs };
     var t = pdfSanitize(p);
     return { t: t, w: pdfTextWidth(doc, t) + cs * t.length };
@@ -5804,6 +5820,13 @@ function pdfTextRich(doc, s, x, y, opts) {
         var ay = y - 0.29 * em, x0 = cx + 0.07 * em, x1 = cx + 0.73 * em, hd = 0.23 * em;
         doc.line(x0, ay, x1 - sw * 0.6, ay);
         doc.lines([[hd, hd * 0.85], [-hd, hd * 0.85]], x1 - hd, ay - hd * 0.85, [1, 1], 'S', false);
+      } else if (r.g === '\u03C3') {
+        // σ : panse sur la hauteur d'x d'Helvetica (≈ 0.52 em), barre tangente
+        // au sommet, prolongée à droite. Tracé au trait, même graisse que → et Δ.
+        var xh = 0.52 * em, ox = cx + 0.27 * em, oy = y - xh / 2;
+        var orx = 0.21 * em - sw / 2, ory = xh / 2 - sw / 2;
+        doc.ellipse(ox, oy, orx, ory, 'S');
+        doc.line(ox, oy - ory, cx + 0.58 * em, oy - ory);
       } else {
         var bx0 = cx + 0.04 * em + sw * 0.9, bx1 = cx + 0.62 * em - sw * 0.9;
         var by = y - sw / 2, ty = y - 0.718 * em + sw * 1.35;
@@ -6249,7 +6272,7 @@ function pdfAKeyRow(doc, x, y, w, key, val) {
 
 // Bloc « Données de tension » d'un côté : libellé coloré (précédé de
 // block.pre s'il existe : « SNAPSHOT 1 »), Moyenne en grand avec Min → Max en
-// légende, puis les autres lignes (Écart-type, CV sans libellé) empilées à
+// légende, puis les autres lignes (σ, CV sans libellé) empilées à
 // droite, ou en dessous en mode compact (quatre colonnes de l'évolution).
 // entries : lignes de la card à l'écran, dans son ordre — la première est la
 // moyenne, la deuxième Min → Max. Renvoie la hauteur occupée.
@@ -6292,9 +6315,12 @@ function pdfAStatBlock(doc, x, y, w, block, compact) {
   var ry = compact ? capBase + 3.2 : yy + Math.max(0, ((capBase - yy) - rest.length * rowH) / 2);
   rest.forEach(function(row) {
     var base = ry + 3.4;
-    if (row.key) { pdfAFont(doc, compact ? 6.5 : 7, false, A.TEXT2); pdfACaps(doc, row.key, rx, base, { k: compact ? 0.08 : 0.12 }); }
+    // Écart-type : pas de libellé en capitales à gauche, le symbole σ précède
+    // la valeur dans son corps, sa graisse et sa couleur (« σ ± 3.1 kgf »).
+    var val = row.key === '\u03C3' ? '\u03C3 ' + row.val : row.val;
+    if (row.key && row.key !== '\u03C3') { pdfAFont(doc, compact ? 6.5 : 7, false, A.TEXT2); pdfACaps(doc, row.key, rx, base, { k: compact ? 0.08 : 0.12 }); }
     pdfAFont(doc, compact ? 7.5 : 8.6, true, A.INK);
-    pdfTextRich(doc, row.val, rx + rw, base, { align: 'right' });
+    pdfTextRich(doc, val, rx + rw, base, { align: 'right' });
     ry += rowH;
   });
   var rightBottom = rest.length ? ry - rowH + 3.4 : 0;
@@ -6422,6 +6448,10 @@ function pdfAStatsFromDom(wh) {
       var k = r.querySelector('span:first-child'), v = r.querySelector('strong');
       var key = k ? k.textContent.trim() : '';
       if (/^\u0394/.test(key)) return; // Δ max reste à l'écran, pas dans le PDF
+      // Écart-type : symbole σ dans le PDF, mot à l'écran. Testé dans les
+      // deux langues : la card peut avoir été rendue avant un changement de
+      // langue (applyLang ne la re-rend que si elle est visible).
+      if (key === i18n.fr.tmStd || key === i18n.en.tmStd) key = '\u03C3';
       entries.push({ key: key, val: v ? v.textContent.trim() : '' });
     });
     var block = { label: label ? label.textContent.trim() : '', color: pdfARowColor(row), entries: entries };
@@ -6897,7 +6927,7 @@ const i18n = {
     calcBtn:'Calculer', perSide:'/côté', configSummary:'Résumé de configuration',
     spokeCount:'Nb rayons', crossLabel:'Croisement',
     hubType:'Type moyeu', spokeSection2:'Section rayon', rimAsym2:'Asym. jante',
-    tensionRatio:'Tension ratio', frontLabel:'Avant', rearLabel:'Arrière', radial:'Radial',
+    tensionRatio:'Tension ratio', sumWeight:'Poids', frontLabel:'Avant', rearLabel:'Arrière', radial:'Radial',
     errSpokes:'Veuillez choisir le nombre de rayons.',
     errPcd:'Veuillez renseigner PCD et déport pour les deux côtés.',
     errErd:'ERD invalide ou non renseigné.', errCross:'Veuillez choisir un croisement.',
@@ -7201,7 +7231,7 @@ const i18n = {
     hubLoadBtnTitle:'Load a hub', hubSaveBtnTitle:'Save this hub',
     rimLoadBtnTitle:'Load a rim', rimSaveBtnTitle:'Save this rim',
     hubType:'Hub type', spokeSection2:'Spoke section', rimAsym2:'Rim asym.',
-    tensionRatio:'Tension ratio', frontLabel:'Front', rearLabel:'Rear', radial:'Radial',
+    tensionRatio:'Tension ratio', sumWeight:'Weight', frontLabel:'Front', rearLabel:'Rear', radial:'Radial',
     errSpokes:'Please select the number of spokes.',
     errPcd:'Please enter PCD and offset for both sides.',
     errErd:'ERD is invalid or missing.', errCross:'Please select a lacing pattern.',
@@ -8562,6 +8592,10 @@ function _applyStateBody(s) {
     }
     if (s.summaryData) {
       summaryData = s.summaryData;
+      // Poids : entier positif en grammes ou null, quoi que contienne le
+      // fichier relu (save antérieure au champ, backup édité à la main).
+      { const wv = Number(summaryData.weight);
+        summaryData.weight = (Number.isInteger(wv) && wv > 0 && wv < 100000) ? wv : null; }
       // Migration : saves antérieures à l'estimation de décentrage —
       // summaryData sans géométrie (foOff/faOff/lFo/lFa). Inputs et globals
       // viennent d'être restaurés ci-dessus : recalcul via le helper partagé
@@ -10267,7 +10301,6 @@ function calc() {
   // rapprochement des deux familles sans swap explicite est donc juste au test
   // sur roue arrière et faux sur roue avant — cf. le swap de tmRenderDish(),
   // seul endroit qui les croise aujourd'hui.
-  // Conserver les longueurs saisies manuellement si elles existent
   // ERD : erdFo/erdFa en convention RANGÉE (celle de crossFo/sl). `erd` reste
   // une chaîne affichable seule (la paire complète en différentiel), pour
   // qu'une version antérieure qui relit ce state écrive encore quelque chose
@@ -10275,11 +10308,28 @@ function calc() {
   const erdOrd = diffRowOrder(wtype);
   const erdRow = { [erdOrd.ds]: erdS.R.toFixed(1), [erdOrd.nds]: erdS.L.toFixed(1) };
   const erdStr = erdDiff ? diffPairStr(wtype, erdRow.fo, erdRow.fa) : erdS.R.toFixed(1);
-  summaryData = { erd: erdStr, erdDiff, erdFo: erdRow.fo, erdFa: erdRow.fa, wtype, n, h, cross, crossFo, crossFa, diffMode, isSP, sl, asym, ratio, foOff, faOff, lFo: Lfo, lFa: Lfa, lenFo: null, lenFa: null };
+  // Longueurs retenues et poids : choix de l'utilisateur, portés par la roue
+  // affectée. Un recalcul qui suit une désaffectation (markModified) repart
+  // à vide ; si la roue est restée affectée (complétion d'une roue
+  // incomplète), le poids est repris tel quel et chaque longueur retenue
+  // seulement si elle reste dans la fenêtre d'acceptation de la modale :
+  // même borne que slenConfirm, lue par slenGetCalc sur les résultats que
+  // calc() vient d'écrire dans r-fo / r-fa (convention RANGÉE, fo = orange).
+  const prevSum = (_loadedConfigName[wtype] && summaryData && summaryData.wtype === wtype) ? summaryData : null;
+  const weight = (prevSum && prevSum.weight != null) ? prevSum.weight : null;
+  const keepLen = (prev, c) => {
+    const v = parseFloat(prev);
+    if (c === null || isNaN(v) || !Number.isInteger(v)) return null;
+    return (v >= c - 2 && v <= c + 2) ? String(v) : null;
+  };
+  const lenFo = prevSum ? keepLen(prevSum.lenFo, slenGetCalc(true))  : null;
+  const lenFa = prevSum ? keepLen(prevSum.lenFa, slenGetCalc(false)) : null;
+  summaryData = { erd: erdStr, erdDiff, erdFo: erdRow.fo, erdFa: erdRow.fa, wtype, n, h, cross, crossFo, crossFa, diffMode, isSP, sl, asym, ratio, foOff, faOff, lFo: Lfo, lFa: Lfa, lenFo, lenFa, weight };
   resetSumCardState();
   $id('sum-card-body').style.display = 'none'; $id('sum-card-chevron').style.transform = '';
   $id('summary-wrap').classList.add('show');
   renderSummary();
+  updateSumCardState(); // « done » si les deux longueurs ont été reprises
 
   const rg = document.querySelector('.rg'), rcFo = document.querySelector('.rc.fo'), rcFa = document.querySelector('.rc.fa');
   diffReorder(rg, rcFo, rcFa, wtype);
@@ -10303,6 +10353,14 @@ function calc() {
   { const hb = document.getElementById('hooke-btn'); if (hb) hb.style.display = hasElong ? 'flex' : 'none'; }
   if (hasElong) {
     buildArb('fo', LfoDisplay, eFoDisplay); buildArb('fa', LfaDisplay, eFaDisplay);
+    // Longueur retenue reprise : cocher la case d'arbitrage qui lui
+    // correspond, même règle que slenConfirm (buildArb vient de tout décocher).
+    ['fo', 'fa'].forEach(side => {
+      const kept = parseFloat(side === 'fo' ? summaryData.lenFo : summaryData.lenFa);
+      if (isNaN(kept)) return;
+      const ad = arbData[side], base = Math.round(ad.exactLen - ad.elongation);
+      if ([base - 1, base, base + 1].includes(kept)) { arbSelected[side] = kept; renderArb(side); }
+    });
   } else {
     $id('arb-wrap').classList.remove('show');
     // Purge des données d'arbitrage périmées : sinon readState() les sauvegarde
@@ -10353,6 +10411,13 @@ function renderSummary() {
     const blinkCls = (val === undefined || val === null) ? ' blink' : '';
     return `<div class="sum-row"><span class="sum-lbl">${lbl}</span><button class="sum-val-btn${blinkCls}" style="color:${colorVar}" onclick="slenOpen('${side}')">${escHtml(display)} ${pencil}</button></div>`;
   }
+  // Poids : même bouton-crayon que les longueurs, couleur neutre, jamais de
+  // clignotement — la valeur est facultative, rien ne réclame sa saisie.
+  function itemWeight(lbl, val) {
+    const pencil = `<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+    const display = (val !== undefined && val !== null) ? val + ' g' : '— g';
+    return `<div class="sum-row"><span class="sum-lbl">${lbl}</span><button class="sum-val-btn" style="color:var(--text)" onclick="wgtOpen()">${escHtml(display)} ${pencil}</button></div>`;
+  }
   // Orange toujours au-dessus, bleu en dessous
   // fo=orange : gauche (avant) / droite (arrière)
   // fa=bleu   : droite (avant) / gauche (arrière)
@@ -10377,7 +10442,8 @@ function renderSummary() {
     item(t('hubType'),      d.isSP ? 'Straightpull' : 'J-Bend') +
     item(t('spokeSection2'), sumPairNoWrap(d.sl)) +
     item(t('rimAsym2'),     (d.asym > 0 ? '+' : '') + d.asym + ' mm') +
-    item(t('tensionRatio'), (d.ratio * 100).toFixed(1) + '%', ratioColor);
+    item(t('tensionRatio'), (d.ratio * 100).toFixed(1) + '%', ratioColor) +
+    itemWeight(t('sumWeight'), d.weight);
 }
 
 function resetSumCardState() {
@@ -10441,6 +10507,7 @@ function applyArbLen(side, sz) {
     if (side === 'fo') d.lenFo = null; else d.lenFa = null;
     arbSelected[side] = null;
     renderSummary(); updateSumCardState(); renderArb(side);
+    sumPersist();
     return;
   }
   // side here is 'fo' or 'fa' from the arb grid
@@ -10452,6 +10519,7 @@ function applyArbLen(side, sz) {
   // Green flash on the newly rendered element
   const newEl = [...$id('arb-grid-' + side).querySelectorAll('.arb-row')].find(r => parseInt(r.querySelector('.arb-sz').textContent) === sz);
   if (newEl) { newEl.classList.add('arb-flash'); setTimeout(() => newEl.classList.remove('arb-flash'), 400); }
+  sumPersist();
 }
 
 // ── Modale saisie taille rayon ──────────────────────────────────────────────────
@@ -10523,6 +10591,29 @@ function slenConfirm() {
     }
     renderArb(arbSide);
   }
+  sumPersist();
+}
+
+// ── Persistance des choix de la card Résumé ─────────────────────────────────
+// Longueurs retenues, cases d'arbitrage et poids : modifiables sur une roue
+// chargée SANS la désaffecter (on peut vouloir arbitrer autrement). Pour que le
+// choix survive d'un chargement à l'autre, on l'écrit chirurgicalement dans la
+// roue enregistrée, comme wiFieldsPersist : on relit la config stockée et on
+// n'y remplace que ces champs — jamais l'état vif complet, ni l'horodatage.
+// Sans roue chargée (calcul non enregistré), rien à écrire : le prochain
+// enregistrement de la roue emporte l'état vif, choix compris.
+function sumPersist() {
+  if (!summaryData || !wiLoadedName()) return false;
+  const configs = loadConfigs();
+  const idx = _wiStoreIdx(configs);
+  if (idx < 0) return false;
+  const st = configs[idx].state;
+  if (!st || !st.summaryData) return false; // roue enregistrée sans calcul : rien à porter
+  st.summaryData.lenFo  = summaryData.lenFo;
+  st.summaryData.lenFa  = summaryData.lenFa;
+  st.summaryData.weight = (summaryData.weight !== undefined) ? summaryData.weight : null;
+  st.arbSelected = JSON.parse(JSON.stringify(arbSelected));
+  return persistConfigs(configs);
 }
 
 // Fermer sur Entrée / Escape depuis l'input
@@ -10530,6 +10621,48 @@ document.addEventListener('keydown', function(e) {
   if (!$id('slen-modal').classList.contains('show')) return;
   if (e.key === 'Enter')  { e.preventDefault(); slenConfirm(); }
   if (e.key === 'Escape') { e.preventDefault(); slenClose(); }
+});
+
+// ── Modale saisie poids de la roue ─────────────────────────────────────────
+// Même coque et mêmes classes que la modale des longueurs ; valeur entière en
+// grammes dans summaryData.weight, donc portée telle quelle par les roues
+// enregistrées, les roues partagées et les backups. Champ vidé + OK = effacer.
+function wgtOpen() {
+  if (!summaryData) return;
+  const d = summaryData;
+  $id('wgt-title').textContent = t('sumWeight');
+  const inpEl = $id('wgt-inp');
+  inpEl.value = (d.weight !== null && d.weight !== undefined) ? d.weight : '';
+  $id('wgt-overlay').classList.add('show');
+  $id('wgt-modal').classList.add('show');
+  setTimeout(() => inpEl.focus(), 80);
+}
+
+function wgtClose() {
+  $id('wgt-overlay').classList.remove('show');
+  $id('wgt-modal').classList.remove('show');
+  if (document.activeElement) document.activeElement.blur();
+}
+
+function wgtConfirm() {
+  if (!summaryData) return;
+  const txt = $id('wgt-inp').value.trim();
+  const raw = parseFloat(txt);
+  if (txt !== '' && (isNaN(raw) || raw <= 0 || raw >= 100000 || !Number.isInteger(raw))) {
+    $id('wgt-inp').classList.add('shake');
+    setTimeout(() => $id('wgt-inp').classList.remove('shake'), 400);
+    return;
+  }
+  summaryData.weight = txt === '' ? null : raw;
+  wgtClose();
+  renderSummary();
+  sumPersist();
+}
+
+document.addEventListener('keydown', function(e) {
+  if (!$id('wgt-modal').classList.contains('show')) return;
+  if (e.key === 'Enter')  { e.preventDefault(); wgtConfirm(); }
+  if (e.key === 'Escape') { e.preventDefault(); wgtClose(); }
 });
 
 // ── Modale Atelier ───────────────────────────────────────────────────────────
@@ -18306,6 +18439,10 @@ async function tmExportPdfWithOpts(opts) {
     // présence d'un chiffre : en différentiel, un seul côté saisi suffit à
     // rendre la ligne informative.
     if (sumD.sl && /\d/.test(sumD.sl)) cfgRows.push([t('spokeSection2'), sumD.sl]);
+    // Poids : facultatif, omis tant qu'il n'est pas renseigné. Éventuelle 5e
+    // ligne, sous le filet aligné sur les longueurs (cf. la rangée ci-dessous) :
+    // la colonne Configuration s'allonge d'une ligne, Y suit le plus bas.
+    if (sumD.weight !== null && sumD.weight !== undefined) cfgRows.push([t('sumWeight'), sumD.weight + ' g']);
   }
 
   // ── Setup jsPDF ───────────────────────────────────────────────────────────
@@ -24004,8 +24141,7 @@ function _snapEvoSigmaLine(sA, sB, aA, aB) {
 }
 // Paire de CV « x.x % → y.y % » (trim du .0, espace avant %) — formatage
 // numérique unique pour les trois surfaces : animation et JPEG (préfixe σ
-// ci-dessus), PDF (ligne labellisée CV, helvetica WinAnsi sans glyphe σ —
-// cf. _cmpCvLine).
+// ci-dessus), PDF (ligne labellisée σ, glyphe dessiné par pdfTextRich).
 function _snapEvoPctPair(sA, sB, aA, aB) {
   if (sA === null || sB === null || !aA || !aB) return null;
   function f(n) { var s = n.toFixed(1); return s.endsWith('.0') ? String(Math.round(n)) : s; }
@@ -24095,8 +24231,8 @@ async function snapComparePDF() {
 
   // ── Données de tension : S1 NDS | S1 DS | S2 NDS | S2 DS ──────────────────
   // Mêmes lignes que la card à l'écran sans le Δ max (Moyenne, Min → Max,
-  // Écart-type, CV sans libellé), mêmes formats, moyenne et écart-type par les
-  // helpers partagés _snapEvoAvg / _snapEvoStd.
+  // écart-type sous le libellé σ, CV sans libellé), mêmes formats, moyenne et
+  // écart-type par les helpers partagés _snapEvoAvg / _snapEvoStd.
   function snapStatsBlock(kgfs) {
     var mean = _snapEvoAvg(kgfs);
     if (mean === null) return null;
@@ -24107,7 +24243,7 @@ async function snapComparePDF() {
     return [
       {key: t('tmAvg'),    val: mean.toFixed(1)+' kgf'},
       {key: 'Min → Max',   val: mn+' → '+mx+' kgf'},
-      {key: t('tmStd'),    val: '± '+std.toFixed(1)+' kgf'},
+      {key: '\u03C3',      val: '± '+std.toFixed(1)+' kgf'},
       {key: '',            val: cv.toFixed(1)+' %'}
     ];
   }
@@ -24161,10 +24297,9 @@ async function snapComparePDF() {
     }
     var pair = _snapEvoPctPair(_snapEvoStd(kgfsA[row]), _snapEvoStd(kgfsB[row]), a, b);
     var cvBase = bigBase + 5.4;
-    pdfAFont(doc, 7.5, false, A.TEXT2);
-    pdfACaps(doc, 'CV', x, cvBase, { k: 0.12 });
+    // σ devant la paire de CV, même style qu'elle, comme l'animation et le JPEG.
     pdfAFont(doc, 9.4, true, A.INK);
-    pdfTextRich(doc, pair === null ? '—' : pair, x + hInner, cvBase, { align: 'right' });
+    pdfTextRich(doc, pair === null ? '—' : '\u03C3 ' + pair, x + hInner, cvBase, { align: 'right' });
     var bh = cvBase - (yE + pad) + 1;
     if (bh > hE) hE = bh;
   });
