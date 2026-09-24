@@ -906,38 +906,82 @@ html[data-fond="alu"] .ateliermgr-logo-wrap.has-logo:hover, html[data-fond="alu"
 .cshare-pick-btn.selected  { opacity:1; border-color:rgba(var(--accent-rgb),.7); background:rgba(var(--accent-rgb),.1) }
 .cshare-pick-name         { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-transform:none; letter-spacing:.04em; color:var(--text) }
 
-/* ── Modal suppression tensiomètre perso ── */
+/* ── Data manager (Supprimer des données) ── */
 .erasemgr-overlay { position:fixed; inset:0; background:var(--scrim-3); backdrop-filter:blur(4px); z-index:9982; opacity:0; transition:opacity .22s; display:none }
 .erasemgr-overlay.show { display:block; opacity:1 }
-.erasemgr-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9983; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:var(--sh-modal); width:92%; max-width:420px; max-height:88vh; max-height:88dvh; overflow-y:auto; display:none; flex-direction:column; gap:.9rem }
+.erasemgr-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:9983; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.6rem 1.5rem 1.3rem; box-shadow:var(--sh-modal); width:92%; max-width:420px; max-height:80vh; max-height:80dvh; overflow:hidden; display:none; flex-direction:column; gap:.9rem }
+/* Ascenseur : gabarit de la modale Online base (#obsel-modal). En-tête,
+   ligne Tout effacer / Période et pied (Supprimer) restent fixes ; seul
+   #erasemgr-body défile. Le haut d'une section dépliée (en-tête + Tout /
+   Aucun, .erasemgr-acc-top) reste collé pendant le défilement de ses lignes.
+   scroll-padding-top = hauteur de ce bloc collé : une ligne atteinte au
+   clavier ne s'arrête pas dessous. */
+.erasemgr-modal > * { flex-shrink:0 }
+.erasemgr-modal > #erasemgr-body { flex:1 1 auto; min-height:0; overflow-y:auto; scroll-padding-top:calc(3.9rem + 4px); scroll-padding-bottom:4px }
+@media (orientation: landscape) and (max-height: 520px) {
+  .erasemgr-modal { max-height:92vh; max-height:92dvh }
+}
 .erasemgr-modal.show { display:flex; animation:conv-in .2s ease both }
 .erasemgr-header { display:flex; align-items:center; justify-content:space-between }
 .erasemgr-title { font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--accent) }
 .erasemgr-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .erasemgr-close:hover { border-color:rgba(var(--warm-rgb),.6); color:var(--warm) }
-.em-period { margin-top:-.35rem }
-.erasemgr-acc { display:flex; flex-direction:column; gap:.45rem }
-.erasemgr-acc-head { display:flex; align-items:center; gap:.5rem; padding:.5rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; user-select:none; transition:border-color .2s }
-.erasemgr-acc-head:hover:not(.disabled) { border-color:var(--border-s) }
-.erasemgr-acc-head.disabled { opacity:.4; cursor:default; pointer-events:none }
-.erasemgr-acc-label { font-size:.6rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent2); flex:1 }
-.erasemgr-acc-count { font-family:'DM Mono',monospace; font-size:.6rem; color:var(--accent) }
-.erasemgr-acc-chevron { font-size:.7rem; color:var(--text3); transition:transform .2s; display:inline-block }
-.erasemgr-acc-body { display:none; flex-direction:column; gap:.05rem; padding:.2rem 0 .1rem }
-.erasemgr-acc-body.open { display:flex }
-.erasemgr-item { display:flex; align-items:center; gap:.5rem; padding:.2rem .75rem }
-.erasemgr-item-info { flex:1; display:flex; align-items:baseline; gap:.4rem; overflow:hidden }
-.erasemgr-item-name { font-family:'DM Mono',monospace; font-size:.72rem; color:var(--text-strong); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-.erasemgr-item-sub { font-size:.58rem; color:var(--text3); flex-shrink:0 }
-.erasemgr-item-info .wheel-load-item-rider { align-self:center; max-width:55%; font-size:.52rem }
-.erasemgr-item-btn { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; padding:.1rem .2rem; line-height:1; transition:color .2s; flex-shrink:0 }
-.erasemgr-item-btn:hover { color:var(--warm) }
-.erasemgr-footer { display:flex; justify-content:flex-end }
-.erasemgr-eraseall { background:none; border:1px solid rgba(var(--warm-rgb),.45); border-radius:7px; height:26px; display:inline-flex; align-items:center; font-family:'DM Mono',monospace; font-size:.58rem; font-weight:400; letter-spacing:.15em; text-transform:uppercase; color:var(--warm); cursor:pointer; gap:.35rem; padding:0 .6rem 0 .45rem; line-height:1; transition:color .2s, border-color .2s, background .2s, box-shadow .2s, transform .2s; touch-action:manipulation }
+/* Ligne d'outils : Tout effacer (orange) à gauche, filtre Période à droite.
+   Le filtre se masque sous 2 périodes (display:none sur #em-period), le
+   bouton reste, toujours calé à gauche. Hauteur du bouton = celle du select
+   Période (1.65rem) : bords haut et bas alignés au pixel. */
+.em-toolbar { display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-top:-.35rem }
+.em-toolbar .em-period { align-self:center; min-width:0 }
+.erasemgr-eraseall { flex-shrink:0; background:none; border:1px solid rgba(var(--warm-rgb),.45); border-radius:7px; height:1.65rem; display:inline-flex; align-items:center; font-family:'DM Mono',monospace; font-size:.58rem; font-weight:400; letter-spacing:.15em; text-transform:uppercase; color:var(--warm); cursor:pointer; gap:.35rem; padding:0 .6rem 0 .45rem; line-height:1; transition:color .2s, border-color .2s, background .2s, box-shadow .2s, transform .2s; touch-action:manipulation }
 .erasemgr-eraseall svg { flex-shrink:0; opacity:.75 }
 .erasemgr-eraseall:hover svg { opacity:1 }
 .erasemgr-eraseall:hover { border-color:rgba(var(--warm-rgb),.6); color:var(--warm2); box-shadow:0 0 10px rgba(var(--warm-rgb),.12),inset 0 0 6px rgba(var(--warm-rgb),.05) }
 @media (hover: none) { .erasemgr-eraseall:hover { border-color:rgba(var(--warm-rgb),.45); color:var(--warm); box-shadow:none } .erasemgr-eraseall:active { background:rgba(var(--warm-rgb),.14); transform:scale(.96) } }
+
+.erasemgr-acc { display:flex; flex-direction:column; gap:.45rem }
+.erasemgr-acc-head { display:flex; align-items:center; gap:.5rem; padding:.5rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; user-select:none; transition:border-color .2s }
+.erasemgr-acc-head:hover:not(.disabled) { border-color:var(--border-s) }
+.erasemgr-acc-head.disabled { opacity:.4; cursor:default; pointer-events:none }
+/* Haut de section (en-tête + ligne Tout / Aucun), collé quand la section est
+   dépliée : l'ombre pleine au-dessus masque les lignes qui défilent dans
+   l'interstice (gap .45rem) laissé au-dessus de lui. */
+.erasemgr-acc-sec.open > .erasemgr-acc-top { position:sticky; top:0; z-index:1; background:var(--card); box-shadow:0 -.45rem 0 var(--card) }
+.erasemgr-acc-label { font-size:.6rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--accent2); flex:1 }
+.erasemgr-acc-count { font-family:'DM Mono',monospace; font-size:.6rem; color:var(--accent) }
+/* Tout / Aucun : pastille des groupes Online base (.ob-group-all), sur sa
+   propre ligne SOUS l'en-tête, calée à droite comme dans l'Online base ;
+   affichée seulement section dépliée. */
+.erasemgr-acc-tools { display:none; justify-content:flex-end; padding:.45rem 0 .1rem }
+.erasemgr-acc-sec.open .erasemgr-acc-tools { display:flex }
+/* Zone de toucher élargie de .ob-group-all (::after, inset -8px) bornée aux
+   espaces libres de cette ligne : 7,2 px au-dessus (padding .45rem), 4,8 px
+   en dessous (.1rem + padding haut de la liste .2rem). À -8px, elle mordait
+   sur le bas de l'en-tête et sur le haut de la première ligne. */
+.ob-group-all.erasemgr-acc-all::after { inset:-.42rem 0 -.28rem }  /* double classe : passe devant .ob-group-all::after, déclarée plus bas */
+.erasemgr-acc-chevron { font-size:.7rem; color:var(--text3); transition:transform .2s; display:inline-block }
+.erasemgr-acc-body { display:none; flex-direction:column; gap:.15rem; padding:.2rem 0 .1rem }
+.erasemgr-acc-body.open { display:flex }
+/* Ligne sélectionnable (bouton) : même sélection que l'Online base, liseré
+   et teinte d'accent, coche ✓ à droite. */
+.erasemgr-item { display:flex; align-items:center; gap:.5rem; width:100%; padding:.3rem .75rem; background:none; border:1px solid transparent; border-radius:var(--rs); font:inherit; color:inherit; text-align:left; cursor:pointer; touch-action:manipulation; transition:border-color .18s, background .18s }
+@media (hover: hover) { .erasemgr-item:hover { border-color:var(--border); background:rgba(var(--accent-rgb),.03) } }
+.erasemgr-item.sel, .erasemgr-item.sel:hover { border-color:rgba(var(--accent-rgb),.6); background:rgba(var(--accent-rgb),.06) }
+.erasemgr-item:focus-visible, .erasemgr-acc-all:focus-visible, .erasemgr-acc-head:focus-visible { outline-offset:-2px; border-radius:var(--rs) }
+/* margin-right négative : glyphes ✓ et › de largeurs différentes, la coche
+   est centrée sur la colonne du chevron de l'en-tête plutôt que calée sur
+   le même bord (écart mesuré : 4,5 px). */
+.erasemgr-item-chk { flex-shrink:0; font-size:.9rem; line-height:1; color:var(--accent); visibility:hidden; margin-right:-.28rem }
+.erasemgr-item.sel .erasemgr-item-chk { visibility:visible }
+.erasemgr-item-info { flex:1; display:flex; align-items:baseline; gap:.4rem; overflow:hidden }
+.erasemgr-item-name { font-family:'DM Mono',monospace; font-size:.72rem; color:var(--text-strong); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.erasemgr-item-sub { font-size:.58rem; color:var(--text3); flex-shrink:0 }
+.erasemgr-item-info .wheel-load-item-rider { align-self:center; max-width:55%; font-size:.52rem }
+/* Pied : Supprimer (n) au gabarit de Télécharger (Online base,
+   .pdfopt-generate), pleine largeur. */
+.erasemgr-footer { display:flex; flex-direction:column; gap:.5rem }
+.erasemgr-footer .pdfopt-generate { display:flex; align-items:center; justify-content:center; gap:.45rem }
+.erasemgr-footer .pdfopt-generate svg { flex-shrink:0 }
+.erasemgr-footer .pdfopt-generate[disabled] { opacity:.4; pointer-events:none }
 
 /* ── Hub/Rim quick save/load icon buttons ──────────────────────────────────── */
 .card-icon-btn {
@@ -995,10 +1039,14 @@ html[data-fond="alu"] .ateliermgr-logo-wrap.has-logo:hover, html[data-fond="alu"
 .hr-load-close { background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.8rem; cursor:pointer; padding:.25rem .5rem; line-height:1; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .hr-load-close:hover { border-color:rgba(var(--warm-rgb),.6); color:var(--warm) }
 .hr-load-list { display:flex; flex-direction:column; gap:.35rem; overflow-y:auto; flex:1 }
-.hr-load-item { display:flex; align-items:center; gap:.5rem; padding:.55rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
+.hr-load-item { display:flex; align-items:center; gap:.5rem; padding:.5rem .75rem; background:var(--card-alt); border:1px solid var(--border); border-radius:var(--rs); cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .hr-load-item:hover { border-color:var(--border-s); background:rgba(var(--accent-rgb),.03) }
-.hr-load-item-name { flex:1; font-family:'DM Mono',monospace; font-size:.78rem; color:var(--text-strong); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-.hr-load-item-meta { font-family:'DM Mono',monospace; font-size:.63rem; color:var(--text3); white-space:nowrap }
+/* Nom, puis date en dessous (gabarit des lignes Online base, .snap-item-info).
+   Interlignes fixés et hauteur mini = deux lignes + gap : une entrée sans date
+   (ancienne ou importée sans ts) garde la hauteur des autres, nom centré. */
+.hr-load-item-info { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:.12rem; min-height:calc(.78rem * 1.4 + .63rem * 1.4 + .12rem) }
+.hr-load-item-name { font-family:'DM Mono',monospace; font-size:.78rem; line-height:1.4; color:var(--text-strong); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.hr-load-item-meta { font-family:'DM Mono',monospace; font-size:.63rem; line-height:1.4; color:var(--text3); white-space:nowrap }
 .hr-load-item-del { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; touch-action:manipulation; padding:.1rem .25rem; transition:color .2s; flex-shrink:0 }
 .hr-load-item-del:hover { color:var(--warm) }
 .hr-load-empty { font-size:.72rem; color:var(--text3); font-style:italic; text-align:center; padding:.5rem }
@@ -1102,6 +1150,16 @@ html[data-fond="alu"] .ateliermgr-logo-wrap.has-logo:hover, html[data-fond="alu"
    text-overflow ne s'applique pas à un item anonyme, d'où le span. */
 .wheel-load-item-rider-txt { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .wheel-load-item-meta { font-family:'DM Mono',monospace; font-size:.63rem; color:var(--text3); white-space:nowrap }
+/* Listes de roues datées (Charger une roue, Roues affectées, Affecter roues) :
+   nom, puis en dessous la date et la capsule rider (wheelLoadStack). Même
+   gabarit que les modales moyeu / jante (.hr-load-item-info) : interlignes
+   fixés, hauteur mini = deux lignes + gap, une roue sans date ni rider garde
+   la hauteur des autres, nom centré. */
+.wheel-load-item.wl-stacked { padding:.5rem .75rem }
+.wheel-load-item-info { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:.12rem; min-height:calc(.78rem * 1.4 + .63rem * 1.4 + .12rem) }
+.wheel-load-item-info > .wheel-load-item-name { flex:0 0 auto; line-height:1.4 }
+.wheel-load-item-sub { display:flex; align-items:center; gap:.45rem; min-width:0; min-height:calc(.63rem * 1.4) }
+.wheel-load-item-sub > .wheel-load-item-meta { line-height:1.4 }
 .wheel-load-item-del { background:none; border:none; color:var(--text3); font-size:.75rem; cursor:pointer; touch-action:manipulation; padding:.1rem .25rem; transition:color .2s; flex-shrink:0 }
 .wheel-load-item-del:hover { color:var(--warm) }
 .wheel-load-empty { font-size:.72rem; color:var(--text3); font-style:italic; text-align:center; padding:.5rem }
@@ -2965,7 +3023,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
 
 /* 11. Isolation du scroll interne : arrivé en butée d'une modale ou d'une liste,
       le scroll ne se propage plus à la page derrière (desktop comme mobile) */
-.erasemgr-modal, .cc-modal, .ct-modal, .snap-modal,
+#erasemgr-body, .cc-modal, .ct-modal, .snap-modal,
 .hr-load-list, .wheel-load-list, .tm-conv-scroll,
 .tou-body, #ef-wrapper.landscape .ef-modal, #snapcompare-list {
   overscroll-behavior: contain;
@@ -5577,12 +5635,15 @@ window.wiNotesFlat = function() {
     </div>
     <button class="erasemgr-close" onclick="closeEraseMgr()">&#x2715;</button>
   </div>
-  <div class="em-period" id="em-period">
-    <select class="em-period-sel" id="em-period-sel" data-i18n-aria="wlPeriod" aria-label="Période" onchange="emPeriodBy(this.value)"></select>
+  <div class="em-toolbar">
+    <button class="erasemgr-eraseall" type="button" onclick="eraseMgrEraseAll()"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg><span id="erasemgr-eraseall-lbl" data-i18n="eraseMgrAllBtn">Tout effacer</span></button>
+    <div class="em-period" id="em-period">
+      <select class="em-period-sel" id="em-period-sel" data-i18n-aria="wlPeriod" aria-label="Période" onchange="emPeriodBy(this.value)"></select>
+    </div>
   </div>
   <div id="erasemgr-body"></div>
   <div class="erasemgr-footer">
-    <button class="erasemgr-eraseall" onclick="eraseMgrEraseAll()"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg><span id="erasemgr-eraseall-lbl" data-i18n="eraseMgrAllBtn">Tout effacer</span></button>
+    <button class="pdfopt-generate" id="erasemgr-delsel" type="button" onclick="eraseMgrDelSelected()" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg><span id="erasemgr-delsel-lbl"></span></button>
   </div>
 </div>
 
@@ -6472,7 +6533,10 @@ const i18n = {
     eraseMgrCustomTensios:'Tensiomètres perso',
     eraseMgrCustomSpokes:'Rayons perso',
     eraseMgrRiders:'Riders',
-    eraseMgrDel:'✕',
+    eraseMgrDelSelBtn:'Supprimer',
+    eraseMgrDelSel:'Supprimer ces <strong>{n}</strong> éléments ?',
+    eraseMgrDelSelKeep1:'<br><span style="opacity:.75">1 roue de ces riders est conservée, simplement désaffectée.</span>',
+    eraseMgrDelSelKeepN:'<br><span style="opacity:.75">{n} roues de ces riders sont conservées, simplement désaffectées.</span>',
     eraseMgrAllBtn:'Tout effacer',
     eraseMgrYearBtn:'Effacer {y}',
     eraseMgrNoneBtn:'Effacer',
@@ -6772,7 +6836,10 @@ const i18n = {
     eraseMgrCustomTensios:'Custom tensiometers',
     eraseMgrCustomSpokes:'Custom spokes',
     eraseMgrRiders:'Riders',
-    eraseMgrDel:'✕',
+    eraseMgrDelSelBtn:'Delete',
+    eraseMgrDelSel:'Delete these <strong>{n}</strong> items?',
+    eraseMgrDelSelKeep1:'<br><span style="opacity:.75">1 wheel of these riders is kept, just unassigned.</span>',
+    eraseMgrDelSelKeepN:'<br><span style="opacity:.75">{n} wheels of these riders are kept, just unassigned.</span>',
     eraseMgrAllBtn:'Erase all',
     eraseMgrYearBtn:'Erase {y}',
     eraseMgrNoneBtn:'Erase',
@@ -10438,6 +10505,31 @@ function wheelDelMsg(cfg) {
     : 'Delete <strong>' + escHtml(cfg.name) + '</strong>' + tail + '?';
 }
 
+// Ligne de roue datée : nom, puis date et capsule rider en dessous. Source
+// unique des trois listes (Charger une roue, Roues affectées, Affecter roues)
+// pour qu'elles ne divergent pas. Ligne secondaire omise quand elle serait
+// vide : la hauteur mini du bloc garde alors la ligne au gabarit des autres.
+function wheelLoadStack(item, nameEl, dateStr, riderEl) {
+  const info = document.createElement('div');
+  info.className = 'wheel-load-item-info';
+  info.appendChild(nameEl);
+  if (dateStr || riderEl) {
+    const sub = document.createElement('div');
+    sub.className = 'wheel-load-item-sub';
+    if (dateStr) {
+      const metaEl = document.createElement('div');
+      metaEl.className = 'wheel-load-item-meta';
+      metaEl.textContent = dateStr;
+      sub.appendChild(metaEl);
+    }
+    if (riderEl) sub.appendChild(riderEl);
+    info.appendChild(sub);
+  }
+  item.classList.add('wl-stacked');
+  item.appendChild(info);
+  return info;
+}
+
 function loadConfig(idx) {
   const configs = loadConfigs(), cfg = configs[idx]; if (!cfg) return;
   const wh = cfg.state.wtype || 'avant'; if (wh !== wtype) return;
@@ -13579,6 +13671,9 @@ ctRefreshAll();
 function openEraseMgr() {
   // Filtre remis à zéro : voir le commentaire du bloc « Filtre Période ».
   _emPeriod = 'all';
+  // Sélection non mémorisée d'une ouverture à l'autre, comme le filtre :
+  // retrouver des lignes cochées la veille, prêtes à partir, serait un piège.
+  _emSel = {};
   renderEraseMgr();
   $id('erasemgr-overlay').classList.add('show');
   $id('erasemgr-modal').classList.add('show');
@@ -13667,9 +13762,264 @@ function _emAlso(nCharts, nSnaps) {
   return t('eraseMgrDelAlso').replace('{list}', parts.join(t('eraseMgrDelAnd')));
 }
 
+// ── Sélection du Data manager ────────────────────────────────────────────────
+// Même geste que l'Online base : un clic sur une ligne la sélectionne ou la
+// désélectionne, « Tout / Aucun » sur la ligne placée sous l'en-tête de
+// section, et le bouton Supprimer (n) du pied n'emporte QUE la sélection.
+// « Tout effacer » (ligne du filtre Période) garde sa portée : la période
+// affichée.
+//
+// Registre reconstruit à chaque rendu. Le module principal le vide et y
+// inscrit ses sections ; le wrapper hub/rim (script ultérieur) y ajoute
+// moyeux et jantes, puis élague la sélection (_emSync(true)). L'élagage n'a
+// lieu qu'à ce moment-là : fait par le module principal, il perdrait les
+// moyeux et jantes cochés, pas encore réinscrits.
+//
+// Clé = identité de l'entrée (id, ou nom + côté, départagés par la date
+// d'enregistrement), JAMAIS un index : la sélection survit ainsi au re-rendu
+// (langue, filtre, section dépliée) sans glisser sur une autre ligne si la
+// liste bouge. Les enregistrements et imports dédoublonnent déjà ces
+// identités ; le suffixe d'occurrence (#2, #3…) de _emRegister n'est qu'un
+// dernier filet pour des données corrompues.
+//
+// Une ligne masquée par le filtre Période sort de la sélection : on ne
+// supprime jamais ce qu'on ne voit pas.
+var _emSel  = {};   // clé → true
+var _emReg  = {};   // clé → fiche (kind, ord, idx, del, msg, el…)
+var _emSecs = [];   // sections rendues, dans l'ordre d'affichage
+
+// Ordre d'EXÉCUTION de la suppression groupée : riders d'abord (leurs roues
+// sont désaffectées, puis éventuellement supprimées), roues, tensiomètres
+// (qui emportent leurs chartes), chartes restantes, moyeux, jantes. Dans une
+// collection indexée, index décroissant : supprimer une entrée ne décale pas
+// celles qui restent à traiter.
+var _EM_ORD = { rider:1, wheel:2, tensio:3, chart:4, hub:5, rim:6 };
+
+function _emResetReg() { _emReg = {}; _emSecs = []; }
+
+function _emRegister(rec) {
+  var base = rec.key, k = base, n = 2;
+  while (_emReg[k]) k = base + '#' + (n++);
+  rec.key = k;
+  rec.ord = _EM_ORD[rec.kind] || 9;
+  _emReg[k] = rec;
+  return rec;
+}
+
+// Ligne sélectionnable. rec : { kind, key, name, sub?, riderId?, idx?, del,
+// msg }. del exécute la suppression (identité re-vérifiée) ; msg produit le
+// message de confirmation à l'unité, construit AU CLIC (compteurs de
+// l'instant, la liste ayant pu bouger depuis le rendu). Champs lus par
+// _emBatchMsg selon kind : riderKey (rider), cfg (roue), tmKey (tensiomètre),
+// cc (charte).
+function _emMakeItem(rec) {
+  _emRegister(rec);
+  const div = document.createElement('button');
+  div.type = 'button';
+  div.className = 'erasemgr-item';
+  // Spans et non divs : contenu phrasé, seul autorisé dans un <button>.
+  // Enfants d'un flex, ils sont rendus en blocs : aucun effet visuel.
+  const info = document.createElement('span');
+  info.className = 'erasemgr-item-info';
+  const nameEl = document.createElement('span');
+  nameEl.className = 'erasemgr-item-name';
+  nameEl.textContent = rec.name;
+  info.appendChild(nameEl);
+  if (rec.sub) {
+    const subEl = document.createElement('span');
+    subEl.className = 'erasemgr-item-sub';
+    subEl.textContent = rec.sub;
+    info.appendChild(subEl);
+  }
+  // Capsule rider si la roue est affectée
+  const riderChip = (rec.riderId && typeof riderChipEl === 'function') ? riderChipEl(rec.riderId) : null;
+  if (riderChip) info.appendChild(riderChip);
+  const chk = document.createElement('span');
+  chk.className = 'erasemgr-item-chk';
+  chk.setAttribute('aria-hidden', 'true');
+  chk.innerHTML = '&#10003;';
+  div.appendChild(info);
+  div.appendChild(chk);
+  div.addEventListener('click', function() {
+    if (_emSel[rec.key]) delete _emSel[rec.key]; else _emSel[rec.key] = true;
+    _emSync(false);
+  });
+  rec.el = div;
+  return rec;
+}
+
+// Section accordéon. recs : fiches produites par _emMakeItem.
+function _emMakeSection(secKey, labelText, recs, openKeys, id) {
+  const wrap  = document.createElement('div');
+  wrap.className = 'erasemgr-acc-sec';
+  if (id) wrap.id = id;
+  const empty = recs.length === 0;
+  const head  = document.createElement('div');
+  head.className = 'erasemgr-acc-head' + (empty ? ' disabled' : '');
+  const label = document.createElement('span');
+  label.className = 'erasemgr-acc-label';
+  label.textContent = labelText;
+  const count = document.createElement('span');
+  count.className = 'erasemgr-acc-count';
+  count.textContent = recs.length;
+  head.appendChild(label); head.appendChild(count);
+  let all = null, tools = null;
+  if (!empty) {
+    all = document.createElement('button');
+    all.type = 'button';
+    all.className = 'ob-group-all erasemgr-acc-all';
+    all.addEventListener('click', function() {
+      const every = recs.every(function(r) { return _emSel[r.key]; });
+      recs.forEach(function(r) { if (every) delete _emSel[r.key]; else _emSel[r.key] = true; });
+      _emSync(false);
+    });
+    tools = document.createElement('div');
+    tools.className = 'erasemgr-acc-tools';
+    tools.appendChild(all);
+  }
+  const chev = document.createElement('span');
+  chev.className = 'erasemgr-acc-chevron';
+  chev.textContent = '›';
+  head.appendChild(chev);
+  // En-tête et ligne Tout / Aucun dans un même bloc : c'est lui qui colle en
+  // haut au défilement, la pastille reste donc à portée.
+  const top = document.createElement('div');
+  top.className = 'erasemgr-acc-top';
+  top.appendChild(head);
+  if (tools) top.appendChild(tools);
+  wrap.appendChild(top);
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'erasemgr-acc-body';
+  bodyEl.dataset.key = secKey;
+  // Rouvrir si elle était ouverte avant le re-render
+  if (openKeys && openKeys.includes(secKey)) {
+    bodyEl.classList.add('open');
+    wrap.classList.add('open');
+    chev.style.transform = 'rotate(90deg)';
+  }
+  recs.forEach(function(r) { bodyEl.appendChild(r.el); });
+  wrap.appendChild(bodyEl);
+  if (!empty) {
+    // Atteignable au clavier : les lignes sont des boutons, la section qui
+    // les contient doit pouvoir s'ouvrir sans la souris.
+    head.tabIndex = 0;
+    head.setAttribute('role', 'button');
+    head.setAttribute('aria-expanded', bodyEl.classList.contains('open') ? 'true' : 'false');
+    head.addEventListener('click', function() {
+      const open = bodyEl.classList.toggle('open');
+      wrap.classList.toggle('open', open);
+      head.setAttribute('aria-expanded', open ? 'true' : 'false');
+      chev.style.transform = open ? 'rotate(90deg)' : '';
+    });
+    head.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); head.click(); }
+    });
+  }
+  _emSecs.push({ label: labelText, keys: recs.map(function(r) { return r.key; }), count: count, all: all });
+  return wrap;
+}
+
+// Lignes, compteurs de section (« 2/5 » dès qu'une ligne y est cochée : la
+// sélection reste visible section repliée), libellés Tout / Aucun et bouton
+// Supprimer (n), depuis _emSel. prune : retire de la sélection les clés
+// absentes du registre (entrées supprimées ou masquées par le filtre).
+function _emSync(prune) {
+  if (prune) Object.keys(_emSel).forEach(function(k) { if (!_emReg[k]) delete _emSel[k]; });
+  let n = 0;
+  Object.keys(_emReg).forEach(function(k) {
+    const r = _emReg[k], on = !!_emSel[k];
+    if (!r.el) return;
+    r.el.classList.toggle('sel', on);
+    r.el.setAttribute('aria-pressed', on ? 'true' : 'false');
+    if (on) n++;
+  });
+  _emSecs.forEach(function(sec) {
+    const nSel = sec.keys.filter(function(k) { return _emSel[k]; }).length;
+    sec.count.textContent = nSel ? (nSel + '/' + sec.keys.length) : sec.keys.length;
+    if (sec.all) {
+      const every = nSel === sec.keys.length;
+      sec.all.textContent = t(every ? 'obSelNone' : 'obSelAll');
+      sec.all.setAttribute('aria-label', sec.label + (lang === 'fr' ? ' : ' : ': ') + sec.all.textContent);
+    }
+  });
+  const lbl = $id('erasemgr-delsel-lbl'), btn = $id('erasemgr-delsel');
+  if (lbl) lbl.textContent = t('eraseMgrDelSelBtn') + (n ? ' (' + n + ')' : '');
+  if (btn) btn.disabled = !n;
+}
+
+// Message de la suppression groupée. Une seule ligne : le message à l'unité,
+// mot pour mot (mêmes mots que la modale de chargement). Plusieurs : le
+// nombre, la répartition par section, puis ce que la suppression emporte
+// réellement, compté une seule fois quelle que soit la ligne qui l'emporte
+// (un snapshot d'une roue supprimée, mesuré avec un tensiomètre supprimé,
+// n'est qu'un snapshot perdu).
+function _emBatchMsg(recs) {
+  if (recs.length === 1) return recs[0].msg();
+  const riders = {}, tms = {}, wheels = {}, charts = [];
+  recs.forEach(function(r) {
+    if (r.kind === 'rider')  riders[r.riderKey] = true;
+    if (r.kind === 'tensio') tms[r.tmKey] = true;
+    if (r.kind === 'wheel')  wheels[r.idx] = r;
+    if (r.kind === 'chart')  charts.push(r.cc);
+  });
+  const parts = [];
+  _emSecs.forEach(function(sec) {
+    const nSel = sec.keys.filter(function(k) { return _emSel[k]; }).length;
+    if (nSel) parts.push(escHtml(sec.label) + ' ' + nSel);
+  });
+  const cfgs = loadConfigs();
+  const wheelGone = function(i) { return !!wheels[i] && wheelStillAt(i, wheels[i].cfg); };
+  // Charte touchée : sélectionnée, ou portée par un tensiomètre sélectionné
+  // (ctDelete l'emporte). Même clé d'identité que ccDeleteDirect.
+  const chartSel = function(cc) {
+    return charts.some(function(x) { return x.name === cc.name && x.tensioKey === cc.tensioKey; });
+  };
+  const snapHit = function(sn) {
+    if (tms[sn.tmType]) return true;
+    if (!charts.length) return false;
+    return _srcSpokeKeys(sn).some(function(k) {
+      return charts.some(function(cc) {
+        return k === CC_PREFIX + cc.name && _tmStoreKeyOf(sn.tmType, sn.tmDTSub) === cc.tensioKey;
+      });
+    });
+  };
+  let nSnaps = 0, nKept = 0;
+  cfgs.forEach(function(c, i) {
+    const gone = wheelGone(i);
+    (c.snapshots || []).forEach(function(sn) { if (gone || snapHit(sn)) nSnaps++; });
+    if (!gone && c.riderId && riders[c.riderId]) nKept++;
+  });
+  const nCharts = ccLoadAll().filter(function(c) { return tms[c.tensioKey] && !chartSel(c); }).length;
+  return t('eraseMgrDelSel').replace('{n}', recs.length)
+    + (parts.length ? '<br><span style="opacity:.75">' + parts.join(' · ') + '</span>' : '')
+    + _emAlso(nCharts, nSnaps)
+    + (nKept === 0 ? '' : nKept === 1 ? t('eraseMgrDelSelKeep1')
+                                      : t('eraseMgrDelSelKeepN').replace('{n}', nKept));
+}
+
+function eraseMgrDelSelected() {
+  const recs = Object.keys(_emSel)
+    .filter(function(k) { return _emSel[k] && _emReg[k]; })
+    .map(function(k) { return _emReg[k]; });
+  if (!recs.length) return;
+  confirmShow(_emBatchMsg(recs), function() {
+    const openKeys = Array.from(document.querySelectorAll('.erasemgr-acc-body.open'))
+      .map(function(el) { return el.dataset.key; });
+    recs.slice()
+      .sort(function(a, b) { return (a.ord - b.ord) || ((b.idx || 0) - (a.idx || 0)); })
+      // Une entrée en échec n'arrête pas les suivantes ; chaque del re-vérifie
+      // l'identité de sa cible, une entrée déjà partie (charte emportée par
+      // son tensiomètre) est simplement ignorée.
+      .forEach(function(r) { try { r.del(); } catch (err) { console.warn('[Data manager]', err); } });
+    _emSel = {};
+    renderEraseMgr(openKeys);
+  });
+}
+
 function renderEraseMgr(openKeys) {
   const body = $id('erasemgr-body');
   body.innerHTML = '';
+  _emResetReg();
   const configs = loadConfigs();
   const charts  = ccLoadAll();
   const tensios = ctLoadAll();
@@ -13703,82 +14053,13 @@ function renderEraseMgr(openKeys) {
   acc.className = 'erasemgr-acc';
   body.appendChild(acc);
 
-  // msgFn est REQUIS : il produit le message de confirmation, construit au
-  // clic. Voir le gestionnaire du bouton plus bas.
-  function makeItem(name, sub, onDel, riderId, msgFn) {
-    const div = document.createElement('div');
-    div.className = 'erasemgr-item';
-    const info = document.createElement('div');
-    info.className = 'erasemgr-item-info';
-    const nameEl = document.createElement('div');
-    nameEl.className = 'erasemgr-item-name';
-    nameEl.textContent = name;
-    info.appendChild(nameEl);
-    if (sub) {
-      const subEl = document.createElement('div');
-      subEl.className = 'erasemgr-item-sub';
-      subEl.textContent = sub;
-      info.appendChild(subEl);
-    }
-    // Capsule rider si la roue est affectée
-    const riderChip = (typeof riderChipEl === 'function') ? riderChipEl(riderId) : null;
-    if (riderChip) info.appendChild(riderChip);
-    const btn = document.createElement('button');
-    btn.className = 'erasemgr-item-btn';
-    btn.textContent = t('eraseMgrDel');
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      // Suppression définitive, sans corbeille : même geste de confirmation que
-      // les modales de chargement, d'où le passage par confirmShow. Le message
-      // est construit AU CLIC et non au rendu — les compteurs qu'il annonce
-      // doivent être ceux de l'instant, la liste ayant pu bouger depuis.
-      const run = () => {
-        // Mémoriser les sections ouvertes
-        const openKeys = Array.from(document.querySelectorAll('.erasemgr-acc-body.open'))
-          .map(el => el.dataset.key);
-        onDel();
-        renderEraseMgr(openKeys);
-      };
-      confirmShow(msgFn(), run);
-    });
-    div.appendChild(info);
-    div.appendChild(btn);
-    return div;
+  // Fiches de ligne : cf. _emMakeItem. La suppression passe désormais par la
+  // sélection et le bouton Supprimer du pied (eraseMgrDelSelected).
+  function makeItem(name, sub, onDel, riderId, msgFn, meta) {
+    return _emMakeItem(Object.assign({ name: name, sub: sub, riderId: riderId, del: onDel, msg: msgFn }, meta));
   }
-
   function makeAccSection(labelKey, items, openKeys) {
-    const wrap  = document.createElement('div');
-    const empty = items.length === 0;
-    const head  = document.createElement('div');
-    head.className = 'erasemgr-acc-head' + (empty ? ' disabled' : '');
-    const label = document.createElement('span');
-    label.className = 'erasemgr-acc-label';
-    label.textContent = t(labelKey);
-    const count = document.createElement('span');
-    count.className = 'erasemgr-acc-count';
-    count.textContent = items.length;
-    const chev = document.createElement('span');
-    chev.className = 'erasemgr-acc-chevron';
-    chev.textContent = '›';
-    head.appendChild(label); head.appendChild(count); head.appendChild(chev);
-    wrap.appendChild(head);
-    const bodyEl = document.createElement('div');
-    bodyEl.className = 'erasemgr-acc-body';
-    bodyEl.dataset.key = labelKey;
-    // Rouvrir si elle était ouverte avant le re-render
-    if (openKeys && openKeys.includes(labelKey)) {
-      bodyEl.classList.add('open');
-      chev.style.transform = 'rotate(90deg)';
-    }
-    items.forEach(el => bodyEl.appendChild(el));
-    wrap.appendChild(bodyEl);
-    if (!empty) {
-      head.addEventListener('click', () => {
-        const open = bodyEl.classList.toggle('open');
-        chev.style.transform = open ? 'rotate(90deg)' : '';
-      });
-    }
-    return wrap;
+    return _emMakeSection(labelKey, t(labelKey), items, openKeys);
   }
 
   // Riders (en tête)
@@ -13814,7 +14095,7 @@ function renderEraseMgr(openKeys) {
         + (nb === 0 ? ''
          : nb === 1 ? t('eraseMgrDelRiderKeep1')
          :            t('eraseMgrDelRiderKeepN').replace('{n}', nb));
-    });
+    }, { kind: 'rider', key: 'r:' + r.id, riderKey: r.id });
   });
   acc.appendChild(makeAccSection('eraseMgrRiders', riderItems, openKeys));
 
@@ -13830,7 +14111,8 @@ function renderEraseMgr(openKeys) {
       // la confirmation ayant introduit un délai (cf. wheelStillAt).
       () => { if (wheelStillAt(i, cfg)) deleteConfig(i); },
       cfg.riderId,
-      () => wheelDelMsg(cfg)
+      () => wheelDelMsg(cfg),
+      { kind: 'wheel', key: 'w:' + cfg.name + '|' + (cfg.state?.wtype || 'avant') + '|' + (cfg.ts || ''), idx: i, cfg: cfg }
     ));
   acc.appendChild(makeAccSection('eraseMgrWheels', wheelItems, openKeys));
 
@@ -13848,7 +14130,8 @@ function renderEraseMgr(openKeys) {
       const nSnaps  = _emCountSnaps(sn => sn.tmType === tmKey);
       return t('eraseMgrDelTensio').split('{name}').join(escHtml(CC_PREFIX + ct.name))
         + _emAlso(nCharts, nSnaps);
-    }
+    },
+    { kind: 'tensio', key: 't:' + ct.id, tmKey: 'ct_' + ct.id }
   ));
   acc.appendChild(makeAccSection('eraseMgrCustomTensios', tensioItems, openKeys));
 
@@ -13885,9 +14168,13 @@ function renderEraseMgr(openKeys) {
         });
       });
       return t('eraseMgrDelChart').split('{name}').join(escHtml(deadKey)) + _emAlso(0, nSnaps);
-    }
+    },
+    { kind: 'chart', key: 'c:' + cc.tensioKey + '|' + cc.name, cc: cc }
   ));
   acc.appendChild(makeAccSection('eraseMgrCustomSpokes', spokeItems, openKeys));
+  // Sans élagage : moyeux et jantes ne sont pas encore réinscrits (cf. bloc
+  // « Sélection du Data manager »). Le wrapper hub/rim élague.
+  _emSync(false);
 }
 
 // ── Tout effacer : supprime l'ensemble des enregistrements du Data manager ──
@@ -22454,8 +22741,13 @@ function hrRenderLoadList(type) {
       });
     });
 
-    item.appendChild(nameEl);
-    if (dateStr) item.appendChild(metaEl);
+    // Nom et date empilés (date SOUS le nom, comme les lignes de l'Online
+    // base) : le nom garde toute la largeur avant la croix.
+    var infoEl = document.createElement('div');
+    infoEl.className = 'hr-load-item-info';
+    infoEl.appendChild(nameEl);
+    if (dateStr) infoEl.appendChild(metaEl);
+    item.appendChild(infoEl);
     item.appendChild(delBtn);
     item.addEventListener('click', function() {
       // Charger un moyeu ou une jante invalide la roue courante (même
@@ -22532,80 +22824,12 @@ window.renderEraseMgr = function(openKeys) {
   var acc = body.querySelector('.erasemgr-acc');
   if (!acc) return;
 
-  // Remove old hub/rim sections if re-rendering
-  ['erasemgr-hub-section', 'erasemgr-rim-section'].forEach(function(id) {
-    var old = document.getElementById(id);
-    if (old) old.remove();
-  });
+  // Pas de purge d'anciennes sections moyeux / jantes : le rendu principal
+  // vient de vider #erasemgr-body, elles n'existent plus.
 
-  // msgFn requis, comme makeItem (module principal).
-  function makeEraseMgrItem(name, onDel, msgFn) {
-    var div = document.createElement('div');
-    div.className = 'erasemgr-item';
-    var info = document.createElement('div');
-    info.className = 'erasemgr-item-info';
-    var nameEl = document.createElement('div');
-    nameEl.className = 'erasemgr-item-name';
-    nameEl.textContent = name;
-    info.appendChild(nameEl);
-    var btn = document.createElement('button');
-    btn.className = 'erasemgr-item-btn';
-    btn.textContent = typeof t === 'function' ? t('eraseMgrDel') : '×';
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      // Même confirmation que les items du module principal (makeItem) et que
-      // la modale de chargement moyeu/jante : une seule et même suppression,
-      // trois portes d'entrée.
-      var run = function() {
-        var ok = Array.from(document.querySelectorAll('.erasemgr-acc-body.open')).map(function(el) { return el.dataset.key; });
-        onDel();
-        window.renderEraseMgr(ok);
-      };
-      confirmShow(msgFn(), run);
-    });
-    div.appendChild(info);
-    div.appendChild(btn);
-    return div;
-  }
-
-  // NB : homonyme volontairement renommé — renderEraseMgr (module principal)
-  // possède son propre makeAccSection(labelKey, items, openKeys) à signature
-  // différente. Les deux sont locaux et indépendants ; le préfixe hr évite
-  // toute confusion en cas de retouche de l'un sans l'autre.
-  function hrMakeAccSection(labelKey, labelFallback, items, openKeys, sectionId) {
-    var wrap = document.createElement('div');
-    wrap.id = sectionId;
-    var empty = items.length === 0;
-    var head  = document.createElement('div');
-    head.className = 'erasemgr-acc-head' + (empty ? ' disabled' : '');
-    var label = document.createElement('span');
-    label.className = 'erasemgr-acc-label';
-    label.textContent = (labelKey.startsWith('__')) ? labelFallback : (typeof t === 'function' ? (t(labelKey) || labelFallback) : labelFallback);
-    var count = document.createElement('span');
-    count.className = 'erasemgr-acc-count';
-    count.textContent = items.length;
-    var chev = document.createElement('span');
-    chev.className = 'erasemgr-acc-chevron';
-    chev.textContent = '›';
-    head.appendChild(label); head.appendChild(count); head.appendChild(chev);
-    wrap.appendChild(head);
-    var bodyEl = document.createElement('div');
-    bodyEl.className = 'erasemgr-acc-body';
-    bodyEl.dataset.key = labelKey;
-    if (openKeys && openKeys.includes(labelKey)) {
-      bodyEl.classList.add('open');
-      chev.style.transform = 'rotate(90deg)';
-    }
-    items.forEach(function(el) { bodyEl.appendChild(el); });
-    wrap.appendChild(bodyEl);
-    if (!empty) {
-      head.addEventListener('click', function() {
-        var open = bodyEl.classList.toggle('open');
-        chev.style.transform = open ? 'rotate(90deg)' : '';
-      });
-    }
-    return wrap;
-  }
+  // Lignes et sections : helpers partagés du module principal (_emMakeItem,
+  // _emMakeSection), pour que moyeux et jantes se sélectionnent exactement
+  // comme les autres données et partent par le même bouton Supprimer.
 
   // Filtre période du Data manager (module principal, bloc antérieur). Sans le
   // moteur, on affiche tout plutôt que de casser le rendu — même convention que
@@ -22618,31 +22842,51 @@ window.renderEraseMgr = function(openKeys) {
 
   var hubs = hrLoadAll('hub');
   var hubItems = emPerPairs(hubs).map(function(o) {
-    return makeEraseMgrItem(o.entry.name, function() {
-      var a = hrLoadAll('hub');
-      // Index global re-vérifié par identité AVANT le splice : `gi` a été
-      // capturé au rendu, la confirmation a introduit un délai. Même garde que
-      // hrRenderLoadList — un index périmé supprime la MAUVAISE entrée.
-      if (!a[o.gi] || a[o.gi].name !== o.entry.name) return;
-      a.splice(o.gi, 1);
-      hrPersist('hub', a);
-      hrUpdateButtons();
-    }, function() { return hrDelMsg('hub', o.entry.name); });
+    var side = (o.entry.data && o.entry.data.wtype) || 'avant';
+    return _emMakeItem({
+      kind: 'hub', idx: o.gi,
+      key: 'h:' + String(o.entry.name).toLowerCase() + '|' + side + '|' + (o.entry.ts || ''),
+      name: o.entry.name,
+      // Côté affiché : un moyeu avant et un moyeu arrière homonymes
+      // coexistent, le nom seul ne permettait pas de les distinguer.
+      sub: side === 'arriere' ? t('rearLabel') : t('frontLabel'),
+      del: function() {
+        var a = hrLoadAll('hub');
+        // Index global re-vérifié par identité AVANT le splice : `gi` a été
+        // capturé au rendu, la confirmation a introduit un délai. Même garde
+        // que hrRenderLoadList : un index périmé supprime la MAUVAISE entrée.
+        if (!a[o.gi] || a[o.gi].name !== o.entry.name) return;
+        a.splice(o.gi, 1);
+        hrPersist('hub', a);
+        hrUpdateButtons();
+      },
+      msg: function() { return hrDelMsg('hub', o.entry.name); }
+    });
   });
-  acc.appendChild(hrMakeAccSection('__hubs__', lang === 'fr' ? 'Moyeux' : 'Hubs', hubItems, openKeys, 'erasemgr-hub-section'));
+  acc.appendChild(_emMakeSection('__hubs__', lang === 'fr' ? 'Moyeux' : 'Hubs', hubItems, openKeys, 'erasemgr-hub-section'));
 
   var rims = hrLoadAll('rim');
   var rimItems = emPerPairs(rims).map(function(o) {
-    return makeEraseMgrItem(o.entry.name, function() {
-      var a = hrLoadAll('rim');
-      // Identité re-vérifiée avant le splice : cf. section moyeux.
-      if (!a[o.gi] || a[o.gi].name !== o.entry.name) return;
-      a.splice(o.gi, 1);
-      hrPersist('rim', a);
-      hrUpdateButtons();
-    }, function() { return hrDelMsg('rim', o.entry.name); });
+    return _emMakeItem({
+      kind: 'rim', idx: o.gi,
+      key: 'm:' + String(o.entry.name).toLowerCase() + '|' + (o.entry.ts || ''),
+      name: o.entry.name,
+      del: function() {
+        var a = hrLoadAll('rim');
+        // Identité re-vérifiée avant le splice : cf. section moyeux.
+        if (!a[o.gi] || a[o.gi].name !== o.entry.name) return;
+        a.splice(o.gi, 1);
+        hrPersist('rim', a);
+        hrUpdateButtons();
+      },
+      msg: function() { return hrDelMsg('rim', o.entry.name); }
+    });
   });
-  acc.appendChild(hrMakeAccSection('__rims__', lang === 'fr' ? 'Jantes' : 'Rims', rimItems, openKeys, 'erasemgr-rim-section'));
+  acc.appendChild(_emMakeSection('__rims__', lang === 'fr' ? 'Jantes' : 'Rims', rimItems, openKeys, 'erasemgr-rim-section'));
+
+  // Registre complet : élagage de la sélection (entrées disparues ou hors
+  // période), compteurs et bouton Supprimer.
+  _emSync(true);
 };
 
 // ── Hub/Rim loaded name badges ───────────────────────────────────────────────
@@ -26032,9 +26276,6 @@ document.addEventListener('keydown', function(e) {
       var riderEl = (typeof riderChipEl === 'function') ? riderChipEl(cfg.riderId) : null;
 
       var dateStr = cfg.ts ? fmtDMY(cfg.ts) : '';
-      var metaEl = document.createElement('div');
-      metaEl.className = 'wheel-load-item-meta';
-      metaEl.textContent = dateStr;
 
       var delBtn = document.createElement('button');
       delBtn.className = 'wheel-load-item-del';
@@ -26055,9 +26296,7 @@ document.addEventListener('keydown', function(e) {
         });
       });
 
-      item.appendChild(nameEl);
-      if (riderEl) item.appendChild(riderEl);
-      if (dateStr) item.appendChild(metaEl);
+      wheelLoadStack(item, nameEl, dateStr, riderEl);
       item.appendChild(delBtn);
 
       item.addEventListener('click', function() {
@@ -26250,9 +26489,6 @@ document.addEventListener('keydown', function(e) {
       nameEl.textContent = cfg.name + '  · ' + _waSideTag(cfg);
 
       var dateStr = cfg.ts ? fmtDMY(cfg.ts) : '';
-      var metaEl = document.createElement('div');
-      metaEl.className = 'wheel-load-item-meta';
-      metaEl.textContent = dateStr;
 
       var delBtn = document.createElement('button');
       delBtn.className = 'wheel-load-item-del';
@@ -26285,8 +26521,7 @@ document.addEventListener('keydown', function(e) {
         });
       });
 
-      item.appendChild(nameEl);
-      if (dateStr) item.appendChild(metaEl);
+      wheelLoadStack(item, nameEl, dateStr, null);
       item.appendChild(delBtn);
 
       item.addEventListener('click', function() {
@@ -26419,7 +26654,6 @@ document.addEventListener('keydown', function(e) {
       var nameEl = document.createElement('div');
       nameEl.className = 'wheel-load-item-name';
       nameEl.textContent = cfg.name + '  · ' + _waSideTag(cfg);
-      item.appendChild(nameEl);
 
       // Capsule rider. Roue verrouillée : rider en cours, nom `myName` —
       // capsule et ordre concordent pendant un renommage. Autre rider
@@ -26430,17 +26664,11 @@ document.addEventListener('keydown', function(e) {
         if (o.locked) riderEl = riderChipEl(me, myName);
         else if (cfg.riderId && cfg.riderId !== me) riderEl = riderChipEl(cfg.riderId);
       }
-      if (riderEl) item.appendChild(riderEl);
+      // Nom, puis date et capsule en dessous (source unique des listes de roues).
+      wheelLoadStack(item, nameEl, cfg.ts ? fmtDMY(cfg.ts) : '', riderEl);
 
-      if (cfg.ts) {
-        var metaEl = document.createElement('div');
-        metaEl.className = 'wheel-load-item-meta';
-        metaEl.textContent = fmtDMY(cfg.ts);
-        item.appendChild(metaEl);
-      }
-
-      // Coche toujours présente, masquée hors sélection : les dates restent
-      // alignées d'une ligne à l'autre.
+      // Coche toujours présente, masquée hors sélection : la colonne de droite
+      // garde la même largeur d'une ligne à l'autre.
       var chk = document.createElement('span');
       chk.className = 'wheel-load-item-check';
       chk.textContent = '✓';
