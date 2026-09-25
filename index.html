@@ -16292,7 +16292,7 @@ async function tmConvScreenshot(fond) {
   const workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
   const hLine1 = cardY + headerH * 0.30;
   const hLine2 = cardY + headerH * 0.72;
-  drawHexIcon(ctx, cardX + PAD + 12, hLine1, 11, pal.icon);
+  drawCurvesIcon(ctx, cardX + PAD + 12, hLine1, 24, pal.icon);
   ctx.textBaseline = 'middle';
   // Une ligne = colonne gauche + colonne droite. La gauche garde sa taille ;
   // la droite (tensiomètre, rayons : longueur libre) se réduit jusqu'à tenir
@@ -18897,6 +18897,24 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.lineTo(x + r, y + h);    ctx.arcTo(x,     y + h, x,     y + h - r, r);
   ctx.lineTo(x,     y + r);    ctx.arcTo(x,     y,     x + r, y,         r);
   ctx.closePath();
+}
+
+// Icône « deux courbes » du bouton comparaison (#tm-conv-cmp-btn), tracée sur
+// canvas pour l'en-tête du JPEG des courbes de conversion. Même géométrie que
+// le SVG (viewBox 24, trait 1.6, seconde courbe à 50 %), centrée sur (cx, cy).
+function drawCurvesIcon(ctx, cx, cy, size, color) {
+  const s = size / 24;
+  ctx.save();
+  ctx.translate(cx - size / 2, cy - size / 2);
+  ctx.scale(s, s);
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = 1.6;
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
+  ctx.beginPath(); ctx.moveTo(3, 17); ctx.lineTo(9, 10); ctx.lineTo(13, 14); ctx.lineTo(21, 5);  ctx.stroke();
+  ctx.globalAlpha = 0.5;
+  ctx.beginPath(); ctx.moveTo(3, 20); ctx.lineTo(9, 15); ctx.lineTo(13, 18); ctx.lineTo(21, 11); ctx.stroke();
+  ctx.restore();
 }
 
 function drawHexIcon(ctx, cx, cy, r, color) {
