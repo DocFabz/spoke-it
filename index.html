@@ -7193,7 +7193,7 @@ const i18n = {
     atelierLogoErrSize:'Image trop lourde : 8 Mo au maximum.',
     atelierLogoErrRead:'Image illisible.',
     atelierLogoKept:'Fond conservé : les coins de l\'image ne sont pas d\'une seule couleur.',
-    atelierLogoLowRes:'Définition faible : le logo sera flou à l\'impression.',
+    atelierLogoLowRes:'Définition faible : le logo sera flou dans les PDF et les images.',
     atelierSave:'✓ Sauvegarder',
     atelierClearBtn:'✕ Effacer',
     riderTitle:'Rider',
@@ -7510,7 +7510,7 @@ const i18n = {
     atelierLogoErrSize:'Image too large: 8 MB maximum.',
     atelierLogoErrRead:'Unreadable image.',
     atelierLogoKept:'Background kept: the image corners are not a single colour.',
-    atelierLogoLowRes:'Low resolution: the logo will look blurry in print.',
+    atelierLogoLowRes:'Low resolution: the logo will look blurry in PDFs and images.',
     atelierSave:'✓ Save',
     atelierClearBtn:'✕ Clear',
     riderTitle:'Rider',
@@ -10859,6 +10859,9 @@ function saveAtelierInfo() {
 // charcutés au petit bonheur : dans ces cas-là l'image passe telle quelle et
 // la modale le dit. Une image qui porte déjà de la transparence n'est jamais
 // retouchée non plus.
+// Le logo est posé dans l'en-tête des PDF (pdfAHeader), sur la ligne 2 des
+// trois JPEG (jpegAtelierLogo) et sur le carton de fin des vidéos
+// (_snapAnimLogoCanvas).
 var LOGO_MAX_FILE = 8 * 1024 * 1024;   // garde d'entrée sur le fichier choisi
 var LOGO_EXPORT_H = 320;               // hauteur maxi du PNG conservé, px
 var LOGO_EXPORT_W = 1200;              // largeur maxi du PNG conservé, px
@@ -10867,11 +10870,11 @@ var LOGO_BG_TOL   = 40;                // écart maxi entre coins pour un fond u
 var LOGO_T0 = 32, LOGO_T1 = 72;        // bornes de la transition du détourage
 var LOGO_MIN_INK  = 0.003;             // sous ce taux d'encre, le détourage a raté
 var LOGO_INK_LO   = 75;                // ton le plus sombre après normalisation
-var LOGO_INK_HI   = 190;               // ton le plus clair après normalisation
+var LOGO_INK_HI   = 190;               // ton le plus clair après normalisation (plage reprise par jpegAtelierLogo)
 var LOGO_INK_GAIN = 1.4;               // amplification maxi de l'étirement
-var LOGO_PRINT_W  = 40 / 25.4;         // encombrement maxi dans l'en-tête, pouces
+var LOGO_PRINT_W  = 40 / 25.4;         // encombrement maxi dans l'en-tête des PDF, pouces (JPEG : JPEG_LOGO_W / H)
 var LOGO_PRINT_H  = 12 / 25.4;
-var LOGO_MIN_DPI  = 150;               // sous cette définition, on avertit
+var LOGO_MIN_DPI  = 150;               // sous cette définition, on avertit (les JPEG ajoutent leur propre seuil, cf. _logoBuild)
 var LOGO_CUT_LO   = 0.08;              // part basse écrêtée avant étirement
 var LOGO_CUT_HI   = 0.02;              // part haute écrêtée avant étirement
 
@@ -11003,7 +11006,8 @@ function _logoBg(d, w, h) {
 // le ton sombre, sans quoi un aplat pâle resterait illisible sur la carte
 // presque blanche des PDF. Ce ton sombre n'est pas noir : il est calé pour
 // rester un peu plus appuyé que le nom d'atelier voisin (luma 103) sans
-// devenir l'élément le plus foncé de la page.
+// devenir l'élément le plus foncé de la page. Ce calage vaut pour les PDF ;
+// les JPEG reteintent le logo à l'encre du nom du sol choisi (jpegAtelierLogo).
 //
 // Les deux bouts de l'échelle sont bornés de la même façon : ce qui tombe sous
 // la coupe basse revient au ton sombre, ce qui dépasse la coupe haute revient
@@ -11143,7 +11147,136 @@ function _logoBuild(img) {
   // contenu » dans son cadre (pdfAHeader) : la dimension qui touche le
   // cadre fixe l'échelle, et c'est celle qui donne le PLUS grand rapport.
   var dpi = Math.max(out.width / LOGO_PRINT_W, out.height / LOGO_PRINT_H);
-  return { url: url, detoured: detoured, hadAlpha: hadAlpha, lowRes: dpi < LOGO_MIN_DPI };
+  // Même règle pour les JPEG : la pose fait JPEG_LOGO_W × JPEG_LOGO_H px de
+  // panneau à dpr JPEG_LOGO_DPR, et l'image ne doit pas y être agrandie. Le
+  // seuil impression ne le garantit pas (71 px de haut y suffisent, la pose
+  // JPEG en demande 128) : les deux critères s'ajoutent.
+  var jpegK = Math.max(out.width / (JPEG_LOGO_W * JPEG_LOGO_DPR), out.height / (JPEG_LOGO_H * JPEG_LOGO_DPR));
+  return { url: url, detoured: detoured, hadAlpha: hadAlpha, lowRes: dpi < LOGO_MIN_DPI || jpegK < 1 };
+}
+
+// ── Logo d'atelier dans les JPEG ─────────────────────────────────────────────
+// Même ordre que le bandeau des PDF (pdfAHeader) pour le logo et le nom
+// d'atelier : sur la ligne 2 de l'en-tête, le logo s'il existe, sinon le nom.
+// Sans atelier, le JPEG écrit JPEG_MARQUE là où le PDF pose la marque
+// (pdfABrandLogo).
+//
+// Le PNG conservé (voir _logoBuild) est une encre sombre en niveaux de gris,
+// calée entre LOGO_INK_LO et LOGO_INK_HI pour la carte blanche des PDF. Posée
+// telle quelle sur l'ardoise ou le carbone, elle disparaîtrait. Plutôt qu'une
+// inversion, une seule formule pour les cinq sols : chaque pixel est ramené à
+// sa position t dans la plage d'encre, puis mélangé entre l'encre du nom
+// d'atelier (pal.label composé sur le sol, t = 0) et le sol (pal.bg, t = 1,
+// plafonné à JPEG_LOGO_FADE pour que le ton le plus clair reste lisible). Le
+// ton le plus sombre du logo prend donc la couleur du texte voisin, sur sols
+// clairs comme sombres ; un logo à plusieurs tons garde sa hiérarchie ; un
+// logo d'un seul ton sort strictement dans l'encre du texte.
+//
+// Une image sans transparence (fond conservé à l'import, cf. atelierLogoKept)
+// n'a pas d'encre isolable et n'a pas été normalisée par _logoGray : elle est
+// posée telle quelle, comme dans les PDF et la vidéo (_snapAnimLogoCanvas, qui
+// ré-encre autrement, pour son propre fond).
+//
+// Gabarit : JPEG_LOGO_W × JPEG_LOGO_H px de panneau (largeur 1280), au même
+// rapport 40/12 que l'en-tête des PDF. À dpr JPEG_LOGO_DPR, il faut 128 px de
+// haut au PNG pour une pose sans agrandissement : l'avertissement lowRes de
+// l'import (_logoBuild) couvre ce seuil en plus de celui de l'impression.
+// L'image est rééchantillonnée à cette taille de pose physique AVANT la
+// teinte : une sauvegarde importée peut porter un PNG bien plus grand que ce
+// que l'import produit.
+var JPEG_LOGO_H    = 64;                                                        // hauteur maxi, px de panneau
+var JPEG_LOGO_W    = Math.round(JPEG_LOGO_H * LOGO_PRINT_W / LOGO_PRINT_H);     // 213 : rapport 40/12 du PDF
+var JPEG_LOGO_FADE = 0.75;                                                      // part maxi du sol dans le ton clair
+var JPEG_LOGO_DPR  = 2;                                                         // définition physique de la pose
+var JPEG_MARQUE    = 'Spokeit.fr';                                              // repli sans atelier
+
+// Couleur CSS (hex ou rgba) composée sur `sous` → [r, g, b], via un canvas
+// 1×1 : le navigateur fait l'analyse, quelle que soit la notation de
+// FOND_JPEG, et l'alpha d'une encre translucide (ardoise : blanc à 0,92) est
+// résolu sur le sol, comme il l'est pour le texte.
+function _jpegRgb(css, sous) {
+  var c = document.createElement('canvas'); c.width = c.height = 1;
+  var x = c.getContext('2d');
+  if (sous) { x.fillStyle = sous; x.fillRect(0, 0, 1, 1); }
+  x.fillStyle = css; x.fillRect(0, 0, 1, 1);
+  var d = x.getImageData(0, 0, 1, 1).data;
+  return [d[0], d[1], d[2]];
+}
+
+// Décode le logo `src` (data URL PNG, cf. loadAtelierInfo) et le teinte pour
+// le sol `pal`. Résout { cv, w, h } (canvas prêt, taille de pose en px de
+// panneau) ou null : pas de logo, image illisible ou dégénérée, canvas
+// verrouillé. Jamais de rejet : l'export retombe alors sur le nom, comme le
+// PDF.
+function jpegAtelierLogo(src, pal) {
+  if (!src || typeof src !== 'string') return Promise.resolve(null);
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      try {
+        var iw = img.naturalWidth, ih = img.naturalHeight;
+        if (!iw || !ih) return resolve(null);
+        // Taille de pose (px de panneau), au contenu dans le gabarit, ratio
+        // préservé ; le canvas de travail est à la définition physique.
+        var s = Math.min(JPEG_LOGO_W / iw, JPEG_LOGO_H / ih);
+        var pw = Math.round(iw * s), ph = Math.round(ih * s);
+        if (pw < 4 || ph < 4) return resolve(null);     // filet ou trait : rien à poser
+        var k = Math.min(1, pw * JPEG_LOGO_DPR / iw);   // jamais agrandi ici
+        var w = Math.max(1, Math.round(iw * k)), h = Math.max(1, Math.round(ih * k));
+        var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        var c = cv.getContext('2d');
+        try { c.imageSmoothingQuality = 'high'; } catch (e) {}
+        c.drawImage(img, 0, 0, w, h);
+        var id = c.getImageData(0, 0, w, h), d = id.data, i;
+        var alpha = false;
+        for (i = 3; i < d.length; i += 4) if (d[i] < 250) { alpha = true; break; }
+        if (alpha) {
+          var ink = _jpegRgb(pal.label, pal.bg), bg = _jpegRgb(pal.bg);
+          var span = LOGO_INK_HI - LOGO_INK_LO, u;
+          for (i = 0; i < d.length; i += 4) {
+            if (d[i + 3] === 0) continue;
+            u = (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2] - LOGO_INK_LO) / span;
+            u = (u < 0 ? 0 : u > 1 ? 1 : u) * JPEG_LOGO_FADE;
+            d[i]     = ink[0] + (bg[0] - ink[0]) * u;
+            d[i + 1] = ink[1] + (bg[1] - ink[1]) * u;
+            d[i + 2] = ink[2] + (bg[2] - ink[2]) * u;
+          }
+          c.putImageData(id, 0, 0);
+        }
+        resolve({ cv: cv, w: pw, h: ph });
+      } catch (e) { resolve(null); }
+    };
+    img.onerror = function() { resolve(null); };
+    img.src = src;
+  });
+}
+
+// Ligne 2 du bandeau, colonne gauche : le logo centré sur yMid, sinon le
+// libellé (ctx.font, ctx.fillStyle et ctx.textBaseline = 'middle' déjà posés
+// par l'appelant). Renvoie la largeur occupée, pour borner la colonne droite.
+function jpegHeaderLeft2(ctx, x, yMid, logo, label) {
+  if (logo) {
+    ctx.save();
+    try { ctx.imageSmoothingQuality = 'high'; } catch (e) {}
+    ctx.drawImage(logo.cv, x, Math.round(yMid - logo.h / 2), logo.w, logo.h);
+    ctx.restore();
+    return logo.w;
+  }
+  ctx.textAlign = 'left';
+  ctx.fillText(label, x, yMid);
+  return ctx.measureText(label).width;
+}
+
+// Réduit la police de `size` à `minSize` (pas de 2) jusqu'à ce que `txt`
+// tienne dans `maxW`, puis tronque avec une ellipse si ça ne suffit pas.
+// Laisse ctx.font sur la taille retenue et renvoie le texte à dessiner. Sert
+// aux colonnes droites des en-têtes JPEG (nom de roue, tensiomètre, rayons) et
+// aux légendes, dont la longueur est libre.
+function jpegFitText(ctx, txt, weight, size, minSize, maxW) {
+  ctx.font = weight + size + 'px DM Sans, sans-serif';
+  while (size > minSize && ctx.measureText(txt).width > maxW) { size -= 2; ctx.font = weight + size + 'px DM Sans, sans-serif'; }
+  while (txt.length > 1 && ctx.measureText(txt).width > maxW) txt = txt.slice(0, -2).replace(/\s+$/, '') + '…';
+  return txt;
 }
 
 document.addEventListener('keydown', function(e) {
@@ -12226,8 +12359,8 @@ var FOND_PASTILLE = {
 };
 
 // ── Palette d'export JPEG par sol ──────────────────────────────────────────
-// Le screenshot du module tension et le JPEG d'évolution se peignent dans le
-// sol choisi au moment de l'export, qui n'est pas forcément le sol actif : les
+// Les trois JPEG (diagramme de tension, évolution, courbe de conversion) se
+// peignent dans le sol choisi au moment de l'export, qui n'est pas forcément le sol actif : les
 // jetons calculés ne servent donc à rien ici, et ces littéraux sont assumés
 // pour la même raison que FOND_PASTILLE.
 // Chaque ligne donne, au palier normal du bloc CSS correspondant :
@@ -12253,7 +12386,9 @@ var FOND_PASTILLE = {
 // NDS / DS, en orange et bleu sourds. L'attribution ne change pas : orange =
 // rangée fo, bleu = rangée fa, comme partout. Ses champs propres : titre
 // (l'encre, à la place de l'accent), blockLine (gris, à la place des accents),
-// et le drapeau neutre, qui grise les axes et les numéros de rayon.
+// et le drapeau neutre, qui grise les axes et les numéros de rayon et retire
+// tout aplat : rien sous les nappes du radar (fondPaletteExport), aucun lavis
+// sous la courbe de conversion (tmConvScreenshot).
 var FOND_JPEG = {
   neutre:  { clair:1, neutre:1, bg:'#ffffff', blockFill:null, blockLine:'#b8b8b8', titre:'#1c1c1e', label:'#1c1c1e', legend:'#3a3a3a', stat:'#1c1c1e', muted:'rgba(90,90,90,0.9)', accent:[62,118,168], warm:[196,112,58] },
   ardoise: { clair:0, bg:'#232a38', blockFill:'#000000', label:'rgba(255,255,255,0.92)', legend:'rgba(220,228,237,0.95)', stat:'#dce4ed', muted:'rgba(150,170,190,0.7)', accent:[126,200,227], warm:[232,146,124] },
@@ -12289,9 +12424,10 @@ function fondPaletteExport(f) {
     // Aplats : les valeurs de tmDrawRadar, à l'identique. Sur la famille
     // claire, l'écran remplit avec le corail et le cyan PASTEL de l'ardoise,
     // pas avec l'accent assombri du sol, qui pèse trois fois plus au même
-    // alpha : c'est ce pastel-là que le JPEG reprend.
-    fillFo:   p.neutre ? rgba(p.warm, 0.07)   : clair ? 'rgba(232,146,124,0.10)' : rgba(p.warm, 0.06),
-    fillFa:   p.neutre ? rgba(p.accent, 0.10) : clair ? 'rgba(126,200,227,0.10)' : rgba(p.accent, 0.06),
+    // alpha : c'est ce pastel-là que le JPEG reprend. Le sol neutre n'a pas
+    // d'aplat du tout : traits et points seuls, c'est un export de travail.
+    fillFo:   p.neutre ? 'rgba(0,0,0,0)' : clair ? 'rgba(232,146,124,0.10)' : rgba(p.warm, 0.06),
+    fillFa:   p.neutre ? 'rgba(0,0,0,0)' : clair ? 'rgba(126,200,227,0.10)' : rgba(p.accent, 0.06),
     // Blocs de stats : remplissage du sol (null = liseré seul), liseré aux
     // accents ou au gris du sol, étiquette pleine.
     blockFill: p.blockFill,
@@ -16066,7 +16202,8 @@ function tmDrawConvCurve(pts, pts2) {
 
 // Couleurs du tracé pour une famille de sol et deux accents (r,g,b).
 // Partagée par l'écran (jetons du sol actif) et le JPEG (FOND_JPEG du sol
-// choisi) : mêmes opacités des deux côtés.
+// choisi) : mêmes opacités des deux côtés. Seule exception : sur le sol
+// neutre, le JPEG retire les lavis (tmConvScreenshot).
 function _tmConvCurvePalette(clair, accRgb, warmRgb) {
   return {
     grid:  clair ? 'rgba(0,0,0,0.10)'      : 'rgba(255,255,255,0.06)',
@@ -16289,7 +16426,8 @@ async function tmConvScreenshot(fond) {
 
   // En-tête : titre + atelier à gauche, tensiomètre + rayon(s) à droite
   const atelierInfo   = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
-  const workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
+  const workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : JPEG_MARQUE;
+  const logo          = await jpegAtelierLogo(atelierInfo.logo, pal);
   const hLine1 = cardY + headerH * 0.30;
   const hLine2 = cardY + headerH * 0.72;
   drawCurvesIcon(ctx, cardX + PAD + 12, hLine1, 24, pal.icon);
@@ -16298,20 +16436,14 @@ async function tmConvScreenshot(fond) {
   // la droite (tensiomètre, rayons : longueur libre) se réduit jusqu'à tenir
   // dans la place restante, sans jamais chevaucher la gauche.
   const leftX = cardX + PAD + 34, rightX = cardX + cardW - PAD, GAP = 40;
-  // Réduit la police de `size` à `minSize` jusqu'à ce que `txt` tienne dans
-  // `maxW`, puis tronque avec une ellipse si ça ne suffit pas. Laisse ctx.font
-  // sur la taille retenue et retourne le texte à dessiner.
-  function fitText(txt, weight, size, minSize, maxW) {
-    ctx.font = weight + size + 'px DM Sans, sans-serif';
-    while (size > minSize && ctx.measureText(txt).width > maxW) { size -= 2; ctx.font = weight + size + 'px DM Sans, sans-serif'; }
-    while (txt.length > 1 && ctx.measureText(txt).width > maxW) txt = txt.slice(0, -2).replace(/\s+$/, '') + '\u2026';
-    return txt;
-  }
-  function headerLine(y, leftTxt, leftColor, rightTxt, rightColor) {
+  const fitText = (txt, weight, size, minSize, maxW) => jpegFitText(ctx, txt, weight, size, minSize, maxW);
+  // `leftLogo` (ligne 2) : le logo d'atelier remplace le texte de gauche et
+  // c'est sa largeur qui borne la colonne droite.
+  function headerLine(y, leftTxt, leftColor, rightTxt, rightColor, leftLogo) {
     ctx.font = '600 42px DM Sans, sans-serif';
-    ctx.textAlign = 'left'; ctx.fillStyle = leftColor;
-    ctx.fillText(leftTxt, leftX, y);
-    const avail = rightX - (leftX + ctx.measureText(leftTxt).width + GAP);
+    ctx.fillStyle = leftColor;
+    const leftW = jpegHeaderLeft2(ctx, leftX, y, leftLogo, leftTxt);
+    const avail = rightX - (leftX + leftW + GAP);
     rightTxt = fitText(rightTxt, '600 ', 42, 22, avail);
     ctx.textAlign = 'right'; ctx.fillStyle = rightColor;
     ctx.fillText(rightTxt, rightX, y);
@@ -16319,12 +16451,15 @@ async function tmConvScreenshot(fond) {
   // Deux courbes ⇒ titre au pluriel.
   const jpegTitle = t(cmp ? 'tmConvJpegTitle2' : 'tmConvJpegTitle');
   headerLine(hLine1, jpegTitle, pal.title, (_tmConvTensioLabel || '').toUpperCase(), pal.title);
-  headerLine(hLine2, workshopLabel, pal.label, cmp ? (refName + '  ·  ' + cmp.name) : refName, pal.label);
+  headerLine(hLine2, workshopLabel, pal.label, cmp ? (refName + '  ·  ' + cmp.name) : refName, pal.label, logo);
 
   // Courbe, dans la palette du sol choisi (accents de FOND_JPEG)
   const curveX = cardX + PAD, curveY = cardY + headerH + 10;
   const P = _tmConvCurvePalette(pal.clair, fj.accent.join(','), fj.warm.join(','));
   P.bg = pal.bg; // fond opaque pour l'anti-collision des ticks (cf. _tmConvCurvePaint)
+  // Sol neutre : pas de lavis sous les courbes, traits et points seuls,
+  // comme le radar y est sans aplat (fondPaletteExport).
+  if (fj.neutre) P.fill0 = P.fill1 = P.fill0b = P.fill1b = 'rgba(0,0,0,0)';
   ctx.save();
   ctx.translate(curveX, curveY);
   _tmConvCurvePaint(ctx, curveW, curveH, pts, cmp ? cmp.pts : null, P, curveW / 380);
@@ -19382,7 +19517,8 @@ async function tmScreenshot(fond) {
 
   // Infos atelier (nécessaire pour le calcul de hauteur)
   const atelierInfo   = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
-  const workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
+  const workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : JPEG_MARQUE;
+  const logo          = await jpegAtelierLogo(atelierInfo.logo, pal);
 
   // Hauteurs des sections
   const headerH = 150;
@@ -19424,11 +19560,10 @@ async function tmScreenshot(fond) {
   ctx.textBaseline = 'middle';
   ctx.fillText(lang === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', cardX + PAD + 34, hLine1);
 
-  // Gauche ligne 2 : nom du workshop
+  // Gauche ligne 2 : logo d'atelier, sinon nom du workshop
   ctx.font      = '600 42px DM Sans, sans-serif';
   ctx.fillStyle = C_label;
-  ctx.textAlign = 'left';
-  ctx.fillText(workshopLabel, cardX + PAD + 34, hLine2);
+  const leftW = jpegHeaderLeft2(ctx, cardX + PAD + 34, hLine2, logo, workshopLabel);
 
   // Droite ligne 1 : type de roue
   ctx.font      = '600 42px DM Sans, sans-serif';
@@ -19436,12 +19571,14 @@ async function tmScreenshot(fond) {
   ctx.textAlign = 'right';
   ctx.fillText(wheelLabel.toUpperCase(), cardX + cardW - PAD, hLine1);
 
-  // Droite ligne 2 : nom de la roue
+  // Droite ligne 2 : nom de la roue, réduit puis tronqué pour ne jamais
+  // mordre sur le logo ou le nom d'atelier
   if (wheelName) {
-    ctx.font      = '600 42px DM Sans, sans-serif';
+    const availW = (cardX + cardW - PAD) - (cardX + PAD + 34 + leftW + 40);
+    const name   = jpegFitText(ctx, wheelName, '600 ', 42, 22, availW);
     ctx.fillStyle = C_label;
     ctx.textAlign = 'right';
-    ctx.fillText(wheelName, cardX + cardW - PAD, hLine2);
+    ctx.fillText(name, cardX + cardW - PAD, hLine2);
   }
 
 
@@ -24882,7 +25019,8 @@ async function snapCompareJPEG() {
   var wheelName = document.getElementById('tm-cfg-loaded-text')
     ? document.getElementById('tm-cfg-loaded-text').textContent.trim() : '';
   var atelierInfo   = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
-  var workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
+  var workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : JPEG_MARQUE;
+  var logo = await jpegAtelierLogo(atelierInfo.logo, pal);   // décodé une fois pour les deux panneaux
   var isAvant = wtype === 'avant';
   // Gauche = NDS, droite = DS ; palette canvas indexée par rangée — orange
   // = fo. Les pleins du sol choisi, sombres sur les sols clairs.
@@ -24973,14 +25111,16 @@ async function snapCompareJPEG() {
 
     ctx.font      = '600 42px DM Sans, sans-serif';
     ctx.fillStyle = C_label;
-    ctx.fillText(workshopLabel, cardX + PAD + 34, hLine2);
+    var leftW = jpegHeaderLeft2(ctx, cardX + PAD + 34, hLine2, logo, workshopLabel);
 
     ctx.textAlign = 'right';
     ctx.fillStyle = C_title;
     ctx.fillText(wheelLabel.toUpperCase(), cardX + cardW - PAD, hLine1);
     if (wheelName) {
+      // Réduit puis tronqué pour ne jamais mordre sur le logo ou le nom d'atelier
+      var availW = (cardX + cardW - PAD) - (cardX + PAD + 34 + leftW + 40);
       ctx.fillStyle = C_label;
-      ctx.fillText(wheelName, cardX + cardW - PAD, hLine2);
+      ctx.fillText(jpegFitText(ctx, wheelName, '600 ', 42, 22, availW), cardX + cardW - PAD, hLine2);
     }
 
     // Radar — re-rendu off-screen adapté au fond
@@ -25202,7 +25342,8 @@ function snapAnimClose() {
 // détourage laisse glisser vers le clair, repart vers le sombre, dans le sens
 // du fondu d'alpha. Une image sans transparence (fond conservé à l'import,
 // photo) n'a pas d'encre isolable : elle est posée telle quelle, comme dans
-// les PDF, plutôt que retournée en négatif photo.
+// les PDF, plutôt que retournée en négatif photo. Les JPEG ré-encrent le même
+// PNG autrement, à l'encre et au sol choisis : voir jpegAtelierLogo.
 function _snapAnimLogoCanvas(img) {
   var w = img.naturalWidth, h = img.naturalHeight;
   if (!w || !h) return null;
