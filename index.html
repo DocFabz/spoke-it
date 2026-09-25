@@ -1650,7 +1650,7 @@ select option             { background:var(--inp) }
 .screenshot-overlay.show { display:block; opacity:1 }
 .screenshot-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.97); z-index:9993; background:var(--card); border:1px solid var(--border-s); border-radius:var(--r); padding:1.4rem 1.4rem 1.1rem; box-shadow:var(--sh-modal); width:88%; max-width:300px; max-height:92vh; max-height:92dvh; overflow-y:auto; overscroll-behavior:contain; display:none; flex-direction:column; gap:1.4rem; opacity:0; transition:opacity .2s, transform .2s }
 .screenshot-modal.show { display:flex; opacity:1; transform:translate(-50%,-50%) scale(1) }
-/* Curseur de sol, dans les deux modales JPEG et dans la modale Apparence : le
+/* Curseur de sol, dans les trois modales JPEG et dans la modale Apparence : le
    curseur du contraste (.contrast-range, piste et pouce compris), avec les
    pastilles .fond-swatch en guise de crans, et le nom du sol choisi en tête
    de ligne. Né pour les exports, où il a remplacé la pilule Dark / Light,
@@ -2628,6 +2628,9 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-conv-close:hover { color:var(--text) }
 #tm-conv-view-btn { outline:none }
 #tm-conv-modal .tm-conv-spoke { margin-bottom:1.3rem }
+/* Vue courbe : trois lignes d'en-tête + légende + Δ dépassent 82dvh sur un
+   téléphone en paysage ; la zone courbe défile, la modale garde sa hauteur. */
+#tm-conv-curve-wrap { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain }
 .tm-conv-scroll   { overflow-y:auto; flex:1; border-radius:var(--rs); border:1px solid var(--border) }
 .tm-conv-table    { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:.8rem }
 .tm-conv-table th { padding:.5rem .7rem; font-family:'DM Sans',sans-serif; font-size:.58rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; text-align:center; background:linear-gradient(rgba(var(--accent-rgb),.06),rgba(var(--accent-rgb),.06)),var(--card); box-shadow:0 1px 0 var(--border); color:var(--accent); position:sticky; top:0; z-index:1 }
@@ -3354,7 +3357,7 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
 <!-- ── Apparence : le fond et le contraste dans une seule modale, ouverte
      depuis la ligne « Apparence » des Réglages. Même coque que la modale
      Données (.ateliermgr-modal.ridermgr-chooser), deux curseurs empilés :
-       - le SOL, en haut, sur le curseur à pastilles des deux modales JPEG
+       - le SOL, en haut, sur le curseur à pastilles des trois modales JPEG
          (fondRangeRender, sans le cran Neutre, qui est un sol d'export
          seulement) : le choix est catégoriel, la piste n'est donc pas
          remplie et chaque pastille vaut un cran ;
@@ -4783,7 +4786,7 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     <div class="tm-conv-spoke" id="tm-cmp-ref-label"></div>
     <div class="cc-step">
       <div class="cc-step-label" id="tm-cmp-pick-label"></div>
-      <select id="tm-cmp-select" class="tm-select"></select>
+      <select id="tm-cmp-select" class="tm-select" aria-labelledby="tm-cmp-pick-label"></select>
       <div id="tm-cmp-note"></div>
     </div>
     <div class="savemgr-btns">
@@ -12196,7 +12199,7 @@ function fondRepeintCanvas() {
   try { if (typeof tmTryRenderRadar === 'function') tmTryRenderRadar(); } catch (e) {}
   try {
     if (_tmConvShowCurve && _tmConvPts && typeof tmDrawConvCurve === 'function')
-      tmDrawConvCurve(_tmConvPts, (typeof _tmConvCmp !== 'undefined' && _tmConvCmp) ? _tmConvCmp.pts : null);
+      tmDrawConvCurve(_tmConvPts, _tmConvCmp ? _tmConvCmp.pts : null);
   } catch (e) {}
 }
 
@@ -12322,7 +12325,7 @@ function _exportPalLegacy(whiteBg, colored) {
 // ── Curseur de sol ──────────────────────────────────────────────────────────
 // Le sol se choisit sur un curseur à pastilles, le même partout : dans la
 // modale Apparence (liste FONDS_DISPO, application immédiate par setFond) et
-// dans les deux modales JPEG (liste FONDS_EXPORT, avec le Neutre en tête, et
+// dans les trois modales JPEG (liste FONDS_EXPORT, avec le Neutre en tête, et
 // un état local par modale). C'est le curseur du contraste, piste et pouce
 // compris, avec les pastilles de FOND_PASTILLE pour crans : même vocabulaire
 // des deux côtés, l'utilisateur ne l'apprend qu'une fois.
@@ -15854,7 +15857,7 @@ function _tmConvShowOnly(mode) {
   const pdfBtn  = $id('tm-conv-pdf-btn');
   const snapBtn = $id('tm-conv-snap-btn');
   if (pdfBtn)  pdfBtn.style.display  = mode === 'curve' ? 'none' : '';
-  if (snapBtn) snapBtn.style.display = mode === 'curve' ? 'inline-flex' : 'none';
+  if (snapBtn) { snapBtn.title = t('screenshotTitle'); snapBtn.setAttribute('aria-label', t('screenshotTitle')); snapBtn.style.display = mode === 'curve' ? 'inline-flex' : 'none'; }
 }
 
 function tmConvToggleView() {
@@ -15864,6 +15867,7 @@ function tmConvToggleView() {
     _tmConvRedraw();
   } else {
     _tmConvShowOnly('table');
+    _tmConvSpokeLabelRender();
   }
 }
 
@@ -15891,10 +15895,14 @@ function _tmConvCmpReset() {
 function _tmConvSpokeLabelRender() {
   const el = $id('tm-conv-spoke-label');
   if (!el) return;
-  let html = t('tmConvTensio') + '\u00a0: <strong style="color:var(--accent)">' + escHtml(_tmConvTensioLabel || '\u2014') + '</strong><br>' +
-             t('tmSpokeLabel') + '\u00a0: <strong style="color:var(--text)">' + escHtml(_tmConvSpokeName || '\u2014') + '</strong>';
-  if (_tmConvCmp) html += '<br>' + t('tmSpokeLabel') + '\u00a0: <strong style="color:var(--text)">' + escHtml(_tmConvCmp.name) + '</strong>';
-  el.innerHTML = html;
+  // Devant la table (et son PDF), seule la référence est montrée : la
+  // comparaison ne vaut que pour la courbe. En comparaison, les noms peuvent
+  // porter leur catégorie pour lever un homonyme (cf. _tmConvCmpNames).
+  const cmp = (_tmConvCmp && _tmConvShowCurve) ? _tmConvCmp : null;
+  const spokeLine = name => '<br>' + t('tmSpokeLabel') + '\u00a0: <strong style="color:var(--text)">' + escHtml(name || '\u2014') + '</strong>';
+  el.innerHTML = t('tmConvTensio') + '\u00a0: <strong style="color:var(--accent)">' + escHtml(_tmConvTensioLabel || '\u2014') + '</strong>' +
+                 spokeLine(cmp ? cmp.refName : _tmConvSpokeName) +
+                 (cmp ? spokeLine(cmp.name) : '');
 }
 
 // Écarts entre les deux chartes, en kgf, sur la plage de lectures commune.
@@ -15933,16 +15941,15 @@ function _tmConvLegendRender() {
   if (!lg) return;
   if (!_tmConvCmp) { lg.style.display = 'none'; lg.innerHTML = ''; return; }
   const st = _tmConvCmpStats(_tmConvPts, _tmConvCmp.pts);
-  const fmt = v => (Math.round(v * 10) / 10).toFixed(1);
   lg.innerHTML =
     '<span class="lg-row">' +
-    '<span class="lg-item"><span class="lg-dot" style="background:var(--accent)"></span><span class="lg-name">' + escHtml(_tmConvSpokeName || '\u2014') + '</span></span>' +
+    '<span class="lg-item"><span class="lg-dot" style="background:var(--accent)"></span><span class="lg-name">' + escHtml(_tmConvCmp.refName) + '</span></span>' +
     '<span class="lg-item"><span class="lg-dot" style="background:var(--warm)"></span><span class="lg-name">' + escHtml(_tmConvCmp.name) + '</span></span>' +
     '</span>' +
     '<button class="lg-rm" onclick="tmConvCmpClear()" title="' + escHtml(t('tmCmpRemove')) + '" aria-label="' + escHtml(t('tmCmpRemove')) + '">✕</button>' +
     (st ? '<span class="lg-stats">' +
-            '<span>' + t('tmCmpDeltaMean') + '\u00a0: <strong>' + fmt(st.mean) + '\u00a0kgf</strong></span>' +
-            '<span>' + t('tmCmpDeltaMax')  + '\u00a0: <strong>' + fmt(st.max)  + '\u00a0kgf</strong> ' + t('tmCmpAt') + '\u00a0' + escHtml(tmDisplayValue(st.maxAt)) + '</span>' +
+            '<span>' + t('tmCmpDeltaMean') + '\u00a0: <strong>' + _tmConvFmtKgf(st.mean) + '</strong></span>' +
+            '<span>' + t('tmCmpDeltaMax')  + '\u00a0: <strong>' + _tmConvFmtKgf(st.max)  + '</strong> ' + t('tmCmpAt') + '\u00a0' + escHtml(tmDisplayValue(st.maxAt)) + '</span>' +
           '</span>' : '');
   lg.style.display = 'flex';
 }
@@ -15951,6 +15958,27 @@ function _tmConvLegendRender() {
 // les préfixes de catégorie (__STEEL__…) tombent, le préfixe perso reste.
 function _tmConvKeyName(key) {
   return key.replace(/^__[A-Z ]+__/, '');
+}
+// Catégorie d'une clé (« LARGE TERMINAL » pour __LARGE TERMINAL__P14), '' sinon.
+function _tmConvKeyCat(key) {
+  const m = key.match(/^__([A-Z ]+)__/);
+  return m ? m[1] : '';
+}
+// Deux chartes peuvent porter le même nom une fois la catégorie retirée
+// (P14 en LARGE et en SMALL TERMINAL) : dans ce cas, chacune reprend la
+// sienne entre parenthèses. Retourne [nomRéférence, nomComparée].
+function _tmConvCmpNames(refKey, cmpKey) {
+  let a = _tmConvKeyName(refKey), b = _tmConvKeyName(cmpKey);
+  if (a === b) {
+    const ca = _tmConvKeyCat(refKey), cb = _tmConvKeyCat(cmpKey);
+    if (ca) a += ' (' + ca + ')';
+    if (cb) b += ' (' + cb + ')';
+  }
+  return [a, b];
+}
+// Formatage des Δ : une décimale, unité collée par une insécable.
+function _tmConvFmtKgf(v) {
+  return (Math.round(v * 10) / 10).toFixed(1) + '\u00a0kgf';
 }
 
 function tmConvCmpOpen() {
@@ -15970,7 +15998,8 @@ function tmConvCmpOpen() {
   const sel = $id('tm-cmp-select');
   const src = $id('tm-spoke-select');
   sel.innerHTML = src ? src.innerHTML : '';
-  Array.from(sel.options).forEach(o => { if (!o.value || o.value === curKey || !(o.value in tbl)) o.remove(); });
+  const drawable = k => Array.isArray(tbl[k]) && tbl[k].filter(p => p[1] !== null).length >= 2;
+  Array.from(sel.options).forEach(o => { if (!o.value || o.value === curKey || !drawable(o.value)) o.remove(); });
   Array.from(sel.querySelectorAll('optgroup')).forEach(g => { if (!g.children.length) g.remove(); });
   const has = sel.options.length > 0;
   if (has && _tmConvCmp && (_tmConvCmp.key in tbl)) sel.value = _tmConvCmp.key;
@@ -15993,7 +16022,8 @@ function tmConvCmpApply() {
   const tbl = tmGetActiveTable();
   const pts = key && tbl ? tbl[key] : null;
   if (!pts || pts.filter(p => p[1] !== null).length < 2) return;
-  _tmConvCmp = { key: key, name: _tmConvKeyName(key), pts: pts };
+  const names = _tmConvCmpNames(tmSpokeOf(_tmConvSide) || '', key);
+  _tmConvCmp = { key: key, name: names[1], refName: names[0], pts: pts };
   tmConvCmpClose();
   _tmConvRedraw();
 }
@@ -16057,7 +16087,7 @@ function _tmConvCurvePalette(clair, accRgb, warmRgb) {
 
 // Cœur du tracé, sur un contexte déjà mis à l'échelle : W × H en pixels
 // logiques, k = facteur d'épaisseur des traits (1 à l'écran, ~3 dans le JPEG
-// dont le panneau fait 1280 de large) — marges et police suivent W.
+// dont le panneau fait 1280 de large) ; marges et police suivent W.
 function _tmConvCurvePaint(ctx, W, H, pts, pts2, P, k) {
   // Seconde charte (comparaison) : optionnelle, tracée derrière la première
   // sur des axes communs. Ignorée si elle n'a pas deux points valides.
@@ -16067,7 +16097,7 @@ function _tmConvCurvePaint(ctx, W, H, pts, pts2, P, k) {
   const gW  = W - pad.l - pad.r;
   const gH  = H - pad.t - pad.b;
 
-  // Données — pts = [[reading, kgf], ...]. Échelle commune aux deux jeux.
+  // Données : pts = [[reading, kgf], ...]. Échelle commune aux deux jeux.
   const allPts   = pts2 ? pts.concat(pts2) : pts;
   const readings = Array.from(new Set(allPts.map(p => p[0]))).sort((a, b) => a - b);
   const kgfs     = allPts.map(p => p[1] !== null ? p[1] : 0);
@@ -16196,9 +16226,9 @@ function _tmConvCurvePaint(ctx, W, H, pts, pts2, P, k) {
 // ── Photo JPEG de la courbe ─────────────────────────────────────────────────
 // Même modale de sol et même gabarit que le JPEG du diagramme de tension
 // (tmScreenshot) : panneau 1280 en retrait de JPEG_MARGE, en-tête sur deux
-// lignes, courbe pleine largeur, puis, en comparaison, légende et bloc
-// d'écarts au format des blocs de stats.
-let _convSnapFond = 'ardoise';
+// lignes, courbe pleine largeur, puis, en comparaison, légende et ligne des
+// Δ. L'état du sol choisi (_convSnapFond) est déclaré avec ses homologues, à
+// côté de FONDS_EXPORT.
 
 function tmConvSnapOpen(e) {
   if (e) e.stopPropagation();
@@ -16238,9 +16268,10 @@ async function tmConvScreenshot(fond) {
   const curveH  = Math.round(curveW * 0.65);
   const legendH = cmp ? 128 : 60;
   const st      = cmp ? _tmConvCmpStats(pts, cmp.pts) : null;
+  const refName = cmp ? cmp.refName : _tmConvSpokeName;
   const rows    = st ? [
-    [t('tmCmpDeltaMean'), (Math.round(st.mean * 10) / 10).toFixed(1) + ' kgf'],
-    [t('tmCmpDeltaMax'),  (Math.round(st.max  * 10) / 10).toFixed(1) + ' kgf ' + t('tmCmpAt') + ' ' + tmDisplayValue(st.maxAt)]
+    [t('tmCmpDeltaMean'), _tmConvFmtKgf(st.mean)],
+    [t('tmCmpDeltaMax'),  _tmConvFmtKgf(st.max) + ' ' + t('tmCmpAt') + '\u00a0' + tmDisplayValue(st.maxAt)]
   ] : [];
   const STATS_LINE = 56;                       // la ligne des Δ, centrée sous la légende
   const statsH  = rows.length ? STATS_LINE : 0;
@@ -16267,20 +16298,28 @@ async function tmConvScreenshot(fond) {
   // la droite (tensiomètre, rayons : longueur libre) se réduit jusqu'à tenir
   // dans la place restante, sans jamais chevaucher la gauche.
   const leftX = cardX + PAD + 34, rightX = cardX + cardW - PAD, GAP = 40;
+  // Réduit la police de `size` à `minSize` jusqu'à ce que `txt` tienne dans
+  // `maxW`, puis tronque avec une ellipse si ça ne suffit pas. Laisse ctx.font
+  // sur la taille retenue et retourne le texte à dessiner.
+  function fitText(txt, weight, size, minSize, maxW) {
+    ctx.font = weight + size + 'px DM Sans, sans-serif';
+    while (size > minSize && ctx.measureText(txt).width > maxW) { size -= 2; ctx.font = weight + size + 'px DM Sans, sans-serif'; }
+    while (txt.length > 1 && ctx.measureText(txt).width > maxW) txt = txt.slice(0, -2).replace(/\s+$/, '') + '\u2026';
+    return txt;
+  }
   function headerLine(y, leftTxt, leftColor, rightTxt, rightColor) {
     ctx.font = '600 42px DM Sans, sans-serif';
     ctx.textAlign = 'left'; ctx.fillStyle = leftColor;
     ctx.fillText(leftTxt, leftX, y);
     const avail = rightX - (leftX + ctx.measureText(leftTxt).width + GAP);
-    let size = 42;
-    while (size > 22 && ctx.measureText(rightTxt).width > avail) { size -= 2; ctx.font = '600 ' + size + 'px DM Sans, sans-serif'; }
+    rightTxt = fitText(rightTxt, '600 ', 42, 22, avail);
     ctx.textAlign = 'right'; ctx.fillStyle = rightColor;
     ctx.fillText(rightTxt, rightX, y);
   }
   // Deux courbes ⇒ titre au pluriel.
   const jpegTitle = t(cmp ? 'tmConvJpegTitle2' : 'tmConvJpegTitle');
   headerLine(hLine1, jpegTitle, pal.title, (_tmConvTensioLabel || '').toUpperCase(), pal.title);
-  headerLine(hLine2, workshopLabel, pal.label, cmp ? (_tmConvSpokeName + '  ·  ' + cmp.name) : _tmConvSpokeName, pal.label);
+  headerLine(hLine2, workshopLabel, pal.label, cmp ? (refName + '  ·  ' + cmp.name) : refName, pal.label);
 
   // Courbe, dans la palette du sol choisi (accents de FOND_JPEG)
   const curveX = cardX + PAD, curveY = cardY + headerH + 10;
@@ -16297,8 +16336,12 @@ async function tmConvScreenshot(fond) {
     const DOT_R = 10;
     ctx.textBaseline = 'middle';
     ctx.font = '500 32px DM Sans, sans-serif';
-    const items = [[_tmConvSpokeName, pal.fa, cardX + cardW / 4], [cmp.name, pal.fo, cardX + cardW * 3 / 4]];
-    items.forEach(([name, color, mid]) => {
+    // Chaque item dispose d'une demi-largeur : au-delà, la police se réduit
+    // puis le nom est tronqué (noms perso jusqu'à 50 caractères).
+    const maxItemW = cardW / 2 - 80;
+    const items = [[refName, pal.fa, cardX + cardW / 4], [cmp.name, pal.fo, cardX + cardW * 3 / 4]];
+    items.forEach(([name0, color, mid]) => {
+      const name = fitText(name0, '500 ', 32, 22, maxItemW - (DOT_R * 2 + 15));
       const w = DOT_R * 2 + 15 + ctx.measureText(name).width;
       const x = mid - w / 2;
       ctx.fillStyle = color;
@@ -16328,10 +16371,10 @@ async function tmConvScreenshot(fond) {
     });
   }
 
-  // Export JPEG — share natif sur mobile, téléchargement sur desktop
+  // Export JPEG : share natif sur mobile, téléchargement sur desktop
   const slug = v => (v || '').replace(/[^a-z0-9]/gi, '-').toLowerCase().replace(/-+/g, '-').replace(/^-|-$/g, '');
   const jpeg     = off.toDataURL('image/jpeg', 0.96);
-  const filename = 'spokeit-conversion-' + (slug(_tmConvSpokeName) || 'chart') + (cmp ? '-vs-' + slug(cmp.name) : '') + '.jpg';
+  const filename = 'spokeit-conversion-' + (slug(refName) || 'chart') + (cmp ? '-vs-' + slug(cmp.name) : '') + '.jpg';
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   let shared     = false;
   if (isMobile && navigator.canShare) {
@@ -16359,7 +16402,7 @@ async function tmConvScreenshot(fond) {
 // ── Fermer la modale ────────────────────────────────────────────────────────
 function tmCloseConvTable() {
   tmConvCmpClose();
-  if ($id('tm-conv-snap-modal')) tmConvSnapClose();
+  tmConvSnapClose();
   _tmConvCmpReset();
   $id('tm-conv-overlay').classList.remove('show');
   $id('tm-conv-modal').classList.remove('show');
@@ -19193,7 +19236,8 @@ function tmRenderRadarOffscreen(w, h, whiteBg, outliers, scale, pal) {
 }
 
 // ── Choix du sol d'export ────────────────────────────────────────────────────
-// Les deux modales JPEG (screenshot tension, évolution) proposent les sols sur
+// Les trois modales JPEG (screenshot tension, évolution, courbe de conversion)
+// proposent les sols sur
 // le curseur à pastilles de la modale Apparence (fondRangeRender, module Fond).
 // La sélection est pré-posée sur le sol ACTIF à chaque ouverture, sans mémoire
 // d'une fois sur l'autre : on exporte d'abord ce qu'on voit, et on change si
@@ -19204,6 +19248,7 @@ var FONDS_EXPORT = ['neutre'].concat(FONDS_DISPO);
 var FOND_I18N_EXPORT = Object.assign({ neutre: 'fondNeutre' }, FOND_I18N);
 var _screenshotFond = 'ardoise';
 var _snapCmpFond    = 'ardoise';
+var _convSnapFond   = 'ardoise'; // photo de la courbe de conversion (tmConvSnapOpen)
 
 // Les libellés [data-i18n] de la modale sont retraduits ici, à l'ouverture :
 // les deux modales sont écrites APRÈS le script d'init, donc l'applyLang() du
