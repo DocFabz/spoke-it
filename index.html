@@ -9893,15 +9893,15 @@ function tmSideLabel(row, wh) {
 //   CÔTE À CÔTE → gauche puis droite, donc NDS puis DS. diffRowOrder() dit
 //     quelle rangée occupe quelle colonne. Concerne : tableau de saisie,
 //     radar et sa légende, cards de longueur, colonnes d'arbitrage, stats de
-//     tension en 2 colonnes, légende Hooke, colonnes des PDF — et les chaînes
+//     tension en 2 colonnes, blocs de stats des JPEG (jpegBlocsRangee),
+//     légende Hooke, colonnes des PDF — et les chaînes
 //     « A / B » (diffPairStr, _snapSpokeLabel), qui sont horizontales elles
 //     aussi. Pour _snapSpokeLabel, non libellée, l'ordre EST la seule
 //     information de côté transportée.
 //
 //   EMPILÉ → orange (fo) en haut, bleu (fa) dessous. L'ordre suit la RANGÉE,
-//     pas le côté. Concerne : stats de tension en 1 colonne (CSS `order:-1`),
-//     blocs de stats des JPEG (tri sur isFo), et les deux lignes de longueur
-//     de la card Résumé.
+//     pas le côté. Concerne : stats de tension en 1 colonne (CSS `order:-1`)
+//     et les deux lignes de longueur de la card Résumé.
 //
 // Une bascule d'orientation doit donc CHANGER l'ordre. C'est acquis pour les
 // stats de tension : la collapse en 1 colonne et le `order:-1` vivent dans le
@@ -11007,7 +11007,7 @@ function _logoBg(d, w, h) {
 // presque blanche des PDF. Ce ton sombre n'est pas noir : il est calé pour
 // rester un peu plus appuyé que le nom d'atelier voisin (luma 103) sans
 // devenir l'élément le plus foncé de la page. Ce calage vaut pour les PDF ;
-// les JPEG reteintent le logo à l'encre du nom du sol choisi (jpegAtelierLogo).
+// les JPEG reteignent le logo à l'encre du nom du sol choisi (jpegAtelierLogo).
 //
 // Les deux bouts de l'échelle sont bornés de la même façon : ce qui tombe sous
 // la coupe basse revient au ton sombre, ce qui dépasse la coupe haute revient
@@ -11177,24 +11177,18 @@ function _logoBuild(img) {
 // posée telle quelle, comme dans les PDF et la vidéo (_snapAnimLogoCanvas, qui
 // ré-encre autrement, pour son propre fond).
 //
-// Gabarit : JPEG_LOGO_W × JPEG_LOGO_H px de panneau (1280 de large, ou 1980
-// pour le diagramme en carré natif), au même rapport 40/12 que l'en-tête des
-// PDF. À dpr JPEG_DPR, il faut 128 px de
+// Gabarit : JPEG_LOGO_W × JPEG_LOGO_H px de panneau (1280 de large ; le
+// diagramme en carré natif est plus large, le logo y paraît un peu plus
+// petit ; la courbe le réduit par JPEG_ECHELLE_COURBE avec son en-tête), au
+// même rapport 40/12 que l'en-tête des PDF. À dpr JPEG_DPR, il faut 128 px de
 // haut au PNG pour une pose sans agrandissement : l'avertissement lowRes de
 // l'import (_logoBuild) couvre ce seuil en plus de celui de l'impression.
 // L'image est rééchantillonnée à cette taille de pose physique AVANT la
 // teinte : une sauvegarde importée peut porter un PNG bien plus grand que ce
 // que l'import produit.
-// Définition physique de tous les JPEG : 2 px par px de panneau, quel que
-// soit l'écran. C'est le plancher historique des exports ; c'en est aussi le
-// plafond désormais, un iPhone à dpr 3 portant sinon la comparaison carrée à
-// 7680 × 7680 px, au-delà de ce qu'iOS accorde à un canvas. Instagram ramène
-// tout à 1080 px de large : 2560 suffisent largement.
-var JPEG_DPR       = 2;
 var JPEG_LOGO_H    = 64;                                                        // hauteur maxi, px de panneau
 var JPEG_LOGO_W    = Math.round(JPEG_LOGO_H * LOGO_PRINT_W / LOGO_PRINT_H);     // 213 : rapport 40/12 du PDF
 var JPEG_LOGO_FADE = 0.75;                                                      // part maxi du sol dans le ton clair
-var JPEG_MARQUE    = 'Spokeit.fr';                                              // repli sans atelier
 
 // Couleur CSS (hex ou rgba) composée sur `sous` → [r, g, b], via un canvas
 // 1×1 : le navigateur fait l'analyse, quelle que soit la notation de
@@ -11255,34 +11249,6 @@ function jpegAtelierLogo(src, pal) {
     img.onerror = function() { resolve(null); };
     img.src = src;
   });
-}
-
-// Ligne 2 du bandeau, colonne gauche : le logo centré sur yMid, sinon le
-// libellé (ctx.font, ctx.fillStyle et ctx.textBaseline = 'middle' déjà posés
-// par l'appelant). Renvoie la largeur occupée, pour borner la colonne droite.
-function jpegHeaderLeft2(ctx, x, yMid, logo, label) {
-  if (logo) {
-    ctx.save();
-    try { ctx.imageSmoothingQuality = 'high'; } catch (e) {}
-    ctx.drawImage(logo.cv, x, Math.round(yMid - logo.h / 2), logo.w, logo.h);
-    ctx.restore();
-    return logo.w;
-  }
-  ctx.textAlign = 'left';
-  ctx.fillText(label, x, yMid);
-  return ctx.measureText(label).width;
-}
-
-// Réduit la police de `size` à `minSize` (pas de 2) jusqu'à ce que `txt`
-// tienne dans `maxW`, puis tronque avec une ellipse si ça ne suffit pas.
-// Laisse ctx.font sur la taille retenue et renvoie le texte à dessiner. Sert
-// aux colonnes droites des en-têtes JPEG (nom de roue, tensiomètre, rayons) et
-// aux légendes, dont la longueur est libre.
-function jpegFitText(ctx, txt, weight, size, minSize, maxW) {
-  ctx.font = weight + size + 'px DM Sans, sans-serif';
-  while (size > minSize && ctx.measureText(txt).width > maxW) { size -= 2; ctx.font = weight + size + 'px DM Sans, sans-serif'; }
-  while (txt.length > 1 && ctx.measureText(txt).width > maxW) txt = txt.slice(0, -2).replace(/\s+$/, '') + '…';
-  return txt;
 }
 
 document.addEventListener('keydown', function(e) {
@@ -12231,9 +12197,8 @@ function fondActuel() {
 }
 // Les canvas ne résolvent pas var() : une chaîne 'rgba(var(--accent-rgb),…)'
 // passée à ctx.fillStyle serait peinte en noir. Les fonctions de dessin
-// interrogent donc le sol par ce prédicat, et basculent sur la palette claire
-// déjà écrite pour les exports (le paramètre whiteBg de
-// tmRenderRadarOffscreen).
+// interrogent donc le sol par ce prédicat, et basculent sur des couleurs
+// littérales claires.
 // Le prédicat lit --fond-clair, que le bloc CSS du sol pose lui-même, plutôt
 // qu'une liste tenue ici : la feuille reste la seule source de vérité sur ce
 // qu'est un sol clair, et un sol ajouté n'a rien à déclarer côté JS.
@@ -12402,117 +12367,6 @@ var FOND_JPEG = {
   papier:  { clair:1, bg:'#edeae2', blockFill:'#ffffff', label:'#221f1a',                legend:'#443f36',                stat:'#221f1a', muted:'rgba(100,93,81,0.9)',   accent:[25,108,121],  warm:[162,84,63]  },
   alu:     { clair:1, bg:'#f2f2f7', blockFill:'#ffffff', label:'#1c1c1e',                legend:'#3f4045',                stat:'#1c1c1e', muted:'rgba(95,95,102,0.9)',   accent:[11,102,195],  warm:[188,65,26]  }
 };
-// Retrait du panneau par rapport au bord du JPEG, en px de panneau (1280 de
-// large pour la comparaison et la courbe, 1980 pour le diagramme en carré
-// natif). Il s'ajoute au PAD intérieur ; dans le montage d'évolution, il
-// sépare aussi les deux panneaux de deux fois sa valeur.
-var JPEG_MARGE = 40;
-// Cadre carré : les trois JPEG sortent au format 1:1, le seul qui se publie
-// tel quel partout (feed Instagram, Facebook, LinkedIn, X, messageries)
-// sans recadrage. Le panneau est rendu comme avant, au pixel près, puis posé
-// au centre d'un canvas carré rempli du sol choisi : comme la marge est du
-// même sol, cadre et marge se fondent sans liseré. Le côté est la plus grande
-// des deux dimensions du panneau, jamais d'étirement. Un panneau déjà carré
-// est renvoyé tel quel.
-function jpegCarre(panel, bg) {
-  var w = panel.width, h = panel.height;
-  if (w === h) return panel;
-  var side = Math.max(w, h);
-  var out = document.createElement('canvas');
-  out.width = side; out.height = side;
-  var ctx = out.getContext('2d');
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, side, side);
-  ctx.drawImage(panel, Math.round((side - w) / 2), Math.round((side - h) / 2));
-  return out;
-}
-
-// ── Blocs de stats des JPEG (diagramme de tension, comparaison de snapshots) ──
-// Deux blocs côte à côte, NDS à gauche et DS à droite comme la légende, six
-// lignes chacun : Moyenne, Min, Max, Δ max, Écart-type, CV. Clé en DM Sans à
-// gauche, valeur en DM Mono alignée à droite ; le CV prend la couleur de son
-// côté au-dessus du seuil, comme à l'écran.
-//
-// Les métriques diffèrent par export parce que l'échelle finale diffère : le
-// diagramme seul entre dans son carré à 0,55 environ, le montage de
-// comparaison (deux panneaux de 1280 dans un carré de 2560) à 0,42. Les
-// blocs de la comparaison sont donc un cran plus gros pour rapprocher les
-// tailles de texte sur un post de 1080 px (18,5 px contre 16 px).
-var JPEG_BLOC = {
-  tension: { row: 34, label: 36, lineH: 54, labelH: 50, padY: 28, padX: 48, gap: 24 },
-  compare: { row: 38, label: 40, lineH: 58, labelH: 56, padY: 28, padX: 28, gap: 24 }
-};
-
-// Hauteur d'un bloc : la dernière ligne occupe la police seule et non
-// m.lineH, pour que la marge basse égale la marge haute.
-function jpegBlocH(b, m) {
-  return m.padY * 2 + m.labelH + (b.entries.length - 1) * m.lineH + m.row + 4;
-}
-
-// Lignes lues à l'écran → lignes du JPEG : « Min → Max  a → b kgf » éclaté en
-// deux lignes « Min  a kgf » et « Max  b kgf » (la paire ne tient pas face à sa
-// clé dans un bloc étroit), et la ligne CV, sans clé à l'écran, reçoit « CV »,
-// valable dans les deux langues.
-function jpegBlocLignes(entries) {
-  var out = [];
-  entries.forEach(function(e) {
-    var ks = e.key.split('→'), vs = e.val.split('→');
-    if (ks.length === 2 && vs.length === 2) {
-      var v0 = vs[0].trim(), v1 = vs[1].trim();
-      var unit = (v1.match(/[^\d.,\s]+\s*$/) || [''])[0].trim();
-      out.push({ key: ks[0].trim(), val: unit && !/[^\d.,]$/.test(v0) ? v0 + ' ' + unit : v0 });
-      out.push({ key: ks[1].trim(), val: v1 });
-    } else out.push({ key: e.key || 'CV', val: e.val, hi: !!e.hi });
-  });
-  return out;
-}
-
-// Dessine une rangée de blocs côte à côte entre x0 et x1, à partir de y.
-// blocks : [{ label, isFo, entries }], ndsFo : true si la rangée fo est le
-// côté NDS (elle passe alors à gauche). Renvoie la hauteur de la rangée.
-function jpegBlocsRangee(ctx, blocks, x0, x1, y, m, pal, ndsFo) {
-  if (!blocks.length) return 0;
-  var ordre = blocks.slice().sort(function(a, b) {
-    return ((b.isFo === ndsFo) ? 1 : 0) - ((a.isFo === ndsFo) ? 1 : 0);
-  });
-  var n  = ordre.length;
-  var bw = Math.floor((x1 - x0 - m.gap * (n - 1)) / n);
-  var rh = Math.max.apply(null, ordre.map(function(b) { return jpegBlocH(b, m); }));
-  ordre.forEach(function(block, ci) {
-    var bx   = x0 + ci * (bw + m.gap);
-    var warm = block.isFo;
-    ctx.strokeStyle = warm ? pal.blockLineFo : pal.blockLineFa;
-    ctx.lineWidth   = 1.5;
-    roundRect(ctx, bx, y, bw, rh, 10);
-    if (pal.blockFill) { ctx.fillStyle = pal.blockFill; ctx.fill(); }
-    ctx.stroke();
-
-    ctx.font         = '600 ' + m.label + 'px DM Sans, sans-serif';
-    ctx.fillStyle    = warm ? pal.fo : pal.fa;
-    ctx.textAlign    = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText(block.label.toUpperCase(), bx + m.padX, y + m.padY);
-
-    block.entries.forEach(function(row, ri) {
-      var ry = y + m.padY + m.labelH + ri * m.lineH;
-      ctx.font      = '400 ' + m.row + 'px DM Sans, sans-serif';
-      ctx.fillStyle = pal.stat;
-      ctx.textAlign = 'left';
-      ctx.fillText(row.key, bx + m.padX, ry);
-      // Valeur : réduite par pas de 2 px si elle mordait sur la clé. Avec les
-      // métriques de JPEG_BLOC, ne se déclenche qu'en comparaison, en anglais
-      // (« Std deviation »), pour un écart-type à deux chiffres : un seul pas.
-      var keyW = row.key ? ctx.measureText(row.key).width + 24 : 0;
-      var fv = m.row;
-      ctx.font = '400 ' + fv + 'px DM Mono, monospace';
-      while (fv > 20 && ctx.measureText(row.val).width > bw - m.padX * 2 - keyW) { fv -= 2; ctx.font = '400 ' + fv + 'px DM Mono, monospace'; }
-      ctx.fillStyle = row.hi ? (warm ? pal.fo : pal.fa) : pal.stat;
-      ctx.textAlign = 'right';
-      ctx.fillText(row.val, bx + bw - m.padX, ry);
-    });
-  });
-  return rh;
-}
 // Palette résolue, rôle par rôle, pour les deux rendus off-screen et les deux
 // exports. Les opacités sont celles du radar à l'écran (tmDrawRadar), famille
 // par famille : le JPEG et l'écran restent donc d'accord.
@@ -12549,26 +12403,230 @@ function fondPaletteExport(f) {
     fo: rgba(p.warm, 1), fa: rgba(p.accent, 1)
   };
 }
-// Palette historique des rendus off-screen, pilotée par le seul booléen
-// whiteBg : c'est celle que les PDF (rapport, diagnostic, évolution) passent
-// encore, et ils doivent rendre au pixel près comme avant. Les deux JPEG
-// passent désormais une palette de sol à la place.
-// Le second paramètre distingue les gris sombres du radar coloré (évolution)
-// de ceux du radar tension : ils n'ont jamais été les mêmes.
-function _exportPalLegacy(whiteBg, colored) {
-  return {
-    clair: !!whiteBg,
-    ring:  whiteBg ? 'rgba(0,0,0,0.12)'      : (colored ? 'rgba(80,100,130,0.33)' : 'rgba(255,255,255,0.15)'),
-    grad:  whiteBg ? 'rgba(60,80,100,0.75)'  : (colored ? 'rgba(100,120,150,0.8)' : 'rgba(150,170,190,0.7)'),
-    hub:   whiteBg ? 'rgba(100,120,140,0.4)' : 'rgba(150,170,190,0.35)',
-    axisFo: whiteBg ? 'rgba(232,146,124,0.5)' : (colored ? 'rgba(232,146,124,0.25)' : 'rgba(232,146,124,0.22)'),
-    axisFa: whiteBg ? 'rgba(126,200,227,0.5)' : (colored ? 'rgba(126,200,227,0.25)' : 'rgba(126,200,227,0.22)'),
-    numFo:  whiteBg ? 'rgba(190,85,55,1)'     : (colored ? 'rgba(232,146,124,0.8)'  : 'rgba(232,146,124,0.75)'),
-    numFa:  whiteBg ? 'rgba(40,140,185,1)'    : (colored ? 'rgba(126,200,227,0.7)'  : 'rgba(126,200,227,0.65)'),
-    strokeFo: 'rgba(232,146,124,0.8)', strokeFa: 'rgba(126,200,227,0.8)',
-    fillFo: whiteBg ? 'rgba(232,146,124,0.18)' : 'rgba(232,146,124,0.06)',
-    fillFa: whiteBg ? 'rgba(126,200,227,0.18)' : 'rgba(126,200,227,0.06)'
-  };
+
+// ══ Gabarit commun des trois JPEG ════════════════════════════════════════════
+// Diagramme de tension (tmScreenshot), courbes de conversion
+// (tmConvScreenshot), comparaison de snapshots (snapCompareJPEG). Un panneau
+// de 1280 px de large (le diagramme, en carré natif, prend la largeur de sa
+// hauteur), rendu à JPEG_DPR (plafonné par JPEG_COTE_MAX pour la
+// comparaison), en-tête sur deux lignes avec le logo d'atelier,
+// légende à pastilles, blocs de stats, sortie carrée, partage ou
+// téléchargement. Les carrés diffèrent (1280, 1980 et 2560 px de panneau) :
+// à police égale, l'en-tête de la courbe sortirait à 35 px sur un post de
+// 1080 contre 23 pour le diagramme. La courbe met donc son en-tête, sa
+// légende et sa ligne d'écarts à l'échelle du diagramme (JPEG_ECHELLE_COURBE,
+// paramètre k des helpers) ; la comparaison, à 18 px, garde sa densité.
+
+// Définition physique : 2 px par px de panneau, quel que soit l'écran. C'est
+// le plancher historique des exports ; c'en est aussi le plafond, un iPhone
+// à dpr 3 portant sinon les carrés bien au-delà de ce qu'iOS accorde à un
+// canvas (16,7 Mpx, soit 4096 × 4096). Le diagramme sort à 3960 px
+// (15,7 Mpx) ; la comparaison, dont le montage fait 2560 px de panneau,
+// plafonne son dpr à JPEG_COTE_MAX / côté, soit 1,6. Instagram ramène tout à
+// 1080 px : c'est largement assez.
+var JPEG_DPR      = 2;
+var JPEG_COTE_MAX = 4096;          // côté physique maxi d'un carré exporté (limite iOS)
+var JPEG_MARQUE   = 'Spokeit.fr';  // repli de la ligne 2 sans atelier
+// Retrait du panneau par rapport au bord du JPEG, en px de panneau. Il
+// s'ajoute au PAD intérieur ; dans le montage d'évolution, il sépare aussi
+// les deux panneaux de deux fois sa valeur.
+var JPEG_MARGE    = 40;
+// Ligne 2 de l'en-tête : part de la ligne laissée à la colonne gauche (logo
+// ou nom d'atelier, jusqu'à 50 caractères), le reste au nom de roue ou de
+// rayon ; sous JPEG_ENTETE_MIN_D, la colonne droite n'est pas dessinée, un
+// « … » seul n'apportant rien.
+var JPEG_ENTETE_PART_G = 0.55;
+var JPEG_ENTETE_MIN_D  = 80;
+// Facteur d'échelle du texte de la courbe : rapport des côtés des deux carrés
+// (1280 / 1980), pour une taille perçue égale à celle du diagramme.
+var JPEG_ECHELLE_COURBE = 1280 / 1980;
+
+// Réduit la police de `size` à `minSize` (pas de 2) jusqu'à ce que `txt`
+// tienne dans `maxW`, puis tronque avec une ellipse si ça ne suffit pas.
+// Laisse ctx.font sur la taille retenue et renvoie le texte à dessiner. Sert
+// aux deux colonnes des en-têtes (nom d'atelier, nom de roue, tensiomètre,
+// rayons) et aux légendes, dont la longueur est libre.
+function jpegFitText(ctx, txt, weight, size, minSize, maxW) {
+  ctx.font = weight + size + 'px DM Sans, sans-serif';
+  while (size - 2 >= minSize && ctx.measureText(txt).width > maxW) { size -= 2; ctx.font = weight + size + 'px DM Sans, sans-serif'; }
+  while (txt.length > 1 && ctx.measureText(txt).width > maxW) txt = txt.slice(0, -2).replace(/\s+$/, '') + '\u2026';
+  return txt;
+}
+
+// Colonne gauche d'une ligne d'en-tête : le logo centré sur yMid s'il est
+// fourni, sinon le libellé en 600 42px (ctx.fillStyle et ctx.textBaseline =
+// 'middle' posés par l'appelant), réduit puis tronqué pour tenir dans maxW.
+// k : échelle du texte et du logo (1 par défaut, JPEG_ECHELLE_COURBE pour la
+// courbe). Renvoie la largeur occupée, pour borner la colonne droite. Laisse
+// ctx.font sur la taille retenue : l'appelant repose la sienne avant d'écrire
+// à droite.
+function jpegEnteteGauche(ctx, x, yMid, logo, label, maxW, k) {
+  k = k || 1;
+  if (logo) {
+    var lw = Math.round(logo.w * k), lh = Math.round(logo.h * k);
+    ctx.save();
+    try { ctx.imageSmoothingQuality = 'high'; } catch (e) {}
+    ctx.drawImage(logo.cv, x, Math.round(yMid - lh / 2), lw, lh);
+    ctx.restore();
+    return lw;
+  }
+  label = jpegFitText(ctx, label, '600 ', Math.round(42 * k), Math.round(28 * k), maxW);
+  ctx.textAlign = 'left';
+  ctx.fillText(label, x, yMid);
+  return ctx.measureText(label).width;
+}
+
+// Légende à pastilles : items = [[texte, couleur, xMilieu]], chaque item
+// centré sur son xMilieu ; au-delà de maxItemW la police se réduit puis le
+// texte est tronqué (noms de rayons perso jusqu'à 50 caractères). k : échelle
+// (1 par défaut).
+function jpegLegende(ctx, items, y, maxItemW, pal, k) {
+  k = k || 1;
+  var R = 10 * k, GAP = 15 * k;
+  ctx.textBaseline = 'middle';
+  items.forEach(function(it) {
+    var txt = jpegFitText(ctx, it[0], '500 ', Math.round(32 * k), Math.round(22 * k), maxItemW - (R * 2 + GAP));
+    var w   = R * 2 + GAP + ctx.measureText(txt).width;
+    var x   = it[2] - w / 2;
+    ctx.fillStyle = it[1];
+    ctx.beginPath(); ctx.arc(x + R, y, R, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = pal.legend; ctx.textAlign = 'left';
+    ctx.fillText(txt, x + R * 2 + GAP, y);
+  });
+}
+
+// ── Blocs de stats (diagramme de tension, comparaison de snapshots) ──────────
+// Deux blocs côte à côte, NDS à gauche et DS à droite comme la légende, six
+// lignes chacun : Moyenne, Min, Max, Δ max, Écart-type, CV. Clé en DM Sans à
+// gauche, valeur en DM Mono alignée à droite ; le CV prend la couleur de son
+// côté au-dessus du seuil, comme à l'écran.
+//
+// Les métriques diffèrent par export parce que l'échelle finale diffère : le
+// diagramme seul entre dans son carré à 0,55 environ, le montage de
+// comparaison (deux panneaux de 1280 dans un carré de 2560) à 0,42. Les
+// blocs de la comparaison sont donc un cran plus gros pour rapprocher les
+// tailles de texte sur un post de 1080 px (18,5 px contre 16 px).
+var JPEG_BLOC = {
+  tension: { row: 34, label: 36, lineH: 54, labelH: 50, padY: 28, padX: 48, gap: 24 },
+  compare: { row: 38, label: 40, lineH: 58, labelH: 56, padY: 28, padX: 28, gap: 24 }
+};
+
+// Hauteur d'un bloc : la dernière ligne occupe la police seule et non
+// m.lineH, pour que la marge basse égale la marge haute.
+function jpegBlocH(b, m) {
+  return m.padY * 2 + m.labelH + (b.entries.length - 1) * m.lineH + m.row + 4;
+}
+
+// Hauteur d'une rangée de blocs (le plus haut des deux)
+function jpegBlocsHauteur(blocks, m) {
+  return blocks.length ? Math.max.apply(null, blocks.map(function(b) { return jpegBlocH(b, m); })) : 0;
+}
+
+// Lignes lues à l'écran → lignes du JPEG : « Min → Max  a → b kgf » éclaté en
+// deux lignes « Min  a kgf » et « Max  b kgf » (la paire ne tient pas face à sa
+// clé dans un bloc étroit), et la ligne CV, sans clé à l'écran, reçoit « CV »,
+// valable dans les deux langues.
+function jpegBlocLignes(entries) {
+  var out = [];
+  entries.forEach(function(e) {
+    var ks = e.key.split('→'), vs = e.val.split('→');
+    if (ks.length === 2 && vs.length === 2) {
+      var v0 = vs[0].trim(), v1 = vs[1].trim();
+      var unit = (v1.match(/[^\d.,\s]+\s*$/) || [''])[0].trim();
+      out.push({ key: ks[0].trim(), val: unit && !/[^\d.,]$/.test(v0) ? v0 + ' ' + unit : v0 });
+      out.push({ key: ks[1].trim(), val: v1 });
+    } else out.push({ key: e.key || 'CV', val: e.val, hi: !!e.hi });
+  });
+  return out;
+}
+
+// Dessine une rangée de blocs côte à côte entre x0 et x1, à partir de y.
+// blocks : [{ label, isFo, entries }], ndsFo : true si la rangée fo est le
+// côté NDS. Deux colonnes fixes, NDS à gauche et DS à droite comme la
+// légende : un côté seul (lectures d'une seule rangée) garde sa colonne et
+// sa largeur, il ne s'étale pas sur toute la ligne.
+function jpegBlocsRangee(ctx, blocks, x0, x1, y, m, pal, ndsFo) {
+  if (!blocks.length) return 0;
+  var bw = Math.floor((x1 - x0 - m.gap) / 2);
+  var rh = jpegBlocsHauteur(blocks, m);
+  blocks.forEach(function(block) {
+    var ci   = block.isFo === ndsFo ? 0 : 1;
+    var bx   = x0 + ci * (bw + m.gap);
+    var warm = block.isFo;
+    ctx.strokeStyle = warm ? pal.blockLineFo : pal.blockLineFa;
+    ctx.lineWidth   = 1.5;
+    roundRect(ctx, bx, y, bw, rh, 10);
+    if (pal.blockFill) { ctx.fillStyle = pal.blockFill; ctx.fill(); }
+    ctx.stroke();
+
+    ctx.font         = '600 ' + m.label + 'px DM Sans, sans-serif';
+    ctx.fillStyle    = warm ? pal.fo : pal.fa;
+    ctx.textAlign    = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(block.label.toUpperCase(), bx + m.padX, y + m.padY);
+
+    block.entries.forEach(function(row, ri) {
+      var ry = y + m.padY + m.labelH + ri * m.lineH;
+      ctx.font      = '400 ' + m.row + 'px DM Sans, sans-serif';
+      ctx.fillStyle = pal.stat;
+      ctx.textAlign = 'left';
+      ctx.fillText(row.key, bx + m.padX, ry);
+      // Valeur : filet de sécurité, réduite par pas de 2 px si elle mordait
+      // sur la clé. Avec les métriques de JPEG_BLOC et les libellés des deux
+      // langues, il faudrait une valeur à trois chiffres avant la virgule.
+      var keyW = row.key ? ctx.measureText(row.key).width + 24 : 0;
+      var fv = m.row;
+      ctx.font = '400 ' + fv + 'px DM Mono, monospace';
+      while (fv > 20 && ctx.measureText(row.val).width > bw - m.padX * 2 - keyW) { fv -= 2; ctx.font = '400 ' + fv + 'px DM Mono, monospace'; }
+      ctx.fillStyle = row.hi ? (warm ? pal.fo : pal.fa) : pal.stat;
+      ctx.textAlign = 'right';
+      ctx.fillText(row.val, bx + bw - m.padX, ry);
+    });
+  });
+}
+
+// ── Sortie ───────────────────────────────────────────────────────────────────
+// Les trois JPEG sortent au format 1:1, le seul qui se publie tel quel
+// partout (feed Instagram, Facebook, LinkedIn, X, messageries) sans
+// recadrage. Chaque export alloue son carré lui-même : le diagramme est un
+// carré natif (sa largeur est sa hauteur), la courbe et la comparaison
+// allouent un carré rempli du sol et y posent l'en-tête en haut, le reste
+// centré. Comme la marge est du même sol, cadre et contenu se fondent sans
+// liseré.
+
+// Nom de fichier : spokeit-<type>-<slug>, pour les JPEG comme pour les PDF
+function jpegSlug(v) {
+  return (v || '').replace(/[^a-z0-9]/gi, '-').toLowerCase().replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+// Partage natif sur mobile (fiche de partage iOS / Android), sinon
+// téléchargement, puis flash du bouton d'origine. Le try englobe fetch et
+// new File : sous pression mémoire WebContent (iPad), l'un ou l'autre peut
+// jeter, et sans garde le repli téléchargement ne s'exécutait pas. Une
+// annulation volontaire de la fiche (AbortError) n'a ni repli ni flash.
+async function jpegPartager(jpeg, filename, title, btnId) {
+  var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  var shared   = false;
+  if (isMobile && navigator.canShare) {
+    try {
+      var blob = await (await fetch(jpeg)).blob();
+      var file = new File([blob], filename, { type: 'image/jpeg' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: title });
+        shared = true;
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+    }
+  }
+  if (!shared) {
+    var a = document.createElement('a');
+    a.download = filename;
+    a.href     = jpeg;
+    a.click();
+  }
+  var btn = document.getElementById(btnId);
+  if (btn) { btn.classList.add('flash'); setTimeout(function() { btn.classList.remove('flash'); }, 800); }
 }
 
 // ── Curseur de sol ──────────────────────────────────────────────────────────
@@ -16337,13 +16395,19 @@ function _tmConvCurvePalette(clair, accRgb, warmRgb) {
 
 // Cœur du tracé, sur un contexte déjà mis à l'échelle : W × H en pixels
 // logiques, k = facteur d'épaisseur des traits (1 à l'écran, ~3 dans le JPEG
-// dont le panneau fait 1280 de large) ; marges et police suivent W.
-function _tmConvCurvePaint(ctx, W, H, pts, pts2, P, k) {
+// dont le panneau fait 1280 de large) ; la police des axes suit W, les
+// marges suivent k. fk : échelle de la police des axes et de leurs marges
+// (1 à l'écran ; JPEG_ECHELLE_COURBE dans le JPEG, où les axes suivent
+// l'en-tête réduit).
+function _tmConvCurvePaint(ctx, W, H, pts, pts2, P, k, fk) {
   // Seconde charte (comparaison) : optionnelle, tracée derrière la première
   // sur des axes communs. Ignorée si elle n'a pas deux points valides.
   if (pts2 && pts2.filter(p => p[1] !== null).length < 2) pts2 = null;
 
-  const pad = { t:24 * k, r:24 * k, b:48 * k, l:56 * k };
+  // km : échelle des marges et décalages liés au texte des axes ; les traits
+  // et les points gardent k.
+  const km  = k * (fk || 1);
+  const pad = { t:24 * km, r:24 * km, b:48 * km, l:56 * km };
   const gW  = W - pad.l - pad.r;
   const gH  = H - pad.t - pad.b;
 
@@ -16356,7 +16420,7 @@ function _tmConvCurvePaint(ctx, W, H, pts, pts2, P, k) {
 
   const xPos = r => pad.l + (r - minR) / (maxR - minR) * gW;
   const yPos = kg => pad.t + gH - kg / maxK * gH;
-  const fontSize = Math.round(W * 0.031);
+  const fontSize = Math.round(W * 0.031 * (fk || 1));
 
   // Grille horizontale + labels Y
   ctx.strokeStyle = P.grid;
@@ -16370,12 +16434,12 @@ function _tmConvCurvePaint(ctx, W, H, pts, pts2, P, k) {
     ctx.moveTo(pad.l, yPos(kg));
     ctx.lineTo(pad.l + gW, yPos(kg));
     ctx.stroke();
-    ctx.fillText(kg, pad.l - 10 * k, yPos(kg));
+    ctx.fillText(kg, pad.l - 10 * km, yPos(kg));
   }
 
   // Label Y vertical
   ctx.save();
-  ctx.translate(12 * k, pad.t + gH / 2);
+  ctx.translate(12 * km, pad.t + gH / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.fillStyle    = P.axis;
   ctx.font         = fontSize + "px 'DM Sans',sans-serif";
@@ -16400,11 +16464,11 @@ function _tmConvCurvePaint(ctx, W, H, pts, pts2, P, k) {
       // Le dernier tick efface le précédent. À l'écran, le canvas est
       // transparent sur la carte : clearRect suffit. Dans le JPEG, un trou
       // transparent s'encode en NOIR : on repeint le fond du sol (P.bg).
-      const ex = lastTickX - minSpacing / 2, ey = pad.t + gH + 6 * k, ew = minSpacing, eh = fontSize + 4 * k;
+      const ex = lastTickX - minSpacing / 2, ey = pad.t + gH + 6 * km, ew = minSpacing, eh = fontSize + 4 * km;
       if (P.bg) { ctx.fillStyle = P.bg; ctx.fillRect(ex, ey, ew, eh); } else ctx.clearRect(ex, ey, ew, eh);
     }
     ctx.fillStyle = P.lab;
-    ctx.fillText(rv, tx, pad.t + gH + 10 * k);
+    ctx.fillText(rv, tx, pad.t + gH + 10 * km);
     lastTickX = tx;
   }
 
@@ -16413,7 +16477,7 @@ function _tmConvCurvePaint(ctx, W, H, pts, pts2, P, k) {
   ctx.font         = fontSize + "px 'DM Sans',sans-serif";
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'bottom';
-  ctx.fillText(t('tmConvReading'), pad.l + gW / 2, H - 2 * k);
+  ctx.fillText(t('tmConvReading'), pad.l + gW / 2, H - 2 * km);
 
   // Une courbe = lavis + trait + points. La seconde (comparaison) passe
   // d'abord, la référence reste au premier plan.
@@ -16513,29 +16577,40 @@ async function tmConvScreenshot(fond) {
   const cardX   = M, cardY = M;
   const cardW   = W - M * 2;
   const innerW  = cardW - PAD * 2;
-  const headerH = 150;
+  // Texte à l'échelle du diagramme (voir JPEG_ECHELLE_COURBE) : en-tête,
+  // légende et ligne d'écarts, avec leurs hauteurs de section.
+  const K       = JPEG_ECHELLE_COURBE;
+  const F       = px => Math.round(px * K);
+  const headerH = F(150);
   const curveW  = innerW;
   const curveH  = Math.round(curveW * 0.65);
-  const legendH = cmp ? 128 : 60;
+  const legendH = cmp ? F(128) : F(60);
   const st      = cmp ? _tmConvCmpStats(pts, cmp.pts) : null;
   const refName = cmp ? cmp.refName : _tmConvSpokeName;
   const rows    = st ? [
     [t('tmCmpDeltaMean'), _tmConvFmtKgf(st.mean)],
     [t('tmCmpDeltaMax'),  _tmConvFmtKgf(st.max) + ' ' + t('tmCmpAt') + '\u00a0' + tmDisplayValue(st.maxAt)]
   ] : [];
-  const STATS_LINE = 56;                       // la ligne des Δ, centrée sous la légende
+  const STATS_LINE = F(56);                    // la ligne des Δ, centrée sous la légende
   const statsH  = rows.length ? STATS_LINE : 0;
-  const cardH   = headerH + curveH + legendH + statsH + PAD;
+  const cardH   = headerH + 10 + curveH + legendH + statsH + PAD;
   const totalH  = cardH + M * 2;
 
+  // Carré alloué d'emblée (le panneau est moins haut que large). L'en-tête
+  // se pose en haut du carré, dans sa bande de 150·K px sous la marge ; le
+  // panneau, lui, est centré verticalement comme avant (le tracé, la légende
+  // et les écarts ne bougent pas), l'air gagné est entre l'en-tête et le
+  // tracé. La marge M et le PAD ne sont pas mis à l'échelle K : ils sont
+  // communs aux trois exports.
+  const cote = Math.max(W, totalH);
+  const offY = Math.round((cote - totalH) / 2);
   const dpr  = JPEG_DPR;
   const off  = document.createElement('canvas');
-  off.width  = Math.round(W * dpr);
-  off.height = Math.round(totalH * dpr);
+  off.width  = off.height = Math.round(cote * dpr);
   const ctx  = off.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = pal.bg;
-  ctx.fillRect(0, 0, W, totalH);
+  ctx.fillRect(0, 0, cote, cote);
 
   // En-tête : titre + atelier à gauche, tensiomètre + rayon(s) à droite
   const atelierInfo   = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
@@ -16543,21 +16618,21 @@ async function tmConvScreenshot(fond) {
   const logo          = await jpegAtelierLogo(atelierInfo.logo, pal);
   const hLine1 = cardY + headerH * 0.30;
   const hLine2 = cardY + headerH * 0.72;
-  drawCurvesIcon(ctx, cardX + PAD + 12, hLine1, 24, pal.icon);
+  drawCurvesIcon(ctx, cardX + PAD + F(12), hLine1, F(24), pal.icon);
   ctx.textBaseline = 'middle';
-  // Une ligne = colonne gauche + colonne droite. La gauche garde sa taille ;
-  // la droite (tensiomètre, rayons : longueur libre) se réduit jusqu'à tenir
+  // Une ligne = colonne gauche + colonne droite. La gauche est bornée à
+  // JPEG_ENTETE_PART_G de la ligne (réduite puis tronquée au-delà) ; la
+  // droite (tensiomètre, rayons : longueur libre) se réduit jusqu'à tenir
   // dans la place restante, sans jamais chevaucher la gauche.
-  const leftX = cardX + PAD + 34, rightX = cardX + cardW - PAD, GAP = 40;
-  const fitText = (txt, weight, size, minSize, maxW) => jpegFitText(ctx, txt, weight, size, minSize, maxW);
+  const leftX = cardX + PAD + F(34), rightX = cardX + cardW - PAD, GAP = F(40);
   // `leftLogo` (ligne 2) : le logo d'atelier remplace le texte de gauche et
   // c'est sa largeur qui borne la colonne droite.
   function headerLine(y, leftTxt, leftColor, rightTxt, rightColor, leftLogo) {
-    ctx.font = '600 42px DM Sans, sans-serif';
     ctx.fillStyle = leftColor;
-    const leftW = jpegHeaderLeft2(ctx, leftX, y, leftLogo, leftTxt);
+    const leftW = jpegEnteteGauche(ctx, leftX, y, leftLogo, leftTxt, (rightX - leftX) * JPEG_ENTETE_PART_G, K);
     const avail = rightX - (leftX + leftW + GAP);
-    rightTxt = fitText(rightTxt, '600 ', 42, 22, avail);
+    if (avail < F(JPEG_ENTETE_MIN_D)) return;   // plus de place utile à droite
+    rightTxt = jpegFitText(ctx, rightTxt, '600 ', F(42), F(22), avail);
     ctx.textAlign = 'right'; ctx.fillStyle = rightColor;
     ctx.fillText(rightTxt, rightX, y);
   }
@@ -16567,7 +16642,7 @@ async function tmConvScreenshot(fond) {
   headerLine(hLine2, workshopLabel, pal.label, cmp ? (refName + '  ·  ' + cmp.name) : refName, pal.label, logo);
 
   // Courbe, dans la palette du sol choisi (accents de FOND_JPEG)
-  const curveX = cardX + PAD, curveY = cardY + headerH + 10;
+  const curveX = cardX + PAD, curveY = offY + cardY + headerH + 10;
   const P = _tmConvCurvePalette(pal.clair, fj.accent.join(','), fj.warm.join(','));
   P.bg = pal.bg; // fond opaque pour l'anti-collision des ticks (cf. _tmConvCurvePaint)
   // Sol neutre : pas de lavis sous les courbes, traits et points seuls,
@@ -16575,37 +16650,24 @@ async function tmConvScreenshot(fond) {
   if (fj.neutre) P.fill0 = P.fill1 = P.fill0b = P.fill1b = 'rgba(0,0,0,0)';
   ctx.save();
   ctx.translate(curveX, curveY);
-  _tmConvCurvePaint(ctx, curveW, curveH, pts, cmp ? cmp.pts : null, P, curveW / 380);
+  _tmConvCurvePaint(ctx, curveW, curveH, pts, cmp ? cmp.pts : null, P, curveW / 380, K);
   ctx.restore();
 
-  // Légende (comparaison seulement) : pastille + nom, à quart et trois quarts
+  // Légende (comparaison seulement) : pastille + nom, au quart et aux trois
+  // quarts ; chaque item dispose d'une demi-largeur.
   if (cmp) {
-    const legY  = curveY + curveH + legendH / 2;
-    const DOT_R = 10;
-    ctx.textBaseline = 'middle';
-    ctx.font = '500 32px DM Sans, sans-serif';
-    // Chaque item dispose d'une demi-largeur : au-delà, la police se réduit
-    // puis le nom est tronqué (noms perso jusqu'à 50 caractères).
-    const maxItemW = cardW / 2 - 80;
-    const items = [[refName, pal.fa, cardX + cardW / 4], [cmp.name, pal.fo, cardX + cardW * 3 / 4]];
-    items.forEach(([name0, color, mid]) => {
-      const name = fitText(name0, '500 ', 32, 22, maxItemW - (DOT_R * 2 + 15));
-      const w = DOT_R * 2 + 15 + ctx.measureText(name).width;
-      const x = mid - w / 2;
-      ctx.fillStyle = color;
-      ctx.beginPath(); ctx.arc(x + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = pal.legend; ctx.textAlign = 'left';
-      ctx.fillText(name, x + DOT_R * 2 + 15, legY);
-    });
+    jpegLegende(ctx, [[refName, pal.fa, cardX + cardW / 4], [cmp.name, pal.fo, cardX + cardW * 3 / 4]],
+                curveY + curveH + legendH / 2, cardW / 2 - 80, pal, K);
   }
 
   // Écarts : une seule ligne centrée sous la légende, sans cadre ni titre.
   // Δ moy puis Δ max, libellé en Sans, valeur en Mono, encre des stats.
   if (rows.length) {
-    const GAPI = 24, GAPB = 90;
+    const GAPI = F(24), GAPB = F(90);
+    const fS = '400 ' + F(36) + 'px DM Sans, sans-serif', fM = '400 ' + F(36) + 'px DM Mono, monospace';
     const parts = rows.map(([key, val]) => {
-      ctx.font = '400 36px DM Sans, sans-serif';  const kw = ctx.measureText(key).width;
-      ctx.font = '400 36px DM Mono, monospace';   const vw = ctx.measureText(val).width;
+      ctx.font = fS;  const kw = ctx.measureText(key).width;
+      ctx.font = fM;  const vw = ctx.measureText(val).width;
       return { key, val, kw, vw, w: kw + GAPI + vw };
     });
     const total = parts.reduce((a, p) => a + p.w, 0) + GAPB * (parts.length - 1);
@@ -16613,38 +16675,16 @@ async function tmConvScreenshot(fond) {
     const y = curveY + curveH + legendH + STATS_LINE / 2;
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = pal.stat;
     parts.forEach(p => {
-      ctx.font = '400 36px DM Sans, sans-serif';  ctx.fillText(p.key, x, y);
-      ctx.font = '400 36px DM Mono, monospace';   ctx.fillText(p.val, x + p.kw + GAPI, y);
+      ctx.font = fS;  ctx.fillText(p.key, x, y);
+      ctx.font = fM;  ctx.fillText(p.val, x + p.kw + GAPI, y);
       x += p.w + GAPB;
     });
   }
 
-  // Export JPEG : share natif sur mobile, téléchargement sur desktop
-  const slug = v => (v || '').replace(/[^a-z0-9]/gi, '-').toLowerCase().replace(/-+/g, '-').replace(/^-|-$/g, '');
-  const jpeg     = jpegCarre(off, pal.bg).toDataURL('image/jpeg', 0.96);
-  const filename = 'spokeit-conversion-' + (slug(refName) || 'chart') + (cmp ? '-vs-' + slug(cmp.name) : '') + '.jpg';
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  let shared     = false;
-  if (isMobile && navigator.canShare) {
-    try {
-      const blob = await (await fetch(jpeg)).blob();
-      const file = new File([blob], filename, { type: 'image/jpeg' });
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: jpegTitle });
-        shared = true;
-      }
-    } catch (err) {
-      if (err.name === 'AbortError') return;
-    }
-  }
-  if (!shared) {
-    const a = document.createElement('a');
-    a.download = filename;
-    a.href     = jpeg;
-    a.click();
-  }
-  const btn = $id('tm-conv-snap-btn');
-  if (btn) { btn.classList.add('flash'); setTimeout(() => btn.classList.remove('flash'), 800); }
+  // Sortie (canvas déjà carré)
+  const jpeg     = off.toDataURL('image/jpeg', 0.96);
+  const filename = 'spokeit-conversion-' + (jpegSlug(refName) || 'chart') + (cmp ? '-vs-' + jpegSlug(cmp.name) : '') + '.jpg';
+  await jpegPartager(jpeg, filename, jpegTitle, 'tm-conv-snap-btn');
 }
 
 // ── Fermer la modale ────────────────────────────────────────────────────────
@@ -19321,7 +19361,7 @@ async function tmExportPdfWithOpts(opts) {
       fo: tmData.fo.slice(0, perSide).map(v => toKgf(v, 'fo')),
       fa: tmData.fa.slice(0, perSide).map(v => toKgf(v, 'fa'))
     };
-    const radarOff = tmRenderRadarOffscreen(440, 440, true, tmHighlightOn ? tmOutliers : null, 2, pdfARadarPal());
+    const radarOff = tmRenderRadarOffscreen(440, 440, tmHighlightOn ? tmOutliers : null, 2, pdfARadarPal());
     const radarColW = 79.4, colGap = 8.5, rs = radarColW + 4;
     const showValues = opts.values;
     // Hauteur de ligne calée sur le diagramme (cf. pdfATensionRowH).
@@ -19357,9 +19397,8 @@ async function tmExportPdfWithOpts(opts) {
   pdfAFooter(doc);
 
   // ── Export ────────────────────────────────────────────────────────────────
-  const filename = wheelName
-    ? 'spoke-it-' + wheelName.replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.pdf'
-    : 'spoke-it-' + (wtype === 'arriere' ? 'rear' : 'front') + '.pdf';
+  // Même préfixe et même slug que les JPEG (jpegSlug)
+  const filename = 'spokeit-' + (jpegSlug(wheelName) || (wtype === 'arriere' ? 'rear' : 'front')) + '.pdf';
   doc.save(filename);
   tmBuildTable();
 
@@ -19394,12 +19433,11 @@ function radarDrawPoly(ctx, g, vals, angleOff, stroke, fill) {
   });
 }
 
-// outliers / scale : optionnels, export PDF uniquement (halos d'outliers comme
-// à l'écran ; échelle de rendu fixe au lieu du dpr de l'appareil).
-// pal : palette de sol (fondPaletteExport), passée par le screenshot JPEG.
-// Absente, whiteBg choisit la palette historique : c'est le chemin des PDF.
-function tmRenderRadarOffscreen(w, h, whiteBg, outliers, scale, pal) {
-  pal = pal || _exportPalLegacy(whiteBg, false);
+// outliers : halos d'outliers comme à l'écran (PDF seulement). scale :
+// définition du rendu (JPEG_DPR pour le JPEG, échelle fixe pour les PDF).
+// pal : palette de sol (fondPaletteExport) pour le JPEG, pdfARadarPal() pour
+// les PDF.
+function tmRenderRadarOffscreen(w, h, outliers, scale, pal) {
   // Récupère les données kgf depuis le radar DOM existant
   const radar = $id('tm-radar');
   if (!radar) return null;
@@ -19410,7 +19448,7 @@ function tmRenderRadarOffscreen(w, h, whiteBg, outliers, scale, pal) {
   const foKgfs = tmData.fo.slice(0, perSide).map(v => toKgf(v, 'fo'));
   const faKgfs = tmData.fa.slice(0, perSide).map(v => toKgf(v, 'fa'));
 
-  const dpr = scale || Math.max(window.devicePixelRatio || 1, 2);
+  const dpr = scale;
   const off  = document.createElement('canvas');
   off.width  = Math.round(w * dpr);
   off.height = Math.round(h * dpr);
@@ -19545,8 +19583,7 @@ function snapCmpBgClose() {
 }
 
 async function snapCmpBgGo() {
-  $id('snapcmp-bg-overlay').classList.remove('show');
-  $id('snapcmp-bg-modal').classList.remove('show');
+  snapCmpBgClose();
   await snapCompareJPEG();
 }
 
@@ -19575,14 +19612,12 @@ async function tmScreenshot(fond) {
   const pal = fondPaletteExport(fond);
 
   await document.fonts.ready;
-  const radar   = document.getElementById('tm-radar');
   const statsEl = document.getElementById('tm-stats');
-  if (!radar) return;
 
   // Mise en page. Le panneau est un CARRÉ NATIF : le radar a un côté fixe
   // (RW, l'ancienne largeur interne d'un panneau de 1280), la hauteur du
-  // panneau en découle, et le panneau prend cette hauteur pour largeur.
-  // jpegCarre n'a donc rien à combler. En-tête et blocs de stats courent sur
+  // panneau en découle, et le panneau prend cette hauteur pour largeur :
+  // rien à combler. En-tête et blocs de stats courent sur
   // toute la largeur : titre et logo dans le coin gauche, type et nom de roue
   // dans le coin droit, blocs alignés sur ces bords ; seul le radar reste
   // centré, avec sa légende aux quarts de sa colonne.
@@ -19619,32 +19654,35 @@ async function tmScreenshot(fond) {
   // Gauche = NDS, droite = DS ; la couleur suit la rangée, pas le côté.
   const _ord     = diffRowOrder(wtype);
   const _leg     = radarLegLabels(wtype);
-  const _PAL     = { fo: pal.fo, fa: pal.fa };
   const legLeft  = _leg[_ord.nds];
   const legRight = _leg[_ord.ds];
-  const leftColor  = _PAL[_ord.nds];
-  const rightColor = _PAL[_ord.ds];
+  const leftColor  = pal[_ord.nds];
+  const rightColor = pal[_ord.ds];
 
-  // Infos atelier (nécessaire pour le calcul de hauteur)
+  // Infos atelier
   const atelierInfo   = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
   const workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : JPEG_MARQUE;
   const logo          = await jpegAtelierLogo(atelierInfo.logo, pal);
 
   // Hauteurs, puis largeur : le panneau est en retrait du bord de JPEG_MARGE
   const M      = JPEG_MARGE;
-  const rW     = RW, rH = RW;   // le rendu off-screen est carré (min(w, h))
-  const statsH = statBlocks.length
-    ? GAP_LB + Math.max(...statBlocks.map(b => jpegBlocH(b, BM))) : 0;
-  const cardH  = headerH + GAP_HR + rH + legendH + statsH + PAD;
+  const statsH = statBlocks.length ? GAP_LB + jpegBlocsHauteur(statBlocks, BM) : 0;
+  const cardH  = headerH + GAP_HR + RW + legendH + statsH + PAD;
   const totalH = cardH + M * 2;
   const W      = totalH;                  // carré natif
   const cardY  = M;
   const HL     = M + PAD;                 // bord gauche de l'en-tête et des blocs
   const HR     = W - M - PAD;             // bord droit
-  const rX     = Math.round((W - rW) / 2);
+  const rX     = Math.round((W - RW) / 2);
 
-  // Canvas off-screen, à la définition fixe des JPEG (JPEG_DPR)
-  const dpr  = JPEG_DPR;
+  // Radar, re-rendu off-screen au sol choisi. Sans lecture exploitable il
+  // vaut null : rien à exporter.
+  // Définition des JPEG, plafonnée par sécurité (le carré de 1980 tient sous
+  // JPEG_COTE_MAX à dpr 2)
+  const dpr  = Math.min(JPEG_DPR, JPEG_COTE_MAX / W);
+  const radarOff = tmRenderRadarOffscreen(RW, RW, null, dpr, pal);
+  if (!radarOff) return;
+
   const off  = document.createElement('canvas');
   off.width  = Math.round(W      * dpr);
   off.height = Math.round(totalH * dpr);
@@ -19656,7 +19694,6 @@ async function tmScreenshot(fond) {
 
   const C_title  = pal.title;
   const C_label  = pal.label;
-  const C_legend = pal.legend;
 
   // En-tête : 2 lignes gauche/droite, sur toute la largeur du carré
   const hLine1 = cardY + headerH * 0.30;
@@ -19669,12 +19706,11 @@ async function tmScreenshot(fond) {
   ctx.fillStyle    = C_title;
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(lang === 'fr' ? 'DIAGRAMME DE TENSION' : 'TENSION DIAGRAM', HL + 34, hLine1);
+  ctx.fillText(t('tmRadarTitle').toUpperCase(), HL + 34, hLine1);
 
   // Gauche ligne 2 : logo d'atelier, sinon nom du workshop
-  ctx.font      = '600 42px DM Sans, sans-serif';
   ctx.fillStyle = C_label;
-  const leftW = jpegHeaderLeft2(ctx, HL + 34, hLine2, logo, workshopLabel);
+  const leftW = jpegEnteteGauche(ctx, HL + 34, hLine2, logo, workshopLabel, (HR - HL - 34) * JPEG_ENTETE_PART_G);
 
   // Droite ligne 1 : type de roue
   ctx.font      = '600 42px DM Sans, sans-serif';
@@ -19684,88 +19720,30 @@ async function tmScreenshot(fond) {
 
   // Droite ligne 2 : nom de la roue, réduit puis tronqué pour ne jamais
   // mordre sur le logo ou le nom d'atelier
-  if (wheelName) {
-    const availW = HR - (HL + 34 + leftW + 40);
+  const availW = HR - (HL + 34 + leftW + 40);
+  if (wheelName && availW >= JPEG_ENTETE_MIN_D) {
     const name   = jpegFitText(ctx, wheelName, '600 ', 42, 22, availW);
     ctx.fillStyle = C_label;
     ctx.textAlign = 'right';
     ctx.fillText(name, HR, hLine2);
   }
 
-  // Radar — re-rendu off-screen pour respecter le fond
+  // Radar
   const radarY = cardY + headerH + GAP_HR;
-  const radarOff = tmRenderRadarOffscreen(rW, rH, pal.clair, null, JPEG_DPR, pal);
-  if (radarOff) ctx.drawImage(radarOff, rX, radarY, rW, rH);
-  else          ctx.drawImage(radar,    rX, radarY, rW, rH);
+  ctx.drawImage(radarOff, rX, radarY, RW, RW);
 
   // Légende : sous le radar, aux quarts de sa colonne (elle décrit le radar,
   // pas les blocs)
-  const legY   = radarY + rH + legendH / 2;
-  const DOT_R  = 10;
-
-  ctx.textBaseline = 'middle';
-  ctx.font         = '500 32px DM Sans, sans-serif';
-
-  const wLeft  = ctx.measureText(legLeft).width;
-  const wRight = ctx.measureText(legRight).width;
-  const itemLeftW  = DOT_R * 2 + 6 + wLeft;
-  const itemRightW = DOT_R * 2 + 6 + wRight;
-
-  const midLeft  = rX + rW / 4;
-  const midRight = rX + rW * 3 / 4;
-
-  const xLeft  = midLeft  - itemLeftW  / 2;
-  const xRight = midRight - itemRightW / 2;
-
-  ctx.fillStyle = leftColor;
-  ctx.beginPath(); ctx.arc(xLeft + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = C_legend;
-  ctx.textAlign = 'left';
-  ctx.fillText(legLeft, xLeft + DOT_R * 2 + 15, legY);
-
-  ctx.fillStyle = rightColor;
-  ctx.beginPath(); ctx.arc(xRight + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = C_legend;
-  ctx.textAlign = 'left';
-  ctx.fillText(legRight, xRight + DOT_R * 2 + 15, legY);
+  jpegLegende(ctx, [[legLeft, leftColor, rX + RW / 4], [legRight, rightColor, rX + RW * 3 / 4]],
+              radarY + RW + legendH / 2, RW / 2 - 40, pal);
 
   // Blocs stats : côte à côte, alignés sur les bords de l'en-tête
-  if (statBlocks.length) {
-    jpegBlocsRangee(ctx, statBlocks, HL, HR, radarY + rH + legendH + GAP_LB, BM, pal, _ord.nds === 'fo');
-  }
+  jpegBlocsRangee(ctx, statBlocks, HL, HR, radarY + RW + legendH + GAP_LB, BM, pal, _ord.nds === 'fo');
 
-  // Export JPEG — share natif sur mobile, téléchargement sur desktop
-  const jpeg     = jpegCarre(off, pal.bg).toDataURL('image/jpeg', 0.96);
-  const filename = 'tension-diagram.jpg';
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  let shared     = false;
-
-  if (isMobile && navigator.canShare) {
-    // try englobant (même pattern que l'export Évolution) : fetch(dataURL) ou
-    // new File peuvent jeter sous pression mémoire WebContent (iPad) — sans
-    // garde, rejet non géré et le fallback téléchargement ne s'exécutait pas.
-    try {
-      const blob = await (await fetch(jpeg)).blob();
-      const file = new File([blob], filename, { type: 'image/jpeg' });
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Tension Diagram' });
-        shared = true;
-      }
-    } catch (err) {
-      if (err.name === 'AbortError') return; // annulation volontaire : pas de fallback
-    }
-  }
-
-  if (!shared) {
-    const a = document.createElement('a');
-    a.download = filename;
-    a.href     = jpeg;
-    a.click();
-  }
-
-  // Flash confirmation
-  const btn = document.getElementById('tm-screenshot-btn');
-  if (btn) { btn.classList.add('flash'); setTimeout(() => btn.classList.remove('flash'), 800); }
+  // Sortie (le panneau est un carré natif)
+  const jpeg     = off.toDataURL('image/jpeg', 0.96);
+  const filename = 'spokeit-tension-' + (jpegSlug(wheelName) || 'diagram') + '.jpg';
+  await jpegPartager(jpeg, filename, t('tmRadarTitle'), 'tm-screenshot-btn');
 }
 
 function tmRenderStats(foKgfs, faKgfs) {
@@ -22872,7 +22850,7 @@ async function diagGeneratePdf() {
     fo: (typeof tmData !== 'undefined') ? tmData.fo.slice(0, perSide).map(function(v) { return (typeof toKgf === 'function') ? toKgf(v, 'fo') : v; }) : [],
     fa: (typeof tmData !== 'undefined') ? tmData.fa.slice(0, perSide).map(function(v) { return (typeof toKgf === 'function') ? toKgf(v, 'fa') : v; }) : []
   };
-  var radarOff  = tmRenderRadarOffscreen(440, 440, true, tmHighlightOn ? tmOutliers : null, 2, pdfARadarPal());
+  var radarOff  = tmRenderRadarOffscreen(440, 440, tmHighlightOn ? tmOutliers : null, 2, pdfARadarPal());
   var radarColW = 79.4, colGap = 8.5, tabW = CW - radarColW - colGap, rs = radarColW + 4;
   // Hauteur de ligne calée sur le diagramme (cf. pdfATensionRowH) ; les
   // observations prennent ce qui reste sous la rangée.
@@ -22931,9 +22909,7 @@ async function diagGeneratePdf() {
   pdfAFooter(doc);
 
   // ── Export + fermeture modale ──────────────────────────────────────────────
-  var filename = wheelName
-    ? 'spoke-it-diagnostic-' + wheelName.replace(/[^a-z0-9]/gi,'-').toLowerCase() + '.pdf'
-    : 'spoke-it-diagnostic.pdf';
+  var filename = 'spokeit-diagnostic' + (jpegSlug(wheelName) ? '-' + jpegSlug(wheelName) : '') + '.pdf';
   doc.save(filename);
   tmBuildTable();
   closeDiagModal();
@@ -24793,18 +24769,17 @@ function _snapKgfs(snap) {
   return { fo: foKgfs, fa: faKgfs };
 }
 
-// ── Radar off-screen coloré, palette de sol ou historique (évolution JPEG et PDF) ──
-// pal : palette de sol (fondPaletteExport), passée par le JPEG d'évolution.
-// Absente, whiteBg choisit la palette historique : c'est le chemin du PDF.
-function _snapRenderRadarCanvasColored(snap, w, h, whiteBg, scale, pal) {
-  pal = pal || _exportPalLegacy(whiteBg, true);
+// ── Radar off-screen coloré d'un snapshot (évolution JPEG et PDF) ─────────────
+// scale : définition du rendu. pal : palette de sol (fondPaletteExport) pour le
+// JPEG, pdfARadarPal() pour le PDF.
+function _snapRenderRadarCanvasColored(snap, w, h, scale, pal) {
   var kgfs    = _snapKgfs(snap);
   var foKgfs  = kgfs.fo;
   var faKgfs  = kgfs.fa;
   var perSide = Math.max(foKgfs.length, faKgfs.length);
   if (!perSide) return null;
 
-  var dpr = scale || Math.max(window.devicePixelRatio || 1, 2);
+  var dpr = scale;
   var off = document.createElement('canvas');
   off.width  = Math.round(w * dpr);
   off.height = Math.round(h * dpr);
@@ -24962,7 +24937,7 @@ async function snapComparePDF() {
   [snapA, snapB].forEach(function(snap, si) {
     var x = ML + si * (colW + colGap);
     var y = pdfASection(doc, x, yCols, colW, pdfAStr('snapshot') + ' ' + snap.num, fmtDMY(snap.ts));
-    y = pdfARadar(doc, _snapRenderRadarCanvasColored(snap, 400, 400, true, 2.5, pdfARadarPal()), x + (colW - rs) / 2, y + 3.7, rs);
+    y = pdfARadar(doc, _snapRenderRadarCanvasColored(snap, 400, 400, 2.5, pdfARadarPal()), x + (colW - rs) / 2, y + 3.7, rs);
     // Même légende que les deux autres PDF : « Tensiomètre : nom · charte »,
     // sans l'étoile des tensiomètres perso (hors WinAnsi, elle sortirait « * »).
     var tensio = (_snapResolveTensio(snap) || '').replace(/^\u2605\s*/, '');
@@ -25058,9 +25033,7 @@ async function snapComparePDF() {
   // ── Pied de page ──────────────────────────────────────────────────────────
   pdfAFooter(doc);
 
-  var filename = wheelName
-    ? 'spoke-it-evolution-'+wheelName.replace(/[^a-z0-9]/gi,'-').toLowerCase()+'.pdf'
-    : 'spoke-it-evolution-tension.pdf';
+  var filename = 'spokeit-evolution-' + (jpegSlug(wheelName) || 'tension') + '.pdf';   // comme le JPEG
   doc.save(filename);
   snapCompareClose();
 
@@ -25082,31 +25055,32 @@ async function snapCompareJPEG() {
   var snapA = selPair[0];
   var snapB = selPair[1];
   if (!snapA || !snapB) return; // symétrie avec snapComparePDF : sélection orpheline
-  var L = typeof lang !== 'undefined' ? lang : 'fr';
-
   // Mise en page d'un panneau : même en-tête que tmScreenshot, mais le
   // panneau reste à 1280 de large (pas de carré natif) : deux panneaux côte à
-  // côte plus le récap donnent 2560 × ~2310, que jpegCarre complète en haut et
-  // en bas. Les blocs sont un cran plus gros que ceux du diagramme seul
-  // (JPEG_BLOC.compare) parce que ce montage entre dans son carré à une
-  // échelle plus petite.
+  // côte plus le récap donnent 2560 × ~2310, centrés verticalement dans un
+  // carré de 2560 alloué d'emblée. Les blocs sont un cran plus gros que ceux
+  // du diagramme seul (JPEG_BLOC.compare) parce que ce montage entre dans son
+  // carré à une échelle plus petite.
   var W       = 1280;
   var PAD     = 48;
   var GAP_HR  = 32;                 // en-tête → radar
   var GAP_LB  = 24;                 // légende → blocs
   var BM      = JPEG_BLOC.compare;  // métriques des blocs
+  var RECAP_H = 300;                // bandeau récap sous les deux panneaux
+  // Définition : le carré final fait 2 × W de panneau ; à JPEG_DPR il ferait
+  // 5120 px (26 Mpx), au-delà de la limite iOS. Plafonné à JPEG_COTE_MAX.
+  var dpr     = Math.min(JPEG_DPR, JPEG_COTE_MAX / (W * 2));
 
   var wheelName = document.getElementById('tm-cfg-loaded-text')
     ? document.getElementById('tm-cfg-loaded-text').textContent.trim() : '';
   var atelierInfo   = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
   var workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : JPEG_MARQUE;
   var logo = await jpegAtelierLogo(atelierInfo.logo, pal);   // décodé une fois pour les deux panneaux
-  var isAvant = wtype === 'avant';
-  // Gauche = NDS, droite = DS ; palette canvas indexée par rangée — orange
-  // = fo. Les pleins du sol choisi, sombres sur les sols clairs.
-  var ord    = diffRowOrder(wtype);
-  var PAL    = { fo: pal.fo, fa: pal.fa };
-  var wheelLabel = isAvant ? (L === 'fr' ? 'Roue Avant' : 'Front Wheel') : (L === 'fr' ? 'Roue Arrière' : 'Rear Wheel');
+  // Gauche = NDS, droite = DS ; la palette de sol est indexée par rangée
+  // (pal.fo orange, pal.fa bleu), les pleins sombres sur les sols clairs.
+  var ord        = diffRowOrder(wtype);
+  var legLabels  = radarLegLabels(wtype);
+  var wheelLabel = t(wtype === 'arriere' ? 'rearWheel' : 'frontWheel');
 
   function computeStatBlocks(rendFo, rendFa) {
     var blocks = [];
@@ -25118,15 +25092,18 @@ async function snapCompareJPEG() {
       var mx    = Math.max.apply(null, kgfs);
       var std   = Math.sqrt(kgfs.reduce(function(s, x) { return s + Math.pow(x - avg, 2); }, 0) / kgfs.length);
       var cv    = avg > 0 ? std / avg * 100 : 0;
+      // Mêmes libellés et mêmes formats que la card de stats à l'écran, que
+      // le diagramme recopie : Min, Max et Δ en kgf entiers (toKgf arrondit),
+      // une décimale pour la moyenne, l'écart-type et le CV.
       blocks.push({
         isFo: pair[1],
-        label: diffSideLabel(pair[1] ? 'fo' : 'fa', wtype),
+        label: tmSideLabel(pair[1] ? 'fo' : 'fa', wtype),
         entries: [
-          { key: L === 'fr' ? 'Moyenne' : 'Average',         val: avg.toFixed(1) + ' kgf' },
-          { key: 'Min',                                        val: mn.toFixed(1) + ' kgf' },
-          { key: 'Max',                                        val: mx.toFixed(1) + ' kgf' },
-          { key: 'Δ max',                                      val: (mx - mn).toFixed(1) + ' kgf' },
-          { key: L === 'fr' ? 'Écart-type' : 'Std deviation', val: '± ' + std.toFixed(1) + ' kgf' },
+          { key: t('tmAvg'),  val: avg.toFixed(1) + ' kgf' },
+          { key: 'Min',       val: Math.round(mn) + ' kgf' },
+          { key: 'Max',       val: Math.round(mx) + ' kgf' },
+          { key: 'Δ max',     val: Math.round(mx - mn) + ' kgf' },
+          { key: t('tmStd'),  val: '± ' + std.toFixed(1) + ' kgf' },
           // Coloré au-dessus du seuil, comme la card à l'écran
           { key: 'CV',                                         val: cv.toFixed(1) + ' %', hi: cv > tmCVThreshold }
         ]
@@ -25153,12 +25130,10 @@ async function snapCompareJPEG() {
     var rX      = cardX + PAD;
     var headerH = 150;
     var legendH = 128;
-    var statsH  = statBlocks.length
-      ? GAP_LB + Math.max.apply(null, statBlocks.map(function(b) { return jpegBlocH(b, BM); })) : 0;
+    var statsH  = statBlocks.length ? GAP_LB + jpegBlocsHauteur(statBlocks, BM) : 0;
     var cardH   = headerH + GAP_HR + rH + legendH + statsH + PAD;
     var totalH  = cardH + M * 2;
 
-    var dpr = JPEG_DPR;
     var off = document.createElement('canvas');
     off.width  = Math.round(W     * dpr);
     off.height = Math.round(totalH * dpr);
@@ -25167,7 +25142,6 @@ async function snapCompareJPEG() {
 
     var C_title  = pal.title;
     var C_label  = pal.label;
-    var C_legend = pal.legend;
 
     ctx.fillStyle = pal.bg;
     ctx.fillRect(0, 0, W, totalH);
@@ -25188,81 +25162,57 @@ async function snapCompareJPEG() {
     ctx.textBaseline = 'middle';
     ctx.fillText(snapLbl + ' — ' + dateStr, cardX + PAD + 34, hLine1);
 
-    ctx.font      = '600 42px DM Sans, sans-serif';
     ctx.fillStyle = C_label;
-    var leftW = jpegHeaderLeft2(ctx, cardX + PAD + 34, hLine2, logo, workshopLabel);
+    var leftW = jpegEnteteGauche(ctx, cardX + PAD + 34, hLine2, logo, workshopLabel, (cardW - PAD * 2 - 34) * JPEG_ENTETE_PART_G);
 
+    ctx.font      = '600 42px DM Sans, sans-serif';   // reposée : la colonne gauche a pu réduire
     ctx.textAlign = 'right';
     ctx.fillStyle = C_title;
     ctx.fillText(wheelLabel.toUpperCase(), cardX + cardW - PAD, hLine1);
-    if (wheelName) {
-      // Réduit puis tronqué pour ne jamais mordre sur le logo ou le nom d'atelier
-      var availW = (cardX + cardW - PAD) - (cardX + PAD + 34 + leftW + 40);
+    // Nom de roue réduit puis tronqué pour ne jamais mordre sur le logo ou le
+    // nom d'atelier ; omis s'il ne reste presque rien
+    var availW = (cardX + cardW - PAD) - (cardX + PAD + 34 + leftW + 40);
+    if (wheelName && availW >= JPEG_ENTETE_MIN_D) {
       ctx.fillStyle = C_label;
       ctx.fillText(jpegFitText(ctx, wheelName, '600 ', 42, 22, availW), cardX + cardW - PAD, hLine2);
     }
 
     // Radar — re-rendu off-screen adapté au fond
     var radarY = cardY + headerH + GAP_HR;
-    var radarOff = _snapRenderRadarCanvasColored(snap, rW, rH, pal.clair, JPEG_DPR, pal);
+    var radarOff = _snapRenderRadarCanvasColored(snap, rW, rH, dpr, pal);
     if (radarOff) ctx.drawImage(radarOff, rX, radarY, rW, rH);
 
-    // Légende
-    var leftColor  = PAL[ord.nds];
-    var rightColor = PAL[ord.ds];
-    var legY  = radarY + rH + legendH / 2;
-    var DOT_R = 10;
-    ctx.textBaseline = 'middle';
-    ctx.font = '500 32px DM Sans, sans-serif';
-    var wLeft  = ctx.measureText('NDS').width;
-    var wRight = ctx.measureText('DS').width;
-    var itemLeftW  = DOT_R * 2 + 6 + wLeft;
-    var itemRightW = DOT_R * 2 + 6 + wRight;
-    var midLeft  = rX + rW / 4;       // quarts du radar, comme tmScreenshot
-    var midRight = rX + rW * 3 / 4;
-    var xLeft2   = midLeft  - itemLeftW  / 2;
-    var xRight2  = midRight - itemRightW / 2;
-
-    ctx.fillStyle = leftColor;
-    ctx.beginPath(); ctx.arc(xLeft2 + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = C_legend;
-    ctx.textAlign = 'left';
-    ctx.fillText('NDS', xLeft2 + DOT_R * 2 + 15, legY);
-
-    ctx.fillStyle = rightColor;
-    ctx.beginPath(); ctx.arc(xRight2 + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = C_legend;
-    ctx.fillText('DS', xRight2 + DOT_R * 2 + 15, legY);
+    // Légende : mêmes libellés que le diagramme, aux quarts du radar
+    jpegLegende(ctx, [[legLabels[ord.nds], pal[ord.nds], rX + rW / 4], [legLabels[ord.ds], pal[ord.ds], rX + rW * 3 / 4]],
+                radarY + rH + legendH / 2, rW / 2 - 40, pal);
 
     // Blocs stats : côte à côte, NDS à gauche, sur la largeur interne
-    if (statBlocks.length) {
-      jpegBlocsRangee(ctx, statBlocks, cardX + PAD, cardX + cardW - PAD, radarY + rH + legendH + GAP_LB, BM, pal, ord.nds === 'fo');
-    }
+    jpegBlocsRangee(ctx, statBlocks, cardX + PAD, cardX + cardW - PAD, radarY + rH + legendH + GAP_LB, BM, pal, ord.nds === 'fo');
 
-    return { canvas: off, totalH: totalH, dpr: dpr, foKgfs: foKgfs, faKgfs: faKgfs };
+    return { canvas: off, totalH: totalH, foKgfs: foKgfs, faKgfs: faKgfs };
   }
 
   // Construire les deux canvas
   var resA = buildSnapCanvas(snapA);
   var resB = buildSnapCanvas(snapB);
 
-  // Canvas final : côte à côte + bandeau récap évolution en pied,
-  // hauteur = max des deux panneaux + bandeau
-  var RECAP_H  = 300;
-  var dpr      = resA.dpr;
+  // Canvas final, alloué directement au carré (un seul grand canvas, pas de
+  // montage intermédiaire recopié ensuite) : les deux panneaux côte
+  // à côte et le bandeau récap, centrés verticalement dans le sol.
   var totalH   = Math.max(resA.totalH, resB.totalH);
   var finalW   = W * 2;
+  var cote     = Math.max(finalW, totalH + RECAP_H);
+  var offY     = Math.round((cote - (totalH + RECAP_H)) / 2);
   var finalCanvas  = document.createElement('canvas');
-  finalCanvas.width  = Math.round(finalW * dpr);
-  finalCanvas.height = Math.round((totalH + RECAP_H) * dpr);
+  finalCanvas.width = finalCanvas.height = Math.round(cote * dpr);
   var fctx     = finalCanvas.getContext('2d');
 
   fctx.fillStyle = pal.bg;
   fctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
   // Coller snapA (gauche) et snapB (droite) en coordonnées pixel natif
-  fctx.drawImage(resA.canvas, 0, 0);
-  fctx.drawImage(resB.canvas, Math.round(W * dpr), 0);
+  fctx.drawImage(resA.canvas, 0, Math.round(offY * dpr));
+  fctx.drawImage(resB.canvas, Math.round(W * dpr), Math.round(offY * dpr));
 
   // ── Bandeau récap évolution — même contenu que la fin de l'animation ────
   (function drawEvoRecap() {
@@ -25273,8 +25223,8 @@ async function snapCompareJPEG() {
     var avgNdsA = _snapEvoAvg(ndsA), avgNdsB = _snapEvoAvg(ndsB);
     var avgDsA  = _snapEvoAvg(dsA),  avgDsB  = _snapEvoAvg(dsB);
 
-    var colorNDS = PAL[ord.nds];
-    var colorDS  = PAL[ord.ds];
+    var colorNDS = pal[ord.nds];
+    var colorDS  = pal[ord.ds];
     var C_val = pal.legend;
 
     fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -25283,11 +25233,11 @@ async function snapCompareJPEG() {
     function drawSide(cx, label, color, diffStr, stdLine) {
       fctx.font = '600 46px DM Mono, monospace';
       fctx.fillStyle = color;
-      fctx.fillText(label, cx, totalH + 70);
+      fctx.fillText(label, cx, offY + totalH + 70);
       fctx.font = '500 50px DM Sans, sans-serif';
       fctx.fillStyle = C_val;
-      fctx.fillText(diffStr, cx, totalH + 150);
-      fctx.fillText(stdLine, cx, totalH + 230);
+      fctx.fillText(diffStr, cx, offY + totalH + 150);
+      fctx.fillText(stdLine, cx, offY + totalH + 230);
     }
     // Chaque colonne du récap est centrée sur une moitié du montage
     drawSide(finalW * 0.25, 'NDS', colorNDS,
@@ -25299,35 +25249,10 @@ async function snapCompareJPEG() {
     fctx.setTransform(1, 0, 0, 1, 0, 0);
   })();
 
-  // Export
-  var jpeg     = jpegCarre(finalCanvas, pal.bg).toDataURL('image/jpeg', 0.96);
-  var filename = wheelName
-    ? 'spoke-it-evolution-' + wheelName.replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.jpg'
-    : 'spoke-it-evolution-tension.jpg';
-  var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  var shared   = false;
-
-  if (isMobile && navigator.canShare) {
-    try {
-      var blob = await (await fetch(jpeg)).blob();
-      var file = new File([blob], filename, { type: 'image/jpeg' });
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Tension Evolution' });
-        shared = true;
-      }
-    } catch(err) {
-      if (err.name === 'AbortError') return;
-    }
-  }
-  if (!shared) {
-    var a = document.createElement('a');
-    a.download = filename;
-    a.href     = jpeg;
-    a.click();
-  }
-
-  var btn3 = document.getElementById('tm-snapcompare-btn');
-  if (btn3) { btn3.classList.add('flash'); setTimeout(function(){ btn3.classList.remove('flash'); }, 800); }
+  // Sortie (canvas déjà carré)
+  var jpeg     = finalCanvas.toDataURL('image/jpeg', 0.96);
+  var filename = 'spokeit-evolution-' + (jpegSlug(wheelName) || 'tension') + '.jpg';
+  await jpegPartager(jpeg, filename, t('snapCompareTitle'), 'tm-snapcompare-btn');
 }
 
 // ── Animation morphing radar entre deux snapshots ─────────────────────────────
