@@ -1969,6 +1969,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-screenshot-btn:disabled { opacity:.35; background:transparent; border-color:var(--border); color:var(--text3); cursor:default; pointer-events:none }
 .tm-screenshot-btn:active { opacity:.75 }
 .tm-screenshot-btn.flash { border-color: var(--success); color: var(--success) }
+#tm-conv-snap-btn.flash { border-color:var(--success) !important; color:var(--success) !important }
 
 /* ── Snapshots ─────────────────────────────────────────────────────────────── */
 .snap-overlay { position:fixed; inset:0; background:var(--scrim-2); backdrop-filter:blur(4px); z-index:9990; opacity:0; transition:opacity .22s; display:none }
@@ -2626,6 +2627,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-conv-close    { background:none; border:none; color:var(--text3); font-size:1.1rem; cursor:pointer; padding:.2rem .4rem; line-height:1; transition:color .2s; flex-shrink:0; outline:none }
 .tm-conv-close:hover { color:var(--text) }
 #tm-conv-view-btn { outline:none }
+#tm-conv-modal .tm-conv-spoke { margin-bottom:1.3rem }
 .tm-conv-scroll   { overflow-y:auto; flex:1; border-radius:var(--rs); border:1px solid var(--border) }
 .tm-conv-table    { width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:.8rem }
 .tm-conv-table th { padding:.5rem .7rem; font-family:'DM Sans',sans-serif; font-size:.58rem; font-weight:600; letter-spacing:.15em; text-transform:uppercase; text-align:center; background:linear-gradient(rgba(var(--accent-rgb),.06),rgba(var(--accent-rgb),.06)),var(--card); box-shadow:0 1px 0 var(--border); color:var(--accent); position:sticky; top:0; z-index:1 }
@@ -2675,6 +2677,20 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .tm-conv-overlay.over-cc { z-index:9994 }
 .tm-conv-actions { display:flex; justify-content:flex-end; gap:.4rem; margin-bottom:.6rem }
 .tm-conv-modal.curve-only .tm-conv-actions { display:none }
+/* Comparaison de deux chartes : légende sous la courbe + modale de choix,
+   empilée AU-DESSUS de la modale de conversion (9991) et de son aperçu (9995). */
+.tm-conv-legend { position:relative; display:flex; flex-direction:column; align-items:center; gap:.4rem; font-family:'DM Mono',monospace; font-size:.68rem; color:var(--text2); padding:.55rem 2rem 0; line-height:1.3 }
+.tm-conv-legend .lg-row  { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:.35rem 1.2rem; max-width:100% }
+.tm-conv-legend .lg-item { display:inline-flex; align-items:center; gap:.4rem; min-width:0 }
+.tm-conv-legend .lg-dot  { width:7px; height:7px; border-radius:50%; flex-shrink:0 }
+.tm-conv-legend .lg-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.tm-conv-legend .lg-rm   { position:absolute; right:.2rem; top:.5rem; background:none; border:1px solid var(--border); border-radius:var(--rs); color:var(--text3); font-size:.7rem; line-height:1; padding:.18rem .4rem; cursor:pointer; transition:border-color .2s, color .2s; outline:none }
+.tm-conv-legend .lg-rm:hover { border-color:rgba(var(--warm-rgb),.6); color:var(--warm) }
+.tm-conv-legend .lg-stats { align-self:stretch; display:flex; flex-wrap:wrap; gap:.2rem 1.4rem; color:var(--text3); font-size:.66rem; justify-content:center; text-align:center; margin:1.1rem -1.6rem 0; white-space:nowrap }
+.tm-conv-legend .lg-stats strong { color:var(--text); font-weight:500 }
+.tm-conv-modal.over-conv   { z-index:9997 }
+.tm-conv-overlay.over-conv { z-index:9996 }
+#tm-cmp-note { font-size:.66rem; color:var(--text3); font-style:italic; line-height:1.3; min-height:.9rem; margin-top:.5rem }
 .cc-smooth-btn.undo { color:var(--warm); border-color:rgba(var(--warm-rgb),.3) }
 .cc-smooth-btn.undo:hover { border-color:rgba(var(--warm-rgb),.65); background:rgba(var(--warm-rgb),.06) }
 .cc-feedback { font-size:.66rem; color:#f08080; min-height:.9rem; font-style:italic; line-height:1.3; margin-top:.4rem }
@@ -4728,6 +4744,15 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
           <line x1="9" y1="9" x2="10" y2="9"/>
         </svg>
       </button>
+      <button id="tm-conv-snap-btn" onclick="tmConvSnapOpen(event)" title="Screenshot" style="background:transparent;border:1px solid rgba(var(--accent-rgb),.45);border-radius:7px;color:var(--accent);padding:.22rem .55rem;cursor:pointer;transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s;outline:none;display:none;align-items:center;justify-content:center;line-height:1">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      </button>
+      <button id="tm-conv-cmp-btn" onclick="tmConvCmpOpen()" style="display:none;background:transparent;border:1px solid rgba(var(--accent-rgb),.45);border-radius:7px;color:var(--accent);padding:.22rem .55rem;cursor:pointer;transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s;outline:none;align-items:center;justify-content:center;line-height:1">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 10 13 14 21 5"/><polyline points="3 20 9 15 13 18 21 11" opacity=".5"/></svg>
+      </button>
       <button id="tm-conv-view-btn" onclick="tmConvToggleView()" style="background:transparent;border:1px solid rgba(var(--accent-rgb),.45);border-radius:7px;color:var(--accent);font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;padding:.22rem .75rem;cursor:pointer;transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s;outline:none"></button>
     </div>
     <div class="tm-conv-scroll" id="tm-conv-table-wrap">
@@ -4743,6 +4768,29 @@ La sauvegarde non datée écrase la précédente dans votre dossier.</p>
     </div>
     <div id="tm-conv-curve-wrap" style="display:none;padding:.4rem 0">
       <canvas id="tm-conv-canvas" style="display:block;width:100%;border-radius:var(--rs)"></canvas>
+      <div class="tm-conv-legend" id="tm-conv-legend" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- ── Modal comparaison : choix d'une seconde charte du tensiomètre actif ── -->
+  <div class="tm-conv-overlay over-conv" id="tm-cmp-overlay" onclick="tmConvCmpClose()"></div>
+  <div class="tm-conv-modal over-conv" id="tm-cmp-modal">
+    <div class="tm-conv-header">
+      <svg class="mt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 10 13 14 21 5"/><polyline points="3 20 9 15 13 18 21 11" opacity=".5"/></svg>
+      <div class="tm-conv-title" id="tm-cmp-title"></div>
+      <button class="tm-conv-close" onclick="tmConvCmpClose()">✕</button>
+    </div>
+    <div class="tm-conv-spoke" id="tm-cmp-ref-label"></div>
+    <div class="cc-step">
+      <div class="cc-step-label" id="tm-cmp-pick-label"></div>
+      <select id="tm-cmp-select" class="tm-select"></select>
+      <div id="tm-cmp-note"></div>
+    </div>
+    <div class="savemgr-btns">
+      <button class="savemgr-action-btn savemgr-export" id="tm-cmp-ok-btn" onclick="tmConvCmpApply()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+        <span id="tm-cmp-ok-label"></span>
+      </button>
     </div>
   </div>
 
@@ -7053,6 +7101,17 @@ const i18n = {
     tmConvReading:'Lecture',
     tmConvCurve:'Courbe',
     tmConvTable:'Charte',
+    tmCmpBtn:'Comparer',
+    tmCmpTitle:'Comparaison',
+    tmCmpRef:'Référence',
+    tmCmpPick:'Charte à comparer',
+    tmCmpOk:'Afficher',
+    tmCmpNone:'Aucune autre charte sur ce tensiomètre.',
+    tmCmpRemove:'Retirer la comparaison',
+    tmCmpDeltaMean:'Δ moy',
+    tmCmpDeltaMax:'Δ max',
+    tmCmpAt:'à',
+    tmConvJpegTitle:'COURBE DE CONVERSION',
     tmConvTensio:'Tensiomètre',
     tmTcBtn:'Contrôle tensiomètre',
     tmTcTitle:'Contrôle tensiomètre',
@@ -7358,6 +7417,17 @@ const i18n = {
     tmConvReading:'Reading',
     tmConvCurve:'Curve',
     tmConvTable:'Table',
+    tmCmpBtn:'Compare',
+    tmCmpTitle:'Comparison',
+    tmCmpRef:'Reference',
+    tmCmpPick:'Chart to compare',
+    tmCmpOk:'Show',
+    tmCmpNone:'No other chart on this tensiometer.',
+    tmCmpRemove:'Remove comparison',
+    tmCmpDeltaMean:'Δ mean',
+    tmCmpDeltaMax:'Δ max',
+    tmCmpAt:'at',
+    tmConvJpegTitle:'CONVERSION CURVE',
     tmConvTensio:'Tensiometer',
     tmTcBtn:'Tensiometer check',
     tmTcTitle:'Tensiometer check',
@@ -12124,7 +12194,7 @@ function fondRepeintCanvas() {
   try { if (typeof tmTryRenderRadar === 'function') tmTryRenderRadar(); } catch (e) {}
   try {
     if (_tmConvShowCurve && _tmConvPts && typeof tmDrawConvCurve === 'function')
-      tmDrawConvCurve(_tmConvPts);
+      tmDrawConvCurve(_tmConvPts, (typeof _tmConvCmp !== 'undefined' && _tmConvCmp) ? _tmConvCmp.pts : null);
   } catch (e) {}
 }
 
@@ -15728,9 +15798,6 @@ function tmOpenConvTable(side) {
     if (tmType === 'dt' && tmDTSub === 'aerolite2') tensioLabel += ' (Tensio Aerolite II)';
   }
 
-  // Label rayon
-  $id('tm-conv-spoke-label').innerHTML = `${t('tmConvTensio')}\u00a0: <strong style="color:var(--accent)">${escHtml(tensioLabel)}</strong><br>${t('tmSpokeLabel')}\u00a0: <strong style="color:var(--text)">${escHtml(spokeKey.replace(/^__[A-Z ]+__/, ''))}</strong>`;
-
   // Header lecture
   $id('tm-conv-th-reading').textContent = t('tmConvReading');
 
@@ -15747,9 +15814,11 @@ function tmOpenConvTable(side) {
   // Stocker les points pour la courbe + reset état
   _tmConvPts = pts;
   _tmConvTensioLabel = tensioLabel;
-  _tmConvSpokeName = spokeKey.replace(/^__[A-Z ]+__/, '');
+  _tmConvSpokeName = _tmConvKeyName(spokeKey);
   _tmConvIsCustom = !!((tmType && tmType.startsWith('ct_')) || spokeKey.startsWith(CC_PREFIX));
   _tmConvShowCurve = false;
+  _tmConvCmpReset();
+  _tmConvSpokeLabelRender();
 
   // Labels boutons
   const viewBtn = document.getElementById('tm-conv-view-btn');
@@ -15776,19 +15845,163 @@ function _tmConvShowOnly(mode) {
   $id('tm-conv-table-wrap').style.display = mode === 'table' ? '' : 'none';
   $id('tm-conv-curve-wrap').style.display = mode === 'curve' ? 'block' : 'none';
   $id('tm-conv-view-btn').textContent = mode === 'curve' ? t('tmConvTable') : t('tmConvCurve');
+  // Le bouton Comparer n'a de sens que devant la courbe.
+  const cmpBtn = $id('tm-conv-cmp-btn');
+  if (cmpBtn) { cmpBtn.title = t('tmCmpBtn'); cmpBtn.setAttribute('aria-label', t('tmCmpBtn')); cmpBtn.style.display = mode === 'curve' ? 'inline-flex' : 'none'; }
+  // Devant la courbe, l'export est une photo (JPEG), pas le PDF de la charte.
+  const pdfBtn  = $id('tm-conv-pdf-btn');
+  const snapBtn = $id('tm-conv-snap-btn');
+  if (pdfBtn)  pdfBtn.style.display  = mode === 'curve' ? 'none' : '';
+  if (snapBtn) snapBtn.style.display = mode === 'curve' ? 'inline-flex' : 'none';
 }
 
 function tmConvToggleView() {
   _tmConvShowCurve = !_tmConvShowCurve;
   if (_tmConvShowCurve) {
     _tmConvShowOnly('curve');
-    tmDrawConvCurve(_tmConvPts);
+    _tmConvRedraw();
   } else {
     _tmConvShowOnly('table');
   }
 }
 
-function tmDrawConvCurve(pts) {
+// ── Comparaison : seconde charte du tensiomètre actif ───────────────────────
+// _tmConvCmp = { key, name, pts } ou null. La courbe de référence reste
+// _tmConvPts ; la seconde est tracée derrière elle, en --warm, sur les mêmes
+// axes (échelle commune aux deux jeux de points).
+let _tmConvCmp = null;
+
+function _tmConvRedraw() {
+  tmDrawConvCurve(_tmConvPts, _tmConvCmp ? _tmConvCmp.pts : null);
+  _tmConvLegendRender();
+}
+
+function _tmConvCmpReset() {
+  _tmConvCmp = null;
+  const lg = $id('tm-conv-legend');
+  if (lg) { lg.style.display = 'none'; lg.innerHTML = ''; }
+}
+
+// Ligne « Tensiomètre / Rayon » sous le titre. Seul écrivain de ce libellé :
+// l'ouverture normale, l'aperçu depuis la charte perso et la comparaison
+// passent tous par ici. En comparaison, le second rayon s'ajoute sur sa
+// propre ligne, même style que le premier.
+function _tmConvSpokeLabelRender() {
+  const el = $id('tm-conv-spoke-label');
+  if (!el) return;
+  let html = t('tmConvTensio') + '\u00a0: <strong style="color:var(--accent)">' + escHtml(_tmConvTensioLabel || '\u2014') + '</strong><br>' +
+             t('tmSpokeLabel') + '\u00a0: <strong style="color:var(--text)">' + escHtml(_tmConvSpokeName || '\u2014') + '</strong>';
+  if (_tmConvCmp) html += '<br>' + t('tmSpokeLabel') + '\u00a0: <strong style="color:var(--text)">' + escHtml(_tmConvCmp.name) + '</strong>';
+  el.innerHTML = html;
+}
+
+// Écarts entre les deux chartes, en kgf, sur la plage de lectures commune.
+// Échantillonnage sur l'union des lectures des deux jeux (là où chaque charte
+// est définie par un point ou par interpolation linéaire, sans arrondi).
+// Retourne null si moins de deux lectures communes.
+function _tmConvCmpStats(a, b) {
+  const va = a.filter(p => p[1] !== null), vb = b.filter(p => p[1] !== null);
+  if (va.length < 2 || vb.length < 2) return null;
+  const lerp = (v, r) => {
+    for (let i = 0; i < v.length - 1; i++) {
+      const [x0, y0] = v[i], [x1, y1] = v[i + 1];
+      if (r >= Math.min(x0, x1) && r <= Math.max(x0, x1)) return x1 === x0 ? y0 : y0 + (r - x0) / (x1 - x0) * (y1 - y0);
+    }
+    return null;
+  };
+  const lo = Math.max(Math.min(...va.map(p => p[0])), Math.min(...vb.map(p => p[0])));
+  const hi = Math.min(Math.max(...va.map(p => p[0])), Math.max(...vb.map(p => p[0])));
+  if (!(hi > lo)) return null;
+  const xs = Array.from(new Set(va.concat(vb).map(p => p[0]).filter(r => r >= lo && r <= hi))).sort((x, y) => x - y);
+  let sum = 0, n = 0, max = -1, maxAt = null;
+  xs.forEach(r => {
+    const ya = lerp(va, r), yb = lerp(vb, r);
+    if (ya === null || yb === null) return;
+    const d = Math.abs(ya - yb);
+    sum += d; n++;
+    if (d > max) { max = d; maxAt = r; }
+  });
+  if (n < 2) return null;
+  return { mean: sum / n, max: max, maxAt: maxAt };
+}
+
+function _tmConvLegendRender() {
+  _tmConvSpokeLabelRender();
+  const lg = $id('tm-conv-legend');
+  if (!lg) return;
+  if (!_tmConvCmp) { lg.style.display = 'none'; lg.innerHTML = ''; return; }
+  const st = _tmConvCmpStats(_tmConvPts, _tmConvCmp.pts);
+  const fmt = v => (Math.round(v * 10) / 10).toFixed(1);
+  lg.innerHTML =
+    '<span class="lg-row">' +
+    '<span class="lg-item"><span class="lg-dot" style="background:var(--accent)"></span><span class="lg-name">' + escHtml(_tmConvSpokeName || '\u2014') + '</span></span>' +
+    '<span class="lg-item"><span class="lg-dot" style="background:var(--warm)"></span><span class="lg-name">' + escHtml(_tmConvCmp.name) + '</span></span>' +
+    '</span>' +
+    '<button class="lg-rm" onclick="tmConvCmpClear()" title="' + escHtml(t('tmCmpRemove')) + '" aria-label="' + escHtml(t('tmCmpRemove')) + '">✕</button>' +
+    (st ? '<span class="lg-stats">' +
+            '<span>' + t('tmCmpDeltaMean') + '\u00a0: <strong>' + fmt(st.mean) + '\u00a0kgf</strong></span>' +
+            '<span>' + t('tmCmpDeltaMax')  + '\u00a0: <strong>' + fmt(st.max)  + '\u00a0kgf</strong> ' + t('tmCmpAt') + '\u00a0' + escHtml(tmDisplayValue(st.maxAt)) + '</span>' +
+          '</span>' : '');
+  lg.style.display = 'flex';
+}
+
+// Libellé d'une clé de charte tel qu'il apparaît dans le sélecteur de rayon :
+// les préfixes de catégorie (__STEEL__…) tombent, le préfixe perso reste.
+function _tmConvKeyName(key) {
+  return key.replace(/^__[A-Z ]+__/, '');
+}
+
+function tmConvCmpOpen() {
+  const tbl = tmGetActiveTable();
+  if (!tbl) return;
+  const curKey = tmSpokeOf(_tmConvSide);
+  $id('tm-cmp-title').textContent      = t('tmCmpTitle');
+  $id('tm-cmp-pick-label').textContent = t('tmCmpPick');
+  $id('tm-cmp-ok-label').textContent   = t('tmCmpOk');
+  $id('tm-cmp-ref-label').innerHTML =
+    t('tmConvTensio') + '\u00a0: <strong style="color:var(--accent)">' + escHtml(_tmConvTensioLabel || '\u2014') + '</strong><br>' +
+    t('tmCmpRef') + '\u00a0: <strong style="color:var(--text)">' + escHtml(_tmConvSpokeName || '\u2014') + '</strong>';
+
+  // Mêmes options, mêmes groupes que le sélecteur de rayon du tensiomètre
+  // actif : on le clone et on retire la charte de référence, puis les
+  // groupes devenus vides.
+  const sel = $id('tm-cmp-select');
+  const src = $id('tm-spoke-select');
+  sel.innerHTML = src ? src.innerHTML : '';
+  Array.from(sel.options).forEach(o => { if (!o.value || o.value === curKey || !(o.value in tbl)) o.remove(); });
+  Array.from(sel.querySelectorAll('optgroup')).forEach(g => { if (!g.children.length) g.remove(); });
+  const has = sel.options.length > 0;
+  if (has && _tmConvCmp && (_tmConvCmp.key in tbl)) sel.value = _tmConvCmp.key;
+  sel.disabled = !has;
+  $id('tm-cmp-ok-btn').disabled = !has;
+  $id('tm-cmp-note').textContent = has ? '' : t('tmCmpNone');
+
+  $id('tm-cmp-overlay').classList.add('show');
+  $id('tm-cmp-modal').classList.add('show');
+}
+
+function tmConvCmpClose() {
+  $id('tm-cmp-overlay').classList.remove('show');
+  $id('tm-cmp-modal').classList.remove('show');
+}
+
+function tmConvCmpApply() {
+  const sel = $id('tm-cmp-select');
+  const key = sel.value;
+  const tbl = tmGetActiveTable();
+  const pts = key && tbl ? tbl[key] : null;
+  if (!pts || pts.filter(p => p[1] !== null).length < 2) return;
+  _tmConvCmp = { key: key, name: _tmConvKeyName(key), pts: pts };
+  tmConvCmpClose();
+  _tmConvRedraw();
+}
+
+function tmConvCmpClear() {
+  _tmConvCmpReset();
+  _tmConvRedraw();
+}
+
+function tmDrawConvCurve(pts, pts2) {
   const canvas = document.getElementById('tm-conv-canvas');
   if (!canvas || !pts || pts.length < 2) return;
   const dpr  = Math.max(window.devicePixelRatio || 1, 2);
@@ -15803,20 +16016,6 @@ function tmDrawConvCurve(pts) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
 
-  const pad = { t:24, r:24, b:48, l:56 };
-  const gW  = W - pad.l - pad.r;
-  const gH  = H - pad.t - pad.b;
-
-  // Données — pts = [[reading, kgf], ...]
-  const readings = pts.map(p => p[0]);
-  const kgfs     = pts.map(p => p[1] !== null ? p[1] : 0);
-  const minR = Math.min(...readings), maxR = Math.max(...readings);
-  const maxK = Math.ceil(Math.max(...kgfs) / 20) * 20 || 160;
-
-  const xPos = r => pad.l + (r - minR) / (maxR - minR) * gW;
-  const yPos = k => pad.t + gH - k / maxK * gH;
-  const fontSize = Math.round(W * 0.031);
-
   // Palette du sol courant, même logique que le radar : la grille blanche à
   // 6 % et les labels gris-bleu disparaissent sur un sol clair, et la courbe
   // cyan à 85 % n'y tient pas le contraste. La courbe et son lavis prennent
@@ -15827,42 +16026,81 @@ function tmDrawConvCurve(pts) {
   const accRgb   = (typeof fondJetonRgb === 'function')
                      ? fondJetonRgb('--accent', clair ? '25,108,121' : '126,200,227')
                      : (clair ? '25,108,121' : '126,200,227');
-  const C_grid   = clair ? 'rgba(0,0,0,0.10)'      : 'rgba(255,255,255,0.06)';
-  const C_lab    = clair ? 'rgba(45,60,78,0.80)'   : 'rgba(150,170,190,0.55)';
-  const C_axis   = clair ? 'rgba(45,60,78,0.72)'   : 'rgba(150,170,190,0.5)';
-  const C_fill0  = 'rgba(' + accRgb + (clair ? ',0.20)' : ',0.18)');
-  const C_fill1  = 'rgba(' + accRgb + (clair ? ',0.02)' : ',0.01)');
-  const C_line   = 'rgba(' + accRgb + (clair ? ',1)'    : ',0.85)');
-  const C_dot    = 'rgba(' + accRgb + (clair ? ',1)'    : ',0.9)');
+  const warmRgb  = (typeof fondJetonRgb === 'function')
+                     ? fondJetonRgb('--warm', clair ? '162,84,63' : '232,146,124')
+                     : (clair ? '162,84,63' : '232,146,124');
+  _tmConvCurvePaint(ctx, W, H, pts, pts2, _tmConvCurvePalette(clair, accRgb, warmRgb), 1);
+}
+
+// Couleurs du tracé pour une famille de sol et deux accents (r,g,b).
+// Partagée par l'écran (jetons du sol actif) et le JPEG (FOND_JPEG du sol
+// choisi) : mêmes opacités des deux côtés.
+function _tmConvCurvePalette(clair, accRgb, warmRgb) {
+  return {
+    grid:  clair ? 'rgba(0,0,0,0.10)'      : 'rgba(255,255,255,0.06)',
+    lab:   clair ? 'rgba(45,60,78,0.80)'   : 'rgba(150,170,190,0.55)',
+    axis:  clair ? 'rgba(45,60,78,0.72)'   : 'rgba(150,170,190,0.5)',
+    fill0: 'rgba(' + accRgb + (clair ? ',0.20)' : ',0.18)'),
+    fill1: 'rgba(' + accRgb + (clair ? ',0.02)' : ',0.01)'),
+    line:  'rgba(' + accRgb + (clair ? ',1)'    : ',0.85)'),
+    dot:   'rgba(' + accRgb + (clair ? ',1)'    : ',0.9)'),
+    // Seconde courbe : le chaud du sol, mêmes opacités, lavis plus discret
+    // pour que les deux aplats ne se brouillent pas là où ils se recouvrent.
+    fill0b: 'rgba(' + warmRgb + (clair ? ',0.12)' : ',0.11)'),
+    fill1b: 'rgba(' + warmRgb + ',0.01)',
+    lineb:  'rgba(' + warmRgb + (clair ? ',1)'    : ',0.85)'),
+    dotb:   'rgba(' + warmRgb + (clair ? ',1)'    : ',0.9)')
+  };
+}
+
+// Cœur du tracé, sur un contexte déjà mis à l'échelle : W × H en pixels
+// logiques, k = facteur d'épaisseur des traits (1 à l'écran, ~3 dans le JPEG
+// dont le panneau fait 1280 de large) — marges et police suivent W.
+function _tmConvCurvePaint(ctx, W, H, pts, pts2, P, k) {
+  // Seconde charte (comparaison) : optionnelle, tracée derrière la première
+  // sur des axes communs. Ignorée si elle n'a pas deux points valides.
+  if (pts2 && pts2.filter(p => p[1] !== null).length < 2) pts2 = null;
+
+  const pad = { t:24 * k, r:24 * k, b:48 * k, l:56 * k };
+  const gW  = W - pad.l - pad.r;
+  const gH  = H - pad.t - pad.b;
+
+  // Données — pts = [[reading, kgf], ...]. Échelle commune aux deux jeux.
+  const allPts   = pts2 ? pts.concat(pts2) : pts;
+  const readings = Array.from(new Set(allPts.map(p => p[0]))).sort((a, b) => a - b);
+  const kgfs     = allPts.map(p => p[1] !== null ? p[1] : 0);
+  const minR = Math.min(...readings), maxR = Math.max(...readings);
+  const maxK = Math.ceil(Math.max(...kgfs) / 20) * 20 || 160;
+
+  const xPos = r => pad.l + (r - minR) / (maxR - minR) * gW;
+  const yPos = kg => pad.t + gH - kg / maxK * gH;
+  const fontSize = Math.round(W * 0.031);
 
   // Grille horizontale + labels Y
-  ctx.strokeStyle = C_grid;
-  ctx.lineWidth   = 1;
+  ctx.strokeStyle = P.grid;
+  ctx.lineWidth   = 1 * k;
   ctx.font        = fontSize + "px 'DM Mono',monospace";
-  ctx.fillStyle   = C_lab;
+  ctx.fillStyle   = P.lab;
   ctx.textAlign   = 'right';
   ctx.textBaseline = 'middle';
-  for (let k = 0; k <= maxK; k += maxK / 4) {
+  for (let kg = 0; kg <= maxK; kg += maxK / 4) {
     ctx.beginPath();
-    ctx.moveTo(pad.l, yPos(k));
-    ctx.lineTo(pad.l + gW, yPos(k));
+    ctx.moveTo(pad.l, yPos(kg));
+    ctx.lineTo(pad.l + gW, yPos(kg));
     ctx.stroke();
-    ctx.fillText(k, pad.l - 10, yPos(k));
+    ctx.fillText(kg, pad.l - 10 * k, yPos(kg));
   }
 
   // Label Y vertical
   ctx.save();
-  ctx.translate(12, pad.t + gH / 2);
+  ctx.translate(12 * k, pad.t + gH / 2);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle    = C_axis;
+  ctx.fillStyle    = P.axis;
   ctx.font         = fontSize + "px 'DM Sans',sans-serif";
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('kgf', 0, 0);
   ctx.restore();
-
-  // Reset transform après rotate
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   // Ticks X — espacement minimum anti-collision
   ctx.font         = fontSize + "px 'DM Mono',monospace";
@@ -15877,72 +16115,260 @@ function tmDrawConvCurve(pts) {
     const isLast  = ti === readings.length - 1;
     if (!isFirst && !isLast && tx - lastTickX < minSpacing) continue;
     if (isLast && tx - lastTickX < minSpacing) {
-      ctx.clearRect(lastTickX - minSpacing / 2, pad.t + gH + 6, minSpacing, fontSize + 4);
+      // Le dernier tick efface le précédent. À l'écran, le canvas est
+      // transparent sur la carte : clearRect suffit. Dans le JPEG, un trou
+      // transparent s'encode en NOIR : on repeint le fond du sol (P.bg).
+      const ex = lastTickX - minSpacing / 2, ey = pad.t + gH + 6 * k, ew = minSpacing, eh = fontSize + 4 * k;
+      if (P.bg) { ctx.fillStyle = P.bg; ctx.fillRect(ex, ey, ew, eh); } else ctx.clearRect(ex, ey, ew, eh);
     }
-    ctx.fillStyle = C_lab;
-    ctx.fillText(rv, tx, pad.t + gH + 10);
+    ctx.fillStyle = P.lab;
+    ctx.fillText(rv, tx, pad.t + gH + 10 * k);
     lastTickX = tx;
   }
 
   // Label X
-  ctx.fillStyle    = C_axis;
+  ctx.fillStyle    = P.axis;
   ctx.font         = fontSize + "px 'DM Sans',sans-serif";
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'bottom';
-  ctx.fillText(t('tmConvReading'), pad.l + gW / 2, H - 2);
+  ctx.fillText(t('tmConvReading'), pad.l + gW / 2, H - 2 * k);
 
-  // Points valides uniquement
-  const valid = pts.filter(p => p[1] !== null);
-  if (valid.length < 2) return;
+  // Une courbe = lavis + trait + points. La seconde (comparaison) passe
+  // d'abord, la référence reste au premier plan.
+  function drawSeries(src, fill0, fill1, lineC, dotC) {
+    const valid = src.filter(p => p[1] !== null);
+    if (valid.length < 2) return;
 
-  // Gradient sous la courbe
-  const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + gH);
-  grad.addColorStop(0, C_fill0);
-  grad.addColorStop(1, C_fill1);
+    const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + gH);
+    grad.addColorStop(0, fill0);
+    grad.addColorStop(1, fill1);
 
-  // Catmull-Rom → Bézier
-  function catmullPath() {
-    ctx.moveTo(xPos(valid[0][0]), yPos(valid[0][1]));
-    for (let i = 0; i < valid.length - 1; i++) {
-      const p0 = valid[Math.max(i - 1, 0)];
-      const p1 = valid[i];
-      const p2 = valid[i + 1];
-      const p3 = valid[Math.min(i + 2, valid.length - 1)];
-      const cp1x = xPos(p1[0]) + (xPos(p2[0]) - xPos(p0[0])) / 6;
-      const cp1y = yPos(p1[1]) + (yPos(p2[1]) - yPos(p0[1])) / 6;
-      const cp2x = xPos(p2[0]) - (xPos(p3[0]) - xPos(p1[0])) / 6;
-      const cp2y = yPos(p2[1]) - (yPos(p3[1]) - yPos(p1[1])) / 6;
-      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, xPos(p2[0]), yPos(p2[1]));
+    // Catmull-Rom → Bézier
+    function catmullPath() {
+      ctx.moveTo(xPos(valid[0][0]), yPos(valid[0][1]));
+      for (let i = 0; i < valid.length - 1; i++) {
+        const p0 = valid[Math.max(i - 1, 0)];
+        const p1 = valid[i];
+        const p2 = valid[i + 1];
+        const p3 = valid[Math.min(i + 2, valid.length - 1)];
+        const cp1x = xPos(p1[0]) + (xPos(p2[0]) - xPos(p0[0])) / 6;
+        const cp1y = yPos(p1[1]) + (yPos(p2[1]) - yPos(p0[1])) / 6;
+        const cp2x = xPos(p2[0]) - (xPos(p3[0]) - xPos(p1[0])) / 6;
+        const cp2y = yPos(p2[1]) - (yPos(p3[1]) - yPos(p1[1])) / 6;
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, xPos(p2[0]), yPos(p2[1]));
+      }
     }
+
+    // Fill
+    ctx.beginPath();
+    catmullPath();
+    ctx.lineTo(xPos(valid[valid.length - 1][0]), pad.t + gH);
+    ctx.lineTo(xPos(valid[0][0]), pad.t + gH);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Trait : fin (1 px), joints et bouts arrondis pour que la Bézier
+    // reste lisse aux raccords à cette épaisseur.
+    ctx.beginPath();
+    catmullPath();
+    ctx.strokeStyle = lineC;
+    ctx.lineWidth   = 1 * k;
+    ctx.lineJoin    = 'round';
+    ctx.lineCap     = 'round';
+    ctx.stroke();
+
+    // Points : r = 1.5 px, dans la même proportion que le trait.
+    valid.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(xPos(p[0]), yPos(p[1]), 1.5 * k, 0, 2 * Math.PI);
+      ctx.fillStyle = dotC;
+      ctx.fill();
+    });
   }
 
-  // Fill
-  ctx.beginPath();
-  catmullPath();
-  ctx.lineTo(xPos(valid[valid.length - 1][0]), pad.t + gH);
-  ctx.lineTo(xPos(valid[0][0]), pad.t + gH);
-  ctx.closePath();
-  ctx.fillStyle = grad;
-  ctx.fill();
+  if (pts2) drawSeries(pts2, P.fill0b, P.fill1b, P.lineb, P.dotb);
+  drawSeries(pts, P.fill0, P.fill1, P.line, P.dot);
+}
 
-  // Trait
-  ctx.beginPath();
-  catmullPath();
-  ctx.strokeStyle = C_line;
-  ctx.lineWidth   = 2;
-  ctx.stroke();
+// ── Photo JPEG de la courbe ─────────────────────────────────────────────────
+// Même modale de sol et même gabarit que le JPEG du diagramme de tension
+// (tmScreenshot) : panneau 1280 en retrait de JPEG_MARGE, en-tête sur deux
+// lignes, courbe pleine largeur, puis, en comparaison, légende et bloc
+// d'écarts au format des blocs de stats.
+let _convSnapFond = 'ardoise';
 
-  // Points
-  valid.forEach(p => {
-    ctx.beginPath();
-    ctx.arc(xPos(p[0]), yPos(p[1]), 3, 0, 2 * Math.PI);
-    ctx.fillStyle = C_dot;
-    ctx.fill();
-  });
+function tmConvSnapOpen(e) {
+  if (e) e.stopPropagation();
+  _convSnapFond = fondActuel();
+  fondRangeRender('convsnap', FONDS_EXPORT, FOND_I18N_EXPORT, _convSnapFond, function(f) { _convSnapFond = f; });
+  fondExportI18n('tm-conv-snap-modal');
+  $id('tm-conv-snap-overlay').classList.add('show');
+  $id('tm-conv-snap-modal').classList.add('show');
+}
+
+function tmConvSnapClose() {
+  $id('tm-conv-snap-overlay').classList.remove('show');
+  $id('tm-conv-snap-modal').classList.remove('show');
+}
+
+async function tmConvSnapGo() {
+  tmConvSnapClose();
+  await tmConvScreenshot(_convSnapFond);
+}
+
+async function tmConvScreenshot(fond) {
+  const pts  = _tmConvPts;
+  const cmp  = _tmConvCmp;
+  if (!pts || pts.length < 2) return;
+  const pal  = fondPaletteExport(fond);
+  const fj   = FOND_JPEG[fond] || FOND_JPEG.ardoise;
+  await document.fonts.ready;
+
+  const W       = 1280;
+  const PAD     = 48;
+  const M       = JPEG_MARGE;
+  const cardX   = M, cardY = M;
+  const cardW   = W - M * 2;
+  const innerW  = cardW - PAD * 2;
+  const headerH = 150;
+  const curveW  = innerW;
+  const curveH  = Math.round(curveW * 0.65);
+  const legendH = cmp ? 128 : 60;
+  const LINE_H  = 66, BPADY = 36, LABELH = 60;
+  const st      = cmp ? _tmConvCmpStats(pts, cmp.pts) : null;
+  const rows    = st ? [
+    [t('tmCmpDeltaMean'), (Math.round(st.mean * 10) / 10).toFixed(1) + ' kgf'],
+    [t('tmCmpDeltaMax'),  (Math.round(st.max  * 10) / 10).toFixed(1) + ' kgf ' + t('tmCmpAt') + ' ' + tmDisplayValue(st.maxAt)]
+  ] : [];
+  const blockH  = rows.length ? BPADY * 2 + LABELH + LINE_H : 0; // les Δ côte à côte, une seule ligne
+  const statsH  = rows.length ? blockH + PAD : 0;
+  const cardH   = headerH + curveH + legendH + statsH + PAD;
+  const totalH  = cardH + M * 2;
+
+  const dpr  = Math.max(window.devicePixelRatio || 1, 2);
+  const off  = document.createElement('canvas');
+  off.width  = Math.round(W * dpr);
+  off.height = Math.round(totalH * dpr);
+  const ctx  = off.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = pal.bg;
+  ctx.fillRect(0, 0, W, totalH);
+
+  // En-tête : titre + atelier à gauche, tensiomètre + rayon(s) à droite
+  const atelierInfo   = (typeof loadAtelierInfo === 'function') ? loadAtelierInfo() : {};
+  const workshopLabel = (atelierInfo.name && atelierInfo.name.trim()) ? atelierInfo.name.trim() : 'Spoke It';
+  const hLine1 = cardY + headerH * 0.30;
+  const hLine2 = cardY + headerH * 0.72;
+  drawHexIcon(ctx, cardX + PAD + 12, hLine1, 11, pal.icon);
+  ctx.textBaseline = 'middle';
+  // Une ligne = colonne gauche + colonne droite. La gauche garde sa taille ;
+  // la droite (tensiomètre, rayons : longueur libre) se réduit jusqu'à tenir
+  // dans la place restante, sans jamais chevaucher la gauche.
+  const leftX = cardX + PAD + 34, rightX = cardX + cardW - PAD, GAP = 40;
+  function headerLine(y, leftTxt, leftColor, rightTxt, rightColor) {
+    ctx.font = '600 42px DM Sans, sans-serif';
+    ctx.textAlign = 'left'; ctx.fillStyle = leftColor;
+    ctx.fillText(leftTxt, leftX, y);
+    const avail = rightX - (leftX + ctx.measureText(leftTxt).width + GAP);
+    let size = 42;
+    while (size > 22 && ctx.measureText(rightTxt).width > avail) { size -= 2; ctx.font = '600 ' + size + 'px DM Sans, sans-serif'; }
+    ctx.textAlign = 'right'; ctx.fillStyle = rightColor;
+    ctx.fillText(rightTxt, rightX, y);
+  }
+  headerLine(hLine1, t('tmConvJpegTitle'), pal.title, (_tmConvTensioLabel || '').toUpperCase(), pal.title);
+  headerLine(hLine2, workshopLabel, pal.label, cmp ? (_tmConvSpokeName + '  ·  ' + cmp.name) : _tmConvSpokeName, pal.label);
+
+  // Courbe, dans la palette du sol choisi (accents de FOND_JPEG)
+  const curveX = cardX + PAD, curveY = cardY + headerH + 10;
+  const P = _tmConvCurvePalette(pal.clair, fj.accent.join(','), fj.warm.join(','));
+  P.bg = pal.bg; // fond opaque pour l'anti-collision des ticks (cf. _tmConvCurvePaint)
+  ctx.save();
+  ctx.translate(curveX, curveY);
+  _tmConvCurvePaint(ctx, curveW, curveH, pts, cmp ? cmp.pts : null, P, curveW / 380);
+  ctx.restore();
+
+  // Légende (comparaison seulement) : pastille + nom, à quart et trois quarts
+  if (cmp) {
+    const legY  = curveY + curveH + legendH / 2;
+    const DOT_R = 10;
+    ctx.textBaseline = 'middle';
+    ctx.font = '500 32px DM Sans, sans-serif';
+    const items = [[_tmConvSpokeName, pal.fa, cardX + cardW / 4], [cmp.name, pal.fo, cardX + cardW * 3 / 4]];
+    items.forEach(([name, color, mid]) => {
+      const w = DOT_R * 2 + 15 + ctx.measureText(name).width;
+      const x = mid - w / 2;
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(x + DOT_R, legY, DOT_R, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = pal.legend; ctx.textAlign = 'left';
+      ctx.fillText(name, x + DOT_R * 2 + 15, legY);
+    });
+  }
+
+  // Bloc d'écarts, au format des blocs de stats du diagramme
+  if (rows.length) {
+    const bx = cardX + PAD, bw = cardW - PAD * 2;
+    const by = curveY + curveH + legendH;
+    // Cadre en blanc sur les sols sombres ; sur les sols clairs, le gris du
+    // sol (neutre) ou l'encre des stats, un blanc y serait invisible.
+    ctx.strokeStyle = pal.clair ? (fj.blockLine || pal.stat) : '#ffffff'; ctx.lineWidth = 2;
+    roundRect(ctx, bx, by, bw, blockH, 8);
+    if (pal.blockFill) { ctx.fillStyle = pal.blockFill; ctx.fill(); }
+    ctx.stroke();
+    ctx.font = '600 42px DM Sans, sans-serif';
+    ctx.fillStyle = pal.fa; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(t('tmCmpTitle').toUpperCase(), bx + PAD, by + BPADY);
+    // Δ moy à gauche, Δ max à droite, sur la même ligne : libellé en Sans,
+    // valeur en Mono à la suite.
+    const ry = by + BPADY + LABELH;
+    // Δ moy calé à gauche, Δ max calé à droite.
+    rows.forEach(([key, val], ri) => {
+      ctx.font = '400 42px DM Sans, sans-serif';
+      const kw = ctx.measureText(key).width;
+      ctx.font = '400 42px DM Mono, monospace';
+      const vw = ctx.measureText(val).width;
+      const x0 = ri === 0 ? bx + PAD : bx + bw - PAD - (kw + 24 + vw);
+      ctx.textAlign = 'left'; ctx.fillStyle = pal.stat;
+      ctx.font = '400 42px DM Sans, sans-serif';
+      ctx.fillText(key, x0, ry);
+      ctx.font = '400 42px DM Mono, monospace';
+      ctx.fillText(val, x0 + kw + 24, ry);
+    });
+  }
+
+  // Export JPEG — share natif sur mobile, téléchargement sur desktop
+  const slug = v => (v || '').replace(/[^a-z0-9]/gi, '-').toLowerCase().replace(/-+/g, '-').replace(/^-|-$/g, '');
+  const jpeg     = off.toDataURL('image/jpeg', 0.96);
+  const filename = 'spokeit-conversion-' + (slug(_tmConvSpokeName) || 'chart') + (cmp ? '-vs-' + slug(cmp.name) : '') + '.jpg';
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  let shared     = false;
+  if (isMobile && navigator.canShare) {
+    try {
+      const blob = await (await fetch(jpeg)).blob();
+      const file = new File([blob], filename, { type: 'image/jpeg' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: t('tmConvJpegTitle') });
+        shared = true;
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+    }
+  }
+  if (!shared) {
+    const a = document.createElement('a');
+    a.download = filename;
+    a.href     = jpeg;
+    a.click();
+  }
+  const btn = $id('tm-conv-snap-btn');
+  if (btn) { btn.classList.add('flash'); setTimeout(() => btn.classList.remove('flash'), 800); }
 }
 
 // ── Fermer la modale ────────────────────────────────────────────────────────
 function tmCloseConvTable() {
+  tmConvCmpClose();
+  if ($id('tm-conv-snap-modal')) tmConvSnapClose();
+  _tmConvCmpReset();
   $id('tm-conv-overlay').classList.remove('show');
   $id('tm-conv-modal').classList.remove('show');
   // Mode aperçu (ouvert depuis la charte perso) : on rend la modale à son
@@ -16451,6 +16877,14 @@ async function tmConvExportPdf() {
 
 // Fermer la modale avec Escape
 document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && $id('tm-conv-snap-modal') && $id('tm-conv-snap-modal').classList.contains('show')) {
+    tmConvSnapClose();
+    return;
+  }
+  if (e.key === 'Escape' && $id('tm-cmp-modal') && $id('tm-cmp-modal').classList.contains('show')) {
+    tmConvCmpClose();
+    return; // la modale de conversion reste ouverte derrière
+  }
   if (e.key === 'Escape' && $id('tm-conv-modal').classList.contains('show')) {
     tmCloseConvTable();
     return; // ne pas fermer aussi la charte perso derrière (cf. ec-modal)
@@ -17140,10 +17574,8 @@ function ccPreviewCurve() {
   _tmConvSpokeName   = name;
   _tmConvIsCustom    = true;
   _tmConvShowCurve   = true;
-
-  $id('tm-conv-spoke-label').innerHTML =
-    t('tmConvTensio') + '\u00a0: <strong style="color:var(--accent)">' + escHtml(_tmConvTensioLabel || '\u2014') + '</strong><br>' +
-    t('tmSpokeLabel') + '\u00a0: <strong style="color:var(--text)">' + escHtml(name || '\u2014') + '</strong>';
+  _tmConvCmpReset();
+  _tmConvSpokeLabelRender();
 
   var modal = $id('tm-conv-modal'), ov = $id('tm-conv-overlay');
   modal.classList.add('curve-only', 'over-cc');
@@ -25772,6 +26204,32 @@ async function tmPlayAnimVideo(mode) {
     </div>
   </div>
   <button class="pdfopt-generate" onclick="tmScreenshotGo()" style="display:flex;align-items:center;justify-content:center;gap:.45rem">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    <span data-i18n="screenshotGenerate">Generate JPEG</span>
+  </button>
+</div>
+
+<!-- ── Modale choix fond JPEG courbe de conversion ── -->
+<div class="screenshot-overlay" id="tm-conv-snap-overlay" onclick="tmConvSnapClose()"></div>
+<div class="screenshot-modal" id="tm-conv-snap-modal">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:.55rem;min-width:0">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent);opacity:.85;flex-shrink:0">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      <div style="font-size:.62rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)" data-i18n="screenshotTitle">Screenshot</div>
+    </div>
+    <button onclick="tmConvSnapClose()" style="background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--text3);font-size:.8rem;cursor:pointer;padding:.25rem .5rem;line-height:1;transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s">✕</button>
+  </div>
+  <div>
+    <div class="fond-range-head"><span class="fld-label" id="convsnap-fond-label" data-i18n="fondLabel">Fond</span><span class="fond-range-val" id="convsnap-fond-val"></span></div>
+    <div class="contrast-range-wrap">
+      <input class="contrast-range fond-range" id="convsnap-fond-range" type="range" min="0" max="4" step="1" value="0" aria-labelledby="convsnap-fond-label" oninput="fondRangeInput('convsnap')">
+      <div class="fond-range-legend" id="convsnap-fond-legend"></div>
+    </div>
+  </div>
+  <button class="pdfopt-generate" onclick="tmConvSnapGo()" style="display:flex;align-items:center;justify-content:center;gap:.45rem">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
     <span data-i18n="screenshotGenerate">Generate JPEG</span>
   </button>
