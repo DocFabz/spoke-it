@@ -7112,6 +7112,7 @@ const i18n = {
     tmCmpDeltaMax:'Δ max',
     tmCmpAt:'à',
     tmConvJpegTitle:'COURBE DE CONVERSION',
+    tmConvJpegTitle2:'COURBES DE CONVERSION',
     tmConvTensio:'Tensiomètre',
     tmTcBtn:'Contrôle tensiomètre',
     tmTcTitle:'Contrôle tensiomètre',
@@ -7428,6 +7429,7 @@ const i18n = {
     tmCmpDeltaMax:'Δ max',
     tmCmpAt:'at',
     tmConvJpegTitle:'CONVERSION CURVE',
+    tmConvJpegTitle2:'CONVERSION CURVES',
     tmConvTensio:'Tensiometer',
     tmTcBtn:'Tensiometer check',
     tmTcTitle:'Tensiometer check',
@@ -16235,14 +16237,13 @@ async function tmConvScreenshot(fond) {
   const curveW  = innerW;
   const curveH  = Math.round(curveW * 0.65);
   const legendH = cmp ? 128 : 60;
-  const LINE_H  = 66, BPADY = 36, LABELH = 60;
   const st      = cmp ? _tmConvCmpStats(pts, cmp.pts) : null;
   const rows    = st ? [
     [t('tmCmpDeltaMean'), (Math.round(st.mean * 10) / 10).toFixed(1) + ' kgf'],
     [t('tmCmpDeltaMax'),  (Math.round(st.max  * 10) / 10).toFixed(1) + ' kgf ' + t('tmCmpAt') + ' ' + tmDisplayValue(st.maxAt)]
   ] : [];
-  const blockH  = rows.length ? BPADY * 2 + LABELH + LINE_H : 0; // les Δ côte à côte, une seule ligne
-  const statsH  = rows.length ? blockH + PAD : 0;
+  const STATS_LINE = 56;                       // la ligne des Δ, centrée sous la légende
+  const statsH  = rows.length ? STATS_LINE : 0;
   const cardH   = headerH + curveH + legendH + statsH + PAD;
   const totalH  = cardH + M * 2;
 
@@ -16276,7 +16277,9 @@ async function tmConvScreenshot(fond) {
     ctx.textAlign = 'right'; ctx.fillStyle = rightColor;
     ctx.fillText(rightTxt, rightX, y);
   }
-  headerLine(hLine1, t('tmConvJpegTitle'), pal.title, (_tmConvTensioLabel || '').toUpperCase(), pal.title);
+  // Deux courbes ⇒ titre au pluriel.
+  const jpegTitle = t(cmp ? 'tmConvJpegTitle2' : 'tmConvJpegTitle');
+  headerLine(hLine1, jpegTitle, pal.title, (_tmConvTensioLabel || '').toUpperCase(), pal.title);
   headerLine(hLine2, workshopLabel, pal.label, cmp ? (_tmConvSpokeName + '  ·  ' + cmp.name) : _tmConvSpokeName, pal.label);
 
   // Courbe, dans la palette du sol choisi (accents de FOND_JPEG)
@@ -16305,34 +16308,23 @@ async function tmConvScreenshot(fond) {
     });
   }
 
-  // Bloc d'écarts, au format des blocs de stats du diagramme
+  // Écarts : une seule ligne centrée sous la légende, sans cadre ni titre.
+  // Δ moy puis Δ max, libellé en Sans, valeur en Mono, encre des stats.
   if (rows.length) {
-    const bx = cardX + PAD, bw = cardW - PAD * 2;
-    const by = curveY + curveH + legendH;
-    // Cadre en blanc sur les sols sombres ; sur les sols clairs, le gris du
-    // sol (neutre) ou l'encre des stats, un blanc y serait invisible.
-    ctx.strokeStyle = pal.clair ? (fj.blockLine || pal.stat) : '#ffffff'; ctx.lineWidth = 2;
-    roundRect(ctx, bx, by, bw, blockH, 8);
-    if (pal.blockFill) { ctx.fillStyle = pal.blockFill; ctx.fill(); }
-    ctx.stroke();
-    ctx.font = '600 42px DM Sans, sans-serif';
-    ctx.fillStyle = pal.fa; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-    ctx.fillText(t('tmCmpTitle').toUpperCase(), bx + PAD, by + BPADY);
-    // Δ moy à gauche, Δ max à droite, sur la même ligne : libellé en Sans,
-    // valeur en Mono à la suite.
-    const ry = by + BPADY + LABELH;
-    // Δ moy calé à gauche, Δ max calé à droite.
-    rows.forEach(([key, val], ri) => {
-      ctx.font = '400 42px DM Sans, sans-serif';
-      const kw = ctx.measureText(key).width;
-      ctx.font = '400 42px DM Mono, monospace';
-      const vw = ctx.measureText(val).width;
-      const x0 = ri === 0 ? bx + PAD : bx + bw - PAD - (kw + 24 + vw);
-      ctx.textAlign = 'left'; ctx.fillStyle = pal.stat;
-      ctx.font = '400 42px DM Sans, sans-serif';
-      ctx.fillText(key, x0, ry);
-      ctx.font = '400 42px DM Mono, monospace';
-      ctx.fillText(val, x0 + kw + 24, ry);
+    const GAPI = 24, GAPB = 90;
+    const parts = rows.map(([key, val]) => {
+      ctx.font = '400 36px DM Sans, sans-serif';  const kw = ctx.measureText(key).width;
+      ctx.font = '400 36px DM Mono, monospace';   const vw = ctx.measureText(val).width;
+      return { key, val, kw, vw, w: kw + GAPI + vw };
+    });
+    const total = parts.reduce((a, p) => a + p.w, 0) + GAPB * (parts.length - 1);
+    let x = cardX + (cardW - total) / 2;
+    const y = curveY + curveH + legendH + STATS_LINE / 2;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = pal.stat;
+    parts.forEach(p => {
+      ctx.font = '400 36px DM Sans, sans-serif';  ctx.fillText(p.key, x, y);
+      ctx.font = '400 36px DM Mono, monospace';   ctx.fillText(p.val, x + p.kw + GAPI, y);
+      x += p.w + GAPB;
     });
   }
 
@@ -16347,7 +16339,7 @@ async function tmConvScreenshot(fond) {
       const blob = await (await fetch(jpeg)).blob();
       const file = new File([blob], filename, { type: 'image/jpeg' });
       if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: t('tmConvJpegTitle') });
+        await navigator.share({ files: [file], title: jpegTitle });
         shared = true;
       }
     } catch (err) {
