@@ -101,7 +101,7 @@
 // qu'à lire `lang`. Le dictionnaire i18n et t() vivent dans ce script-là ;
 // applyLang() (script principal) fait le reste.
 // Accès storage protégé : avec "Bloquer tous les cookies" (Safari) ou certains
-// contextes privés/WebView, localStorage JETTE dès la lecture — sans try, ce
+// contextes privés/WebView, localStorage JETTE dès la lecture ; sans try, ce
 // script du <head> meurt, `lang` n'est jamais déclarée et l'application reste
 // inerte (ReferenceError dans applyLangStatic puis applyLang).
 const _storedLang = (function() {
@@ -1339,7 +1339,7 @@ html[data-fond="alu"] .ateliermgr-logo-wrap.has-logo:hover, html[data-fond="alu"
 
 /* ── Segment control ───────────────────────────────────────────────────────── */
 .seg         { display:flex; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); padding:3px; gap:3px }
-.sb          { flex:1; padding:.6rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500; cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
+.sb          { flex:1; padding:.6rem .5rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500; cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s }
 .sb.active   { background:var(--bg2); color:var(--accent); box-shadow:var(--sh-raise), 0 0 0 1px rgba(var(--accent-rgb),.15) inset }
 @keyframes sb-click-flash {
   0%   { box-shadow:var(--sh-raise), 0 0 0 1px rgba(var(--accent-rgb),.15) inset, 0 0 22px rgba(var(--accent-rgb),.32) }
@@ -1842,7 +1842,10 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
    même hauteur. Sans subgrid le navigateur ignore le bloc : mise en page
    d'origine. */
 @supports (grid-template-rows: subgrid) {
-  .rg > .rc { display:grid; grid-template-rows:subgrid; grid-row:span 5; row-gap:0; align-content:start }
+  /* minmax(0,1fr) : sans lui, la colonne prend la largeur du nombre (insécable)
+     et les autres lignes se replient sur cette largeur-là, pas sur celle de
+     la tuile. */
+  .rg > .rc { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:subgrid; grid-row:span 5; row-gap:0; align-content:start }
 }
 .rc.fo    { background:var(--card-alt); border:1px solid rgba(var(--warm-rgb),.28) }
 .rc.fa    { background:var(--card-alt); border:1px solid rgba(var(--accent-rgb),.28) }
@@ -1858,7 +1861,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 .rincluant{ font-family:'DM Mono',monospace; font-size:.52rem; font-weight:400; letter-spacing:.25em; text-transform:uppercase; margin-top:0; margin-bottom:0 }
 .fo .rincluant { color:var(--warm) }
 .fa .rincluant { color:var(--accent) }
-/* Longueurs de rayon : DM Sans 300 à 2rem occupe la même largeur que l'ancienne
+/* Longueurs de rayon : DM Sans 300 à 2rem occupe à peu près la même largeur que l'ancienne
    Cormorant 300 à 2.4rem ; line-height 1.2 conserve la hauteur de boîte (2.4rem). */
 .rnum     { font-family:'DM Sans',sans-serif; font-size:2rem; font-weight:300; line-height:1.2 }
 .fo .rnum { color:var(--warm2) }
@@ -1871,7 +1874,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
    que l'unité sous son encre (line-height normal contre 1). */
 .rrows:not(:empty) { border-top:1px solid var(--border); padding-top:.8rem; margin-top:.9rem; margin-bottom:-1px }
 .rrow     { display:flex; flex-wrap:wrap; column-gap:.75rem; align-items:baseline; font-size:.72rem; color:var(--text2) }
-.rrow > span { white-space:nowrap }
+.rrow > * { white-space:nowrap }
 .rrow strong { font-family:'DM Mono',monospace; font-weight:400; font-size:.77rem; color:var(--text) }
 .ev       { font-family:'DM Mono',monospace; font-weight:500; color:var(--success); font-size:.8rem }
 .rc-tap   { position:absolute; bottom:.7rem; right:.7rem; width:18px; height:18px; opacity:.65; transition:opacity .2s }
@@ -2100,7 +2103,7 @@ input.invalid, select.invalid, .cp.invalid { border-color:rgba(240,100,100,.6) !
 /* Aligné sur le segment control .seg/.sb (sélecteur de roue) : un seul
    langage de sélecteur segmenté dans l'app */
 .module-nav     { display:flex; background:var(--inp); border:1px solid var(--border-s); border-radius:var(--rs); padding:3px; gap:3px; max-width:880px; margin:0 auto 1.2rem; width:100% }
-.module-nav-btn { flex:1; padding:.6rem 1rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s; display:flex; align-items:center; justify-content:center; gap:.4rem }
+.module-nav-btn { flex:1; padding:.6rem .5rem; border:none; border-radius:calc(var(--rs) - 2px); background:transparent; color:var(--text3); font-family:'DM Sans',sans-serif; font-size:.85rem; font-weight:500; text-transform:uppercase; cursor:pointer; touch-action:manipulation; transition:background .2s, border-color .2s, color .2s, opacity .2s, transform .2s, box-shadow .2s; display:flex; align-items:center; justify-content:center; gap:.4rem }
 .module-nav-btn.active { background:var(--bg2); color:var(--accent); box-shadow:var(--sh-raise), 0 0 0 1px rgba(var(--accent-rgb),.15) inset }
 .module-nav-btn.active .nav-icon { color:var(--accent) }
 .module-nav-btn:hover:not(.active) { color:var(--text2) }
@@ -3141,10 +3144,39 @@ input[type=number] { -moz-appearance:textfield; appearance:textfield }
   #tm-result-card .radar-wrap { margin-bottom: calc(.5rem + 1.06rem + 1rem); }
 }
 
-/* Très petits écrans (≤359px) : desserre les cards de résultat sans toucher aux iPhone (375+) ni aux Android larges. Police .rnum inchangée. */
+/* Écrans étroits (< 400 px) : le nombre (.rnum) et l'étiquette (.rtag) des
+   tuiles de résultat sont réduits pour tenir dans la tuile sans dépendre l'un
+   de l'autre. Paliers du nombre calés sur « 300.06 », le cas le plus large
+   réaliste (environ 53 px par rem en DM Sans 300), avec 2 à 7 px de réserve
+   avant le bord de la tuile. L'étiquette à .52rem / .13em fait 70 px pour
+   71,8 px de zone de contenu à 320 px : deux lignes dès 320 px, comme au-delà
+   de 400. Seuils voisins pour les rangées de boutons (onglets de module et
+   sélecteur de roue) : « MODULE TENSION » se repliait à 360 px, et à 412 px
+   dès que la police système est en « Grand » ; à .78rem le bouton offre
+   120 px pour 106 px de texte à 360 px, à .72rem 100 px pour 98 px à 320 px.
+   Les deux rangées gardent le même corps à chaque largeur. */
+@media (max-width: 399px) {
+  /* Seuil à 399 et non 389 : à 390 px (iPhone 12 à 14), l'étiquette de base
+     (.59rem / .2em, 87 px) ne laisse que 0,9 px dans les 88 px de la tuile ;
+     à partir de 400 px, la réserve dépasse 5 px. */
+  .rtag { font-size: .52rem; letter-spacing: .13em; }
+}
+@media (max-width: 389px) {
+  .rnum { font-size: 1.875rem; }
+  .module-nav-btn, .sb { font-size: .78rem; }
+}
+@media (max-width: 374px) {
+  .rnum { font-size: 1.75rem; }
+}
+
+/* Très petits écrans (≤359px) : desserre les cards de résultat sans toucher aux iPhone (375+) ni aux Android larges.
+   gap sans composante verticale et padding bas compensé d'1 px : mêmes raisons
+   que sur .rg et .rc (piste fantôme du subgrid, descente d'encre). */
 @media (max-width: 359px) {
-  .rg { gap: .65rem; }
-  .rc { padding: 1.25rem 1rem; }
+  .rg { gap: 0 .65rem; }
+  .rc { padding: 1.25rem 1rem calc(1.25rem - 1px); }
+  .rnum { font-size: 1.6rem; }
+  .module-nav-btn, .sb { font-size: .72rem; }
 }
 
 /* ── ToU link & modal ───────────────────────────────────────────────────────── */
