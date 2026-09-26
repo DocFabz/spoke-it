@@ -12499,7 +12499,8 @@ function jpegLegende(ctx, items, y, maxItemW, pal, k) {
 // Deux blocs côte à côte, NDS à gauche et DS à droite comme la légende, six
 // lignes chacun : Moyenne, Min, Max, Δ max, Écart-type, CV. Clé en DM Sans à
 // gauche, valeur en DM Mono alignée à droite ; le CV prend la couleur de son
-// côté au-dessus du seuil, comme à l'écran.
+// côté au-dessus du seuil, comme à l'écran. Le récap d'évolution de la
+// comparaison reprend ce gabarit avec deux lignes, Δ Moyenne et σ.
 //
 // Les métriques diffèrent par export parce que l'échelle finale diffère : le
 // diagramme seul entre dans son carré à 0,55 environ, le montage de
@@ -12573,7 +12574,8 @@ function jpegBlocsRangee(ctx, blocks, x0, x1, y, m, pal, ndsFo) {
       ctx.fillText(row.key, bx + m.padX, ry);
       // Valeur : filet de sécurité, réduite par pas de 2 px si elle mordait
       // sur la clé. Avec les métriques de JPEG_BLOC et les libellés des deux
-      // langues, il faudrait une valeur à trois chiffres avant la virgule.
+      // langues, il faudrait une valeur à trois chiffres avant la virgule
+      // (blocs de stats) ou de plus de 18 caractères (récap d'évolution).
       var keyW = row.key ? ctx.measureText(row.key).width + 24 : 0;
       var fv = m.row;
       ctx.font = '400 ' + fv + 'px DM Mono, monospace';
@@ -24838,7 +24840,7 @@ function _snapRenderRadarCanvasColored(snap, w, h, scale, pal) {
   return off;
 }
 
-// ── Récap évolution — helpers partagés (animation, PDF, bandeau JPEG) ────────
+// ── Récap évolution — helpers partagés (animation, PDF, blocs JPEG) ──────────
 function _snapEvoAvg(arr) {
   var v = arr.filter(function(x){ return x != null; });
   return v.length ? v.reduce(function(a,b){ return a+b; }, 0) / v.length : null;
@@ -24862,8 +24864,9 @@ function _snapEvoSigmaLine(sA, sB, aA, aB) {
   return pair === null ? '—' : 'σ  ' + pair;
 }
 // Paire de CV « x.x % → y.y % » (trim du .0, espace avant %) — formatage
-// numérique unique pour les trois surfaces : animation et JPEG (préfixe σ
-// ci-dessus), PDF (ligne labellisée σ, glyphe dessiné par pdfTextRich).
+// numérique unique pour les trois surfaces : animation (préfixe σ
+// ci-dessus), JPEG (clé σ du bloc), PDF (ligne labellisée σ, glyphe dessiné
+// par pdfTextRich).
 function _snapEvoPctPair(sA, sB, aA, aB) {
   if (sA === null || sB === null || !aA || !aB) return null;
   function f(n) { var s = n.toFixed(1); return s.endsWith('.0') ? String(Math.round(n)) : s; }
@@ -25019,7 +25022,7 @@ async function snapComparePDF() {
     }
     var pair = _snapEvoPctPair(_snapEvoStd(kgfsA[row]), _snapEvoStd(kgfsB[row]), a, b);
     var cvBase = bigBase + 5.4;
-    // σ devant la paire de CV, même style qu'elle, comme l'animation et le JPEG.
+    // σ devant la paire de CV, même style qu'elle, comme l'animation.
     pdfAFont(doc, 9.4, true, A.INK);
     pdfTextRich(doc, pair === null ? '—' : '\u03C3 ' + pair, x + hInner, cvBase, { align: 'right' });
     var bh = cvBase - (yE + pad) + 1;
@@ -25045,7 +25048,7 @@ async function snapComparePDF() {
 async function snapCompareJPEG() {
   if (_snapCompareSelected.length !== 2) return;
   // Sol choisi dans la modale, résolu une fois pour les deux panneaux et le
-  // bandeau : le JPEG se peint dans ce sol, pas dans le sol actif.
+  // récap d'évolution : le JPEG se peint dans ce sol, pas dans le sol actif.
   var pal = fondPaletteExport(_snapCmpFond);
 
   await document.fonts.ready;
@@ -25057,16 +25060,25 @@ async function snapCompareJPEG() {
   if (!snapA || !snapB) return; // symétrie avec snapComparePDF : sélection orpheline
   // Mise en page d'un panneau : même en-tête que tmScreenshot, mais le
   // panneau reste à 1280 de large (pas de carré natif) : deux panneaux côte à
-  // côte plus le récap donnent 2560 × ~2310, centrés verticalement dans un
-  // carré de 2560 alloué d'emblée. Les blocs sont un cran plus gros que ceux
-  // du diagramme seul (JPEG_BLOC.compare) parce que ce montage entre dans son
-  // carré à une échelle plus petite.
+  // côte plus le récap d'évolution donnent 2560 × ~2400, centrés verticalement
+  // dans un carré de 2560 alloué d'emblée. Les blocs sont un cran plus gros
+  // que ceux du diagramme seul (JPEG_BLOC.compare) parce que ce montage entre
+  // dans son carré à une échelle plus petite.
   var W       = 1280;
   var PAD     = 48;
   var GAP_HR  = 32;                 // en-tête → radar
   var GAP_LB  = 24;                 // légende → blocs
   var BM      = JPEG_BLOC.compare;  // métriques des blocs
-  var RECAP_H = 300;                // bandeau récap sous les deux panneaux
+  // Récap d'évolution sous les deux panneaux : un titre « ÉVOLUTION S1 → S2 »
+  // centré, puis deux blocs NDS / DS au gabarit des blocs de stats des
+  // panneaux, la paire centrée sur le montage. Elle est plus large qu'un
+  // panneau pour que la valeur la plus longue attendue, « +11.6 kgf  (+12%) »
+  // (17 caractères), tienne face à « Δ Moyenne » sans réduction de police :
+  // les deux blocs gardent ainsi le même corps. La hauteur du récap (RECAP_H)
+  // se calcule après les blocs, dont elle dépend.
+  var RECAP_TITLE_H = 60;           // ligne de titre du récap
+  var RECAP_GAP     = 24;           // titre → blocs
+  var RECAP_W       = 1440;         // largeur de la paire de blocs
   // Définition : le carré final fait 2 × W de panneau ; à JPEG_DPR il ferait
   // 5120 px (26 Mpx), au-delà de la limite iOS. Plafonné à JPEG_COTE_MAX.
   var dpr     = Math.min(JPEG_DPR, JPEG_COTE_MAX / (W * 2));
@@ -25196,9 +25208,34 @@ async function snapCompareJPEG() {
   var resA = buildSnapCanvas(snapA);
   var resB = buildSnapCanvas(snapB);
 
+  // ── Récap évolution — même contenu que la fin de l'animation et le PDF ──
+  // Deux blocs NDS / DS au gabarit des blocs de stats (jpegBlocsRangee,
+  // mêmes métriques BM, même liseré coloré par côté), deux lignes chacun :
+  // Δ Moyenne « +1.6 kgf  (+2%) » et σ « x % → y % », par les helpers
+  // partagés _snapEvo*. Les deux côtés sont toujours présents ; sans lecture
+  // d'un côté, ses valeurs sortent en « — » comme dans le PDF.
+  var evoBlocks = (function() {
+    var kgfsA = { fo: resA.foKgfs, fa: resA.faKgfs };
+    var kgfsB = { fo: resB.foKgfs, fa: resB.faKgfs };
+    return ['fo', 'fa'].map(function(row) {
+      var a = _snapEvoAvg(kgfsA[row]), b = _snapEvoAvg(kgfsB[row]);
+      return {
+        isFo: row === 'fo',
+        label: tmSideLabel(row, wtype),
+        entries: [
+          { key: pdfAStr('dAvg'), val: _snapEvoDiff(a, b) },
+          { key: 'σ',             val: _snapEvoPctPair(_snapEvoStd(kgfsA[row]), _snapEvoStd(kgfsB[row]), a, b) || '—' }
+        ]
+      };
+    });
+  })();
+  // Le panneau garde PAD + JPEG_MARGE sous ses blocs (compris dans totalH) ;
+  // le récap reprend la même respiration sous les siens.
+  var RECAP_H = RECAP_TITLE_H + RECAP_GAP + jpegBlocsHauteur(evoBlocks, BM) + PAD + JPEG_MARGE;
+
   // Canvas final, alloué directement au carré (un seul grand canvas, pas de
   // montage intermédiaire recopié ensuite) : les deux panneaux côte
-  // à côte et le bandeau récap, centrés verticalement dans le sol.
+  // à côte et le récap d'évolution, centrés verticalement dans le sol.
   var totalH   = Math.max(resA.totalH, resB.totalH);
   var finalW   = W * 2;
   var cote     = Math.max(finalW, totalH + RECAP_H);
@@ -25214,38 +25251,23 @@ async function snapCompareJPEG() {
   fctx.drawImage(resA.canvas, 0, Math.round(offY * dpr));
   fctx.drawImage(resB.canvas, Math.round(W * dpr), Math.round(offY * dpr));
 
-  // ── Bandeau récap évolution — même contenu que la fin de l'animation ────
+  // ── Récap évolution : titre centré, puis la paire de blocs centrée ──────
   (function drawEvoRecap() {
-    var kgfsA = { fo: resA.foKgfs, fa: resA.faKgfs };
-    var kgfsB = { fo: resB.foKgfs, fa: resB.faKgfs };
-    var ndsA = kgfsA[ord.nds], ndsB = kgfsB[ord.nds];
-    var dsA  = kgfsA[ord.ds],  dsB  = kgfsB[ord.ds];
-    var avgNdsA = _snapEvoAvg(ndsA), avgNdsB = _snapEvoAvg(ndsB);
-    var avgDsA  = _snapEvoAvg(dsA),  avgDsB  = _snapEvoAvg(dsB);
-
-    var colorNDS = pal[ord.nds];
-    var colorDS  = pal[ord.ds];
-    var C_val = pal.legend;
-
     fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var y0 = offY + totalH;   // PAD + JPEG_MARGE sous les blocs des panneaux
 
-    fctx.textAlign = 'center'; fctx.textBaseline = 'middle';
-    function drawSide(cx, label, color, diffStr, stdLine) {
-      fctx.font = '600 46px DM Mono, monospace';
-      fctx.fillStyle = color;
-      fctx.fillText(label, cx, offY + totalH + 70);
-      fctx.font = '500 50px DM Sans, sans-serif';
-      fctx.fillStyle = C_val;
-      fctx.fillText(diffStr, cx, offY + totalH + 150);
-      fctx.fillText(stdLine, cx, offY + totalH + 230);
-    }
-    // Chaque colonne du récap est centrée sur une moitié du montage
-    drawSide(finalW * 0.25, 'NDS', colorNDS,
-             _snapEvoDiff(avgNdsA, avgNdsB),
-             _snapEvoSigmaLine(_snapEvoStd(ndsA), _snapEvoStd(ndsB), avgNdsA, avgNdsB));
-    drawSide(finalW * 0.75, 'DS', colorDS,
-             _snapEvoDiff(avgDsA, avgDsB),
-             _snapEvoSigmaLine(_snapEvoStd(dsA), _snapEvoStd(dsB), avgDsA, avgDsB));
+    // Titre au style des libellés de blocs, même graisse et même corps, dans
+    // l'encre secondaire de l'en-tête (celle du nom de roue et de l'atelier)
+    fctx.font         = '600 ' + BM.label + 'px DM Sans, sans-serif';
+    fctx.fillStyle    = pal.label;
+    fctx.textAlign    = 'center';
+    fctx.textBaseline = 'middle';
+    fctx.fillText((pdfAStr('evolution') + ' S' + snapA.num + ' → S' + snapB.num).toUpperCase(),
+                  finalW / 2, y0 + RECAP_TITLE_H / 2);
+
+    // Paire NDS / DS de RECAP_W, centrée sur le montage
+    var x0 = Math.round((finalW - RECAP_W) / 2);
+    jpegBlocsRangee(fctx, evoBlocks, x0, x0 + RECAP_W, y0 + RECAP_TITLE_H + RECAP_GAP, BM, pal, ord.nds === 'fo');
     fctx.setTransform(1, 0, 0, 1, 0, 0);
   })();
 
