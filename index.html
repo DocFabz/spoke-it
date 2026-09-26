@@ -16303,21 +16303,38 @@ function tmConvCmpOpen() {
 
   // Mêmes options, mêmes groupes que le sélecteur de rayon du tensiomètre
   // actif : on le clone et on retire la charte de référence, puis les
-  // groupes devenus vides.
+  // groupes devenus vides. Le placeholder « — » (value vide) est conservé
+  // en tête : sans comparaison active, le sélecteur s'ouvre dessus plutôt
+  // que sur la première charte de la liste, et Comparer reste inactif tant
+  // qu'aucune charte n'est choisie.
   const sel = $id('tm-cmp-select');
   const src = $id('tm-spoke-select');
   sel.innerHTML = src ? src.innerHTML : '';
   const drawable = k => Array.isArray(tbl[k]) && tbl[k].filter(p => p[1] !== null).length >= 2;
-  Array.from(sel.options).forEach(o => { if (!o.value || o.value === curKey || !drawable(o.value)) o.remove(); });
+  Array.from(sel.options).forEach(o => { if (o.value && (o.value === curKey || !drawable(o.value))) o.remove(); });
   Array.from(sel.querySelectorAll('optgroup')).forEach(g => { if (!g.children.length) g.remove(); });
-  const has = sel.options.length > 0;
-  if (has && _tmConvCmp && (_tmConvCmp.key in tbl)) sel.value = _tmConvCmp.key;
+  if (!sel.querySelector('option[value=""]')) {
+    const ph = document.createElement('option');
+    ph.value = ''; ph.textContent = t('tmSpokeSelectPlaceholder');
+    sel.insertBefore(ph, sel.firstChild);
+  }
+  const has = Array.from(sel.options).some(o => !!o.value);
+  const keep = has && _tmConvCmp && (_tmConvCmp.key in tbl) &&
+               Array.from(sel.options).some(o => o.value === _tmConvCmp.key);
+  sel.value = keep ? _tmConvCmp.key : '';
   sel.disabled = !has;
-  $id('tm-cmp-ok-btn').disabled = !has;
+  sel.onchange = _tmConvCmpSyncOk;
+  _tmConvCmpSyncOk();
   $id('tm-cmp-note').textContent = has ? '' : t('tmCmpNone');
 
   $id('tm-cmp-overlay').classList.add('show');
   $id('tm-cmp-modal').classList.add('show');
+}
+
+// Bouton Comparer actif seulement devant une charte choisie (pas sur « — »).
+function _tmConvCmpSyncOk() {
+  const sel = $id('tm-cmp-select'), btn = $id('tm-cmp-ok-btn');
+  if (btn) btn.disabled = !(sel && sel.value);
 }
 
 function tmConvCmpClose() {
